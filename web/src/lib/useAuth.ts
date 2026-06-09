@@ -2,7 +2,7 @@
 // access-token-for-API-resource flow and the sign-in / sign-out redirects.
 import { useCallback } from 'react'
 import { useLogto } from '@logto/react'
-import { logtoResource, redirectUri, postSignOutUri } from './logto'
+import { getLogtoResource, redirectUri, postSignOutUri } from './logto'
 
 export function useAuth() {
   const { isAuthenticated, isLoading, getAccessToken, signIn, signOut } =
@@ -13,7 +13,7 @@ export function useAuth() {
   const getApiToken = useCallback(async (): Promise<string | null> => {
     if (!isAuthenticated) return null
     try {
-      const token = await getAccessToken(logtoResource || undefined)
+      const token = await getAccessToken(getLogtoResource() || undefined)
       return token ?? null
     } catch {
       return null

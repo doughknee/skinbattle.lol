@@ -6,20 +6,10 @@ WORKDIR /app
 COPY package.json package-lock.json* ./
 RUN npm ci || npm install
 
-# Copy source and build
+# Copy source and build. Public config (Logto endpoint/app/resource, API URL) is
+# injected at RUNTIME via env vars (see src/lib/config.ts + routes/__root.tsx),
+# so no per-environment build args are needed here.
 COPY . .
-
-# VITE_* vars are baked into the client bundle at build time.
-# Provide them as build args so Coolify/CI can inject per-environment values.
-ARG VITE_API_URL=/api
-ARG VITE_LOGTO_ENDPOINT
-ARG VITE_LOGTO_APP_ID
-ARG VITE_LOGTO_RESOURCE
-ENV VITE_API_URL=$VITE_API_URL \
-    VITE_LOGTO_ENDPOINT=$VITE_LOGTO_ENDPOINT \
-    VITE_LOGTO_APP_ID=$VITE_LOGTO_APP_ID \
-    VITE_LOGTO_RESOURCE=$VITE_LOGTO_RESOURCE
-
 RUN npm run build
 
 # ── Runtime stage ───────────────────────────────────────────────

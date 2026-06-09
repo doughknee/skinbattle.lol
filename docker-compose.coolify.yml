@@ -1,0 +1,127 @@
+# Coolify Docker Compose deployment for skinbattle.lol — the whole stack in one resource.
+#
+# In Coolify: New Resource → Docker Compose (from this Git repo) → set the compose
+# file to `docker-compose.coolify.yml`. Coolify auto-generates domains and passwords
+# via the SERVICE_* "magic" variables below; you only set TWO things by hand:
+#   - LOGTO_APP_ID      (after creating the SPA app in Logto's admin console)
+#   - LOGTO_AUDIENCE    (optional; defaults to https://api.skinbattle.lol — must match
+#                        the API Resource identifier you create in Logto)
+#
+# Deploy flow:
+#   1. Deploy this compose. Coolify assigns domains for web, api, and logto.
+#   2. Open the Logto admin console (the logto-admin domain) → create an SPA app
+#      (redirect URI: <web-url>/callback, post-logout: <web-url>) and an API Resource
+#      with identifier = LOGTO_AUDIENCE. Copy the SPA App ID.
+#   3. Set LOGTO_APP_ID in this resource's env vars → restart the `web` service (no rebuild).
+#   4. Run the seeder once (see seed/README.md) against the Postgres service.
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      - POSTGRES_USER=skinbattle
+      - POSTGRES_PASSWORD=${SERVICE_PASSWORD_POSTGRES}
+      - POSTGRES_DB=skinbattle
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U skinbattle']
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  # One-shot: create the separate `logto` database (the app uses `skinbattle`).
+  postgres-init:
+    image: postgres:16-alpine
+    restart: 'no'
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      - PGPASSWORD=${SERVICE_PASSWORD_POSTGRES}
+    entrypoint:
+      - sh
+      - -c
+      - >
+        psql -h postgres -U skinbattle -d skinbattle -tc
+        "SELECT 1 FROM pg_database WHERE datname='logto'" | grep -q 1
+        || psql -h postgres -U skinbattle -d skinbattle -c "CREATE DATABASE logto"
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    environment:
+      - REDIS_PASSWORD=${SERVICE_PASSWORD_REDIS}
+    command: redis-server --requirepass ${SERVICE_PASSWORD_REDIS} --save 60 1
+    volumes:
+      - redisdata:/data
+    healthcheck:
+      test: ['CMD-SHELL', 'redis-cli -a "$$REDIS_PASSWORD" ping | grep -q PONG']
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  logto:
+    image: svhd/logto:latest
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      postgres-init:
+        condition: service_completed_successfully
+    environment:
+      # Generates two domains for this service: OIDC endpoint (3001) + admin (3002).
+      - SERVICE_FQDN_LOGTO_3001
+      - SERVICE_FQDN_LOGTOADMIN_3002
+      - TRUST_PROXY_HEADER=1
+      - DB_URL=postgres://skinbattle:${SERVICE_PASSWORD_POSTGRES}@postgres:5432/logto
+      - ENDPOINT=${SERVICE_URL_LOGTO}
+      - ADMIN_ENDPOINT=${SERVICE_URL_LOGTOADMIN}
+    entrypoint:
+      - sh
+      - -c
+      - 'npm run cli db seed -- --swe || true && npm start'
+
+  api:
+    build:
+      context: ./api
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      # Exposes the Go API on its own generated domain (browser calls it cross-origin).
+      - SERVICE_FQDN_API_8080
+      - DATABASE_URL=postgres://skinbattle:${SERVICE_PASSWORD_POSTGRES}@postgres:5432/skinbattle?sslmode=disable
+      - REDIS_URL=redis://:${SERVICE_PASSWORD_REDIS}@redis:6379/0
+      - LOGTO_ENDPOINT=${SERVICE_URL_LOGTO}
+      - LOGTO_AUDIENCE=${LOGTO_AUDIENCE:-https://api.skinbattle.lol}
+      - CORS_ORIGIN=${SERVICE_URL_WEB}
+      - PORT=8080
+    # Note: the API runs on a distroless image (no shell), so there is no Docker
+    # healthcheck here. Use Coolify's HTTP health check with path `/healthz`.
+
+  web:
+    build:
+      context: ./web
+    restart: unless-stopped
+    depends_on:
+      - api
+    environment:
+      # The public site domain.
+      - SERVICE_FQDN_WEB_3000
+      # SSR → API over the internal network; browser → API's public URL.
+      - API_INTERNAL_URL=http://api:8080
+      - PUBLIC_API_URL=${SERVICE_URL_API}/api
+      # Public Logto config injected into the browser at runtime (no rebuild needed).
+      - LOGTO_ENDPOINT=${SERVICE_URL_LOGTO}
+      - LOGTO_APP_ID=${LOGTO_APP_ID}
+      - LOGTO_RESOURCE=${LOGTO_AUDIENCE:-https://api.skinbattle.lol}
+      - PORT=3000
+
+volumes:
+  pgdata:
+  redisdata:

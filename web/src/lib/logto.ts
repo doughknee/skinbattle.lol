@@ -1,16 +1,23 @@
-// Logto OIDC configuration, read from Vite env vars.
+// Logto OIDC configuration, built from runtime public config.
 import type { LogtoConfig } from '@logto/react'
 import { UserScope } from '@logto/react'
+import type { PublicConfig } from './config'
+import { getPublicConfig } from './config'
 
-export const logtoResource: string = import.meta.env.VITE_LOGTO_RESOURCE || ''
+export function makeLogtoConfig(c: PublicConfig): LogtoConfig {
+  return {
+    endpoint: c.logtoEndpoint,
+    appId: c.logtoAppId,
+    // Request the API resource so we can mint access tokens with the correct
+    // audience for the Go API.
+    resources: c.logtoResource ? [c.logtoResource] : [],
+    scopes: [UserScope.Email, UserScope.Profile],
+  }
+}
 
-export const logtoConfig: LogtoConfig = {
-  endpoint: import.meta.env.VITE_LOGTO_ENDPOINT || '',
-  appId: import.meta.env.VITE_LOGTO_APP_ID || '',
-  // Request the API resource so we can mint access tokens with the correct
-  // audience for the Go API.
-  resources: logtoResource ? [logtoResource] : [],
-  scopes: [UserScope.Email, UserScope.Profile],
+// The API resource indicator, resolved at call time (browser runtime config).
+export function getLogtoResource(): string {
+  return getPublicConfig().logtoResource
 }
 
 // Where Logto redirects back to after sign-in / sign-out.

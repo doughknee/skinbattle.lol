@@ -1,7 +1,43 @@
 # Deploying skinbattle.lol on Coolify
 
-Five services: **postgres**, **redis**, **logto**, **api**, **web**. Postgres/Redis/Logto
-are one-click resources in Coolify; `api` and `web` deploy from this repo's Dockerfiles.
+Five services: **postgres**, **redis**, **logto**, **api**, **web**.
+
+There are two ways to deploy. **Option A (recommended)** brings the whole stack up from
+one Docker Compose file. **Option B** wires up five individual Coolify resources by hand.
+
+---
+
+## Option A — One-shot Docker Compose (recommended)
+
+Uses [`docker-compose.coolify.yml`](docker-compose.coolify.yml), which auto-generates all
+domains and passwords via Coolify's `SERVICE_*` magic variables.
+
+1. **New Resource → Docker Compose**, from this Git repo (`doughknee/skinbattle.lol`,
+   branch `main`). Set the compose file to `docker-compose.coolify.yml`.
+2. **Deploy.** Coolify generates domains for `web`, `api`, and `logto` (OIDC + admin), and
+   random passwords for Postgres/Redis. Migrations run on the API's first boot.
+3. **Configure Logto:** open the generated Logto **admin** domain → create:
+   - a **Single Page App**: redirect URI `<web-url>/callback`, post-logout `<web-url>`,
+     CORS origin `<web-url>`. Copy its **App ID**.
+   - an **API Resource** with identifier matching `LOGTO_AUDIENCE`
+     (default `https://api.skinbattle.lol`).
+4. **Set `LOGTO_APP_ID`** in the resource's environment variables → **restart the `web`
+   service**. No rebuild needed — the frontend reads Logto config at runtime.
+   (Optionally set `LOGTO_AUDIENCE` if you want a different resource identifier; set it on
+   the same env screen so both `api` and `web` pick it up.)
+5. **Seed the data** (see step 6 below): run the importer against the Postgres service once.
+6. **Migrate users** into Logto (see step 7 below).
+
+Notes:
+- The browser calls the API cross-origin at its generated domain; the API's `CORS_ORIGIN`
+  is wired to the web domain automatically. Want a single domain instead? Give `web` your
+  apex domain and add a Coolify proxy rule sending `/api/*` to the `api` service, then set
+  `PUBLIC_API_URL=/api` on `web`.
+- `LOGTO_APP_ID` is the only value you must paste by hand; everything else is generated.
+
+---
+
+## Option B — Individual resources
 
 ## 0. Prerequisites
 - A Coolify instance with a project created.

@@ -11,8 +11,12 @@ import ClientProviders from '~/components/ClientProviders'
 import NavBar from '~/components/Navbar'
 import ChampionSearch from '~/components/ChampionSearch'
 import UserStats from '~/components/UserStats'
+import { readServerConfig, type PublicConfig } from '~/lib/config'
 
 export const Route = createRootRoute({
+  // Runs on the server during SSR; the result is serialized to the client, so
+  // browser navigations reuse the same values without re-reading env.
+  loader: () => ({ config: readServerConfig() }),
   head: () => ({
     meta: [
       { charSet: 'utf-8' },
@@ -38,9 +42,10 @@ export const Route = createRootRoute({
 })
 
 function RootComponent() {
+  const { config } = Route.useLoaderData()
   return (
-    <RootDocument>
-      <ClientProviders>
+    <RootDocument config={config}>
+      <ClientProviders config={config}>
         <NavBar />
         <Outlet />
         <ChampionSearch />
@@ -50,7 +55,13 @@ function RootComponent() {
   )
 }
 
-function RootDocument({ children }: { children: ReactNode }) {
+function RootDocument({
+  children,
+  config,
+}: {
+  children: ReactNode
+  config: PublicConfig
+}) {
   return (
     <html
       lang="en"
@@ -58,6 +69,14 @@ function RootDocument({ children }: { children: ReactNode }) {
     >
       <head>
         <HeadContent />
+        {/* Runtime public config — read by the browser before the app bundle.
+            Sourced from loader data so SSR and client render identically. */}
+        <script
+          // eslint-disable-next-line react/no-danger
+          dangerouslySetInnerHTML={{
+            __html: `window.__APP_CONFIG__=${JSON.stringify(config).replace(/</g, '\\u003c')}`,
+          }}
+        />
       </head>
       <body className="antialiased min-h-screen">
         {children}

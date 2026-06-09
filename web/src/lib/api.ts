@@ -18,6 +18,7 @@ import type {
   VoteRequest,
   VoteResponse,
 } from './types'
+import { getPublicConfig } from './config'
 
 const isServer = typeof window === 'undefined'
 
@@ -28,9 +29,8 @@ function baseUrl(): string {
       (typeof process !== 'undefined' && process.env?.API_INTERNAL_URL) || ''
     if (internal) return internal.replace(/\/$/, '') + '/api'
   }
-  // Browser (or SSR fallback): the public/proxied URL.
-  const fromEnv = import.meta.env.VITE_API_URL || '/api'
-  return fromEnv.replace(/\/$/, '')
+  // Browser (or SSR fallback): the public/proxied URL from runtime config.
+  return getPublicConfig().apiUrl.replace(/\/$/, '')
 }
 
 export interface ApiError extends Error {
