@@ -2,6 +2,10 @@
 // Idempotent: re-running upserts champion metadata and inserts any new skins
 // without disturbing existing vote tallies.
 //
+// Designed to run as a one-shot service in the deployment stack: it waits for
+// the API to have applied migrations (tables exist), skips if the DB is already
+// populated, then imports.
+//
 // Usage:
 //   DATABASE_URL=postgres://user:pass@host:5432/db DDRAGON_VERSION=15.3.1 node import.js
 //
@@ -21,6 +25,8 @@ if (!process.env.DATABASE_URL) {
 }
 
 const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 async function fetchChampionList() {
   const res = await fetch(CHAMPION_LIST_URL);
@@ -77,8 +83,43 @@ async function insertSkin(client, championId, skin) {
   );
 }
 
+// Wait until the API has applied its migrations (the `skins` table exists).
+// Returns once ready, or throws after the timeout.
+async function waitForSchema(timeoutMs = 180000) {
+  const deadline = Date.now() + timeoutMs;
+  let lastErr = null;
+  while (Date.now() < deadline) {
+    try {
+      const r = await pool.query("SELECT to_regclass('public.skins') AS t");
+      if (r.rows[0].t !== null) return;
+      console.log('waiting for schema (tables not created yet)...');
+    } catch (err) {
+      lastErr = err;
+      console.log(`waiting for database... (${err.code || err.message})`);
+    }
+    await sleep(3000);
+  }
+  throw new Error(
+    `schema not ready after ${timeoutMs}ms${lastErr ? `: ${lastErr.message}` : ''}`
+  );
+}
+
+async function alreadyPopulated() {
+  const r = await pool.query('SELECT count(*)::int AS n FROM champions');
+  return r.rows[0].n;
+}
+
 async function main() {
   console.log(`Data Dragon version: ${API_VERSION}`);
+
+  await waitForSchema();
+
+  const existing = await alreadyPopulated();
+  if (existing > 0) {
+    console.log(`champions already present (${existing}); skipping import.`);
+    return;
+  }
+
   const names = await fetchChampionList();
   console.log(`Fetched ${names.length} champion names`);
 
@@ -97,11 +138,14 @@ async function main() {
     console.log('Import complete.');
   } finally {
     client.release();
-    await pool.end();
   }
 }
 
-main().catch((err) => {
-  console.error('Import failed:', err);
-  process.exit(1);
-});
+main()
+  .catch((err) => {
+    console.error('Import failed:', err);
+    process.exitCode = 1;
+  })
+  .finally(async () => {
+    await pool.end();
+  });

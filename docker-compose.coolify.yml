@@ -104,6 +104,22 @@ services:
     # Note: the API runs on a distroless image (no shell), so there is no Docker
     # healthcheck here. Use Coolify's HTTP health check with path `/healthz`.
 
+  # One-shot: waits for the API to apply migrations, then imports champions/skins
+  # from Riot Data Dragon. Idempotent — skips if the DB is already populated, so
+  # it's safe to leave in the stack across redeploys. Exits when done.
+  seed:
+    build:
+      context: ./seed
+    restart: 'no'
+    depends_on:
+      postgres:
+        condition: service_healthy
+      api:
+        condition: service_started
+    environment:
+      - DATABASE_URL=postgres://skinbattle:${SERVICE_PASSWORD_POSTGRES}@postgres:5432/skinbattle?sslmode=disable
+      - DDRAGON_VERSION=${DDRAGON_VERSION:-15.3.1}
+
   web:
     build:
       context: ./web
