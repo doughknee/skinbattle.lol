@@ -15,6 +15,9 @@ type Config struct {
 	CORSOrigin        string
 	LogtoM2MAppID     string
 	LogtoM2MAppSecret string
+	// Data Dragon catalog sync (champions/skins). DDragonVersion empty = latest.
+	DDragonVersion      string
+	DDragonSyncDisabled bool
 }
 
 // Load reads environment variables and returns a populated Config.
@@ -29,6 +32,9 @@ func Load() (*Config, error) {
 		CORSOrigin:        os.Getenv("CORS_ORIGIN"),
 		LogtoM2MAppID:     os.Getenv("LOGTO_M2M_APP_ID"),
 		LogtoM2MAppSecret: os.Getenv("LOGTO_M2M_APP_SECRET"),
+		DDragonVersion:    os.Getenv("DDRAGON_VERSION"),
+		DDragonSyncDisabled: os.Getenv("DDRAGON_SYNC_DISABLED") == "true" ||
+			os.Getenv("DDRAGON_SYNC_DISABLED") == "1",
 	}
 
 	if c.DatabaseURL == "" {

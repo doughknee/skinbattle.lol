@@ -14,6 +14,7 @@ import (
 	"skinbattle/api/internal/cache"
 	"skinbattle/api/internal/config"
 	"skinbattle/api/internal/db"
+	"skinbattle/api/internal/ddragon"
 	"skinbattle/api/internal/httpapi"
 	"skinbattle/api/internal/logto"
 	"skinbattle/api/internal/store"
@@ -63,6 +64,19 @@ func run() error {
 
 	// ── Store ─────────────────────────────────────────────────────────────────
 	st := store.New(pool)
+
+	// ── Catalog sync ────────────────────────────────────────────────────────
+	// Sync champions/skins from Data Dragon in the background so it never blocks
+	// serving. Version-aware: a no-op when already on the latest patch.
+	if cfg.DDragonSyncDisabled {
+		log.Println("ddragon sync disabled (DDRAGON_SYNC_DISABLED)")
+	} else {
+		go func() {
+			if err := ddragon.Sync(context.Background(), pool, cfg.DDragonVersion); err != nil {
+				log.Printf("ddragon sync failed: %v", err)
+			}
+		}()
+	}
 
 	// ── Auth middleware ───────────────────────────────────────────────────────
 	// Provisioner: JIT-upsert local user on every authenticated request.
