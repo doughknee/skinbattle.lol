@@ -1,0 +1,5 @@
+# Ignore anything that shouldn't go into the Docker build context.
+.git
+.gitignore
+*.md
+go.sum

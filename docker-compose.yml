@@ -1,0 +1,87 @@
+# Local development stack for skinbattle.lol.
+# For Coolify, deploy each service (postgres, redis, logto, api, web) individually;
+# this compose file is for running the whole thing locally.
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: skinbattle
+      POSTGRES_PASSWORD: skinbattle
+      POSTGRES_DB: skinbattle
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      # creates a second database for Logto on first init
+      - ./deploy/initdb:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U skinbattle"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    command: ["redis-server", "--save", "60", "1"]
+    ports:
+      - "6379:6379"
+    volumes:
+      - redisdata:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  logto:
+    image: svhd/logto:latest
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      TRUST_PROXY_HEADER: 1
+      DB_URL: postgres://skinbattle:skinbattle@postgres:5432/logto
+      ENDPOINT: http://localhost:3001
+      ADMIN_ENDPOINT: http://localhost:3002
+    entrypoint: ["sh", "-c", "npm run cli db seed -- --swe && npm start"]
+    ports:
+      - "3001:3001"  # Logto OIDC endpoint (used by api + web)
+      - "3002:3002"  # Logto admin console
+
+  api:
+    build: ./api
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgres://skinbattle:skinbattle@postgres:5432/skinbattle?sslmode=disable
+      REDIS_URL: redis://redis:6379/0
+      LOGTO_ENDPOINT: http://logto:3001
+      LOGTO_AUDIENCE: https://api.skinbattle.lol
+      PORT: "8080"
+      CORS_ORIGIN: http://localhost:3000
+    ports:
+      - "8080:8080"
+
+  web:
+    build: ./web
+    depends_on:
+      - api
+    environment:
+      # server-side: where the SSR server reaches the API
+      API_INTERNAL_URL: http://api:8080
+      # browser-side: same-origin proxy path
+      VITE_API_URL: /api
+      VITE_LOGTO_ENDPOINT: http://localhost:3001
+      VITE_LOGTO_APP_ID: ${LOGTO_APP_ID}
+      VITE_LOGTO_RESOURCE: https://api.skinbattle.lol
+      PORT: "3000"
+    ports:
+      - "3000:3000"
+
+volumes:
+  pgdata:
+  redisdata:

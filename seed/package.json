@@ -1,0 +1,13 @@
+{
+  "name": "skinbattle-seed",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Imports League of Legends champion + skin data from Riot Data Dragon into Postgres.",
+  "scripts": {
+    "import": "node import.js"
+  },
+  "dependencies": {
+    "pg": "^8.13.1"
+  }
+}

@@ -1,0 +1,12 @@
+node_modules
+.output
+.nitro
+.tanstack
+.vite
+dist
+.git
+.env
+.env.local
+*.log
+Dockerfile
+.dockerignore

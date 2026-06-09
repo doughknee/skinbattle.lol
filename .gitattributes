@@ -1,0 +1,11 @@
+# Normalize line endings to LF in the repo so files build correctly in the
+# Linux containers Coolify deploys (this project is authored on Windows).
+* text=auto eol=lf
+
+# Binary assets — never normalize.
+*.png  binary
+*.jpg  binary
+*.jpeg binary
+*.gif  binary
+*.ico  binary
+*.webp binary

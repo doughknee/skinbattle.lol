@@ -1,0 +1,53 @@
+@import 'tailwindcss';
+
+@theme {
+  /* Display serif for headings — gives the LoL/hextech fantasy feel.
+     Overriding --font-serif upgrades every existing `font-serif` heading. */
+  --font-serif: 'Cinzel', ui-serif, Georgia, 'Times New Roman', serif;
+
+  --color-subText: #9f9b8d;
+  --color-titleText: #978351;
+
+  --color-gradientTop: #030912;
+  --color-gradientBottom: #1a3243;
+
+  --color-icon: #c9bf96;
+  --color-iconActive: #eee7d4;
+
+  /* Golds */
+  --color-gold1: #f0e6d2;
+  --color-gold2: #c8aa6e;
+  --color-gold3: #c8aa6e;
+  --color-gold4: #c8983c;
+  --color-gold5: #785a28;
+  --color-gold6: #463714;
+  --color-gold7: #32281e;
+
+  /* Blues */
+  --color-blue1: #cdfafa;
+  --color-blue2: #0ac8b9;
+  --color-blue3: #0397ab;
+  --color-blue4: #005a82;
+  --color-blue5: #0a323c;
+  --color-blue6: #091428;
+  --color-blue7: #0a1428;
+
+  /* Greys */
+  --color-grey1: #a09b8c;
+  --color-grey1-5: #5b5a56;
+  --color-grey2: #3c3c41;
+  --color-grey3: #1e2328;
+  --color-grey-cool: #1e282d;
+  --color-hextech-black: #010a13;
+}
+
+.svg-inline--fa {
+  height: 1.5em;
+}
+
+/* Legibility for text laid over splash art. */
+.text-shadow-hero {
+  text-shadow:
+    0 2px 24px rgba(1, 10, 19, 0.85),
+    0 1px 3px rgba(1, 10, 19, 0.9);
+}
