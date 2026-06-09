@@ -118,7 +118,9 @@ services:
         condition: service_started
     environment:
       - DATABASE_URL=postgres://skinbattle:${SERVICE_PASSWORD_POSTGRES}@postgres:5432/skinbattle?sslmode=disable
-      - DDRAGON_VERSION=${DDRAGON_VERSION:-15.3.1}
+      # Leave empty to always import the latest Data Dragon patch; pin a version
+      # (e.g. 16.12.1) to freeze the dataset.
+      - DDRAGON_VERSION=${DDRAGON_VERSION:-}
 
   web:
     build:

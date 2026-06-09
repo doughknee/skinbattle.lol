@@ -1,23 +1,23 @@
 // Imports champions + skins from Riot's Data Dragon CDN into Postgres.
-// Idempotent: re-running upserts champion metadata and inserts any new skins
-// without disturbing existing vote tallies.
+//
+// - Defaults to the LATEST Data Dragon patch (set DDRAGON_VERSION to pin one).
+// - Idempotent upsert: adds new champions/skins and refreshes metadata without
+//   ever touching vote tallies (skins.total_* / user_skin_votes).
+// - Tracks the imported patch in `seed_meta`, so on redeploy it re-syncs only
+//   when a newer patch is available (otherwise it skips fast).
 //
 // Designed to run as a one-shot service in the deployment stack: it waits for
-// the API to have applied migrations (tables exist), skips if the DB is already
-// populated, then imports.
+// the API to apply migrations (tables exist), then syncs.
 //
 // Usage:
-//   DATABASE_URL=postgres://user:pass@host:5432/db DDRAGON_VERSION=15.3.1 node import.js
-//
-// DATABASE_URL is required. DDRAGON_VERSION defaults to the value below.
+//   DATABASE_URL=postgres://user:pass@host:5432/db node import.js          # latest
+//   DATABASE_URL=... DDRAGON_VERSION=16.12.1 node import.js                 # pinned
 
 import { Pool } from 'pg';
 
-const API_VERSION = process.env.DDRAGON_VERSION || '15.3.1';
-const BASE_URL = `https://ddragon.leagueoflegends.com/cdn/${API_VERSION}`;
-const CHAMPION_LIST_URL = `${BASE_URL}/data/en_US/champion.json`;
-const CHAMPION_DETAILS_URL = (name) => `${BASE_URL}/data/en_US/champion/${name}.json`;
-const SPLASH_BASE_URL = `https://ddragon.leagueoflegends.com/cdn/img/champion/splash`;
+const VERSIONS_URL = 'https://ddragon.leagueoflegends.com/api/versions.json';
+const SPLASH_BASE_URL =
+  'https://ddragon.leagueoflegends.com/cdn/img/champion/splash';
 
 if (!process.env.DATABASE_URL) {
   console.error('DATABASE_URL is required');
@@ -25,21 +25,36 @@ if (!process.env.DATABASE_URL) {
 }
 
 const pool = new Pool({ connectionString: process.env.DATABASE_URL });
-
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
-async function fetchChampionList() {
-  const res = await fetch(CHAMPION_LIST_URL);
+// Resolve the target patch: explicit DDRAGON_VERSION, else the newest published.
+async function resolveVersion() {
+  const pinned = (process.env.DDRAGON_VERSION || '').trim();
+  if (pinned && pinned.toLowerCase() !== 'latest') return pinned;
+  const res = await fetch(VERSIONS_URL);
+  if (!res.ok) throw new Error(`versions.json: ${res.status}`);
+  const arr = await res.json();
+  if (!Array.isArray(arr) || arr.length === 0)
+    throw new Error('versions.json returned no versions');
+  return arr[0];
+}
+
+async function fetchChampionList(version) {
+  const res = await fetch(
+    `https://ddragon.leagueoflegends.com/cdn/${version}/data/en_US/champion.json`,
+  );
   if (!res.ok) throw new Error(`champion list: ${res.status}`);
   const json = await res.json();
   return Object.keys(json.data);
 }
 
-async function fetchChampionDetails(names) {
+async function fetchChampionDetails(names, version) {
   const results = await Promise.all(
     names.map(async (name) => {
       try {
-        const res = await fetch(CHAMPION_DETAILS_URL(name));
+        const res = await fetch(
+          `https://ddragon.leagueoflegends.com/cdn/${version}/data/en_US/champion/${name}.json`,
+        );
         if (!res.ok) throw new Error(`${res.status}`);
         const json = await res.json();
         return json.data[name];
@@ -47,7 +62,7 @@ async function fetchChampionDetails(names) {
         console.error(`details for ${name} failed:`, err.message);
         return null;
       }
-    })
+    }),
   );
   return results.filter(Boolean);
 }
@@ -68,7 +83,7 @@ async function insertChampion(client, c) {
      ON CONFLICT (id) DO UPDATE
        SET lore = EXCLUDED.lore, key = EXCLUDED.key,
            blurb = EXCLUDED.blurb, title = EXCLUDED.title`,
-    [c.id, c.lore, c.key, c.blurb, c.title]
+    [c.id, c.lore, c.key, c.blurb, c.title],
   );
 }
 
@@ -79,12 +94,11 @@ async function insertSkin(client, championId, skin) {
      ON CONFLICT (id) DO UPDATE
        SET name = EXCLUDED.name, chromas = EXCLUDED.chromas,
            splash_url = EXCLUDED.splash_url`,
-    [String(skin.id), championId, skin.num, skin.name, !!skin.chromas, skin.splashUrl]
+    [String(skin.id), championId, skin.num, skin.name, !!skin.chromas, skin.splashUrl],
   );
 }
 
-// Wait until the API has applied its migrations (the `skins` table exists).
-// Returns once ready, or throws after the timeout.
+// Wait until the API has applied migrations (the `skins` table exists).
 async function waitForSchema(timeoutMs = 180000) {
   const deadline = Date.now() + timeoutMs;
   let lastErr = null;
@@ -100,45 +114,83 @@ async function waitForSchema(timeoutMs = 180000) {
     await sleep(3000);
   }
   throw new Error(
-    `schema not ready after ${timeoutMs}ms${lastErr ? `: ${lastErr.message}` : ''}`
+    `schema not ready after ${timeoutMs}ms${lastErr ? `: ${lastErr.message}` : ''}`,
   );
 }
 
-async function alreadyPopulated() {
+async function ensureMeta() {
+  await pool.query(
+    `CREATE TABLE IF NOT EXISTS seed_meta (
+       key        TEXT PRIMARY KEY,
+       value      TEXT NOT NULL,
+       updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+     )`,
+  );
+}
+
+async function getMeta(key) {
+  const r = await pool.query('SELECT value FROM seed_meta WHERE key = $1', [key]);
+  return r.rows[0]?.value ?? null;
+}
+
+async function setMeta(key, value) {
+  await pool.query(
+    `INSERT INTO seed_meta (key, value, updated_at) VALUES ($1, $2, now())
+     ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value, updated_at = now()`,
+    [key, value],
+  );
+}
+
+async function championCount() {
   const r = await pool.query('SELECT count(*)::int AS n FROM champions');
   return r.rows[0].n;
 }
 
 async function main() {
-  console.log(`Data Dragon version: ${API_VERSION}`);
-
   await waitForSchema();
+  await ensureMeta();
 
-  const existing = await alreadyPopulated();
-  if (existing > 0) {
-    console.log(`champions already present (${existing}); skipping import.`);
+  const version = await resolveVersion();
+  const lastVersion = await getMeta('ddragon_version');
+  const count = await championCount();
+
+  if (count > 0 && lastVersion === version) {
+    console.log(
+      `already at Data Dragon ${version} (${count} champions); nothing to sync.`,
+    );
     return;
   }
 
-  const names = await fetchChampionList();
+  console.log(
+    lastVersion
+      ? `syncing Data Dragon ${lastVersion} -> ${version}`
+      : `seeding Data Dragon ${version}`,
+  );
+
+  const names = await fetchChampionList(version);
   console.log(`Fetched ${names.length} champion names`);
 
-  const details = await fetchChampionDetails(names);
+  const details = await fetchChampionDetails(names, version);
   const cleaned = details.map(cleanChampion);
   console.log(`Fetched details for ${cleaned.length} champions`);
 
   const client = await pool.connect();
   try {
+    let skinTotal = 0;
     for (const champ of cleaned) {
       await insertChampion(client, champ);
       for (const skin of champ.skins) {
         await insertSkin(client, champ.id, skin);
+        skinTotal++;
       }
     }
-    console.log('Import complete.');
+    console.log(`Synced ${cleaned.length} champions / ${skinTotal} skins.`);
   } finally {
     client.release();
   }
+
+  await setMeta('ddragon_version', version);
+  console.log(`Recorded patch ${version}.`);
 }
 
 main()
