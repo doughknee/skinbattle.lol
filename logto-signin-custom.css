@@ -1,0 +1,152 @@
+/*
+ * Logto sign-in experience custom CSS for auth.skinbattle.lol.
+ * Deployed copy lives in Logto (PATCH /api/sign-in-exp -> customCss via the
+ * Management API); this file is the editable source of truth.
+ *
+ * <EMBEDDED_CINZEL_WOFF2_B64> is a placeholder: before applying, replace it
+ * with the base64 of the Cinzel variable woff2 (latin subset) from Google
+ * Fonts. It is embedded as a data: URI so the font loads without a
+ * cross-origin request.
+ *
+ * Styling notes:
+ * - Colors override Logto's semantic CSS custom properties (stable across
+ *   upgrades); layout hooks use Logto's public logto_* classes where
+ *   possible and [class*=...] suffix matches otherwise.
+ * - Logto picks mobile vs desktop layout by USER-AGENT, not viewport width.
+ */
+
+@font-face {
+  font-family: 'Cinzel';
+  font-style: normal;
+  font-weight: 400 900;
+  font-display: swap;
+  src: url(data:font/woff2;base64,<EMBEDDED_CINZEL_WOFF2_B64>) format('woff2');
+}
+
+:root, body {
+  color-scheme: dark;
+  --color-bg-body: #030912 !important;
+  --color-bg-body-base: #030912 !important;
+  --color-bg-body-overlay: #0a1428 !important;
+  --color-bg-float: #0a1428 !important;
+  --color-bg-float-base: #091428 !important;
+  --color-bg-float-overlay: #0a323c !important;
+  --color-bg-layer-1: #091428 !important;
+  --color-bg-layer-2: #0a323c !important;
+  --color-bg-toast: #1e282d !important;
+  --color-bg-state-unselected: #1e2328 !important;
+  --color-bg-state-disabled: #1e2328 !important;
+  --color-brand-30: #463714 !important;
+  --color-brand-40: #785a28 !important;
+  --color-brand-50: #c8983c !important;
+  --color-brand-60: #c8aa6e !important;
+  --color-brand-70: #f0e6d2 !important;
+  --color-brand-default: #c8aa6e !important;
+  --color-brand-hover: #d9bb80 !important;
+  --color-brand-pressed: #c8983c !important;
+  --color-brand-loading: #785a28 !important;
+  --color-type-primary: #f0e6d2 !important;
+  --color-type-secondary: #a09b8c !important;
+  --color-type-disabled: #5b5a56 !important;
+  --color-type-link: #c8aa6e !important;
+  --color-line-border: #463714 !important;
+  --color-line-divider: rgba(200, 170, 110, 0.18) !important;
+  --color-overlay-brand-hover: rgba(200, 170, 110, 0.12) !important;
+  --color-overlay-brand-focused: rgba(200, 170, 110, 0.16) !important;
+  --color-overlay-brand-pressed: rgba(200, 170, 110, 0.20) !important;
+}
+
+body {
+  background:
+    linear-gradient(180deg, rgba(3, 9, 18, 0.72) 0%, rgba(3, 9, 18, 0.42) 42%, rgba(9, 20, 40, 0.90) 100%),
+    url('https://ddragon.leagueoflegends.com/cdn/img/champion/splash/Jhin_0.jpg') center 22% / cover no-repeat fixed,
+    #030912 !important;
+}
+
+/* Shrink the card to its content everywhere. */
+[class*=viewBox] {
+  height: auto !important;
+  min-height: 0 !important;
+  max-width: 100%;
+}
+.logto_main-content {
+  min-height: 0 !important;
+  height: auto !important;
+}
+[class*=placeholderTop], [class*=placeholderBottom] {
+  flex: 0 0 0 !important; height: 0 !important; min-height: 0 !important;
+}
+
+/* Wordmark in place of the Logto logo */
+[class*=_logo] { display: none !important; }
+.logto_branding-header::before {
+  content: 'SKINBATTLE.LOL';
+  display: block;
+  font-family: 'Cinzel', Georgia, serif;
+  font-weight: 700;
+  font-size: clamp(17px, 5.2vw, 26px);
+  letter-spacing: 0.14em;
+  color: #c8aa6e;
+  text-align: center;
+  white-space: nowrap;
+  text-shadow: 0 2px 18px rgba(200, 170, 110, 0.25);
+}
+.logto_branding-header::after {
+  content: '';
+  display: block;
+  width: 130px;
+  height: 1px;
+  margin: 14px auto 0;
+  background: linear-gradient(90deg, transparent, rgba(200, 170, 110, 0.6), transparent);
+}
+[class*=headline] {
+  font-family: 'Cinzel', Georgia, serif !important;
+  font-size: 14px !important;
+  letter-spacing: 0.06em;
+  color: #f0e6d2 !important;
+}
+[class*=_title], h1 {
+  font-family: 'Cinzel', Georgia, serif !important;
+  letter-spacing: 0.04em;
+}
+
+/* Primary button: hextech gold */
+button[type=submit] {
+  background: linear-gradient(180deg, #dcc18a 0%, #c8aa6e 55%, #b08d49 100%) !important;
+  color: #0a1428 !important;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-size: 13px !important;
+  border: 1px solid #785a28 !important;
+  box-shadow: 0 4px 18px rgba(200, 170, 110, 0.25);
+}
+button[type=submit]:hover { filter: brightness(1.07); }
+
+input { color: #f0e6d2 !important; caret-color: #c8aa6e; }
+
+.logto_signature { margin-top: 18px !important; opacity: 0.75; }
+
+/* Desktop: glass card with gold trim */
+@media (min-width: 641px) {
+  [class*=viewBox] {
+    background: rgba(7, 16, 32, 0.80) !important;
+    -webkit-backdrop-filter: blur(14px) saturate(1.1);
+    backdrop-filter: blur(14px) saturate(1.1);
+    border: 1px solid rgba(200, 170, 110, 0.35) !important;
+    border-radius: 16px !important;
+    box-shadow: 0 24px 80px rgba(0, 0, 0, 0.6) !important;
+    overflow: hidden;
+  }
+  .logto_main-content { padding: 44px 44px 28px !important; }
+}
+
+/* Mobile: full-bleed; only nudge vertical rhythm, keep Logto's side padding */
+@media (max-width: 640px) {
+  .logto_main-content {
+    padding-top: 9vh !important;
+    padding-bottom: 24px !important;
+  }
+}
+
+html, body { overflow-x: hidden; }
