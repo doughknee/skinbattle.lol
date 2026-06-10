@@ -568,7 +568,8 @@ func (s *Store) UpsertUser(ctx context.Context, sub, email, username string) (in
 	return 0, fmt.Errorf("upsert user %s: %w", sub, err)
 }
 
-// DeleteUser deletes the local user row (cascades to votes).
+// DeleteUser deletes the local user row. Their votes are retained
+// anonymized: the FK sets user_id to NULL, so skins.total_* keep counting them.
 func (s *Store) DeleteUser(ctx context.Context, userID int64) error {
 	_, err := s.pool.Exec(ctx, `DELETE FROM users WHERE id = $1`, userID)
 	if err != nil {
