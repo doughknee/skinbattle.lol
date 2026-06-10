@@ -11,6 +11,7 @@ import {
 import type { IconDefinition } from '@fortawesome/fontawesome-svg-core'
 import AccountButton from './AccountButton'
 import QuotaChip from './QuotaChip'
+import { CrownMark, Wordmark } from './Brand'
 import { openCommandPalette } from './CommandPalette'
 
 const navLinks: { to: string; label: string; icon: IconDefinition }[] = [
@@ -30,13 +31,14 @@ export default function NavBar() {
   return (
     <nav className="fixed top-0 left-0 z-50 w-full border-b border-b-icon/30 border-t-2 border-t-gold5 bg-hextech-black/40 backdrop-blur-2xl">
       <div className="flex h-16 items-center gap-2 px-3 md:h-[68px] md:px-6">
-        {/* Wordmark */}
+        {/* Crown + wordmark (crown alone on mobile) */}
         <Link
           to="/"
           aria-label="SkinBattle home"
-          className="hidden shrink-0 items-center pr-4 font-serif text-xl font-bold text-gold1 md:flex"
+          className="flex shrink-0 items-center gap-2 pr-2 md:pr-4"
         >
-          Skin<span className="text-gold2">Battle</span>
+          <CrownMark className="h-8 w-8" />
+          <Wordmark className="hidden text-lg md:inline" />
         </Link>
 
         {/* Primary nav */}

@@ -6,7 +6,7 @@ import tailwindcss from '@tailwindcss/vite'
 
 export default defineConfig({
   server: {
-    port: 3000,
+    port: Number(process.env.PORT) || 3000,
     // Dev: proxy browser-side /api calls to the Go API so dev mirrors the
     // production same-origin setup (no CORS). SSR loaders use API_INTERNAL_URL.
     proxy: {

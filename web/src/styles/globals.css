@@ -5,6 +5,11 @@
      Overriding --font-serif upgrades every existing `font-serif` heading. */
   --font-serif: 'Cinzel', ui-serif, Georgia, 'Times New Roman', serif;
 
+  /* Brand body face (pairs with Cinzel per the brand guidelines). Overriding
+     --font-sans makes it the default for everything that isn't `font-serif`.
+     Marcellus ships only weight 400; bold UI text renders synthetically. */
+  --font-sans: 'Marcellus', ui-serif, Georgia, 'Times New Roman', serif;
+
   --color-subText: #9f9b8d;
   --color-titleText: #978351;
 
