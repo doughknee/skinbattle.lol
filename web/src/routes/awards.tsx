@@ -7,7 +7,73 @@ import EmptyState from '~/components/EmptyState'
 import { RouteSkeleton } from '~/components/Skeletons'
 import { api } from '~/lib/api'
 import { useAuth } from '~/lib/useAuth'
-import type { AwardsResponse } from '~/lib/types'
+import type { AwardsResponse, Skin } from '~/lib/types'
+
+// Top 3 on a podium (#1 center, raised) + the rest in a ranked grid.
+function RankedShowcase({ skins }: { skins: Skin[] }) {
+  // A podium needs all three steps — with fewer entries, a plain ranked
+  // grid reads better than a lopsided one.
+  if (skins.length < 3) {
+    return (
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+        {skins.map((skin, i) => (
+          <SkinCard
+            key={skin.id}
+            skin={skin}
+            championId={skin.champion_id}
+            initialVote={skin.user_vote ?? 0}
+            initialStar={skin.user_star ?? false}
+            initialX={skin.user_x ?? false}
+            showChampion
+            rank={i + 1}
+          />
+        ))}
+      </div>
+    )
+  }
+  const podium = skins.slice(0, 3)
+  const rest = skins.slice(3)
+  const podiumOrder = [
+    'md:order-2 md:z-10 md:-translate-y-3',
+    'md:order-1',
+    'md:order-3',
+  ]
+  return (
+    <>
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-3 md:items-end">
+        {podium.map((skin, i) => (
+          <div key={skin.id} className={podiumOrder[i]}>
+            <SkinCard
+              skin={skin}
+              championId={skin.champion_id}
+              initialVote={skin.user_vote ?? 0}
+              initialStar={skin.user_star ?? false}
+              initialX={skin.user_x ?? false}
+              showChampion
+              rank={i + 1}
+            />
+          </div>
+        ))}
+      </div>
+      {rest.length > 0 && (
+        <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+          {rest.map((skin, i) => (
+            <SkinCard
+              key={skin.id}
+              skin={skin}
+              championId={skin.champion_id}
+              initialVote={skin.user_vote ?? 0}
+              initialStar={skin.user_star ?? false}
+              initialX={skin.user_x ?? false}
+              showChampion
+              rank={i + 4}
+            />
+          ))}
+        </div>
+      )}
+    </>
+  )
+}
 
 const sortOptions = [
   { value: 'total_votes_desc', label: 'Most Votes' },
@@ -46,6 +112,20 @@ function AwardsPage() {
   const topStarred = awards.topStarred.filter((s) => (s.total_stars ?? 0) > 0)
   const topXed = awards.topXed.filter((s) => (s.total_x ?? 0) > 0)
   const { allSkins } = awards
+
+  // Most divisive: skins that collect BOTH stars and bans, ranked by how
+  // evenly split the love/hate is, then by total heat.
+  const divisive = [...allSkins]
+    .filter((s) => (s.total_stars || 0) > 0 && (s.total_x || 0) > 0)
+    .sort(
+      (a, b) =>
+        Math.min(b.total_stars || 0, b.total_x || 0) -
+          Math.min(a.total_stars || 0, a.total_x || 0) ||
+        (b.total_stars || 0) +
+          (b.total_x || 0) -
+          ((a.total_stars || 0) + (a.total_x || 0)),
+    )
+    .slice(0, 8)
 
   // Enrich with the user's own votes when authenticated.
   useEffect(() => {
@@ -136,19 +216,7 @@ function AwardsPage() {
             cta={{ to: '/champions', label: 'Start Voting' }}
           />
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-            {topStarred.map((skin) => (
-              <SkinCard
-                key={skin.id}
-                skin={skin}
-                championId={skin.champion_id}
-                initialVote={skin.user_vote ?? 0}
-                initialStar={skin.user_star ?? false}
-                initialX={skin.user_x ?? false}
-                showChampion
-              />
-            ))}
-          </div>
+          <RankedShowcase skins={topStarred} />
         )}
       </section>
 
@@ -169,8 +237,22 @@ function AwardsPage() {
             cta={{ to: '/champions', label: 'Start Voting' }}
           />
         ) : (
+          <RankedShowcase skins={topXed} />
+        )}
+      </section>
+
+      {/* Most Divisive Section — only once there's real disagreement */}
+      {divisive.length > 0 && (
+        <section className="mb-36">
+          <h2 className="text-4xl font-serif font-semibold mb-4 text-gold2">
+            Most Divisive Skins
+          </h2>
+          <p className="text-lg text-grey1 mb-10">
+            Loved and hated in equal measure. These skins split the community
+            right down the middle.
+          </p>
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-            {topXed.map((skin) => (
+            {divisive.map((skin) => (
               <SkinCard
                 key={skin.id}
                 skin={skin}
@@ -182,8 +264,8 @@ function AwardsPage() {
               />
             ))}
           </div>
-        )}
-      </section>
+        </section>
+      )}
 
       {/* All Skins Section */}
       <section>

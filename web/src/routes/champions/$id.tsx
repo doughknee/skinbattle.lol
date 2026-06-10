@@ -1,10 +1,11 @@
 import { createFileRoute, Link } from '@tanstack/react-router'
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faArrowLeft } from '@fortawesome/free-solid-svg-icons'
 import { api } from '~/lib/api'
 import { useAuth } from '~/lib/useAuth'
 import SkinCard from '~/components/SkinCard'
+import Dropdown from '~/components/Dropdown'
 import { SkinGridSkeleton } from '~/components/Skeletons'
 import { championDisplayName } from '~/lib/skinName'
 import type { Champion } from '~/lib/types'
@@ -56,6 +57,48 @@ function ChampionPage() {
   const { isAuthenticated, getApiToken } = useAuth()
   const [champion, setChampion] = useState<Champion>(baseChampion)
   const [loreExpanded, setLoreExpanded] = useState(false)
+  const [sortBy, setSortBy] = useState('release')
+
+  const skinSortOptions = [
+    { value: 'release', label: 'Release Order' },
+    { value: 'votes', label: 'Most Votes' },
+    { value: 'stars', label: 'Most Starred' },
+    { value: 'x', label: 'Most Banned' },
+  ]
+
+  // Community rank per skin (by net votes, stars as tiebreaker). Only shown
+  // once this champion has any votes at all — ranking zeroes reads as broken.
+  const ranks = useMemo(() => {
+    const hasVotes = champion.skins.some(
+      (s) => (s.total_votes || 0) !== 0 || (s.total_stars || 0) > 0,
+    )
+    if (!hasVotes) return new Map<string, number>()
+    const byVotes = [...champion.skins].sort(
+      (a, b) =>
+        (b.total_votes || 0) - (a.total_votes || 0) ||
+        (b.total_stars || 0) - (a.total_stars || 0) ||
+        (a.total_x || 0) - (b.total_x || 0),
+    )
+    return new Map(byVotes.map((s, i) => [s.id, i + 1]))
+  }, [champion.skins])
+
+  const sortedSkins = useMemo(() => {
+    const skins = [...champion.skins]
+    switch (sortBy) {
+      case 'votes':
+        skins.sort((a, b) => (b.total_votes || 0) - (a.total_votes || 0))
+        break
+      case 'stars':
+        skins.sort((a, b) => (b.total_stars || 0) - (a.total_stars || 0))
+        break
+      case 'x':
+        skins.sort((a, b) => (b.total_x || 0) - (a.total_x || 0))
+        break
+      default:
+        skins.sort((a, b) => a.num - b.num)
+    }
+    return skins
+  }, [champion.skins, sortBy])
 
   // Re-fetch with the access token so the user's own votes are reflected.
   useEffect(() => {
@@ -135,17 +178,32 @@ function ChampionPage() {
 
       {/* ── Skins ────────────────────────────────────────────── */}
       <section className="container mx-auto px-6 py-16">
-        <h2 className="font-serif text-3xl font-bold text-gold2 mb-2">
-          Skins
-          <span className="ml-3 text-lg font-normal text-grey1">
-            {champion.skins.length}
-          </span>
-        </h2>
-        <p className="text-grey1 mb-10">
-          Upvote, star, or ban each skin to shape the rankings.
-        </p>
+        <div className="mb-10 flex flex-wrap items-end justify-between gap-4">
+          <div>
+            <h2 className="font-serif text-3xl font-bold text-gold2 mb-2">
+              Skins
+              <span className="ml-3 text-lg font-normal text-grey1">
+                {champion.skins.length}
+              </span>
+            </h2>
+            <p className="text-grey1">
+              Upvote, star, or ban each skin to shape the rankings.
+            </p>
+          </div>
+          <div className="w-44">
+            <Dropdown
+              options={skinSortOptions}
+              onSelect={setSortBy}
+              label={
+                skinSortOptions.find((o) => o.value === sortBy)?.label ??
+                'Sort By'
+              }
+              selectedValue={sortBy}
+            />
+          </div>
+        </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-x-6 gap-y-10">
-          {champion.skins.map((skin) => (
+          {sortedSkins.map((skin) => (
             <SkinCard
               key={skin.id}
               skin={skin}
@@ -153,6 +211,7 @@ function ChampionPage() {
               initialVote={skin.user_vote ?? 0}
               initialStar={skin.user_star ?? false}
               initialX={skin.user_x ?? false}
+              rank={ranks.get(skin.id)}
             />
           ))}
         </div>

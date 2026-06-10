@@ -10,6 +10,7 @@ import { Link } from '@tanstack/react-router'
 import { api } from '~/lib/api'
 import { useAuth } from '~/lib/useAuth'
 import { toast } from '~/components/Toaster'
+import { openLightbox } from '~/components/Lightbox'
 import { userStatsStore, MAX_STARS, MAX_X } from '~/lib/userStatsStore'
 import { championDisplayName, displaySkinName } from '~/lib/skinName'
 import type { Skin, VoteTotals } from '~/lib/types'
@@ -23,6 +24,8 @@ interface SkinCardProps {
   // Show the champion name above the skin name — used on pages that mix
   // skins from many champions (home, awards, my votes).
   showChampion?: boolean
+  // Leaderboard position badge overlaid on the splash (#1, #2, ...).
+  rank?: number
 }
 
 const chipBase =
@@ -40,6 +43,7 @@ export default function SkinCard({
   initialStar,
   initialX,
   showChampion = false,
+  rank,
 }: SkinCardProps) {
   const { isAuthenticated, getApiToken, login } = useAuth()
 
@@ -154,7 +158,19 @@ export default function SkinCard({
 
   return (
     <div className="group bg-hextech-black/30 border-2 border-transparent outline-icon/30 outline -outline-offset-2 hover:border-icon hover:border-2 transition duration-150">
-      <div className="relative w-full aspect-video overflow-hidden">
+      <button
+        type="button"
+        onClick={() =>
+          openLightbox({
+            url: skin.splash_url,
+            title: skinName,
+            subtitle: championName,
+          })
+        }
+        aria-label={`View ${skinName} splash art full screen`}
+        title="View full splash art"
+        className="relative block w-full aspect-video cursor-zoom-in overflow-hidden"
+      >
         <img
           src={skin.splash_url}
           alt={`${skinName} splash art`}
@@ -162,7 +178,19 @@ export default function SkinCard({
           decoding="async"
           className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
         />
-      </div>
+        {rank != null && (
+          <span
+            aria-label={`Ranked #${rank}`}
+            className={`absolute left-2 top-2 bg-hextech-black/85 px-2 py-0.5 font-serif text-sm font-bold outline -outline-offset-1 ${
+              rank === 1
+                ? 'text-gold2 outline-gold2'
+                : 'text-gold1 outline-gold5'
+            }`}
+          >
+            #{rank}
+          </span>
+        )}
+      </button>
 
       <div className="px-3 pt-3 text-center">
         {showChampion && (

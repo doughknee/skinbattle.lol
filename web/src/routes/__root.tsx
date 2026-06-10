@@ -11,6 +11,7 @@ import ClientProviders from '~/components/ClientProviders'
 import NavBar from '~/components/Navbar'
 import CommandPalette from '~/components/CommandPalette'
 import Toaster from '~/components/Toaster'
+import Lightbox from '~/components/Lightbox'
 import Footer from '~/components/Footer'
 import { readServerConfig, type PublicConfig } from '~/lib/config'
 
@@ -51,6 +52,7 @@ function RootComponent() {
         <Outlet />
         <Footer />
         <CommandPalette />
+        <Lightbox />
         <Toaster />
       </ClientProviders>
     </RootDocument>
