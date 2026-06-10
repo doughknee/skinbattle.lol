@@ -1,12 +1,14 @@
 import { Link } from '@tanstack/react-router'
+import { CrownMark, Wordmark } from './Brand'
 
 export default function Footer() {
   return (
     <footer className="mt-24 border-t border-icon/20 bg-hextech-black/40">
       <div className="container mx-auto grid gap-10 px-6 py-12 md:grid-cols-3">
         <div>
-          <p className="font-serif text-xl font-bold text-gold1">
-            Skin<span className="text-gold2">Battle</span>
+          <p className="flex items-center gap-2.5">
+            <CrownMark className="h-9 w-9" />
+            <Wordmark className="text-lg" />
           </p>
           <p className="mt-3 max-w-xs text-sm text-grey1">
             Community-built rankings for every League of Legends skin. Upvote,

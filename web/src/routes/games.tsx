@@ -20,7 +20,7 @@ function GamesPage() {
         Coming Soon
       </p>
       <h1 className="font-serif text-5xl md:text-6xl font-bold text-gold1 mb-4">
-        Skin Battle Games
+        SkinBattle Games
       </h1>
       <p className="max-w-xl text-lg text-grey1 mb-10">
         Community-driven challenges that test your skin knowledge — guess the
