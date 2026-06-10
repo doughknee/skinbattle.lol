@@ -27,6 +27,10 @@ if (!process.env.DATABASE_URL) {
 const pool = new Pool({ connectionString: process.env.DATABASE_URL });
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
+// Data Dragon lists chroma color variants as separate skin entries named
+// "Base Skin (ColorName)". They aren't real votable skins, so skip them.
+const isChroma = (name) => /\s\(.+\)$/.test(name);
+
 // Resolve the target patch: explicit DDRAGON_VERSION, else the newest published.
 async function resolveVersion() {
   const pinned = (process.env.DDRAGON_VERSION || '').trim();
@@ -180,6 +184,7 @@ async function main() {
     for (const champ of cleaned) {
       await insertChampion(client, champ);
       for (const skin of champ.skins) {
+        if (isChroma(skin.name)) continue; // chroma variant, not a real skin
         await insertSkin(client, champ.id, skin);
         skinTotal++;
       }

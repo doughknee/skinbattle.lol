@@ -10,11 +10,20 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"regexp"
 	"sync"
 	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 )
+
+// Data Dragon lists chroma color variants as their own skin entries, named
+// "Base Skin (ColorName)". Those aren't real, votable skins (and usually have no
+// splash art), so we exclude them. Base skin names never end in a parenthetical.
+var chromaName = regexp.MustCompile(`\s\(.+\)$`)
+
+// Matching Postgres regex for cleaning up any chroma rows a prior import stored.
+const chromaSQLPattern = `\s\(.+\)$`
 
 const (
 	versionsURL      = "https://ddragon.leagueoflegends.com/api/versions.json"
@@ -79,6 +88,14 @@ func Sync(ctx context.Context, pool *pgxpool.Pool, pinnedVersion string) error {
 	version, err := resolveVersion(ctx, pinnedVersion)
 	if err != nil {
 		return fmt.Errorf("resolve version: %w", err)
+	}
+
+	// Defensive cleanup: remove any chroma entries a prior import stored as skins.
+	// Runs every boot (a no-op once clean) so it self-heals regardless of version.
+	if tag, err := pool.Exec(ctx, `DELETE FROM skins WHERE name ~ $1`, chromaSQLPattern); err != nil {
+		log.Printf("ddragon: chroma cleanup failed: %v", err)
+	} else if tag.RowsAffected() > 0 {
+		log.Printf("ddragon: removed %d chroma entries", tag.RowsAffected())
 	}
 
 	var stored string
@@ -160,6 +177,9 @@ func Sync(ctx context.Context, pool *pgxpool.Pool, pinnedVersion string) error {
 			return fmt.Errorf("upsert champion %s: %w", c.ID, err)
 		}
 		for _, s := range c.Skins {
+			if chromaName.MatchString(s.Name) {
+				continue // chroma variant, not a real skin
+			}
 			splash := fmt.Sprintf("%s/%s_%d.jpg", splashBase, c.ID, s.Num)
 			if _, err := tx.Exec(ctx,
 				`INSERT INTO skins (id, champion_id, num, name, chromas, splash_url)
