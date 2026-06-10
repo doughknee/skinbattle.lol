@@ -5,6 +5,8 @@ import { faArrowLeft } from '@fortawesome/free-solid-svg-icons'
 import { api } from '~/lib/api'
 import { useAuth } from '~/lib/useAuth'
 import SkinCard from '~/components/SkinCard'
+import { SkinGridSkeleton } from '~/components/Skeletons'
+import { championDisplayName } from '~/lib/skinName'
 import type { Champion } from '~/lib/types'
 
 export const Route = createFileRoute('/champions/$id')({
@@ -15,14 +17,23 @@ export const Route = createFileRoute('/champions/$id')({
     return { champion }
   },
   pendingComponent: () => (
-    <div className="fixed inset-0 flex items-center justify-center bg-linear-220 from-gradientTop via-[#0A1428] to-gradientBottom bg-fixed">
-      <p className="text-3xl font-serif font-bold text-gold2">
+    <div className="container mx-auto px-6 pt-28">
+      <p className="mb-8 font-serif text-lg italic text-gold2" role="status">
         One-shotting the ADC...
       </p>
+      <div className="mb-12 space-y-4">
+        <div className="h-[42vh] w-full animate-pulse bg-grey3/60" />
+        <div className="h-10 w-64 animate-pulse bg-grey3/70" />
+        <div className="h-5 w-96 max-w-full animate-pulse bg-grey3/50" />
+      </div>
+      <SkinGridSkeleton
+        count={6}
+        className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-x-6 gap-y-10"
+      />
     </div>
   ),
   errorComponent: ({ error }) => (
-    <div className="container mx-auto p-4 pt-44 text-center">
+    <div className="container mx-auto p-4 pt-36 text-center">
       <h1 className="font-serif text-4xl font-bold text-gold2 mb-3">
         Champion not found
       </h1>
@@ -44,6 +55,7 @@ function ChampionPage() {
   const { champion: baseChampion } = Route.useLoaderData()
   const { isAuthenticated, getApiToken } = useAuth()
   const [champion, setChampion] = useState<Champion>(baseChampion)
+  const [loreExpanded, setLoreExpanded] = useState(false)
 
   // Re-fetch with the access token so the user's own votes are reflected.
   useEffect(() => {
@@ -86,7 +98,7 @@ function ChampionPage() {
         <div className="absolute inset-0 bg-gradient-to-r from-hextech-black/95 via-hextech-black/60 to-transparent" />
         <div className="absolute inset-0 bg-gradient-to-t from-gradientTop via-transparent to-hextech-black/40" />
 
-        <div className="container mx-auto px-6 relative z-10 flex min-h-[58vh] flex-col justify-end pt-36 pb-12">
+        <div className="container mx-auto px-6 relative z-10 flex min-h-[58vh] flex-col justify-end pt-28 pb-12">
           <Link
             to="/champions"
             className="mb-6 inline-flex w-fit items-center gap-2 text-sm font-serif font-bold uppercase tracking-widest text-grey1 hover:text-gold1 transition duration-150"
@@ -95,15 +107,28 @@ function ChampionPage() {
             Champions
           </Link>
           <h1 className="text-shadow-hero font-serif text-5xl md:text-7xl font-bold text-gold1">
-            {champion.id}
+            {championDisplayName(champion.id)}
           </h1>
           <p className="text-shadow-hero mt-2 text-xl md:text-2xl italic text-gold2">
             {champion.title}
           </p>
           {champion.lore && (
-            <p className="text-shadow-hero mt-6 max-w-2xl text-grey1 line-clamp-4">
-              {champion.lore}
-            </p>
+            <div className="mt-6 max-w-2xl">
+              <p
+                className={`text-shadow-hero text-grey1 ${loreExpanded ? '' : 'line-clamp-4'}`}
+              >
+                {champion.lore}
+              </p>
+              {champion.lore.length > 280 && (
+                <button
+                  onClick={() => setLoreExpanded((e) => !e)}
+                  aria-expanded={loreExpanded}
+                  className="mt-2 cursor-pointer text-sm font-bold uppercase tracking-widest text-gold2 hover:text-gold1 transition duration-150"
+                >
+                  {loreExpanded ? 'Show less' : 'Read more'}
+                </button>
+              )}
+            </div>
           )}
         </div>
       </section>

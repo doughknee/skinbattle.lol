@@ -8,7 +8,7 @@ export const Route = createFileRoute('/games')({
 
 function GamesPage() {
   return (
-    <div className="container mx-auto px-6 pt-36 min-h-[80vh] flex flex-col items-center justify-center text-center">
+    <div className="container mx-auto px-6 pt-28 min-h-[80vh] flex flex-col items-center justify-center text-center">
       <div className="mb-8 flex h-24 w-24 items-center justify-center rounded-full bg-hextech-black/40 outline outline-gold5/60 -outline-offset-2">
         <FontAwesomeIcon icon={faDice} className="h-10 text-gold2" />
       </div>

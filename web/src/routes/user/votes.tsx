@@ -2,6 +2,7 @@ import { createFileRoute } from '@tanstack/react-router'
 import { useEffect, useState } from 'react'
 import SkinCard from '~/components/SkinCard'
 import AuthPrompt from '~/components/AuthPrompt'
+import { RouteSkeleton } from '~/components/Skeletons'
 import { api } from '~/lib/api'
 import { useAuth } from '~/lib/useAuth'
 import type { Skin } from '~/lib/types'
@@ -39,6 +40,7 @@ function VoteSection({
               initialVote={skin.user_vote}
               initialStar={skin.user_star}
               initialX={skin.user_x}
+              showChampion
             />
           ))}
         </div>
@@ -88,13 +90,7 @@ function UserVotesPage() {
   }, [isAuthenticated, isLoading, getApiToken])
 
   if (isLoading || loading)
-    return (
-      <div className="fixed inset-0 flex items-center justify-center bg-linear-220 from-gradientTop via-[#0A1428] to-gradientBottom bg-fixed">
-        <p className="text-3xl font-serif font-bold text-gold2">
-          Blaming the jungler...
-        </p>
-      </div>
-    )
+    return <RouteSkeleton quip="Blaming the jungler..." />
 
   if (!isAuthenticated)
     return (
@@ -106,7 +102,7 @@ function UserVotesPage() {
 
   if (errorMsg)
     return (
-      <p className="container mx-auto px-6 pt-44 text-center text-red-400">
+      <p className="container mx-auto px-6 pt-36 text-center text-red-400">
         {errorMsg}
       </p>
     )
@@ -117,7 +113,7 @@ function UserVotesPage() {
   const xed = skins.filter((skin) => skin.user_x)
 
   return (
-    <div className="container mx-auto p-4 pt-36">
+    <div className="container mx-auto p-4 pt-28">
       <header className="mb-16 max-w-3xl">
         <h1 className="text-5xl md:text-6xl font-bold font-serif mb-3 text-gold2">
           Your Votes

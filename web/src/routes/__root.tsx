@@ -9,8 +9,9 @@ import '~/lib/fontawesome'
 import globalCss from '~/styles/globals.css?url'
 import ClientProviders from '~/components/ClientProviders'
 import NavBar from '~/components/Navbar'
-import ChampionSearch from '~/components/ChampionSearch'
-import UserStats from '~/components/UserStats'
+import CommandPalette from '~/components/CommandPalette'
+import Toaster from '~/components/Toaster'
+import Footer from '~/components/Footer'
 import { readServerConfig, type PublicConfig } from '~/lib/config'
 
 export const Route = createRootRoute({
@@ -48,8 +49,9 @@ function RootComponent() {
       <ClientProviders config={config}>
         <NavBar />
         <Outlet />
-        <ChampionSearch />
-        <UserStats />
+        <Footer />
+        <CommandPalette />
+        <Toaster />
       </ClientProviders>
     </RootDocument>
   )

@@ -45,7 +45,7 @@ function AccountPage() {
   }, [isAuthenticated, isLoading, getApiToken])
 
   if (isLoading || loadingMe)
-    return <p className="pt-44 text-center text-grey1">Loading...</p>
+    return <p className="pt-36 text-center text-grey1">Loading...</p>
 
   if (!isAuthenticated)
     return (
@@ -56,7 +56,7 @@ function AccountPage() {
     )
 
   return (
-    <div className="container mx-auto px-6 pt-36 min-h-[70vh] flex flex-col items-center justify-center">
+    <div className="container mx-auto px-6 pt-28 min-h-[70vh] flex flex-col items-center justify-center">
       <h1 className="text-4xl md:text-5xl font-serif font-bold mb-10 text-gold2">
         Account
       </h1>

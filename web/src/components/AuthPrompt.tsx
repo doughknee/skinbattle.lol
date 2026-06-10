@@ -10,7 +10,7 @@ export default function AuthPrompt({
 }) {
   const { login } = useAuth()
   return (
-    <div className="container mx-auto px-6 pt-36 min-h-[70vh] flex flex-col items-center justify-center text-center">
+    <div className="container mx-auto px-6 pt-28 min-h-[70vh] flex flex-col items-center justify-center text-center">
       <h1 className="font-serif text-4xl font-bold text-gold2 mb-3">{title}</h1>
       <p className="text-lg text-grey1 mb-10 max-w-md">{message}</p>
       <button

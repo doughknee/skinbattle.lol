@@ -1,5 +1,7 @@
 import { createFileRoute, Link } from '@tanstack/react-router'
 import { api } from '~/lib/api'
+import { RouteSkeleton } from '~/components/Skeletons'
+import { championDisplayName } from '~/lib/skinName'
 
 export const Route = createFileRoute('/champions/')({
   loader: async () => {
@@ -7,11 +9,7 @@ export const Route = createFileRoute('/champions/')({
     return { champions }
   },
   pendingComponent: () => (
-    <div className="fixed inset-0 flex items-center justify-center bg-linear-220 from-gradientTop via-[#0A1428] to-gradientBottom bg-fixed">
-      <p className="text-3xl font-serif font-bold text-gold2">
-        Stealing baron...
-      </p>
-    </div>
+    <RouteSkeleton quip="Stealing baron..." variant="champions" />
   ),
   errorComponent: ({ error }) => (
     <p className="text-red-500">Error: {error.message}</p>
@@ -23,7 +21,7 @@ function ChampionsPage() {
   const { champions } = Route.useLoaderData()
 
   return (
-    <div className="container mx-auto p-4 pt-36">
+    <div className="container mx-auto p-4 pt-28">
       <h1 className="text-5xl font-bold font-serif mb-2 text-gold2">
         Champions
       </h1>
@@ -49,7 +47,9 @@ function ChampionsPage() {
                 <div className="relative w-full aspect-video overflow-hidden">
                   <img
                     src={defaultSkin.splash_url}
-                    alt={`${champion.id} splash`}
+                    alt={`${championDisplayName(champion.id)} splash`}
+                    loading="lazy"
+                    decoding="async"
                     className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
                   />
                   {/* Bottom fade so the name is always legible over splash art */}
@@ -61,7 +61,7 @@ function ChampionsPage() {
                   {/* Name + title over the art */}
                   <div className="absolute bottom-0 left-0 right-0 p-4">
                     <h2 className="font-serif text-2xl font-bold text-gold1 transition-colors duration-150 group-hover:text-gold2">
-                      {champion.id}
+                      {championDisplayName(champion.id)}
                     </h2>
                     <p className="text-sm italic text-grey1">{champion.title}</p>
                   </div>

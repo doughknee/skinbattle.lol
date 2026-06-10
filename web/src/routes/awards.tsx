@@ -1,7 +1,10 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { useEffect, useState } from 'react'
+import { faStar, faBan } from '@fortawesome/free-solid-svg-icons'
 import SkinCard from '~/components/SkinCard'
 import Dropdown from '~/components/Dropdown'
+import EmptyState from '~/components/EmptyState'
+import { RouteSkeleton } from '~/components/Skeletons'
 import { api } from '~/lib/api'
 import { useAuth } from '~/lib/useAuth'
 import type { AwardsResponse } from '~/lib/types'
@@ -20,15 +23,11 @@ export const Route = createFileRoute('/awards')({
     const awards = await api.awards()
     return { awards }
   },
-  pendingComponent: () => (
-    <div className="fixed inset-0 flex items-center justify-center bg-linear-220 from-gradientTop via-[#0A1428] to-gradientBottom bg-fixed">
-      <p className="text-3xl font-serif font-bold text-gold2">
-        Invading enemy jungle...
-      </p>
-    </div>
-  ),
+  pendingComponent: () => <RouteSkeleton quip="Invading enemy jungle..." />,
   errorComponent: ({ error }) => (
-    <p className="text-red-500">Error: {error.message}</p>
+    <p className="container mx-auto px-6 pt-36 text-center text-red-400">
+      Error: {error.message}
+    </p>
   ),
   component: AwardsPage,
 })
@@ -42,7 +41,11 @@ function AwardsPage() {
   const [currentPage, setCurrentPage] = useState(1)
   const itemsPerPage = 24
 
-  const { topStarred, topXed, allSkins } = awards
+  // Hide skins that haven't actually received any stars/bans yet — ranking
+  // a wall of zeroes reads as broken on a cold start.
+  const topStarred = awards.topStarred.filter((s) => (s.total_stars ?? 0) > 0)
+  const topXed = awards.topXed.filter((s) => (s.total_x ?? 0) > 0)
+  const { allSkins } = awards
 
   // Enrich with the user's own votes when authenticated.
   useEffect(() => {
@@ -105,7 +108,7 @@ function AwardsPage() {
   const currentSkins = sortedSkins.slice(indexOfFirstSkin, indexOfLastSkin)
 
   return (
-    <div className="container mx-auto p-4 pt-36">
+    <div className="container mx-auto p-4 pt-28">
       {/* Page header */}
       <header className="mb-20 max-w-3xl">
         <h1 className="text-5xl md:text-6xl font-bold font-serif mb-3 text-gold2">
@@ -126,7 +129,12 @@ function AwardsPage() {
           These skins are legendary. The most beloved, the most iconic.
         </p>
         {topStarred.length === 0 ? (
-          <p>No data yet.</p>
+          <EmptyState
+            icon={faStar}
+            title="No stars awarded yet"
+            message="Be the first to crown a favorite — every player gets 3 stars to spend on the skins they love most."
+            cta={{ to: '/champions', label: 'Start Voting' }}
+          />
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
             {topStarred.map((skin) => (
@@ -137,6 +145,7 @@ function AwardsPage() {
                 initialVote={skin.user_vote ?? 0}
                 initialStar={skin.user_star ?? false}
                 initialX={skin.user_x ?? false}
+                showChampion
               />
             ))}
           </div>
@@ -153,7 +162,12 @@ function AwardsPage() {
           hate.
         </p>
         {topXed.length === 0 ? (
-          <p>No data yet.</p>
+          <EmptyState
+            icon={faBan}
+            title="No bans cast yet"
+            message="No skin has earned the community's scorn so far. Spend your 3 bans on the ones that missed the mark."
+            cta={{ to: '/champions', label: 'Start Voting' }}
+          />
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
             {topXed.map((skin) => (
@@ -164,6 +178,7 @@ function AwardsPage() {
                 initialVote={skin.user_vote ?? 0}
                 initialStar={skin.user_star ?? false}
                 initialX={skin.user_x ?? false}
+                showChampion
               />
             ))}
           </div>
@@ -205,6 +220,7 @@ function AwardsPage() {
                   initialVote={skin.user_vote ?? 0}
                   initialStar={skin.user_star ?? false}
                   initialX={skin.user_x ?? false}
+                  showChampion
                 />
               ))}
             </div>

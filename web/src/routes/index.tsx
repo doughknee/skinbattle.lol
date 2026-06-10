@@ -29,11 +29,14 @@ export const Route = createFileRoute('/')({
         api.awards(),
       ])
       const skinCount = champions.reduce((n, c) => n + (c.skins?.length ?? 0), 0)
+      // Only feature skins that actually have stars — on a cold start the
+      // "top starred" list is just arbitrary skins with zero votes.
+      const starred = awards.topStarred.filter((s) => (s.total_stars ?? 0) > 0)
       return {
         championCount: champions.length,
         skinCount,
-        featured: awards.topStarred[0] ?? null,
-        trending: awards.topStarred.slice(0, 4),
+        featured: starred[0] ?? null,
+        trending: starred.slice(0, 4),
       }
     } catch {
       return { championCount: 170, skinCount: 0, featured: null, trending: [] }
@@ -101,7 +104,7 @@ function HomePage() {
         <div className="absolute inset-0 bg-gradient-to-r from-hextech-black/95 via-hextech-black/65 to-transparent" />
         <div className="absolute inset-0 bg-gradient-to-t from-gradientTop via-transparent to-hextech-black/40" />
 
-        <div className="container mx-auto px-6 relative z-10 flex min-h-[92vh] flex-col justify-center pt-32 pb-20">
+        <div className="container mx-auto px-6 relative z-10 flex min-h-[92vh] flex-col justify-center pt-24 pb-20">
           <div className="max-w-2xl">
             <p className="mb-4 text-sm font-semibold uppercase tracking-[0.3em] text-gold2">
               Community Skin Rankings
@@ -196,6 +199,7 @@ function HomePage() {
                 initialVote={skin.user_vote ?? 0}
                 initialStar={skin.user_star ?? false}
                 initialX={skin.user_x ?? false}
+                showChampion
               />
             ))}
           </div>

@@ -45,6 +45,14 @@
   height: 1.5em;
 }
 
+/* Keyboard focus ring. !important is required because the design system
+   (ab)uses the `outline` utilities decoratively on most interactive
+   elements, which would otherwise mask the focus indicator. */
+:where(a, button, input, select, textarea, [tabindex]):focus-visible {
+  outline: 2px solid var(--color-gold2) !important;
+  outline-offset: 2px !important;
+}
+
 /* Legibility for text laid over splash art. */
 .text-shadow-hero {
   text-shadow:

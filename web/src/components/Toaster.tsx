@@ -1,0 +1,67 @@
+import { useEffect, useState } from 'react'
+
+// Minimal event-based toast system. Call toast('Star 2/3 used') from
+// anywhere; <Toaster /> (mounted once in the root) renders the stack.
+
+export type ToastType = 'info' | 'success' | 'error'
+
+interface Toast {
+  id: number
+  message: string
+  type: ToastType
+}
+
+const TOAST_EVENT = 'sb:toast'
+const TOAST_DURATION_MS = 3000
+
+export function toast(message: string, type: ToastType = 'info') {
+  if (typeof window === 'undefined') return
+  window.dispatchEvent(
+    new CustomEvent(TOAST_EVENT, { detail: { message, type } }),
+  )
+}
+
+let nextId = 1
+
+export default function Toaster() {
+  const [toasts, setToasts] = useState<Toast[]>([])
+
+  useEffect(() => {
+    const onToast = (e: Event) => {
+      const { message, type } = (e as CustomEvent).detail as {
+        message: string
+        type: ToastType
+      }
+      const id = nextId++
+      setToasts((prev) => [...prev.slice(-3), { id, message, type }])
+      window.setTimeout(() => {
+        setToasts((prev) => prev.filter((t) => t.id !== id))
+      }, TOAST_DURATION_MS)
+    }
+    window.addEventListener(TOAST_EVENT, onToast)
+    return () => window.removeEventListener(TOAST_EVENT, onToast)
+  }, [])
+
+  if (toasts.length === 0) return null
+
+  return (
+    <div
+      aria-live="polite"
+      className="fixed bottom-6 left-1/2 z-[100] flex w-full max-w-sm -translate-x-1/2 flex-col items-center gap-2 px-4"
+    >
+      {toasts.map((t) => (
+        <div
+          key={t.id}
+          role="status"
+          className={`w-fit max-w-full bg-hextech-black/95 px-4 py-2.5 text-sm font-semibold shadow-lg outline -outline-offset-1 backdrop-blur ${
+            t.type === 'error'
+              ? 'text-red-300 outline-red-400/60'
+              : 'text-gold1 outline-gold2/60'
+          }`}
+        >
+          {t.message}
+        </div>
+      ))}
+    </div>
+  )
+}

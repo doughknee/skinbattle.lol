@@ -11,7 +11,9 @@ export default defineConfig({
     // production same-origin setup (no CORS). SSR loaders use API_INTERNAL_URL.
     proxy: {
       '/api': {
-        target: 'http://localhost:8080',
+        // DEV_API_PROXY lets you point dev at a remote API (e.g. the live
+        // one) instead of a locally running Go service.
+        target: process.env.DEV_API_PROXY || 'http://localhost:8080',
         changeOrigin: true,
       },
     },
