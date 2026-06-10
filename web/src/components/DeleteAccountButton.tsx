@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { api } from '~/lib/api'
 import { useAuth } from '~/lib/useAuth'
+import { btnDanger } from '~/lib/ui'
 
 export default function DeleteAccountButton() {
   const { getApiToken, logout } = useAuth()
@@ -27,13 +28,10 @@ export default function DeleteAccountButton() {
 
   return (
     <div>
-      <button
-        onClick={handleDelete}
-        className="bg-hextech-black/30 border-2 border-transparent outline-icon/30 outline -outline-offset-2 hover:border-icon hover:border-2 transition duration-150 font-serif text-grey1 hover:text-gold1 text-lg font-bold px-8 py-4 shadow-lg"
-      >
+      <button onClick={handleDelete} className={`${btnDanger} w-full`}>
         Delete Account
       </button>
-      {errorMsg && <p className="text-red-500 mt-2">{errorMsg}</p>}
+      {errorMsg && <p className="mt-3 text-sm text-red-300">{errorMsg}</p>}
     </div>
   )
 }

@@ -52,11 +52,13 @@ export default function Dropdown({
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
-        className="w-full px-4 py-2 text-left bg-hextech-black outline outline-gold2/30 border-2 border-transparent hover:border-icon text-gold1 shadow flex justify-between items-center transition-colors duration-150"
+        aria-haspopup="listbox"
+        aria-expanded={isOpen}
+        className="flex h-10 w-full cursor-pointer items-center justify-between gap-2 bg-hextech-black/40 px-3 text-left text-sm text-gold1 outline outline-icon/30 -outline-offset-1 hover:outline-icon transition duration-150"
       >
-        <span>{label}</span>
+        <span className="truncate">{label}</span>
         <svg
-          className={`w-4 h-4 text-gold1 ml-2 transform transition-transform duration-300 ${isOpen ? 'rotate-180' : 'rotate-0'}`}
+          className={`h-4 w-4 shrink-0 text-gold2 transform transition-transform duration-300 ${isOpen ? 'rotate-180' : 'rotate-0'}`}
           xmlns="http://www.w3.org/2000/svg"
           viewBox="0 0 20 20"
           fill="currentColor"
@@ -70,7 +72,7 @@ export default function Dropdown({
       </button>
 
       <div
-        className={`absolute mt-2 w-full bg-hextech-black z-10 shadow-lg transition-[max-height] duration-300 ease-in-out ${isOpen ? 'max-h-48 overflow-y-auto outline outline-gold2/30' : 'max-h-0 overflow-hidden'}`}
+        className={`absolute z-20 mt-2 w-full bg-hextech-black/95 shadow-2xl backdrop-blur transition-[max-height] duration-300 ease-in-out ${isOpen ? 'max-h-48 overflow-y-auto outline outline-gold2/30 -outline-offset-1' : 'max-h-0 overflow-hidden'}`}
         style={{ maxHeight: isOpen ? '12rem' : '0' }}
       >
         {options.map((option) => (
@@ -78,10 +80,10 @@ export default function Dropdown({
             key={option.value}
             type="button"
             onClick={() => handleSelect(option.value)}
-            className={`block w-full text-left px-4 py-2 cursor-pointer ${
+            className={`block w-full cursor-pointer px-3 py-2 text-left text-sm transition duration-150 ${
               option.value === selectedValue
-                ? 'bg-gold2 text-blue5 font-semibold'
-                : 'text-grey1 hover:bg-grey-cool hover:text-gold2'
+                ? 'bg-gold5/30 font-semibold text-gold1'
+                : 'text-grey1 hover:bg-grey-cool hover:text-gold1'
             }`}
           >
             {option.label}

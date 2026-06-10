@@ -1,13 +1,28 @@
 import { createFileRoute } from '@tanstack/react-router'
-import { useEffect, useState } from 'react'
-import { faStar, faBan } from '@fortawesome/free-solid-svg-icons'
+import { useEffect, useRef, useState } from 'react'
+import { faStar, faBan, faShirt } from '@fortawesome/free-solid-svg-icons'
 import SkinCard from '~/components/SkinCard'
 import Dropdown from '~/components/Dropdown'
 import EmptyState from '~/components/EmptyState'
+import ErrorState from '~/components/ErrorState'
+import PageHeader from '~/components/PageHeader'
 import { RouteSkeleton } from '~/components/Skeletons'
 import { api } from '~/lib/api'
 import { useAuth } from '~/lib/useAuth'
+import { btnChip } from '~/lib/ui'
 import type { AwardsResponse, Skin } from '~/lib/types'
+
+// Shared section heading treatment, matched across awards/votes/champion pages.
+function SectionHeading({ title, blurb }: { title: string; blurb: string }) {
+  return (
+    <>
+      <h2 className="font-serif text-3xl md:text-4xl font-bold text-gold2 mb-3">
+        {title}
+      </h2>
+      <p className="text-lg text-grey1 mb-10">{blurb}</p>
+    </>
+  )
+}
 
 // Top 3 on a podium (#1 center, raised) + the rest in a ranked grid.
 function RankedShowcase({ skins }: { skins: Skin[] }) {
@@ -89,11 +104,12 @@ export const Route = createFileRoute('/awards')({
     const awards = await api.awards()
     return { awards }
   },
+  head: () => ({
+    meta: [{ title: 'Awards — Skin Battle' }],
+  }),
   pendingComponent: () => <RouteSkeleton quip="Invading enemy jungle..." />,
   errorComponent: ({ error }) => (
-    <p className="container mx-auto px-6 pt-36 text-center text-red-400">
-      Error: {error.message}
-    </p>
+    <ErrorState title="Couldn't load the awards" message={error.message} />
   ),
   component: AwardsPage,
 })
@@ -106,6 +122,7 @@ function AwardsPage() {
   const [sortBy, setSortBy] = useState('total_votes_desc')
   const [currentPage, setCurrentPage] = useState(1)
   const itemsPerPage = 24
+  const allSkinsRef = useRef<HTMLElement>(null)
 
   // Hide skins that haven't actually received any stars/bans yet — ranking
   // a wall of zeroes reads as broken on a cold start.
@@ -154,6 +171,13 @@ function AwardsPage() {
     setCurrentPage(1)
   }, [sortBy])
 
+  // Paging happens from buttons at the bottom of a long grid — bring the
+  // start of the section back into view so the new page is actually visible.
+  const goToPage = (page: number) => {
+    setCurrentPage(page)
+    allSkinsRef.current?.scrollIntoView({ behavior: 'smooth' })
+  }
+
   function getSortedSkins() {
     const sorted = [...allSkins]
     switch (sortBy) {
@@ -188,26 +212,29 @@ function AwardsPage() {
   const currentSkins = sortedSkins.slice(indexOfFirstSkin, indexOfLastSkin)
 
   return (
-    <div className="container mx-auto p-4 pt-28">
-      {/* Page header */}
-      <header className="mb-20 max-w-3xl">
-        <h1 className="text-5xl md:text-6xl font-bold font-serif mb-3 text-gold2">
-          A<span className="italic">wards</span>
-        </h1>
-        <p className="text-xl text-grey1 italic">
-          These a(wards) aren’t for vision—they’re for the best (and worst) skins
-          in League. The summoners have spoken.
-        </p>
-      </header>
+    <div className="container mx-auto px-6 pt-28 pb-12">
+      <PageHeader
+        eyebrow="The community has spoken"
+        title={
+          <>
+            A<span className="italic">wards</span>
+          </>
+        }
+        subtitle={
+          <span className="italic">
+            These a(wards) aren’t for vision—they’re for the best (and worst)
+            skins in League. The summoners have spoken.
+          </span>
+        }
+        className="mb-20"
+      />
 
       {/* Top 10 Starred Section */}
-      <section className="scroll-mt-36 mb-36">
-        <h2 className="text-4xl font-serif font-semibold mb-4 text-gold2">
-          Top 10 Most Starred Skins
-        </h2>
-        <p className="text-lg text-grey1 mb-10">
-          These skins are legendary. The most beloved, the most iconic.
-        </p>
+      <section className="scroll-mt-36 mb-24">
+        <SectionHeading
+          title="Top 10 Most Starred Skins"
+          blurb="These skins are legendary. The most beloved, the most iconic."
+        />
         {topStarred.length === 0 ? (
           <EmptyState
             icon={faStar}
@@ -221,14 +248,11 @@ function AwardsPage() {
       </section>
 
       {/* Top 10 X'ed Section */}
-      <section className="mb-36">
-        <h2 className="text-4xl font-serif font-semibold mb-4 text-gold2">
-          Top 10 Most Banned Skins
-        </h2>
-        <p className="text-lg text-grey1 mb-10">
-          Not every skin is a masterpiece. These are the ones players love to
-          hate.
-        </p>
+      <section className="mb-24">
+        <SectionHeading
+          title="Top 10 Most Banned Skins"
+          blurb="Not every skin is a masterpiece. These are the ones players love to hate."
+        />
         {topXed.length === 0 ? (
           <EmptyState
             icon={faBan}
@@ -243,14 +267,11 @@ function AwardsPage() {
 
       {/* Most Divisive Section — only once there's real disagreement */}
       {divisive.length > 0 && (
-        <section className="mb-36">
-          <h2 className="text-4xl font-serif font-semibold mb-4 text-gold2">
-            Most Divisive Skins
-          </h2>
-          <p className="text-lg text-grey1 mb-10">
-            Loved and hated in equal measure. These skins split the community
-            right down the middle.
-          </p>
+        <section className="mb-24">
+          <SectionHeading
+            title="Most Divisive Skins"
+            blurb="Loved and hated in equal measure. These skins split the community right down the middle."
+          />
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
             {divisive.map((skin) => (
               <SkinCard
@@ -268,15 +289,15 @@ function AwardsPage() {
       )}
 
       {/* All Skins Section */}
-      <section>
-        <div className="mb-10 flex justify-between items-center">
+      <section ref={allSkinsRef} className="scroll-mt-28">
+        <div className="mb-10 flex flex-wrap items-end justify-between gap-4">
           <div>
-            <h2 className="text-4xl font-serif font-semibold mb-4 text-gold2">
+            <h2 className="font-serif text-3xl md:text-4xl font-bold text-gold2 mb-3">
               All Skins
             </h2>
             <p className="text-lg text-grey1">Browse the full collection.</p>
           </div>
-          <div>
+          <div className="w-44">
             <Dropdown
               options={sortOptions}
               onSelect={(value) => setSortBy(value)}
@@ -290,7 +311,12 @@ function AwardsPage() {
         </div>
 
         {sortedSkins.length === 0 ? (
-          <p className="text-lg text-grey1">No skins found.</p>
+          <EmptyState
+            icon={faShirt}
+            title="No skins found"
+            message="The collection hasn't loaded yet — check back in a moment."
+            compact
+          />
         ) : (
           <>
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
@@ -306,23 +332,21 @@ function AwardsPage() {
                 />
               ))}
             </div>
-            <div className="mt-8 flex justify-center items-center space-x-4">
+            <div className="mt-10 flex items-center justify-center gap-4">
               <button
-                onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+                onClick={() => goToPage(Math.max(currentPage - 1, 1))}
                 disabled={currentPage === 1}
-                className="cursor-pointer bg-hextech-black/30 border-2 border-transparent outline-icon/30 outline -outline-offset-2 hover:border-icon hover:border-2 transition duration-150 font-serif text-grey1 hover:text-gold1 text-lg font-bold px-8 py-4 shadow-lg disabled:opacity-50"
+                className={btnChip}
               >
                 Previous
               </button>
-              <span className="text-lg text-grey1">
-                Page {currentPage} of {totalPages}
+              <span className="text-sm text-grey1 tabular-nums">
+                Page {currentPage} of {Math.max(totalPages, 1)}
               </span>
               <button
-                onClick={() =>
-                  setCurrentPage((prev) => Math.min(prev + 1, totalPages))
-                }
+                onClick={() => goToPage(Math.min(currentPage + 1, totalPages))}
                 disabled={currentPage === totalPages}
-                className="cursor-pointer bg-hextech-black/30 border-2 border-transparent outline-icon/30 outline -outline-offset-2 hover:border-icon hover:border-2 transition duration-150 font-serif text-grey1 hover:text-gold1 text-lg font-bold px-8 py-4 shadow-lg disabled:opacity-50"
+                className={btnChip}
               >
                 Next
               </button>

@@ -8,6 +8,9 @@ import AuthPrompt from '~/components/AuthPrompt'
 import type { Me } from '~/lib/types'
 
 export const Route = createFileRoute('/account')({
+  head: () => ({
+    meta: [{ title: 'Account — Skin Battle' }],
+  }),
   component: AccountPage,
 })
 
@@ -45,7 +48,16 @@ function AccountPage() {
   }, [isAuthenticated, isLoading, getApiToken])
 
   if (isLoading || loadingMe)
-    return <p className="pt-36 text-center text-grey1">Loading...</p>
+    return (
+      <div className="container mx-auto flex min-h-[70vh] items-center justify-center px-6 pt-28">
+        <p
+          className="animate-pulse font-serif text-lg italic text-gold2"
+          role="status"
+        >
+          Summoning your account...
+        </p>
+      </div>
+    )
 
   if (!isAuthenticated)
     return (
@@ -79,8 +91,16 @@ function AccountPage() {
           </div>
         </div>
 
-        <div className="flex flex-col gap-4">
-          <LogoutButton />
+        <LogoutButton />
+
+        <div className="mt-8 border-t border-red-400/20 pt-6">
+          <p className="mb-1 text-xs font-semibold uppercase tracking-widest text-red-300/80">
+            Danger zone
+          </p>
+          <p className="mb-4 text-sm text-grey1">
+            Deleting your account permanently removes your votes, stars, and
+            bans.
+          </p>
           <DeleteAccountButton />
         </div>
       </div>
