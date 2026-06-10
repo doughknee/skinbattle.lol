@@ -379,7 +379,7 @@ func (h *handlers) deleteUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Delete local rows (cascade handles votes).
+	// Delete the local user row; their votes stay behind anonymized (user_id NULL).
 	if err := h.store.DeleteUser(ctx, user.LocalID); err != nil {
 		log.Printf("store.DeleteUser: %v", err)
 		writeError(w, http.StatusInternalServerError, "internal error")

@@ -30,8 +30,8 @@ func TestVoteLive(t *testing.T) {
 	skins := []string{"zz_skin_1", "zz_skin_2", "zz_skin_3", "zz_skin_4"}
 
 	cleanup := func() {
-		_, _ = pool.Exec(ctx, `DELETE FROM users WHERE email = 'zz_test@example.com'`)
-		_, _ = pool.Exec(ctx, `DELETE FROM champions WHERE id = $1`, champ) // cascades to skins + votes
+		_, _ = pool.Exec(ctx, `DELETE FROM users WHERE email IN ('zz_test@example.com', 'zz_test2@example.com')`)
+		_, _ = pool.Exec(ctx, `DELETE FROM champions WHERE id = $1`, champ) // cascades to skins + votes (including anonymized rows)
 	}
 	cleanup()
 	defer cleanup()
@@ -97,4 +97,40 @@ func TestVoteLive(t *testing.T) {
 	}
 
 	t.Logf("live vote logic OK: votes recompute, 3-star cap enforced + rolled back, toggle works")
+
+	// 5. Deleting a user anonymizes their votes instead of removing them:
+	//    the rows stay (user_id NULL), so totals keep counting them even after
+	//    a later vote triggers a recount.
+	if err := st.DeleteUser(ctx, userID); err != nil {
+		t.Fatalf("delete user: %v", err)
+	}
+
+	var anonVotes int
+	if err := pool.QueryRow(ctx,
+		`SELECT COUNT(*) FROM user_skin_votes WHERE skin_id = $1 AND user_id IS NULL`, skins[0],
+	).Scan(&anonVotes); err != nil {
+		t.Fatalf("count anonymized votes: %v", err)
+	}
+	if anonVotes != 1 {
+		t.Fatalf("expected 1 anonymized vote row on %s after user delete, got %d", skins[0], anonVotes)
+	}
+
+	var user2ID int64
+	if err := pool.QueryRow(ctx,
+		`INSERT INTO users (email, username, logto_id) VALUES ('zz_test2@example.com','zz_test2','zz_sub2') RETURNING id`,
+	).Scan(&user2ID); err != nil {
+		t.Fatalf("insert second user: %v", err)
+	}
+
+	// Re-voting on the same skin recounts totals from user_skin_votes; the
+	// deleted user's (now anonymous) upvote must still be included.
+	totals, _, err = st.Vote(ctx, VoteInput{SkinID: skins[0], UserID: user2ID, Vote: 1})
+	if err != nil {
+		t.Fatalf("vote by second user after delete: %v", err)
+	}
+	if totals.TotalVotes != 2 {
+		t.Fatalf("expected total_votes=2 (anonymized + new vote), got %d", totals.TotalVotes)
+	}
+
+	t.Logf("deleted-user votes retained OK: anonymized row survives delete and still counts in recount")
 }
