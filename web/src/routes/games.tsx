@@ -1,8 +1,12 @@
 import { createFileRoute, Link } from '@tanstack/react-router'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faDice, faArrowRight } from '@fortawesome/free-solid-svg-icons'
+import { btnSecondary } from '~/lib/ui'
 
 export const Route = createFileRoute('/games')({
+  head: () => ({
+    meta: [{ title: 'Games — Skin Battle' }],
+  }),
   component: GamesPage,
 })
 
@@ -23,10 +27,7 @@ function GamesPage() {
         splash, draft the best set, and climb the leaderboards. We're building
         it now.
       </p>
-      <Link
-        to="/champions"
-        className="group inline-flex items-center justify-center gap-3 bg-hextech-black/40 border-2 border-transparent outline outline-icon/30 -outline-offset-2 hover:outline-icon transition duration-150 font-serif text-grey1 hover:text-gold1 text-lg font-bold px-8 py-4"
-      >
+      <Link to="/champions" className={`group ${btnSecondary}`}>
         Vote on skins while you wait
         <FontAwesomeIcon
           icon={faArrowRight}

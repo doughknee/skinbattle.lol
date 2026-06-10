@@ -64,7 +64,7 @@ export function RouteSkeleton({
   variant?: 'skins' | 'champions'
 }) {
   return (
-    <div className="container mx-auto p-4 pt-28">
+    <div className="container mx-auto px-6 pt-28">
       <p className="mb-8 font-serif text-lg italic text-gold2" role="status">
         {quip}
       </p>

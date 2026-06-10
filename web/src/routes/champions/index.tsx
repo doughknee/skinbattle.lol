@@ -8,6 +8,9 @@ import {
 } from '@fortawesome/free-solid-svg-icons'
 import { api } from '~/lib/api'
 import Dropdown from '~/components/Dropdown'
+import EmptyState from '~/components/EmptyState'
+import ErrorState from '~/components/ErrorState'
+import PageHeader from '~/components/PageHeader'
 import { RouteSkeleton } from '~/components/Skeletons'
 import { championDisplayName } from '~/lib/skinName'
 import type { Champion } from '~/lib/types'
@@ -27,13 +30,14 @@ export const Route = createFileRoute('/champions/')({
     const champions = await api.champions()
     return { champions }
   },
+  head: () => ({
+    meta: [{ title: 'Champions — Skin Battle' }],
+  }),
   pendingComponent: () => (
     <RouteSkeleton quip="Stealing baron..." variant="champions" />
   ),
   errorComponent: ({ error }) => (
-    <p className="container mx-auto px-6 pt-36 text-center text-red-400">
-      Error: {error.message}
-    </p>
+    <ErrorState title="Couldn't load champions" message={error.message} />
   ),
   component: ChampionsPage,
 })
@@ -98,13 +102,13 @@ function ChampionsPage() {
     }`
 
   return (
-    <div className="container mx-auto p-4 pt-28">
-      <h1 className="text-5xl font-bold font-serif mb-2 text-gold2">
-        Champions
-      </h1>
-      <h2 className="text-xl mb-8 text-grey1">
-        Click on a champion to view and vote on their skins.
-      </h2>
+    <div className="container mx-auto px-6 pt-28 pb-12">
+      <PageHeader
+        eyebrow="Browse the roster"
+        title="Champions"
+        subtitle="Click on a champion to view and vote on their skins."
+        className="mb-10"
+      />
 
       {/* Toolbar: search / sort / density */}
       <div className="mb-8 flex flex-wrap items-center gap-3">
@@ -158,17 +162,13 @@ function ChampionsPage() {
       </div>
 
       {visible.length === 0 ? (
-        <div className="bg-hextech-black/30 px-6 py-14 text-center outline outline-icon/20 -outline-offset-2">
-          <p className="mb-4 font-serif text-xl font-bold text-gold1">
-            No champions match “{query}”
-          </p>
-          <button
-            onClick={() => setQuery('')}
-            className="cursor-pointer text-sm font-bold uppercase tracking-widest text-gold2 hover:text-gold1 transition duration-150"
-          >
-            Clear search
-          </button>
-        </div>
+        <EmptyState
+          icon={faMagnifyingGlass}
+          title={`No champions match “${query}”`}
+          message="Try a different name, or clear the search to see the full roster."
+          action={{ label: 'Clear search', onClick: () => setQuery('') }}
+          compact
+        />
       ) : (
         <ul
           className={

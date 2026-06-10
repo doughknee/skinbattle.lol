@@ -6,6 +6,7 @@ import { api } from '~/lib/api'
 import { useAuth } from '~/lib/useAuth'
 import SkinCard from '~/components/SkinCard'
 import Dropdown from '~/components/Dropdown'
+import ErrorState from '~/components/ErrorState'
 import { SkinGridSkeleton } from '~/components/Skeletons'
 import { championDisplayName } from '~/lib/skinName'
 import type { Champion } from '~/lib/types'
@@ -17,6 +18,15 @@ export const Route = createFileRoute('/champions/$id')({
     const champion = await api.champion(params.id)
     return { champion }
   },
+  head: ({ loaderData }) => ({
+    meta: [
+      {
+        title: loaderData
+          ? `${championDisplayName(loaderData.champion.id)} — Skin Battle`
+          : 'Skin Battle',
+      },
+    ],
+  }),
   pendingComponent: () => (
     <div className="container mx-auto px-6 pt-28">
       <p className="mb-8 font-serif text-lg italic text-gold2" role="status">
@@ -34,19 +44,12 @@ export const Route = createFileRoute('/champions/$id')({
     </div>
   ),
   errorComponent: ({ error }) => (
-    <div className="container mx-auto p-4 pt-36 text-center">
-      <h1 className="font-serif text-4xl font-bold text-gold2 mb-3">
-        Champion not found
-      </h1>
-      <p className="text-grey1 mb-8">{error.message}</p>
-      <Link
-        to="/champions"
-        className="inline-flex items-center gap-2 font-serif font-bold text-grey1 hover:text-gold1 transition duration-150"
-      >
-        <FontAwesomeIcon icon={faArrowLeft} className="h-4" />
-        Back to champions
-      </Link>
-    </div>
+    <ErrorState
+      title="Champion not found"
+      message={error.message}
+      retry={false}
+      back={{ to: '/champions', label: 'Back to champions' }}
+    />
   ),
   component: ChampionPage,
 })
@@ -180,7 +183,7 @@ function ChampionPage() {
       <section className="container mx-auto px-6 py-16">
         <div className="mb-10 flex flex-wrap items-end justify-between gap-4">
           <div>
-            <h2 className="font-serif text-3xl font-bold text-gold2 mb-2">
+            <h2 className="font-serif text-3xl md:text-4xl font-bold text-gold2 mb-2">
               Skins
               <span className="ml-3 text-lg font-normal text-grey1">
                 {champion.skins.length}

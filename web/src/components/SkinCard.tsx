@@ -157,7 +157,7 @@ export default function SkinCard({
   }
 
   return (
-    <div className="group bg-hextech-black/30 border-2 border-transparent outline-icon/30 outline -outline-offset-2 hover:border-icon hover:border-2 transition duration-150">
+    <div className="group bg-hextech-black/30 outline outline-icon/25 -outline-offset-2 hover:outline-icon transition duration-150">
       <button
         type="button"
         onClick={() =>

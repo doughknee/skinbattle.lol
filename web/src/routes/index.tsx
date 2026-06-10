@@ -13,6 +13,7 @@ import {
 import type { IconDefinition } from '@fortawesome/fontawesome-svg-core'
 import SkinCard from '~/components/SkinCard'
 import { api } from '~/lib/api'
+import { btnPrimary, btnSecondary } from '~/lib/ui'
 import type { Skin } from '~/lib/types'
 
 // A guaranteed-valid base splash used if the API/leaderboard has nothing yet.
@@ -118,20 +119,14 @@ function HomePage() {
             </p>
 
             <div className="mt-10 flex flex-col sm:flex-row gap-4">
-              <Link
-                to="/champions"
-                className="group inline-flex items-center justify-center gap-3 bg-gold5/20 border-2 border-transparent outline outline-gold2/60 -outline-offset-2 hover:outline-gold2 hover:bg-gold5/40 transition duration-150 font-serif text-gold1 text-lg font-bold px-8 py-4 shadow-lg"
-              >
+              <Link to="/champions" className={`group ${btnPrimary}`}>
                 Start Voting
                 <FontAwesomeIcon
                   icon={faArrowRight}
                   className="h-4 transition-transform duration-150 group-hover:translate-x-1"
                 />
               </Link>
-              <Link
-                to="/awards"
-                className="inline-flex items-center justify-center bg-hextech-black/40 border-2 border-transparent outline outline-icon/30 -outline-offset-2 hover:outline-icon transition duration-150 font-serif text-grey1 hover:text-gold1 text-lg font-bold px-8 py-4"
-              >
+              <Link to="/awards" className={btnSecondary}>
                 See the Awards
               </Link>
             </div>
@@ -238,10 +233,7 @@ function HomePage() {
             Jump in and start ranking. Every vote shapes the definitive list of
             League's best — and worst — skins.
           </p>
-          <Link
-            to="/champions"
-            className="group inline-flex items-center justify-center gap-3 bg-gold5/20 border-2 border-transparent outline outline-gold2/60 -outline-offset-2 hover:outline-gold2 hover:bg-gold5/40 transition duration-150 font-serif text-gold1 text-lg font-bold px-10 py-4 shadow-lg"
-          >
+          <Link to="/champions" className={`group ${btnPrimary}`}>
             Start Voting
             <FontAwesomeIcon
               icon={faArrowRight}
