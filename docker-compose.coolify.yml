@@ -83,6 +83,45 @@ services:
       - -c
       - 'npm run cli db seed -- --swe || true && npm start'
 
+  # One-shot: bootstrap a Logto M2M application with Management API access, so the
+  # stack can be configured programmatically and the api service can delete Logto
+  # accounts. Credentials come from LOGTO_M2M_APP_ID / LOGTO_M2M_APP_SECRET env vars
+  # (set in Coolify, never committed). Idempotent — re-runs no-op once created.
+  logto-bootstrap:
+    image: postgres:16-alpine
+    restart: 'no'
+    depends_on:
+      postgres:
+        condition: service_healthy
+      postgres-init:
+        condition: service_completed_successfully
+      logto:
+        condition: service_started
+    environment:
+      - PGPASSWORD=${SERVICE_PASSWORD_POSTGRES}
+      - M2M_ID=${LOGTO_M2M_APP_ID:-}
+      - M2M_SECRET=${LOGTO_M2M_APP_SECRET:-}
+    entrypoint:
+      - sh
+      - -c
+      - |
+        [ -n "$$M2M_ID" ] && [ -n "$$M2M_SECRET" ] || { echo "logto-bootstrap: M2M creds not set; skipping"; exit 0; }
+        i=0
+        until psql -h postgres -U skinbattle -d logto -tAc "SELECT 1 FROM applications LIMIT 1" >/dev/null 2>&1; do
+          i=$$((i+1)); [ "$$i" -gt 60 ] && { echo "logto-bootstrap: logto schema never appeared"; exit 1; }
+          echo "logto-bootstrap: waiting for logto schema..."; sleep 5
+        done
+        P() { psql -h postgres -U skinbattle -d logto -v ON_ERROR_STOP=1 -c "$$1"; }
+        P "INSERT INTO applications (tenant_id,id,name,secret,description,type,oidc_client_metadata,custom_client_metadata) VALUES ('default','$$M2M_ID','skinbattle-m2m','$$M2M_SECRET','M2M app with Management API access (bootstrap)','MachineToMachine','{\"redirectUris\":[],\"postLogoutRedirectUris\":[]}','{}') ON CONFLICT DO NOTHING" \
+          || P "INSERT INTO applications (tenant_id,id,name,description,type,oidc_client_metadata,custom_client_metadata) VALUES ('default','$$M2M_ID','skinbattle-m2m','M2M app with Management API access (bootstrap)','MachineToMachine','{\"redirectUris\":[],\"postLogoutRedirectUris\":[]}','{}') ON CONFLICT DO NOTHING"
+        P "INSERT INTO application_secrets (tenant_id,application_id,name,value) VALUES ('default','$$M2M_ID','bootstrap','$$M2M_SECRET') ON CONFLICT DO NOTHING" \
+          || echo "logto-bootstrap: no application_secrets table (older logto); legacy secret column used"
+        P "INSERT INTO roles (tenant_id,id,name,description,type) VALUES ('default','sbmgmtrole0000000001','skinbattle-mgmt','Management API access (bootstrap)','MachineToMachine') ON CONFLICT DO NOTHING" \
+          || P "INSERT INTO roles (tenant_id,id,name,description) VALUES ('default','sbmgmtrole0000000001','skinbattle-mgmt','Management API access (bootstrap)') ON CONFLICT DO NOTHING"
+        P "INSERT INTO roles_scopes (tenant_id,id,role_id,scope_id) SELECT 'default','sbmgmtrs000000000001','sbmgmtrole0000000001',s.id FROM scopes s JOIN resources r ON r.id=s.resource_id WHERE r.indicator='https://default.logto.app/api' AND s.name='all' LIMIT 1 ON CONFLICT DO NOTHING"
+        P "INSERT INTO applications_roles (tenant_id,id,application_id,role_id) VALUES ('default','sbm2mapprole00000001','$$M2M_ID','sbmgmtrole0000000001') ON CONFLICT DO NOTHING"
+        echo "logto-bootstrap: complete"
+
   api:
     build:
       context: ./api
@@ -104,6 +143,9 @@ services:
       # Catalog sync runs on API startup. Empty = latest Data Dragon patch;
       # pin a version (e.g. 16.12.1) to freeze, or set DDRAGON_SYNC_DISABLED=1 to skip.
       - DDRAGON_VERSION=${DDRAGON_VERSION:-}
+      # Logto Management API creds (account deletion). Optional.
+      - LOGTO_M2M_APP_ID=${LOGTO_M2M_APP_ID:-}
+      - LOGTO_M2M_APP_SECRET=${LOGTO_M2M_APP_SECRET:-}
     # Note: the API runs on a distroless image (no shell), so there is no Docker
     # healthcheck here. Use Coolify's HTTP health check with path `/healthz`.
 
