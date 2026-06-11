@@ -31,6 +31,14 @@ export default function Footer() {
             </li>
             <li>
               <Link
+                to="/skins"
+                className="text-grey1 hover:text-gold1 transition duration-150"
+              >
+                Skins
+              </Link>
+            </li>
+            <li>
+              <Link
                 to="/awards"
                 className="text-grey1 hover:text-gold1 transition duration-150"
               >
@@ -39,18 +47,10 @@ export default function Footer() {
             </li>
             <li>
               <Link
-                to="/user/votes"
+                to="/profile"
                 className="text-grey1 hover:text-gold1 transition duration-150"
               >
-                My Votes
-              </Link>
-            </li>
-            <li>
-              <Link
-                to="/games"
-                className="text-grey1 hover:text-gold1 transition duration-150"
-              >
-                Games
+                My Profile
               </Link>
             </li>
           </ul>

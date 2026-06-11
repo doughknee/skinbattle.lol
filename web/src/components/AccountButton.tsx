@@ -48,14 +48,14 @@ export default function AccountButton() {
     <button
       onClick={() => {
         if (isAuthenticated) {
-          navigate({ to: '/account' })
+          navigate({ to: '/profile' })
         } else {
           login()
         }
       }}
       type="button"
-      aria-label={isAuthenticated ? `Account: ${label}` : 'Sign in'}
-      title={isAuthenticated ? 'Account settings' : 'Sign in'}
+      aria-label={isAuthenticated ? `Profile: ${label}` : 'Sign in'}
+      title={isAuthenticated ? 'Your profile' : 'Sign in'}
       className="flex h-10 cursor-pointer items-center gap-2 bg-hextech-black/40 px-3 text-sm font-bold text-grey1 outline outline-icon/30 -outline-offset-1 hover:text-gold1 hover:outline-icon transition duration-150"
     >
       <FontAwesomeIcon

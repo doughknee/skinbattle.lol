@@ -9,6 +9,7 @@ import '~/lib/fontawesome'
 import globalCss from '~/styles/globals.css?url'
 import ClientProviders from '~/components/ClientProviders'
 import NavBar from '~/components/Navbar'
+import NotFound from '~/components/NotFound'
 import CommandPalette from '~/components/CommandPalette'
 import Toaster from '~/components/Toaster'
 import Lightbox from '~/components/Lightbox'
@@ -63,6 +64,7 @@ export const Route = createRootRoute({
       { rel: 'stylesheet', href: globalCss },
     ],
   }),
+  notFoundComponent: NotFound,
   component: RootComponent,
 })
 
@@ -72,7 +74,9 @@ function RootComponent() {
     <RootDocument config={config}>
       <ClientProviders config={config}>
         <NavBar />
-        <Outlet />
+        <main className="flex-1">
+          <Outlet />
+        </main>
         <Footer />
         <CommandPalette />
         <Lightbox />
@@ -105,7 +109,9 @@ function RootDocument({
           }}
         />
       </head>
-      <body className="antialiased min-h-screen">
+      {/* Column flex so the footer sits at the viewport bottom even on short
+          pages (account, games) instead of floating mid-screen. */}
+      <body className="antialiased flex min-h-screen flex-col">
         {children}
         <Scripts />
       </body>

@@ -210,7 +210,7 @@ export default function QuotaChip() {
 
           <div className="border-t border-icon/20 px-4 py-2.5">
             <Link
-              to="/user/votes"
+              to="/profile"
               onClick={() => setOpen(false)}
               className="text-xs font-bold text-grey1 hover:text-gold1 transition duration-150"
             >

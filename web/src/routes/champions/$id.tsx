@@ -39,7 +39,7 @@ export const Route = createFileRoute('/champions/$id')({
       </div>
       <SkinGridSkeleton
         count={6}
-        className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-x-6 gap-y-10"
+        className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-x-6 gap-y-10"
       />
     </div>
   ),
@@ -205,7 +205,7 @@ function ChampionPage() {
             />
           </div>
         </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-x-6 gap-y-10">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-x-6 gap-y-10">
           {sortedSkins.map((skin) => (
             <SkinCard
               key={skin.id}

@@ -3,8 +3,11 @@
   "configurations": [
     {
       "name": "web",
-      "runtimeExecutable": "npm",
-      "runtimeArgs": ["run", "dev", "--prefix", "web"],
+      "runtimeExecutable": "cmd",
+      "runtimeArgs": [
+        "/c",
+        "set API_INTERNAL_URL=http://localhost:8080&& npm run dev --prefix web"
+      ],
       "port": 3000,
       "autoPort": true
     }
