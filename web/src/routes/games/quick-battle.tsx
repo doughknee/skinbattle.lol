@@ -33,7 +33,7 @@ export const Route = createFileRoute('/games/quick-battle')({
     fetchQuickBattle({
       data: { restoreToken: guestRestoreToken(), refit: deps.refit },
     }),
-  head: () => ({
+  head: ({ loaderData }) => ({
     meta: [
       { title: 'Quick Battle — Skin Battle' },
       {
@@ -41,6 +41,28 @@ export const Route = createFileRoute('/games/quick-battle')({
         content:
           'Two League skins. Pick the one you like more. Every vote builds the community ranking.',
       },
+    ],
+    // Start the splash downloads from the <head>, before the body parses or
+    // React hydrates: the visible pair at high priority, the on-deck pair at
+    // low. The preconnect saves the DNS+TLS round trip on the first one.
+    links: [
+      {
+        rel: 'preconnect',
+        href: 'https://ddragon.leagueoflegends.com',
+      },
+      ...(loaderData
+        ? [
+            { pair: loaderData.pair, priority: 'high' as const },
+            { pair: loaderData.next, priority: 'low' as const },
+          ].flatMap(({ pair, priority }) =>
+            [pair.a, pair.b].map((s) => ({
+              rel: 'preload',
+              as: 'image',
+              href: s.splashUrl,
+              fetchPriority: priority,
+            })),
+          )
+        : []),
     ],
   }),
   errorComponent: ({ error }) => (
@@ -97,6 +119,9 @@ function BattleCard({
       <img
         src={skin.splashUrl}
         alt={`${skin.name} splash art`}
+        loading="eager"
+        fetchPriority="high"
+        decoding="async"
         onError={() => onBroken(skin.skinId)}
         className="h-full w-full object-cover transition duration-200 group-hover:scale-[1.03]"
       />
@@ -190,7 +215,7 @@ function SessionHistory({ entries }: { entries: HistoryEntry[] }) {
           <li
             key={e.id}
             className={`flex h-10 items-center gap-2 overflow-hidden whitespace-nowrap bg-hextech-black/30 px-3 text-sm outline outline-icon/10 -outline-offset-1 ${
-              i === 0 ? 'animate-fade-in' : ''
+              i === 0 ? 'animate-history-in' : ''
             }`}
           >
             <span className="min-w-0 truncate font-bold text-gold1">

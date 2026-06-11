@@ -59,14 +59,15 @@
     both;
   /* Quick Battle: contenders step in from their corners, the pick gets a
      beat of acknowledgment, and the feedback line answers under the new
-     pair. */
-  --animate-battle-in-a: battle-in-a 0.4s cubic-bezier(0.22, 1, 0.36, 1) both;
-  --animate-battle-in-b: battle-in-b 0.4s cubic-bezier(0.22, 1, 0.36, 1) both;
-  --animate-battle-win: battle-win 0.3s cubic-bezier(0.22, 1, 0.36, 1) both;
-  --animate-battle-lose: battle-lose 0.3s ease-out both;
-  --animate-feedback-pop: feedback-pop 0.35s cubic-bezier(0.22, 1, 0.36, 1)
-    both;
-  --animate-delta-pop: delta-pop 0.45s cubic-bezier(0.22, 1, 0.36, 1) both;
+     pair. Timings run hot — this loop fires every couple of seconds, and
+     anything over ~250ms reads as sluggish at that cadence. */
+  --animate-battle-in-a: battle-in-a 0.25s cubic-bezier(0.22, 1, 0.36, 1) both;
+  --animate-battle-in-b: battle-in-b 0.25s cubic-bezier(0.22, 1, 0.36, 1) both;
+  --animate-battle-win: battle-win 0.22s cubic-bezier(0.22, 1, 0.36, 1) both;
+  --animate-battle-lose: battle-lose 0.22s ease-out both;
+  --animate-feedback-pop: feedback-pop 0.18s ease-out both;
+  --animate-delta-pop: delta-pop 0.3s cubic-bezier(0.22, 1, 0.36, 1) both;
+  --animate-history-in: history-in 0.18s ease-out both;
 }
 
 /* ── Motion ─────────────────────────────────────────────────── */
@@ -172,7 +173,7 @@
 @keyframes battle-in-a {
   from {
     opacity: 0;
-    transform: translateX(-18px) scale(0.985);
+    transform: translateX(-14px) scale(0.99);
   }
   to {
     opacity: 1;
@@ -183,7 +184,7 @@
 @keyframes battle-in-b {
   from {
     opacity: 0;
-    transform: translateX(18px) scale(0.985);
+    transform: translateX(14px) scale(0.99);
   }
   to {
     opacity: 1;
@@ -221,7 +222,19 @@
 @keyframes feedback-pop {
   from {
     opacity: 0;
-    transform: translateY(6px);
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* A fresh verdict dropping onto the top of the session history. */
+@keyframes history-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
   }
   to {
     opacity: 1;
@@ -341,6 +354,7 @@
   .animate-battle-lose,
   .animate-feedback-pop,
   .animate-delta-pop,
+  .animate-history-in,
   .route-progress-bar {
     animation: none !important;
   }
