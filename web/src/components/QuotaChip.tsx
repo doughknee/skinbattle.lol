@@ -11,6 +11,7 @@ import { faStar, faBan, faXmark } from '@fortawesome/free-solid-svg-icons'
 import { api } from '~/lib/api'
 import { useAuth } from '~/lib/useAuth'
 import { toast } from '~/components/Toaster'
+import { Spinner } from '~/components/Skeletons'
 import { userStatsStore, MAX_STARS, MAX_X } from '~/lib/userStatsStore'
 import { championDisplayName, displaySkinName } from '~/lib/skinName'
 import type { Skin } from '~/lib/types'
@@ -187,7 +188,7 @@ export default function QuotaChip() {
       </button>
 
       {open && (
-        <div className="absolute right-0 top-full z-50 mt-2 w-80 max-w-[calc(100vw-1.5rem)] bg-hextech-black/95 shadow-2xl outline outline-gold2/30 -outline-offset-1 backdrop-blur">
+        <div className="animate-pop origin-top-right absolute right-0 top-full z-50 mt-2 w-80 max-w-[calc(100vw-1.5rem)] bg-hextech-black/95 shadow-2xl outline outline-gold2/30 -outline-offset-1 backdrop-blur">
           <div className="border-b border-icon/20 px-4 py-3">
             <p className="font-serif text-sm font-bold text-gold1">My Picks</p>
             <p className="text-xs text-grey1">
@@ -198,7 +199,11 @@ export default function QuotaChip() {
 
           <div className="max-h-96 overflow-y-auto">
             {loadingPicks ? (
-              <p className="px-4 py-6 text-center text-sm text-grey1">
+              <p
+                role="status"
+                className="flex items-center justify-center gap-2.5 px-4 py-6 text-sm text-grey1"
+              >
+                <Spinner className="h-4 w-4" />
                 Loading your picks…
               </p>
             ) : starred.length === 0 && banned.length === 0 ? (

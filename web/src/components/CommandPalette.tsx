@@ -3,6 +3,7 @@ import { useNavigate } from '@tanstack/react-router'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faMagnifyingGlass, faUser, faShirt } from '@fortawesome/free-solid-svg-icons'
 import { api } from '~/lib/api'
+import { Spinner } from '~/components/Skeletons'
 import { championDisplayName, displaySkinName } from '~/lib/skinName'
 import type { Champion } from '~/lib/types'
 
@@ -176,7 +177,7 @@ export default function CommandPalette() {
 
   return (
     <div
-      className="fixed inset-0 z-[90] bg-hextech-black/70 backdrop-blur-sm"
+      className="animate-fade-in [animation-duration:200ms] fixed inset-0 z-[90] bg-hextech-black/70 backdrop-blur-sm"
       onMouseDown={(e) => {
         if (e.target === e.currentTarget) setOpen(false)
       }}
@@ -185,7 +186,7 @@ export default function CommandPalette() {
         role="dialog"
         aria-modal="true"
         aria-label="Search champions and skins"
-        className="mx-auto mt-[12vh] w-full max-w-xl px-4"
+        className="animate-pop mx-auto mt-[12vh] w-full max-w-xl px-4"
       >
         <div className="bg-hextech-black/95 shadow-2xl outline outline-gold2/40 -outline-offset-1">
           <div className="flex items-center gap-3 border-b border-icon/20 px-4">
@@ -214,8 +215,12 @@ export default function CommandPalette() {
             className="max-h-[50vh] overflow-y-auto py-2"
           >
             {entries.length === 0 ? (
-              <li className="px-4 py-6 text-center text-sm text-grey1">
-                Loading…
+              <li
+                role="status"
+                className="flex items-center justify-center gap-2.5 px-4 py-6 text-sm text-grey1"
+              >
+                <Spinner className="h-4 w-4" />
+                Loading the roster…
               </li>
             ) : results.length === 0 ? (
               <li className="px-4 py-6 text-center text-sm text-grey1">

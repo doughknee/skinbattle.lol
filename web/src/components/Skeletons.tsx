@@ -84,7 +84,7 @@ export function PageHeaderSkeleton() {
 
 export function SkinCardSkeleton() {
   return (
-    <div className="bg-hextech-black/30 outline outline-icon/20 -outline-offset-2">
+    <div className="bg-hextech-black/30 outline outline-icon/20 -outline-offset-1">
       <div className="skeleton aspect-video w-full" />
       <div className="space-y-2 p-3">
         <div className="skeleton mx-auto h-5 w-2/3" />
@@ -119,7 +119,7 @@ export function ChampionGridSkeleton({ count = 9 }: { count?: number }) {
       {Array.from({ length: count }, (_, i) => (
         <div
           key={i}
-          className="skeleton aspect-video w-full outline outline-icon/20 -outline-offset-2"
+          className="skeleton aspect-video w-full outline outline-icon/20 -outline-offset-1"
         />
       ))}
     </div>
