@@ -18,11 +18,18 @@ import type { Skin } from '~/lib/types'
 // Navbar quota chip ("★ 1/3 · ⊘ 2/3") that opens a "My picks" tray listing
 // the skins the user has starred/banned, with one-click removal.
 export default function QuotaChip() {
-  const { isAuthenticated, getApiToken } = useAuth()
+  const { isAuthenticated, isLoading, withApiToken } = useAuth()
   const stats = useSyncExternalStore(
     userStatsStore.subscribe,
     userStatsStore.get,
     userStatsStore.get,
+  )
+  // Server snapshot is false (no localStorage during SSR) — React reconciles
+  // the client value after hydration without a mismatch.
+  const hasQuotaHint = useSyncExternalStore(
+    userStatsStore.subscribe,
+    userStatsStore.hasPersisted,
+    () => false,
   )
 
   const [open, setOpen] = useState(false)
@@ -33,16 +40,15 @@ export default function QuotaChip() {
   // Authoritative quota refresh — on auth change and after every vote
   // (skin cards dispatch 'updateUserStats').
   useEffect(() => {
+    if (isLoading) return
     if (!isAuthenticated) {
-      userStatsStore.set({ usedStars: 0, usedX: 0 })
+      userStatsStore.clear()
       return
     }
     let cancelled = false
     const refresh = async () => {
-      const token = await getApiToken()
-      if (!token) return
       try {
-        const data = await api.userStats(token)
+        const data = await withApiToken((token) => api.userStats(token))
         if (!cancelled)
           userStatsStore.set({
             usedStars: data.usedStars || 0,
@@ -58,21 +64,19 @@ export default function QuotaChip() {
       cancelled = true
       window.removeEventListener('updateUserStats', refresh)
     }
-  }, [isAuthenticated, getApiToken])
+  }, [isAuthenticated, isLoading, withApiToken])
 
   const loadPicks = useCallback(async () => {
     setLoadingPicks(true)
     try {
-      const token = await getApiToken()
-      if (!token) return
-      const data = await api.userVotes(token)
+      const data = await withApiToken((token) => api.userVotes(token))
       setPicks((data.skins || []).filter((s) => s.user_star || s.user_x))
     } catch {
       /* tray shows empty state on failure */
     } finally {
       setLoadingPicks(false)
     }
-  }, [getApiToken])
+  }, [withApiToken])
 
   useEffect(() => {
     if (open) loadPicks()
@@ -100,17 +104,17 @@ export default function QuotaChip() {
   }, [open])
 
   const removePick = async (skin: Skin, kind: 'star' | 'x') => {
-    const token = await getApiToken()
-    if (!token) return
     try {
-      await api.vote(
-        {
-          skinId: skin.id,
-          vote: (skin.user_vote ?? 0) as -1 | 0 | 1,
-          star: kind === 'star' ? false : !!skin.user_star,
-          x: kind === 'x' ? false : !!skin.user_x,
-        },
-        token,
+      await withApiToken((token) =>
+        api.vote(
+          {
+            skinId: skin.id,
+            vote: (skin.user_vote ?? 0) as -1 | 0 | 1,
+            star: kind === 'star' ? false : !!skin.user_star,
+            x: kind === 'x' ? false : !!skin.user_x,
+          },
+          token,
+        ),
       )
       setPicks((prev) =>
         prev
@@ -137,6 +141,18 @@ export default function QuotaChip() {
     } catch (err) {
       toast(err instanceof Error ? err.message : 'Failed to remove', 'error')
     }
+  }
+
+  // While the SDK restores the session, hold space with a placeholder when
+  // the user was signed in here before (persisted quota doubles as the hint)
+  // so the navbar doesn't shift when the chip appears.
+  if (isLoading) {
+    return hasQuotaHint ? (
+      <div
+        aria-hidden
+        className="h-10 w-28 animate-pulse bg-hextech-black/40 outline outline-icon/30 -outline-offset-1"
+      />
+    ) : null
   }
 
   if (!isAuthenticated) return null

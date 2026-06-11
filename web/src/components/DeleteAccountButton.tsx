@@ -4,7 +4,7 @@ import { useAuth } from '~/lib/useAuth'
 import { btnDanger } from '~/lib/ui'
 
 export default function DeleteAccountButton() {
-  const { getApiToken, logout } = useAuth()
+  const { withApiToken, logout } = useAuth()
   const [errorMsg, setErrorMsg] = useState('')
 
   const handleDelete = async () => {
@@ -16,9 +16,7 @@ export default function DeleteAccountButton() {
       return
     }
     try {
-      const token = await getApiToken()
-      if (!token) throw new Error('Not authenticated')
-      await api.deleteAccount(token)
+      await withApiToken((token) => api.deleteAccount(token))
       // After successful deletion, sign out (clears the Logto session).
       logout()
     } catch (error) {
