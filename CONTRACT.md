@@ -45,3 +45,37 @@ Skin {
 
 ## Error shape
 `{ error: string }` with appropriate HTTP status (400/401/404/500).
+
+## Games framework (vertical slice — lives in the web tier for now)
+
+The daily-games framework (GAMES_ROADMAP.md Phase 0 subset + Splashdle) is
+currently implemented **inside the TanStack Start SSR server**, not the Go
+API: TanStack server functions (`web/src/lib/games/serverFns.ts`) backed by
+SQLite (`node:sqlite`, file at `web/.data/games.db`). This was a deliberate
+call — the slice had to be runnable without Docker/Postgres/Redis — and the
+schema mirrors Postgres conventions so the port is mechanical.
+
+**RPC surface** (server functions, all guest-open — no Logto required):
+- `fetchDailyHub({ restoreToken? })` → today's per-game status + streaks
+- `fetchSplashdleState({ restoreToken? })` → puzzle state (server-cropped image as a data URL; the full splash URL is only revealed after completion)
+- `submitSplashdleGuess({ skinId, restoreToken? })` → validated guess, updated state
+- `fetchSplashdleOptions()` → guessable skin catalog for autocomplete
+
+**Guest sessions:** first call mints a `game_users` row + 128-bit token in an
+httpOnly `sb_guest` cookie (1 year). The token is echoed in responses and
+mirrored to localStorage by the client; `restoreToken` re-establishes a
+cleared cookie. Sign-up later attaches `logto_sub` to the same row
+(attachment, not migration); `merged_into` supports lossless account merges.
+
+**Tables** (`game_users`, `game_events`, `daily_puzzles`, `daily_results`,
+`streaks`, `catalog_skins`/`catalog_meta`) are defined in
+`web/src/lib/games/server/db.ts`. `game_events` is append-only and records
+`question_asked`, `asset_version`, and `trust_tier` on every row per the
+rating-system design.
+
+**Migration path to the Go API:** create the same tables as a Postgres
+migration (types map 1:1; JSON payloads → `jsonb`), port the engine modules
+(`server/{catalog,daily,guests,streaks,splashdle}.ts`) as Go handlers under
+`/api/games/*`, move splash-crop caching to Redis/disk, and turn each server
+function into a fetch wrapper — component code doesn't change. Export the
+SQLite event log (`game_events`) into Postgres verbatim; nothing is lossy.

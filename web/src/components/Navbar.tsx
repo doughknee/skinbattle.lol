@@ -5,6 +5,7 @@ import {
   faUsers,
   faCrown,
   faShirt,
+  faDice,
   faMagnifyingGlass,
 } from '@fortawesome/free-solid-svg-icons'
 import type { IconDefinition } from '@fortawesome/fontawesome-svg-core'
@@ -13,13 +14,13 @@ import QuotaChip from './QuotaChip'
 import { CrownMark, Wordmark } from './Brand'
 import { openCommandPalette } from './CommandPalette'
 
-// Games stays off the nav until there's something behind it; profile lives
-// behind the account button in the right cluster.
+// Profile lives behind the account button in the right cluster.
 const navLinks: { to: string; label: string; icon: IconDefinition }[] = [
   { to: '/', label: 'Home', icon: faHouse },
   { to: '/champions', label: 'Champions', icon: faUsers },
   { to: '/skins', label: 'Skins', icon: faShirt },
   { to: '/awards', label: 'Awards', icon: faCrown },
+  { to: '/games', label: 'Games', icon: faDice },
 ]
 
 export default function NavBar() {
