@@ -78,9 +78,14 @@ function LoadedSplash({
 function SplashViewport({
   state,
   shake,
+  soft,
 }: {
   state: SplashdleState
   shake: boolean
+  // True while showing the image that was already current at page load:
+  // it replaces a skeleton, so it materializes with a plain fade instead
+  // of playing a zoom/reveal entrance on top of the loading state.
+  soft: boolean
 }) {
   const playing = state.status === 'in_progress'
   const [pair, setPair] = useState({
@@ -92,6 +97,11 @@ function SplashViewport({
   if (state.image !== pair.current) {
     setPair({ current: state.image, prev: pair.current })
   }
+  const anim = soft
+    ? 'animate-fade-in'
+    : playing
+      ? 'animate-zoom-step'
+      : 'animate-reveal-splash'
   return (
     <figure
       className={`relative aspect-video w-full overflow-hidden bg-hextech-black/60 outline outline-gold5/60 -outline-offset-2 ${
@@ -109,7 +119,7 @@ function SplashViewport({
       <LoadedSplash
         key={`${state.status}-${state.zoomLevel}`}
         src={pair.current}
-        anim={playing ? 'animate-zoom-step' : 'animate-reveal-splash'}
+        anim={anim}
         alt={
           playing
             ? 'A cropped sliver of a mystery skin splash'
@@ -433,16 +443,22 @@ function GuessBoard({
   guesses,
   pending,
   maxGuesses,
+  animateFrom = 0,
 }: {
   guesses: SplashdleGuess[]
   pending?: GuessOption | null
   maxGuesses: number
+  // Slots below this index were already filled when the page loaded — they
+  // replace a skeleton, so they render settled instead of replaying their
+  // entrance over the loading state.
+  animateFrom?: number
 }) {
   return (
     <ol className="flex flex-col gap-2">
       {Array.from({ length: maxGuesses }, (_, i) => {
         const g = guesses[i]
         const isPending = !g && pending && i === guesses.length
+        const animate = i >= animateFrom
         return (
           <li
             key={i}
@@ -455,11 +471,11 @@ function GuessBoard({
             {g ? (
               <div
                 key={`guess-${g.skinId}`}
-                className="animate-fade-in flex min-w-0 flex-1 items-center gap-3"
+                className={`flex min-w-0 flex-1 items-center gap-3 ${animate ? 'animate-fade-in' : ''}`}
               >
                 <span
                   className={`h-3.5 w-3.5 shrink-0 outline -outline-offset-1 ${guessTone(g)} ${
-                    i === guesses.length - 1 ? 'animate-tile-pop' : ''
+                    animate && i === guesses.length - 1 ? 'animate-tile-pop' : ''
                   }`}
                 />
                 <span className="min-w-0 truncate font-bold text-gold1">
@@ -516,7 +532,15 @@ function nextPuzzleCountdown(): string {
   return `${Math.floor(mins / 60)}h ${mins % 60}m`
 }
 
-function ResultPanel({ state }: { state: SplashdleState }) {
+function ResultPanel({
+  state,
+  animate,
+}: {
+  state: SplashdleState
+  // False when the page loaded already-finished: the panel replaces a
+  // skeleton, so the celebratory cascade only plays for a live win.
+  animate: boolean
+}) {
   const [countdown, setCountdown] = useState(nextPuzzleCountdown)
 
   useEffect(() => {
@@ -538,7 +562,7 @@ function ResultPanel({ state }: { state: SplashdleState }) {
   const answer = state.answer!
 
   return (
-    <div className="stagger flex flex-col gap-5">
+    <div className={`flex flex-col gap-5 ${animate ? 'stagger' : ''}`}>
       <div>
         <p className="mb-1 text-sm font-semibold uppercase tracking-[0.3em] text-gold2">
           {won
@@ -593,12 +617,24 @@ function SplashdlePage() {
   const shakeTimer = useRef<number | undefined>(undefined)
   useEffect(() => () => window.clearTimeout(shakeTimer.current), [])
 
+  // What the board looked like when the page loaded. Content present at
+  // load swaps in from the skeletons without entrance animations — playing
+  // an entrance on top of a skeleton reads as a flash. Only things that
+  // happen after load (new guesses, the live win) animate.
+  const loadedWith = useRef<{ guessCount: number; finished: boolean } | null>(
+    null,
+  )
+
   useEffect(() => {
     let cancelled = false
     fetchSplashdleState({ data: { restoreToken: guestRestoreToken() } })
       .then((s) => {
         if (cancelled) return
         rememberGuestToken(s.guestToken)
+        loadedWith.current ??= {
+          guessCount: s.guesses.length,
+          finished: s.status !== 'in_progress',
+        }
         setState(s)
       })
       .catch((err) => {
@@ -658,6 +694,13 @@ function SplashdlePage() {
 
   const playing = state?.status === 'in_progress'
   const guessedIds = new Set(state?.guesses.map((g) => g.skinId) ?? [])
+  // Still showing exactly what was on the board at page load?
+  const atLoadState =
+    !!state &&
+    !!loadedWith.current &&
+    state.guesses.length === loadedWith.current.guessCount &&
+    !playing === loadedWith.current.finished
+  const animateFrom = loadedWith.current?.guessCount ?? 0
 
   return (
     <div className="container mx-auto max-w-3xl px-6 pt-28 pb-16">
@@ -695,7 +738,7 @@ function SplashdlePage() {
         <div className="flex flex-col gap-6">
           {/* The splash. While playing this is a server-cropped sliver that
               pulls back with every miss; on completion it's the full reveal. */}
-          <SplashViewport state={state} shake={shake} />
+          <SplashViewport state={state} shake={shake} soft={atLoadState} />
 
           {playing ? (
             <>
@@ -726,14 +769,16 @@ function SplashdlePage() {
                 guesses={state.guesses}
                 pending={pending}
                 maxGuesses={state.maxGuesses}
+                animateFrom={animateFrom}
               />
             </>
           ) : (
             <>
-              <ResultPanel state={state} />
+              <ResultPanel state={state} animate={!loadedWith.current?.finished} />
               <GuessBoard
                 guesses={state.guesses}
                 maxGuesses={state.maxGuesses}
+                animateFrom={animateFrom}
               />
             </>
           )}

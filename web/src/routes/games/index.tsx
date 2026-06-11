@@ -172,7 +172,9 @@ function GamesHubPage() {
         ) : !hub ? (
           <div className="skeleton h-40 w-full" />
         ) : (
-          <div className="stagger flex flex-col gap-4">
+          // Plain fade, not stagger: these cards replace a skeleton, and a
+          // staggered entrance on top of a loading state reads as a flash.
+          <div className="animate-fade-in flex flex-col gap-4">
             {hub.games.map((g) => (
               <SplashdleCard key={g.id} game={g} />
             ))}
