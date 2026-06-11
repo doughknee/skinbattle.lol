@@ -1,13 +1,59 @@
 # SkinBattle Games Roadmap
 
-Planning document — no implementation yet. Covers the games roadmap, the rating
-system architecture, and the design principles everything must satisfy.
+Covers the games roadmap, the rating system architecture, and the design
+principles everything must satisfy. Implementation is underway — see
+"Status" below for what's shipped vs. planned.
 
 The retention thesis: voting alone is a "finish once" activity. People come back
 daily for (1) a shared daily challenge with a streak, (2) time-limited events that
 expire, and (3) a persistent identity worth investing in. Games are sequenced by
 **data dependency** — the earliest games need zero community data and exist to
 *generate* it.
+
+## Status (updated 2026-06-11)
+
+**Shipped to production** (PR #10 — the Phase 0 vertical slice + Splashdle):
+
+- ✅ **Daily seed system** — deterministic from UTC date, frozen per-day in
+  `daily_puzzles`, resets midnight UTC.
+- ✅ **Guest sessions** — server-side anonymous users (httpOnly cookie +
+  localStorage backup). Hardened beyond the original scope: **reads never
+  write** — pageviews mint nothing; the user record, result row, and cookie
+  are all created by the first actual play (crawler hygiene). Account merge
+  is schema-ready (`logto_sub`, `merged_into`) but Logto attachment is not
+  yet wired.
+- ✅ **Streak tracking** — per-user per-game, `best_streak` +
+  `freeze_tokens` in the schema; freeze *redemption* deferred. Semantics:
+  consecutive UTC days with a win.
+- ✅ **Raw event storage** — append-only `game_events` with
+  `question_asked`, `asset_version`, and `trust_tier` on every row.
+- ✅ **Shareable results** — emoji-grid share text (spoiler-free). OG
+  share-card images NOT yet built.
+- ✅ **Splashdle** (Phase 1 flagship) — live at `/games/splashdle`.
+  Server-side crops (the answer never reaches the client mid-game), 6
+  guesses across the full ~1,964-skin catalog, champion-match hint (🟨),
+  fixed six-slot board. Data Dragon gotcha: championFull.json lists ~6,800
+  chroma variants as skins with no splash art — filtered at catalog sync.
+- ✅ **Daily Hub** — `/games` today-checklist with slots for upcoming games.
+- ◻ Leaderboards, match/rating storage, feedback surface (rank deltas),
+  patch ingestion pipeline (beyond 12-hourly catalog re-sync), static facts
+  dataset, OG cards/stable URLs — **not started**.
+
+**Architecture note**: game state currently lives in the TanStack Start SSR
+layer (server functions + SQLite at `web/.data/games.db` — persisted via the
+`gamesdata` volume in `docker-compose.coolify.yml`), not the Go API; the
+schema mirrors Postgres for a mechanical port. Rationale + migration path:
+CONTRACT.md "Games framework".
+
+**UX rules locked in from playtesting** (apply to every future game): no
+skeletons — route loaders give an SSR-complete first paint; fixed layout
+heights so nothing reflows mid-play; entrance animations only for things
+that happen after first paint; one-shot animations cleared by timer, not
+animationend; every interaction answers back before the round-trip
+completes (pending states).
+
+**Next session**: Quick Battle + the rating model (live Elo + raw matches +
+periodic Bradley-Terry refit + matchmaker), then the mirror.
 
 ## Landscape & differentiation
 
