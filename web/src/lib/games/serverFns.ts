@@ -10,6 +10,7 @@ import type {
   BattleVoteResult,
   DailyHubState,
   GuessOption,
+  MirrorState,
   QuickBattleState,
   SplashdleState,
 } from './types'
@@ -56,6 +57,15 @@ export const fetchQuickBattle = createServerFn({ method: 'POST' })
   .handler(async ({ data }): Promise<QuickBattleState> => {
     const { quickBattleState } = await import('./server/quickbattle')
     return quickBattleState(data.restoreToken, data.refit)
+  })
+
+// The Mirror is strictly a read surface: viewing it never mints a user and
+// never writes a row.
+export const fetchMirror = createServerFn({ method: 'POST' })
+  .inputValidator((d: GuestInput) => d)
+  .handler(async ({ data }): Promise<MirrorState> => {
+    const { mirrorState } = await import('./server/mirror')
+    return mirrorState(data.restoreToken)
   })
 
 export const submitBattleVote = createServerFn({ method: 'POST' })

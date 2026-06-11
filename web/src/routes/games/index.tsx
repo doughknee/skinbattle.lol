@@ -9,6 +9,7 @@ import {
   faImage,
   faLock,
   faPalette,
+  faRankingStar,
   faShuffle,
 } from '@fortawesome/free-solid-svg-icons'
 import PageHeader from '~/components/PageHeader'
@@ -146,6 +147,41 @@ function QuickBattleCard({
   )
 }
 
+// The Mirror is the read surface over Quick Battle's data: the loop feeds
+// the mirror, the mirror sends you back into the loop.
+function MirrorCard({ mirror }: { mirror: { skinsRated: number } }) {
+  return (
+    <Link
+      to="/games/mirror"
+      className={`${cardShell} group flex flex-col gap-4 transition duration-200 hover:-translate-y-0.5 hover:bg-hextech-black/50 hover:outline-gold2/60`}
+    >
+      <div className="flex items-start justify-between gap-3">
+        <div className="flex items-center gap-4">
+          <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-hextech-black/60 outline outline-gold5/60 -outline-offset-2">
+            <FontAwesomeIcon icon={faRankingStar} className="h-6 text-gold2" />
+          </div>
+          <div>
+            <h3 className="font-serif text-2xl font-bold text-gold1 group-hover:text-gold2 transition duration-150">
+              The Mirror
+            </h3>
+            <p className="text-sm text-grey1">
+              Your taste, reflected: the tier list your battles build, your
+              hottest takes, your wardrobe.
+            </p>
+          </div>
+        </div>
+      </div>
+      <div className="flex flex-wrap items-center gap-3">
+        <span className="bg-hextech-black/40 px-3 py-1 text-sm font-bold text-gold2 outline outline-gold5/60 -outline-offset-1">
+          {mirror.skinsRated > 0
+            ? `${mirror.skinsRated.toLocaleString()} skins rated`
+            : 'See what your picks reveal'}
+        </span>
+      </div>
+    </Link>
+  )
+}
+
 const upcoming: { name: string; blurb: string; icon: IconDefinition }[] = [
   {
     name: 'Price Check',
@@ -209,6 +245,7 @@ function GamesHubPage() {
         </p>
         <div className="stagger flex flex-col gap-4">
           <QuickBattleCard qb={hub.quickBattle} />
+          <MirrorCard mirror={hub.mirror} />
         </div>
       </section>
 

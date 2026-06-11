@@ -406,6 +406,17 @@ export async function dailyHub(
       userBattles: userBattleCounts(db, known?.user.id ?? null).total,
       communityBattles: communityBattleCount(db),
     },
+    mirror: {
+      skinsRated: known
+        ? (
+            db
+              .prepare(
+                'SELECT COUNT(*) AS c FROM user_skin_ratings WHERE user_id = ? AND battles > 0',
+              )
+              .get(known.user.id) as { c: number }
+          ).c
+        : 0,
+    },
     games: [
       {
         id: GAME,

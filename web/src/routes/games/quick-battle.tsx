@@ -5,6 +5,7 @@ import {
   faArrowLeft,
   faArrowTrendUp,
   faFire,
+  faRankingStar,
   faShuffle,
   faUsers,
 } from '@fortawesome/free-solid-svg-icons'
@@ -233,6 +234,16 @@ function SessionHistory({ entries }: { entries: HistoryEntry[] }) {
           </li>
         ))}
       </ol>
+      <p className="mt-3 text-sm text-grey1">
+        Every verdict sharpens{' '}
+        <Link
+          to="/games/mirror"
+          className="font-bold text-gold2 transition duration-150 hover:text-gold1"
+        >
+          your Mirror
+        </Link>{' '}
+        — the tier list your picks are building.
+      </p>
     </section>
   )
 }
@@ -485,6 +496,10 @@ function QuickBattlePage() {
         <Link to="/games" className={btnSecondarySm}>
           <FontAwesomeIcon icon={faArrowLeft} className="h-4" />
           Daily Hub
+        </Link>
+        <Link to="/games/mirror" className={btnSecondarySm}>
+          <FontAwesomeIcon icon={faRankingStar} className="h-4" />
+          Your Mirror
         </Link>
         {stats.tier === 'guest' && (
           <p className="text-sm text-grey1">
