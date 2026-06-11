@@ -13,6 +13,7 @@ import {
 } from '@fortawesome/free-solid-svg-icons'
 import PageHeader from '~/components/PageHeader'
 import ErrorState from '~/components/ErrorState'
+import SkeletonSwap from '~/components/SkeletonSwap'
 import { fetchDailyHub } from '~/lib/games/serverFns'
 import { guestRestoreToken, rememberGuestToken } from '~/lib/games/client'
 import type { DailyHubState, HubGame } from '~/lib/games/types'
@@ -169,16 +170,19 @@ function GamesHubPage() {
 
         {error ? (
           <ErrorState title="Couldn't load today's games" message={error} />
-        ) : !hub ? (
-          <div className="skeleton h-40 w-full" />
         ) : (
-          // Plain fade, not stagger: these cards replace a skeleton, and a
-          // staggered entrance on top of a loading state reads as a flash.
-          <div className="animate-fade-in flex flex-col gap-4">
-            {hub.games.map((g) => (
-              <SplashdleCard key={g.id} game={g} />
-            ))}
-          </div>
+          <SkeletonSwap
+            ready={!!hub}
+            skeleton={<div className="skeleton h-40 w-full" />}
+          >
+            {hub && (
+              <div className="flex flex-col gap-4">
+                {hub.games.map((g) => (
+                  <SplashdleCard key={g.id} game={g} />
+                ))}
+              </div>
+            )}
+          </SkeletonSwap>
         )}
       </section>
 

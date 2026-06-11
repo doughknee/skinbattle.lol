@@ -16,6 +16,7 @@ import {
   faShareNodes,
 } from '@fortawesome/free-solid-svg-icons'
 import ErrorState from '~/components/ErrorState'
+import SkeletonSwap from '~/components/SkeletonSwap'
 import { toast } from '~/components/Toaster'
 import { btnPrimarySm, btnSecondarySm } from '~/lib/ui'
 import {
@@ -53,20 +54,26 @@ function LoadedSplash({
   src,
   anim,
   alt,
+  onLoaded,
 }: {
   src: string
   anim: string
   alt: string
+  onLoaded?: () => void
 }) {
   const [loaded, setLoaded] = useState(false)
+  const mark = () => {
+    setLoaded(true)
+    onLoaded?.()
+  }
   return (
     <img
       src={src}
       alt={alt}
       ref={(el) => {
-        if (el?.complete) setLoaded(true)
+        if (el?.complete) mark()
       }}
-      onLoad={() => setLoaded(true)}
+      onLoad={mark}
       className={`relative h-full w-full object-cover ${loaded ? anim : 'opacity-0'}`}
     />
   )
@@ -79,6 +86,7 @@ function SplashViewport({
   state,
   shake,
   soft,
+  onImageLoaded,
 }: {
   state: SplashdleState
   shake: boolean
@@ -86,6 +94,8 @@ function SplashViewport({
   // it replaces a skeleton, so it materializes with a plain fade instead
   // of playing a zoom/reveal entrance on top of the loading state.
   soft: boolean
+  // Lets the page know the region is visually ready (drives SkeletonSwap).
+  onImageLoaded?: () => void
 }) {
   const playing = state.status === 'in_progress'
   const [pair, setPair] = useState({
@@ -120,6 +130,7 @@ function SplashViewport({
         key={`${state.status}-${state.zoomLevel}`}
         src={pair.current}
         anim={anim}
+        onLoaded={onImageLoaded}
         alt={
           playing
             ? 'A cropped sliver of a mystery skin splash'
@@ -613,6 +624,9 @@ function SplashdlePage() {
   const [error, setError] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
   const [pending, setPending] = useState<GuessOption | null>(null)
+  // Flips when the first crop has decoded — the splash skeleton dissolves
+  // on this, not on data arrival.
+  const [imgReady, setImgReady] = useState(false)
   const [shake, setShake] = useState(false)
   const shakeTimer = useRef<number | undefined>(undefined)
   useEffect(() => () => window.clearTimeout(shakeTimer.current), [])
@@ -721,26 +735,42 @@ function SplashdlePage() {
         </div>
       </header>
 
-      {!state ? (
-        // Mirrors the playing layout (image → input → hint → board) so the
-        // page doesn't reflow when real content arrives.
-        <div className="flex flex-col gap-6">
-          <div className="skeleton aspect-video w-full" />
-          <div className="skeleton h-12 w-full" />
-          <div className="skeleton h-5 w-72 max-w-full" />
-          <div className="flex flex-col gap-2">
-            {Array.from({ length: 6 }, (_, i) => (
-              <div key={i} className="skeleton h-11 w-full" />
-            ))}
-          </div>
-        </div>
-      ) : (
-        <div className="flex flex-col gap-6">
-          {/* The splash. While playing this is a server-cropped sliver that
-              pulls back with every miss; on completion it's the full reveal. */}
-          <SplashViewport state={state} shake={shake} soft={atLoadState} />
+      <div className="flex flex-col gap-6">
+        {/* The splash. While playing this is a server-cropped sliver that
+            pulls back with every miss; on completion it's the full reveal.
+            Its skeleton dissolves only once the first image has DECODED —
+            data arriving isn't visually ready yet. */}
+        <SkeletonSwap
+          ready={!!state && imgReady}
+          skeleton={<div className="skeleton aspect-video w-full" />}
+        >
+          {state && (
+            <SplashViewport
+              state={state}
+              shake={shake}
+              soft={atLoadState}
+              onImageLoaded={() => setImgReady(true)}
+            />
+          )}
+        </SkeletonSwap>
 
-          {playing ? (
+        <SkeletonSwap
+          ready={!!state}
+          skeleton={
+            <div className="flex flex-col gap-6">
+              <div className="skeleton h-12 w-full" />
+              <div className="skeleton h-5 w-72 max-w-full" />
+              <div className="flex flex-col gap-2">
+                {Array.from({ length: 6 }, (_, i) => (
+                  <div key={i} className="skeleton h-11 w-full" />
+                ))}
+              </div>
+            </div>
+          }
+        >
+          {state && (
+            <div className="flex flex-col gap-6">
+              {playing ? (
             <>
               <GuessInput
                 options={options}
@@ -782,8 +812,10 @@ function SplashdlePage() {
               />
             </>
           )}
-        </div>
-      )}
+            </div>
+          )}
+        </SkeletonSwap>
+      </div>
     </div>
   )
 }
