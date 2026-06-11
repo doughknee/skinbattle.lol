@@ -71,19 +71,62 @@ function GuessSlots({ state }: { state: SplashdleState }) {
 
 // ─── autocomplete guess input ───────────────────────────────────────────────
 
-function matchOptions(options: GuessOption[], query: string): GuessOption[] {
-  const q = query.trim().toLowerCase()
-  if (q.length < 2) return []
-  const starts: GuessOption[] = []
-  const contains: GuessOption[] = []
-  for (const o of options) {
-    const name = o.name.toLowerCase()
-    if (name.startsWith(q)) starts.push(o)
-    else if (name.includes(q) || o.championName.toLowerCase().includes(q))
-      contains.push(o)
-    if (starts.length >= 8) break
+// Punctuation/case-insensitive matching: "project yi" must find
+// "PROJECT: Yi", "kaisa" must find Kai'Sa skins, "kda" must find K/DA.
+// Every query token has to prefix-match a word in the skin or champion name.
+const stripAccents = (s: string) =>
+  s
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[̀-ͯ]/g, '')
+
+const norm = (s: string) =>
+  stripAccents(s)
+    .replace(/[^a-z0-9]+/g, ' ')
+    .trim()
+
+// Each whitespace-delimited word is indexed both punctuation-split and
+// punctuation-collapsed, so Kai'Sa answers to "kai sa" AND "kaisa", and
+// K/DA to "k da" AND "kda".
+function wordsOf(s: string): string[] {
+  const out = new Set<string>()
+  for (const raw of stripAccents(s).split(/\s+/)) {
+    const collapsed = raw.replace(/[^a-z0-9]+/g, '')
+    if (collapsed) out.add(collapsed)
+    for (const part of raw.split(/[^a-z0-9]+/)) if (part) out.add(part)
   }
-  return [...starts, ...contains].slice(0, 8)
+  return [...out]
+}
+
+interface SearchableOption {
+  opt: GuessOption
+  nameNorm: string
+  words: string[]
+}
+
+function buildSearchable(options: GuessOption[]): SearchableOption[] {
+  return options.map((opt) => ({
+    opt,
+    nameNorm: norm(opt.name),
+    words: wordsOf(`${opt.name} ${opt.championName}`),
+  }))
+}
+
+function matchOptions(
+  searchable: SearchableOption[],
+  query: string,
+): GuessOption[] {
+  const q = norm(query)
+  if (q.length < 2) return []
+  const tokens = q.split(' ')
+  const starts: GuessOption[] = []
+  const wordMatches: GuessOption[] = []
+  for (const s of searchable) {
+    if (s.nameNorm.startsWith(q)) starts.push(s.opt)
+    else if (tokens.every((t) => s.words.some((w) => w.startsWith(t))))
+      wordMatches.push(s.opt)
+  }
+  return [...starts, ...wordMatches].slice(0, 8)
 }
 
 function GuessInput({
@@ -103,9 +146,10 @@ function GuessInput({
   const [open, setOpen] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
 
+  const searchable = useMemo(() => buildSearchable(options), [options])
   const matches = useMemo(
-    () => (open ? matchOptions(options, query) : []),
-    [options, query, open],
+    () => (open ? matchOptions(searchable, query) : []),
+    [searchable, query, open],
   )
 
   const pick = (o: GuessOption) => {
