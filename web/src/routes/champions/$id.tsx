@@ -7,7 +7,7 @@ import { useAuth } from '~/lib/useAuth'
 import SkinCard from '~/components/SkinCard'
 import Dropdown from '~/components/Dropdown'
 import ErrorState from '~/components/ErrorState'
-import { SkinGridSkeleton } from '~/components/Skeletons'
+import { ChampionDetailSkeleton } from '~/components/Skeletons'
 import { championDisplayName } from '~/lib/skinName'
 import type { Champion } from '~/lib/types'
 
@@ -28,20 +28,7 @@ export const Route = createFileRoute('/champions/$id')({
     ],
   }),
   pendingComponent: () => (
-    <div className="container mx-auto px-6 pt-28">
-      <p className="mb-8 font-serif text-lg italic text-gold2" role="status">
-        One-shotting the ADC...
-      </p>
-      <div className="mb-12 space-y-4">
-        <div className="h-[42vh] w-full animate-pulse bg-grey3/60" />
-        <div className="h-10 w-64 animate-pulse bg-grey3/70" />
-        <div className="h-5 w-96 max-w-full animate-pulse bg-grey3/50" />
-      </div>
-      <SkinGridSkeleton
-        count={6}
-        className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-x-6 gap-y-10"
-      />
-    </div>
+    <ChampionDetailSkeleton quip="One-shotting the ADC..." />
   ),
   errorComponent: ({ error }) => (
     <ErrorState
@@ -144,7 +131,7 @@ function ChampionPage() {
         <div className="absolute inset-0 bg-gradient-to-r from-hextech-black/95 via-hextech-black/60 to-transparent" />
         <div className="absolute inset-0 bg-gradient-to-t from-gradientTop via-transparent to-hextech-black/40" />
 
-        <div className="container mx-auto px-6 relative z-10 flex min-h-[58vh] flex-col justify-end pt-28 pb-12">
+        <div className="animate-fade-up container mx-auto px-6 relative z-10 flex min-h-[58vh] flex-col justify-end pt-28 pb-12">
           <Link
             to="/champions"
             className="mb-6 inline-flex w-fit items-center gap-2 text-sm font-serif font-bold uppercase tracking-widest text-grey1 hover:text-gold1 transition duration-150"
@@ -205,7 +192,7 @@ function ChampionPage() {
             />
           </div>
         </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-x-6 gap-y-10">
+        <div className="stagger grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-x-6 gap-y-10">
           {sortedSkins.map((skin) => (
             <SkinCard
               key={skin.id}

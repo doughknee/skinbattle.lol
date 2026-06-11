@@ -30,7 +30,7 @@ function RankedShowcase({ skins }: { skins: Skin[] }) {
   // grid reads better than a lopsided one.
   if (skins.length < 3) {
     return (
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-5 gap-4">
+      <div className="stagger grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-5 gap-4">
         {skins.map((skin, i) => (
           <SkinCard
             key={skin.id}
@@ -55,7 +55,7 @@ function RankedShowcase({ skins }: { skins: Skin[] }) {
   ]
   return (
     <>
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-3 md:items-end">
+      <div className="stagger grid grid-cols-1 gap-4 md:grid-cols-3 md:items-end">
         {podium.map((skin, i) => (
           <div key={skin.id} className={podiumOrder[i]}>
             <SkinCard
@@ -71,7 +71,7 @@ function RankedShowcase({ skins }: { skins: Skin[] }) {
         ))}
       </div>
       {rest.length > 0 && (
-        <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-5 gap-4">
+        <div className="stagger mt-8 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-5 gap-4">
           {rest.map((skin, i) => (
             <SkinCard
               key={skin.id}
@@ -214,7 +214,7 @@ function AwardsPage() {
             title="Most Divisive Skins"
             blurb="Loved and hated in equal measure. These skins split the community right down the middle."
           />
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-5 gap-4">
+          <div className="stagger grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-5 gap-4">
             {divisive.map((skin) => (
               <SkinCard
                 key={skin.id}

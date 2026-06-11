@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { useHandleSignInCallback } from '@logto/react'
 import { useAuth, sessionExpiredStore } from '~/lib/useAuth'
+import { Spinner } from '~/components/Skeletons'
 import { btnPrimarySm, btnSecondarySm } from '~/lib/ui'
 
 export const Route = createFileRoute('/callback')({
@@ -66,7 +67,8 @@ function CallbackPage() {
   }
 
   return (
-    <div className="fixed inset-0 flex items-center justify-center bg-linear-220 from-gradientTop via-[#0A1428] to-gradientBottom bg-fixed">
+    <div className="fixed inset-0 flex flex-col items-center justify-center gap-6 bg-linear-220 from-gradientTop via-[#0A1428] to-gradientBottom bg-fixed">
+      <Spinner className="h-10 w-10" />
       <p
         className="animate-pulse text-3xl font-serif font-bold text-gold2"
         role="status"

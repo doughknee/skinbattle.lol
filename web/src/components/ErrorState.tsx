@@ -17,7 +17,7 @@ export default function ErrorState({
   back?: { to: string; label: string }
 }) {
   return (
-    <div className="container mx-auto flex flex-col items-center px-6 pt-36 pb-24 text-center">
+    <div className="animate-fade-in container mx-auto flex flex-col items-center px-6 pt-36 pb-24 text-center">
       <div className="mb-5 flex h-16 w-16 items-center justify-center rounded-full bg-hextech-black/60 outline outline-red-400/40 -outline-offset-2">
         <FontAwesomeIcon
           icon={faTriangleExclamation}

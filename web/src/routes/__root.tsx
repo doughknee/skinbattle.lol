@@ -11,6 +11,7 @@ import ClientProviders from '~/components/ClientProviders'
 import NavBar from '~/components/Navbar'
 import NotFound from '~/components/NotFound'
 import CommandPalette from '~/components/CommandPalette'
+import RouteProgress from '~/components/RouteProgress'
 import Toaster from '~/components/Toaster'
 import Lightbox from '~/components/Lightbox'
 import Footer from '~/components/Footer'
@@ -76,6 +77,7 @@ function RootComponent() {
   return (
     <RootDocument config={config}>
       <ClientProviders config={config}>
+        <RouteProgress />
         <NavBar />
         <main className="flex-1">
           <Outlet />

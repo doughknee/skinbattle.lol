@@ -174,8 +174,8 @@ function ChampionsPage() {
         <ul
           className={
             compact
-              ? 'grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5'
-              : 'grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4'
+              ? 'stagger grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5'
+              : 'stagger grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4'
           }
         >
           {visible.map((champion) => (
@@ -203,7 +203,13 @@ function ChampionCard({
   const skinCount = champion.skins.length
 
   return (
-    <li className="group relative overflow-hidden bg-hextech-black/30 outline outline-icon/25 -outline-offset-2 hover:outline-icon transition duration-150">
+    <li className="group relative overflow-hidden bg-hextech-black/30 transition duration-300 hover:shadow-[0_0_28px_-6px_rgba(200,170,110,0.4)]">
+      {/* Border drawn on an overlay so it stays visible over the splash art —
+          the image's hover transform otherwise paints above an inset outline. */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-0 z-10 outline outline-icon/25 -outline-offset-2 transition duration-300 group-hover:outline-gold2"
+      />
       <Link
         to="/champions/$id"
         params={{ id: champion.id.toLowerCase() }}

@@ -159,7 +159,13 @@ export default function SkinCard({
   }
 
   return (
-    <div className="group bg-hextech-black/30 outline outline-icon/25 -outline-offset-2 hover:outline-icon transition duration-150">
+    <div className="group relative bg-hextech-black/30 transition duration-300 hover:shadow-[0_0_28px_-6px_rgba(200,170,110,0.35)]">
+      {/* Border drawn on an overlay so it stays visible over the splash art —
+          the image's hover transform otherwise paints above an inset outline. */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-0 z-10 outline outline-icon/25 -outline-offset-2 transition duration-300 group-hover:outline-icon"
+      />
       <button
         type="button"
         onClick={() =>
