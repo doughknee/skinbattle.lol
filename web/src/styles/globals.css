@@ -129,11 +129,12 @@
 }
 
 /* Each wider crop settles from "too close" to its frame — reads as the
-   camera pulling back. */
+   camera pulling back. The previous crop stays rendered beneath, so the
+   opacity ramp is a crossfade, never a flash to black. */
 @keyframes zoom-step {
   from {
-    transform: scale(1.28);
-    opacity: 0.35;
+    transform: scale(1.18);
+    opacity: 0;
   }
   to {
     transform: scale(1);
@@ -256,6 +257,12 @@
 
 .svg-inline--fa {
   height: 1.5em;
+}
+
+/* Reserve the scrollbar lane so content growing past the fold (guess
+   history, dropdowns) doesn't nudge the whole centered layout sideways. */
+html {
+  scrollbar-gutter: stable;
 }
 
 /* Keyboard focus ring. !important is required because the design system

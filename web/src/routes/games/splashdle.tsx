@@ -44,6 +44,87 @@ export const Route = createFileRoute('/games/splashdle')({
   component: SplashdlePage,
 })
 
+// ─── splash viewport ────────────────────────────────────────────────────────
+
+// An image that stays invisible until it has actually decoded, then plays
+// its entrance. Without the gate, the animation runs against an empty box
+// (worst on the final reveal, which is a network fetch) and reads as flash.
+function LoadedSplash({
+  src,
+  anim,
+  alt,
+}: {
+  src: string
+  anim: string
+  alt: string
+}) {
+  const [loaded, setLoaded] = useState(false)
+  return (
+    <img
+      src={src}
+      alt={alt}
+      ref={(el) => {
+        if (el?.complete) setLoaded(true)
+      }}
+      onLoad={() => setLoaded(true)}
+      className={`relative h-full w-full object-cover ${loaded ? anim : 'opacity-0'}`}
+    />
+  )
+}
+
+// The previous crop stays mounted beneath the incoming one, so each zoom
+// step is a crossfade between crops — never a blink through the dark
+// figure background.
+function SplashViewport({
+  state,
+  shake,
+}: {
+  state: SplashdleState
+  shake: boolean
+}) {
+  const playing = state.status === 'in_progress'
+  const [pair, setPair] = useState({
+    current: state.image,
+    prev: null as string | null,
+  })
+  // Derived-state pattern: track image changes during render so the old
+  // layer is already in place the moment the new one mounts.
+  if (state.image !== pair.current) {
+    setPair({ current: state.image, prev: pair.current })
+  }
+  return (
+    <figure
+      className={`relative aspect-video w-full overflow-hidden bg-hextech-black/60 outline outline-gold5/60 -outline-offset-2 ${
+        shake ? 'animate-shake' : ''
+      }`}
+    >
+      {pair.prev && (
+        <img
+          src={pair.prev}
+          alt=""
+          aria-hidden
+          className="absolute inset-0 h-full w-full object-cover"
+        />
+      )}
+      <LoadedSplash
+        key={`${state.status}-${state.zoomLevel}`}
+        src={pair.current}
+        anim={playing ? 'animate-zoom-step' : 'animate-reveal-splash'}
+        alt={
+          playing
+            ? 'A cropped sliver of a mystery skin splash'
+            : `${state.answer?.name} splash art`
+        }
+      />
+      {playing && (
+        <figcaption className="absolute bottom-0 right-0 bg-hextech-black/70 px-3 py-1 text-xs font-bold uppercase tracking-widest text-gold2">
+          Zoom {state.zoomLevel + 1}/{state.totalLevels}
+        </figcaption>
+      )}
+    </figure>
+  )
+}
+
 // ─── guess squares ──────────────────────────────────────────────────────────
 
 function guessTone(g: SplashdleGuess): string {
@@ -366,16 +447,18 @@ function GuessHistory({
         </li>
       )}
       {[...guesses].reverse().map((g, i) => (
+        // The row itself never animates: the pending row already provided
+        // the entrance, so the confirmed result "solidifies" in place —
+        // only its verdict square pops. Re-animating the whole row was a
+        // double-entrance flash.
         <li
           key={g.skinId}
-          // Only the newest row animates in; older rows would re-trigger on
-          // every state change otherwise.
-          className={`flex items-center gap-3 bg-hextech-black/30 px-4 py-2.5 outline outline-icon/20 -outline-offset-1 ${
-            i === 0 && !pending ? 'animate-pop' : ''
-          }`}
+          className="flex items-center gap-3 bg-hextech-black/30 px-4 py-2.5 outline outline-icon/20 -outline-offset-1"
         >
           <span
-            className={`h-3.5 w-3.5 shrink-0 outline -outline-offset-1 ${guessTone(g)}`}
+            className={`h-3.5 w-3.5 shrink-0 outline -outline-offset-1 ${guessTone(g)} ${
+              i === 0 ? 'animate-tile-pop' : ''
+            }`}
           />
           <span className="min-w-0 truncate font-bold text-gold1">
             {g.name}
@@ -571,37 +654,19 @@ function SplashdlePage() {
       </header>
 
       {!state ? (
-        <div className="flex flex-col gap-4">
+        // Mirrors the playing layout (image → slots → input → hint) so the
+        // page doesn't reflow when real content arrives.
+        <div className="flex flex-col gap-6">
           <div className="skeleton aspect-video w-full" />
+          <div className="skeleton h-4 w-44" />
           <div className="skeleton h-12 w-full" />
+          <div className="skeleton h-5 w-72 max-w-full" />
         </div>
       ) : (
         <div className="flex flex-col gap-6">
           {/* The splash. While playing this is a server-cropped sliver that
               pulls back with every miss; on completion it's the full reveal. */}
-          <figure
-            className={`relative aspect-video w-full overflow-hidden bg-hextech-black/60 outline outline-gold5/60 -outline-offset-2 ${
-              shake ? 'animate-shake' : ''
-            }`}
-          >
-            <img
-              key={`${state.status}-${state.zoomLevel}`}
-              src={state.image}
-              alt={
-                playing
-                  ? 'A cropped sliver of a mystery skin splash'
-                  : `${state.answer?.name} splash art`
-              }
-              className={`h-full w-full object-cover ${
-                playing ? 'animate-zoom-step' : 'animate-reveal-splash'
-              }`}
-            />
-            {playing && (
-              <figcaption className="absolute bottom-0 right-0 bg-hextech-black/70 px-3 py-1 text-xs font-bold uppercase tracking-widest text-gold2">
-                Zoom {state.zoomLevel + 1}/{state.totalLevels}
-              </figcaption>
-            )}
-          </figure>
+          <SplashViewport state={state} shake={shake} />
 
           {playing ? (
             <>
@@ -621,7 +686,8 @@ function SplashdlePage() {
                 guessed={guessedIds}
                 onSubmit={guess}
               />
-              <GuessHistory guesses={state.guesses} pending={pending} />
+              {/* Static copy sits above the history so the list grows at
+                  the bottom of the page instead of shoving it down. */}
               <p className="text-sm text-grey1">
                 <FontAwesomeIcon
                   icon={faCheck}
@@ -630,6 +696,7 @@ function SplashdlePage() {
                 Wrong guesses zoom the splash out. A gold square means you
                 named the right champion's wrong skin.
               </p>
+              <GuessHistory guesses={state.guesses} pending={pending} />
             </>
           ) : (
             <>
