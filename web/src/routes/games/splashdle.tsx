@@ -423,58 +423,83 @@ function GuessInput({
   )
 }
 
-// ─── past guesses ───────────────────────────────────────────────────────────
+// ─── guess board ────────────────────────────────────────────────────────────
 
-function GuessHistory({
+// All six slots are always rendered (Wordle-style), chronological top-down.
+// Fixed board = fixed page height: the footer never moves during a game.
+// Each slot's CONTENT is keyed, so empty → pending → verdict transitions
+// animate while the rows themselves stay perfectly still.
+function GuessBoard({
   guesses,
   pending,
+  maxGuesses,
 }: {
   guesses: SplashdleGuess[]
   pending?: GuessOption | null
+  maxGuesses: number
 }) {
-  if (guesses.length === 0 && !pending) return null
   return (
-    <ul className="flex flex-col gap-2">
-      {pending && (
-        <li className="animate-pop flex items-center gap-3 bg-hextech-black/30 px-4 py-2.5 outline outline-icon/20 -outline-offset-1">
-          <span className="skeleton h-3.5 w-3.5 shrink-0" />
-          <span className="min-w-0 truncate font-bold text-grey1">
-            {pending.name}
-          </span>
-          <span className="ml-auto shrink-0 text-sm text-grey1">
-            {pending.championName}
-          </span>
-        </li>
-      )}
-      {[...guesses].reverse().map((g, i) => (
-        // The row itself never animates: the pending row already provided
-        // the entrance, so the confirmed result "solidifies" in place —
-        // only its verdict square pops. Re-animating the whole row was a
-        // double-entrance flash.
-        <li
-          key={g.skinId}
-          className="flex items-center gap-3 bg-hextech-black/30 px-4 py-2.5 outline outline-icon/20 -outline-offset-1"
-        >
-          <span
-            className={`h-3.5 w-3.5 shrink-0 outline -outline-offset-1 ${guessTone(g)} ${
-              i === 0 ? 'animate-tile-pop' : ''
+    <ol className="flex flex-col gap-2">
+      {Array.from({ length: maxGuesses }, (_, i) => {
+        const g = guesses[i]
+        const isPending = !g && pending && i === guesses.length
+        return (
+          <li
+            key={i}
+            className={`flex h-11 items-center gap-3 px-4 outline -outline-offset-1 transition-colors duration-300 ${
+              g || isPending
+                ? 'bg-hextech-black/30 outline-icon/20'
+                : 'bg-hextech-black/20 outline-icon/10'
             }`}
-          />
-          <span className="min-w-0 truncate font-bold text-gold1">
-            {g.name}
-          </span>
-          <span className="ml-auto shrink-0 text-sm text-grey1">
-            {g.championMatch ? (
-              <span className="font-bold text-gold2">
-                Right champion, wrong skin
-              </span>
+          >
+            {g ? (
+              <div
+                key={`guess-${g.skinId}`}
+                className="animate-fade-in flex min-w-0 flex-1 items-center gap-3"
+              >
+                <span
+                  className={`h-3.5 w-3.5 shrink-0 outline -outline-offset-1 ${guessTone(g)} ${
+                    i === guesses.length - 1 ? 'animate-tile-pop' : ''
+                  }`}
+                />
+                <span className="min-w-0 truncate font-bold text-gold1">
+                  {g.name}
+                </span>
+                <span className="ml-auto shrink-0 text-sm text-grey1">
+                  {g.championMatch ? (
+                    <span className="font-bold text-gold2">
+                      Right champion, wrong skin
+                    </span>
+                  ) : (
+                    g.championName
+                  )}
+                </span>
+              </div>
+            ) : isPending ? (
+              <div
+                key="pending"
+                className="animate-fade-in flex min-w-0 flex-1 items-center gap-3"
+              >
+                <span className="skeleton h-3.5 w-3.5 shrink-0" />
+                <span className="min-w-0 truncate font-bold text-grey1">
+                  {pending.name}
+                </span>
+                <span className="ml-auto shrink-0 text-sm text-grey1">
+                  {pending.championName}
+                </span>
+              </div>
             ) : (
-              g.championName
+              <>
+                <span className="h-3.5 w-3.5 shrink-0 bg-hextech-black/40 outline outline-icon/20 -outline-offset-1" />
+                <span className="text-sm font-bold text-grey1/40">
+                  Guess {i + 1}
+                </span>
+              </>
             )}
-          </span>
-        </li>
-      ))}
-    </ul>
+          </li>
+        )
+      })}
+    </ol>
   )
 }
 
@@ -654,13 +679,17 @@ function SplashdlePage() {
       </header>
 
       {!state ? (
-        // Mirrors the playing layout (image → slots → input → hint) so the
+        // Mirrors the playing layout (image → input → hint → board) so the
         // page doesn't reflow when real content arrives.
         <div className="flex flex-col gap-6">
           <div className="skeleton aspect-video w-full" />
-          <div className="skeleton h-4 w-44" />
           <div className="skeleton h-12 w-full" />
           <div className="skeleton h-5 w-72 max-w-full" />
+          <div className="flex flex-col gap-2">
+            {Array.from({ length: 6 }, (_, i) => (
+              <div key={i} className="skeleton h-11 w-full" />
+            ))}
+          </div>
         </div>
       ) : (
         <div className="flex flex-col gap-6">
@@ -670,15 +699,6 @@ function SplashdlePage() {
 
           {playing ? (
             <>
-              <div className="flex flex-wrap items-center justify-between gap-3">
-                <GuessSlots state={state} />
-                {state.streak.current > 0 && (
-                  <span className="flex items-center gap-1.5 text-sm font-bold text-gold2">
-                    <FontAwesomeIcon icon={faFire} className="h-3.5" />
-                    {state.streak.current}-day streak on the line
-                  </span>
-                )}
-              </div>
               <GuessInput
                 options={options}
                 disabled={submitting || options.length === 0}
@@ -686,22 +706,35 @@ function SplashdlePage() {
                 guessed={guessedIds}
                 onSubmit={guess}
               />
-              {/* Static copy sits above the history so the list grows at
-                  the bottom of the page instead of shoving it down. */}
-              <p className="text-sm text-grey1">
-                <FontAwesomeIcon
-                  icon={faCheck}
-                  className="mr-1.5 h-3 text-gold2"
-                />
-                Wrong guesses zoom the splash out. A gold square means you
-                named the right champion's wrong skin.
+              <p className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-grey1">
+                <span>
+                  <FontAwesomeIcon
+                    icon={faCheck}
+                    className="mr-1.5 h-3 text-gold2"
+                  />
+                  Wrong guesses zoom the splash out. A gold square means you
+                  named the right champion's wrong skin.
+                </span>
+                {state.streak.current > 0 && (
+                  <span className="flex items-center gap-1.5 font-bold text-gold2">
+                    <FontAwesomeIcon icon={faFire} className="h-3.5" />
+                    {state.streak.current}-day streak on the line
+                  </span>
+                )}
               </p>
-              <GuessHistory guesses={state.guesses} pending={pending} />
+              <GuessBoard
+                guesses={state.guesses}
+                pending={pending}
+                maxGuesses={state.maxGuesses}
+              />
             </>
           ) : (
             <>
               <ResultPanel state={state} />
-              <GuessHistory guesses={state.guesses} />
+              <GuessBoard
+                guesses={state.guesses}
+                maxGuesses={state.maxGuesses}
+              />
             </>
           )}
         </div>
