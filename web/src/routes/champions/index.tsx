@@ -112,7 +112,8 @@ function ChampionsPage() {
 
       {/* Toolbar: search / sort / density */}
       <div className="mb-8 flex flex-wrap items-center gap-3">
-        <div className="relative min-w-56 flex-1 sm:max-w-xs">
+        {/* Full row on phones so the field never wraps mid-toolbar */}
+        <div className="relative w-full sm:w-auto sm:min-w-56 sm:max-w-xs sm:flex-1">
           <FontAwesomeIcon
             icon={faMagnifyingGlass}
             className="pointer-events-none absolute left-3 top-1/2 h-3.5 -translate-y-1/2 text-gold2"
@@ -174,7 +175,7 @@ function ChampionsPage() {
           className={
             compact
               ? 'grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5'
-              : 'grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3'
+              : 'grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4'
           }
         >
           {visible.map((champion) => (

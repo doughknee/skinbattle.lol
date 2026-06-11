@@ -1,15 +1,15 @@
-import { createFileRoute } from '@tanstack/react-router'
-import { useEffect, useRef, useState } from 'react'
-import { faStar, faBan, faShirt } from '@fortawesome/free-solid-svg-icons'
+import { createFileRoute, Link } from '@tanstack/react-router'
+import { useEffect, useState } from 'react'
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { faStar, faBan, faArrowRight } from '@fortawesome/free-solid-svg-icons'
 import SkinCard from '~/components/SkinCard'
-import Dropdown from '~/components/Dropdown'
 import EmptyState from '~/components/EmptyState'
 import ErrorState from '~/components/ErrorState'
 import PageHeader from '~/components/PageHeader'
 import { RouteSkeleton } from '~/components/Skeletons'
 import { api } from '~/lib/api'
 import { useAuth } from '~/lib/useAuth'
-import { btnChip } from '~/lib/ui'
+import { btnSecondarySm } from '~/lib/ui'
 import type { AwardsResponse, Skin } from '~/lib/types'
 
 // Shared section heading treatment, matched across awards/votes/champion pages.
@@ -30,7 +30,7 @@ function RankedShowcase({ skins }: { skins: Skin[] }) {
   // grid reads better than a lopsided one.
   if (skins.length < 3) {
     return (
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-5 gap-4">
         {skins.map((skin, i) => (
           <SkinCard
             key={skin.id}
@@ -71,7 +71,7 @@ function RankedShowcase({ skins }: { skins: Skin[] }) {
         ))}
       </div>
       {rest.length > 0 && (
-        <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+        <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-5 gap-4">
           {rest.map((skin, i) => (
             <SkinCard
               key={skin.id}
@@ -89,15 +89,6 @@ function RankedShowcase({ skins }: { skins: Skin[] }) {
     </>
   )
 }
-
-const sortOptions = [
-  { value: 'total_votes_desc', label: 'Most Votes' },
-  { value: 'total_votes_asc', label: 'Least Votes' },
-  { value: 'total_stars_desc', label: 'Most Stars' },
-  { value: 'total_stars_asc', label: 'Least Stars' },
-  { value: 'total_x_desc', label: 'Most X' },
-  { value: 'total_x_asc', label: 'Least X' },
-]
 
 export const Route = createFileRoute('/awards')({
   loader: async () => {
@@ -119,20 +110,15 @@ function AwardsPage() {
   const { isAuthenticated, getApiToken } = useAuth()
 
   const [awards, setAwards] = useState<AwardsResponse>(baseAwards)
-  const [sortBy, setSortBy] = useState('total_votes_desc')
-  const [currentPage, setCurrentPage] = useState(1)
-  const itemsPerPage = 24
-  const allSkinsRef = useRef<HTMLElement>(null)
 
   // Hide skins that haven't actually received any stars/bans yet — ranking
   // a wall of zeroes reads as broken on a cold start.
   const topStarred = awards.topStarred.filter((s) => (s.total_stars ?? 0) > 0)
   const topXed = awards.topXed.filter((s) => (s.total_x ?? 0) > 0)
-  const { allSkins } = awards
 
   // Most divisive: skins that collect BOTH stars and bans, ranked by how
   // evenly split the love/hate is, then by total heat.
-  const divisive = [...allSkins]
+  const divisive = [...awards.allSkins]
     .filter((s) => (s.total_stars || 0) > 0 && (s.total_x || 0) > 0)
     .sort(
       (a, b) =>
@@ -166,50 +152,6 @@ function AwardsPage() {
       cancelled = true
     }
   }, [isAuthenticated, getApiToken, baseAwards])
-
-  useEffect(() => {
-    setCurrentPage(1)
-  }, [sortBy])
-
-  // Paging happens from buttons at the bottom of a long grid — bring the
-  // start of the section back into view so the new page is actually visible.
-  const goToPage = (page: number) => {
-    setCurrentPage(page)
-    allSkinsRef.current?.scrollIntoView({ behavior: 'smooth' })
-  }
-
-  function getSortedSkins() {
-    const sorted = [...allSkins]
-    switch (sortBy) {
-      case 'total_votes_desc':
-        sorted.sort((a, b) => (b.total_votes || 0) - (a.total_votes || 0))
-        break
-      case 'total_votes_asc':
-        sorted.sort((a, b) => (a.total_votes || 0) - (b.total_votes || 0))
-        break
-      case 'total_stars_desc':
-        sorted.sort((a, b) => (b.total_stars || 0) - (a.total_stars || 0))
-        break
-      case 'total_stars_asc':
-        sorted.sort((a, b) => (a.total_stars || 0) - (b.total_stars || 0))
-        break
-      case 'total_x_desc':
-        sorted.sort((a, b) => (b.total_x || 0) - (a.total_x || 0))
-        break
-      case 'total_x_asc':
-        sorted.sort((a, b) => (a.total_x || 0) - (b.total_x || 0))
-        break
-      default:
-        break
-    }
-    return sorted
-  }
-
-  const sortedSkins = getSortedSkins()
-  const totalPages = Math.ceil(sortedSkins.length / itemsPerPage)
-  const indexOfLastSkin = currentPage * itemsPerPage
-  const indexOfFirstSkin = indexOfLastSkin - itemsPerPage
-  const currentSkins = sortedSkins.slice(indexOfFirstSkin, indexOfLastSkin)
 
   return (
     <div className="container mx-auto px-6 pt-28 pb-12">
@@ -272,7 +214,7 @@ function AwardsPage() {
             title="Most Divisive Skins"
             blurb="Loved and hated in equal measure. These skins split the community right down the middle."
           />
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-5 gap-4">
             {divisive.map((skin) => (
               <SkinCard
                 key={skin.id}
@@ -288,71 +230,22 @@ function AwardsPage() {
         </section>
       )}
 
-      {/* All Skins Section */}
-      <section ref={allSkinsRef} className="scroll-mt-28">
-        <div className="mb-10 flex flex-wrap items-end justify-between gap-4">
-          <div>
-            <h2 className="font-serif text-3xl md:text-4xl font-bold text-gold2 mb-3">
-              All Skins
-            </h2>
-            <p className="text-lg text-grey1">Browse the full collection.</p>
-          </div>
-          <div className="w-44">
-            <Dropdown
-              options={sortOptions}
-              onSelect={(value) => setSortBy(value)}
-              label={
-                sortOptions.find((option) => option.value === sortBy)?.label ||
-                'Sort By'
-              }
-              selectedValue={sortBy}
-            />
-          </div>
-        </div>
-
-        {sortedSkins.length === 0 ? (
-          <EmptyState
-            icon={faShirt}
-            title="No skins found"
-            message="The collection hasn't loaded yet — check back in a moment."
-            compact
+      {/* Hand off browsing to the dedicated skins page */}
+      <section className="border-t border-icon/20 pt-12 text-center">
+        <h2 className="font-serif text-2xl md:text-3xl font-bold text-gold2 mb-3">
+          Looking for the rest?
+        </h2>
+        <p className="mx-auto mb-8 max-w-xl text-lg text-grey1">
+          The awards only crown the extremes. Browse, search, and sort the full
+          collection on the skins page.
+        </p>
+        <Link to="/skins" className={`group ${btnSecondarySm}`}>
+          Browse all skins
+          <FontAwesomeIcon
+            icon={faArrowRight}
+            className="h-4 transition-transform duration-150 group-hover:translate-x-1"
           />
-        ) : (
-          <>
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-              {currentSkins.map((skin) => (
-                <SkinCard
-                  key={skin.id}
-                  skin={skin}
-                  championId={skin.champion_id}
-                  initialVote={skin.user_vote ?? 0}
-                  initialStar={skin.user_star ?? false}
-                  initialX={skin.user_x ?? false}
-                  showChampion
-                />
-              ))}
-            </div>
-            <div className="mt-10 flex items-center justify-center gap-4">
-              <button
-                onClick={() => goToPage(Math.max(currentPage - 1, 1))}
-                disabled={currentPage === 1}
-                className={btnChip}
-              >
-                Previous
-              </button>
-              <span className="text-sm text-grey1 tabular-nums">
-                Page {currentPage} of {Math.max(totalPages, 1)}
-              </span>
-              <button
-                onClick={() => goToPage(Math.min(currentPage + 1, totalPages))}
-                disabled={currentPage === totalPages}
-                className={btnChip}
-              >
-                Next
-              </button>
-            </div>
-          </>
-        )}
+        </Link>
       </section>
     </div>
   )

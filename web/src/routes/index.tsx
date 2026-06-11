@@ -12,6 +12,7 @@ import {
 } from '@fortawesome/free-solid-svg-icons'
 import type { IconDefinition } from '@fortawesome/fontawesome-svg-core'
 import SkinCard from '~/components/SkinCard'
+import EmptyState from '~/components/EmptyState'
 import { api } from '~/lib/api'
 import { btnPrimary, btnSecondary } from '~/lib/ui'
 import type { Skin } from '~/lib/types'
@@ -166,25 +167,33 @@ function HomePage() {
       </section>
 
       {/* ── Most loved right now (live) ──────────────────────── */}
-      {trending.length > 0 && (
-        <section className="container mx-auto px-6 py-12">
-          <div className="flex items-end justify-between gap-4 mb-10">
-            <div>
-              <h2 className="font-serif text-3xl md:text-4xl font-bold text-gold2">
-                Most Loved Right Now
-              </h2>
-              <p className="mt-2 text-lg text-grey1">
-                The skins the community is starring the most.
-              </p>
-            </div>
-            <Link
-              to="/awards"
-              className="hidden sm:inline-flex items-center gap-2 font-serif font-bold text-grey1 hover:text-gold1 transition duration-150 whitespace-nowrap"
-            >
-              View all awards
-              <FontAwesomeIcon icon={faArrowRight} className="h-4" />
-            </Link>
+      <section className="container mx-auto px-6 py-12">
+        <div className="flex items-end justify-between gap-4 mb-10">
+          <div>
+            <h2 className="font-serif text-3xl md:text-4xl font-bold text-gold2">
+              Most Loved Right Now
+            </h2>
+            <p className="mt-2 text-lg text-grey1">
+              The skins the community is starring the most.
+            </p>
           </div>
+          <Link
+            to="/awards"
+            className="hidden sm:inline-flex items-center gap-2 font-serif font-bold text-grey1 hover:text-gold1 transition duration-150 whitespace-nowrap"
+          >
+            View all awards
+            <FontAwesomeIcon icon={faArrowRight} className="h-4" />
+          </Link>
+        </div>
+        {trending.length === 0 ? (
+          <EmptyState
+            icon={faStar}
+            title="No stars awarded yet"
+            message="The throne is empty — be the first to crown a favorite. Every player gets 3 stars to spend."
+            cta={{ to: '/champions', label: 'Start Voting' }}
+            compact
+          />
+        ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {trending.map((skin: Skin) => (
               <SkinCard
@@ -198,8 +207,8 @@ function HomePage() {
               />
             ))}
           </div>
-        </section>
-      )}
+        )}
+      </section>
 
       {/* ── What's coming next ───────────────────────────────── */}
       <section className="container mx-auto px-6 py-24">

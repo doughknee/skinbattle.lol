@@ -4,8 +4,7 @@ import {
   faHouse,
   faUsers,
   faCrown,
-  faDice,
-  faCheckToSlot,
+  faShirt,
   faMagnifyingGlass,
 } from '@fortawesome/free-solid-svg-icons'
 import type { IconDefinition } from '@fortawesome/fontawesome-svg-core'
@@ -14,12 +13,13 @@ import QuotaChip from './QuotaChip'
 import { CrownMark, Wordmark } from './Brand'
 import { openCommandPalette } from './CommandPalette'
 
+// Games stays off the nav until there's something behind it; profile lives
+// behind the account button in the right cluster.
 const navLinks: { to: string; label: string; icon: IconDefinition }[] = [
   { to: '/', label: 'Home', icon: faHouse },
   { to: '/champions', label: 'Champions', icon: faUsers },
-  { to: '/user/votes', label: 'My Votes', icon: faCheckToSlot },
+  { to: '/skins', label: 'Skins', icon: faShirt },
   { to: '/awards', label: 'Awards', icon: faCrown },
-  { to: '/games', label: 'Games', icon: faDice },
 ]
 
 export default function NavBar() {
@@ -63,7 +63,7 @@ export default function NavBar() {
                   className={`h-5 ${active ? 'text-gold1' : 'text-icon'}`}
                 />
                 <span
-                  className={`hidden font-serif text-sm font-bold lg:inline ${
+                  className={`hidden font-serif text-sm font-bold md:inline ${
                     active ? 'text-gold1' : 'text-grey1'
                   }`}
                 >
@@ -84,8 +84,8 @@ export default function NavBar() {
             className="flex h-10 cursor-pointer items-center gap-2 bg-hextech-black/40 px-3 text-sm font-bold text-grey1 outline outline-icon/30 -outline-offset-1 hover:text-gold1 hover:outline-icon transition duration-150"
           >
             <FontAwesomeIcon icon={faMagnifyingGlass} className="h-4 text-gold2" />
-            <span className="hidden md:inline">Search</span>
-            <kbd className="hidden px-1.5 py-0.5 text-[10px] text-grey1 outline outline-icon/30 md:inline">
+            <span className="hidden lg:inline">Search</span>
+            <kbd className="hidden px-1.5 py-0.5 text-[10px] text-grey1 outline outline-icon/30 lg:inline">
               Ctrl K
             </kbd>
           </button>
