@@ -93,6 +93,52 @@ func (c *Client) m2mToken(ctx context.Context) (string, error) {
 	return c.cachedToken, nil
 }
 
+// UserProfile is the subset of a Logto user we mirror locally.
+type UserProfile struct {
+	Username     string `json:"username"`
+	PrimaryEmail string `json:"primaryEmail"`
+	Name         string `json:"name"`
+}
+
+// GetUser fetches the profile of the user identified by logtoUserID (the
+// `sub` claim) via the Logto Management API. Access tokens minted for an API
+// resource carry no email/username claims, so this is the only trustworthy
+// source for them. Returns nil if M2M creds are not configured.
+func (c *Client) GetUser(ctx context.Context, logtoUserID string) (*UserProfile, error) {
+	if !c.Configured() {
+		return nil, nil
+	}
+
+	token, err := c.m2mToken(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("obtain M2M token: %w", err)
+	}
+
+	apiURL := c.endpoint + "/api/users/" + url.PathEscape(logtoUserID)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, apiURL, nil)
+	if err != nil {
+		return nil, fmt.Errorf("build get user request: %w", err)
+	}
+	req.Header.Set("Authorization", "Bearer "+token)
+
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("get user request: %w", err)
+	}
+	defer resp.Body.Close()
+
+	raw, _ := io.ReadAll(resp.Body)
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("get user %s: status %d: %s", logtoUserID, resp.StatusCode, string(raw))
+	}
+
+	var profile UserProfile
+	if err := json.Unmarshal(raw, &profile); err != nil {
+		return nil, fmt.Errorf("parse user response: %w", err)
+	}
+	return &profile, nil
+}
+
 // DeleteUser deletes the user identified by logtoUserID (the `sub` claim)
 // via the Logto Management API. If M2M creds are not configured, it logs
 // and returns nil.

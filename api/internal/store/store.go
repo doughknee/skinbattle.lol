@@ -525,11 +525,14 @@ func (s *Store) UserVotes(ctx context.Context, userID int64) ([]Skin, error) {
 // If a legacy user already exists with the same email, it claims that row by
 // setting its logto_id. Returns the local users.id.
 func (s *Store) UpsertUser(ctx context.Context, sub, email, username string) (int64, error) {
-	// Generate placeholder email/username if not provided by Logto.
-	if email == "" {
+	// Placeholders satisfy NOT NULL on first insert, but must never replace a
+	// real value already stored (e.g. when a Logto profile fetch fails once).
+	hasEmail := email != ""
+	hasUsername := username != ""
+	if !hasEmail {
 		email = sub + "@logto.placeholder"
 	}
-	if username == "" {
+	if !hasUsername {
 		username = sub
 	}
 
@@ -540,10 +543,10 @@ func (s *Store) UpsertUser(ctx context.Context, sub, email, username string) (in
 		VALUES ($1, $2, $3)
 		ON CONFLICT (logto_id) WHERE logto_id IS NOT NULL
 		DO UPDATE SET
-			email    = EXCLUDED.email,
-			username = EXCLUDED.username
+			email    = CASE WHEN $4 THEN EXCLUDED.email    ELSE users.email    END,
+			username = CASE WHEN $5 THEN EXCLUDED.username ELSE users.username END
 		RETURNING id`,
-		sub, email, username,
+		sub, email, username, hasEmail, hasUsername,
 	).Scan(&id)
 	if err == nil {
 		return id, nil
@@ -552,10 +555,12 @@ func (s *Store) UpsertUser(ctx context.Context, sub, email, username string) (in
 	// Second try: a legacy row with this email already exists (no logto_id).
 	// Claim it by setting the logto_id.
 	updateErr := s.pool.QueryRow(ctx, `
-		UPDATE users SET logto_id = $1, username = $2
+		UPDATE users SET
+			logto_id = $1,
+			username = CASE WHEN $4 THEN $2 ELSE users.username END
 		WHERE email = $3 AND logto_id IS NULL
 		RETURNING id`,
-		sub, username, email,
+		sub, username, email, hasUsername,
 	).Scan(&id)
 	if updateErr == nil {
 		return id, nil

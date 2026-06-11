@@ -13,6 +13,7 @@ import { useCallback, useSyncExternalStore } from 'react'
 import { LogtoClientError, LogtoError, useLogto } from '@logto/react'
 import { getLogtoClient } from './logtoClient'
 import { getLogtoResource, redirectUri, postSignOutUri } from './logto'
+import { toast } from '~/components/Toaster'
 import type { ApiError } from './api'
 
 // Flipped when a token refresh fails terminally. isAuthenticated from the
@@ -49,8 +50,7 @@ function isSessionDead(err: unknown): boolean {
 }
 
 export function useAuth() {
-  const { isAuthenticated: sdkAuthenticated, isLoading, signIn, signOut } =
-    useLogto()
+  const { isAuthenticated: sdkAuthenticated, isLoading } = useLogto()
   const expired = useSyncExternalStore(
     sessionExpiredStore.subscribe,
     sessionExpiredStore.get,
@@ -112,15 +112,31 @@ export function useAuth() {
     [getApiToken],
   )
 
+  // login/logout talk to the Logto client directly instead of useLogto()'s
+  // wrapped signIn/signOut: the wrappers flip the SDK-wide isLoading flag
+  // (and signIn never resets it, assuming the page is about to unload), which
+  // blanks every page that gates rendering on isLoading until the redirect
+  // lands — or forever, if it fails. The wrappers also swallow errors; here a
+  // failed redirect keeps the page intact and tells the user.
   const login = useCallback(() => {
     sessionExpiredStore.set(false)
-    signIn(redirectUri())
-  }, [signIn])
+    const client = getLogtoClient()
+    if (!client) return
+    client.signIn(redirectUri()).catch((err) => {
+      console.error('sign-in redirect failed:', err)
+      toast("Couldn't reach the sign-in service. Please try again.", 'error')
+    })
+  }, [])
 
   const logout = useCallback(() => {
     sessionExpiredStore.set(false)
-    signOut(postSignOutUri())
-  }, [signOut])
+    const client = getLogtoClient()
+    if (!client) return
+    client.signOut(postSignOutUri()).catch((err) => {
+      console.error('sign-out redirect failed:', err)
+      toast("Couldn't reach the sign-out service. Please try again.", 'error')
+    })
+  }, [])
 
   return { isAuthenticated, isLoading, getApiToken, withApiToken, login, logout }
 }

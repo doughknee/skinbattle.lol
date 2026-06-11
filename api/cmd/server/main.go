@@ -78,9 +78,33 @@ func run() error {
 		}()
 	}
 
+	// ── Logto Management API client ───────────────────────────────────────────
+	logtoClient := logto.New(cfg.LogtoEndpoint, cfg.LogtoM2MAppID, cfg.LogtoM2MAppSecret)
+	if !logtoClient.Configured() {
+		log.Println("logto: M2M creds not configured; user profiles fall back to placeholder email/username")
+	}
+
 	// ── Auth middleware ───────────────────────────────────────────────────────
 	// Provisioner: JIT-upsert local user on every authenticated request.
+	// Access tokens scoped to an API resource carry only `sub` — email and
+	// username live in the Logto profile, so fetch them via the Management API.
 	provisioner := func(provCtx context.Context, sub, email, username string) (int64, error) {
+		if email == "" || username == "" {
+			profile, err := logtoClient.GetUser(provCtx, sub)
+			if err != nil {
+				log.Printf("logto: fetch profile for %s: %v", sub, err)
+			} else if profile != nil {
+				if email == "" {
+					email = profile.PrimaryEmail
+				}
+				if username == "" {
+					username = profile.Username
+				}
+				if username == "" {
+					username = profile.Name
+				}
+			}
+		}
 		return st.UpsertUser(provCtx, sub, email, username)
 	}
 
@@ -88,9 +112,6 @@ func run() error {
 	if err != nil {
 		return fmt.Errorf("auth middleware: %w", err)
 	}
-
-	// ── Logto Management API client ───────────────────────────────────────────
-	logtoClient := logto.New(cfg.LogtoEndpoint, cfg.LogtoM2MAppID, cfg.LogtoM2MAppSecret)
 
 	// ── HTTP server ───────────────────────────────────────────────────────────
 	router := httpapi.NewRouter(st, cacheClient, logtoClient, authMW, cfg.CORSOrigin)
