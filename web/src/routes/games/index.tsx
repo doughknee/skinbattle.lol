@@ -105,12 +105,48 @@ function SplashdleCard({ game }: { game: HubGame }) {
   )
 }
 
+// Quick Battle is endless rather than daily, so its card shows volume — your
+// battles fought and the community's — instead of a checklist slot.
+function QuickBattleCard({
+  qb,
+}: {
+  qb: { userBattles: number; communityBattles: number }
+}) {
+  return (
+    <Link
+      to="/games/quick-battle"
+      className={`${cardShell} group flex flex-col gap-4 transition duration-200 hover:-translate-y-0.5 hover:bg-hextech-black/50 hover:outline-gold2/60`}
+    >
+      <div className="flex items-start justify-between gap-3">
+        <div className="flex items-center gap-4">
+          <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-hextech-black/60 outline outline-gold5/60 -outline-offset-2">
+            <FontAwesomeIcon icon={faShuffle} className="h-6 text-gold2" />
+          </div>
+          <div>
+            <h3 className="font-serif text-2xl font-bold text-gold1 group-hover:text-gold2 transition duration-150">
+              Quick Battle
+            </h3>
+            <p className="text-sm text-grey1">
+              Two skins. Pick one. The endless swipe that builds the rankings.
+            </p>
+          </div>
+        </div>
+      </div>
+      <div className="flex flex-wrap items-center gap-3">
+        <span className="bg-hextech-black/40 px-3 py-1 text-sm font-bold text-gold2 outline outline-gold5/60 -outline-offset-1">
+          {qb.userBattles > 0
+            ? `${qb.userBattles.toLocaleString()} battles fought`
+            : 'Jump in'}
+        </span>
+        <span className="text-sm text-grey1">
+          {qb.communityBattles.toLocaleString()} community battles
+        </span>
+      </div>
+    </Link>
+  )
+}
+
 const upcoming: { name: string; blurb: string; icon: IconDefinition }[] = [
-  {
-    name: 'Quick Battle',
-    blurb: 'Two skins. Pick one. The endless swipe that builds the rankings.',
-    icon: faShuffle,
-  },
   {
     name: 'Price Check',
     blurb: 'Guess the RP tier. Legacy relics included.',
@@ -161,6 +197,18 @@ function GamesHubPage() {
           {hub.games.map((g) => (
             <SplashdleCard key={g.id} game={g} />
           ))}
+        </div>
+      </section>
+
+      <section className="mt-16 max-w-3xl">
+        <h2 className="mb-2 font-serif text-2xl font-bold text-gold2">
+          Always open
+        </h2>
+        <p className="mb-6 text-grey1">
+          No daily limit — battle as long as the picks feel easy.
+        </p>
+        <div className="stagger flex flex-col gap-4">
+          <QuickBattleCard qb={hub.quickBattle} />
         </div>
       </section>
 

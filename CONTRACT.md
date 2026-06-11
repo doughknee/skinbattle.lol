@@ -56,10 +56,23 @@ call — the slice had to be runnable without Docker/Postgres/Redis — and the
 schema mirrors Postgres conventions so the port is mechanical.
 
 **RPC surface** (server functions, all guest-open — no Logto required):
-- `fetchDailyHub({ restoreToken? })` → today's per-game status + streaks
+- `fetchDailyHub({ restoreToken? })` → today's per-game status + streaks + Quick Battle volume counts
 - `fetchSplashdleState({ restoreToken? })` → puzzle state (server-cropped image as a data URL; the full splash URL is only revealed after completion)
 - `submitSplashdleGuess({ skinId, restoreToken? })` → validated guess, updated state
 - `fetchSplashdleOptions()` → guessable skin catalog for autocomplete
+- `fetchQuickBattle({ restoreToken?, refit? })` → current pair + preloaded next pair + battle stats. Pairs are HMAC-signed stateless tokens (no row written on read); `refit` triggers the manual Bradley-Terry refit (guarded by `GAMES_ADMIN_SECRET` when set; reachable for cron via `GET /games/quick-battle?refit=…` which runs the loader)
+- `submitBattleVote({ pairToken, winnerId, recent?, restoreToken? })` → appends the raw `battle_voted` event, applies the live Elo update (global + personal), burns the pair nonce, enforces rate limits, and returns feedback (delta, rank, agreement %) + the next pair
+
+**Rating model** (`web/src/lib/games/server/ratings.ts`): live Glicko-lite
+per pick (start 1500 ± 350, K 16–64 scaled by uncertainty, floor ± 60, guest
+votes at 0.5 weight) for instant feedback, plus a periodic Bradley-Terry
+MM refit over the full `game_events` history for canonical ratings ("Elo UX,
+BT truth"). The refit weighs by each voter's CURRENT trust tier, so guest →
+member conversion retroactively upgrades their history. Auto-refit runs
+opportunistically after votes (every 500 events, or 6 h + ≥ 50 events).
+Matchmaker mix: 50% informative (close rating, high uncertainty), 25%
+placement (battles < 10), 15% dunk, 10% marquee — unfillable types fall back
+to informative.
 
 **Guest sessions:** first call mints a `game_users` row + 128-bit token in an
 httpOnly `sb_guest` cookie (1 year). The token is echoed in responses and
@@ -68,10 +81,12 @@ cleared cookie. Sign-up later attaches `logto_sub` to the same row
 (attachment, not migration); `merged_into` supports lossless account merges.
 
 **Tables** (`game_users`, `game_events`, `daily_puzzles`, `daily_results`,
-`streaks`, `catalog_skins`/`catalog_meta`) are defined in
+`streaks`, `skin_ratings`, `user_skin_ratings`, `battle_nonces`,
+`catalog_skins`/`catalog_meta`) are defined in
 `web/src/lib/games/server/db.ts`. `game_events` is append-only and records
 `question_asked`, `asset_version`, and `trust_tier` on every row per the
-rating-system design.
+rating-system design; `skin_ratings`/`user_skin_ratings` are derived and can
+always be rebuilt from it by a refit.
 
 **Migration path to the Go API:** create the same tables as a Postgres
 migration (types map 1:1; JSON payloads → `jsonb`), port the engine modules

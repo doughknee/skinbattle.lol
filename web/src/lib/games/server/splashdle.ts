@@ -20,6 +20,7 @@ import { MAX_GUESSES, puzzleNumber, seedFloats, utcToday } from './daily'
 import { allCatalogSkins, ensureCatalog, getCatalogSkin } from './catalog'
 import { ensureUser, peekUser, type GameUser } from './guests'
 import { getStreak, recordCompletion } from './streaks'
+import { communityBattleCount, userBattleCounts } from './quickbattle'
 
 const GAME = 'splashdle'
 // Recorded on every event so themed variants can be added later without
@@ -399,6 +400,10 @@ export async function dailyHub(
   return {
     date,
     guestToken: known?.token ?? '',
+    quickBattle: {
+      userBattles: userBattleCounts(db, known?.user.id ?? null).total,
+      communityBattles: communityBattleCount(db),
+    },
     games: [
       {
         id: GAME,

@@ -35,9 +35,25 @@ expire, and (3) a persistent identity worth investing in. Games are sequenced by
   fixed six-slot board. Data Dragon gotcha: championFull.json lists ~6,800
   chroma variants as skins with no splash art — filtered at catalog sync.
 - ✅ **Daily Hub** — `/games` today-checklist with slots for upcoming games.
-- ◻ Leaderboards, match/rating storage, feedback surface (rank deltas),
-  patch ingestion pipeline (beyond 12-hourly catalog re-sync), static facts
-  dataset, OG cards/stable URLs — **not started**.
+- ✅ **Quick Battle + the rating model** (2026-06-11) — live at
+  `/games/quick-battle`. The endless swipe loop (stacked on mobile, next
+  pair preloaded so picks have zero wait), with the full two-layer rating
+  system: every pick appends a raw `battle_voted` event
+  (`question_asked='which-do-you-like-more'`) AND applies a cheap live
+  Glicko-lite update (start 1500 ± 350, K 16–64 by uncertainty, floor ± 60)
+  to the global `skin_ratings` and the user's `user_skin_ratings` — the
+  mirror's data source. Periodic Bradley-Terry MM refit recomputes canonical
+  ratings from the whole event log (auto after votes + manual
+  `?refit=` trigger), re-weighting by CURRENT trust tier so guest → member
+  conversion upgrades history retroactively. Matchmaker mixes informative /
+  placement / dunk / marquee pairs (principle 6). Every pick answers back
+  with the winner's delta + new rank, or agreement % once a matchup has ≥ 5
+  votes (principle 1). Guest votes at 0.5 weight; 40/min + 500/day guest
+  rate limits (60/min + 1500/day members); pairs are HMAC-signed single-use
+  tokens so only matchmaker-dealt pairs can be voted, once each.
+- ◻ Leaderboards, feedback surface beyond Quick Battle (rank deltas on skin
+  pages), patch ingestion pipeline (beyond 12-hourly catalog re-sync),
+  static facts dataset, OG cards/stable URLs — **not started**.
 
 **Architecture note**: game state currently lives in the TanStack Start SSR
 layer (server functions + SQLite at `web/.data/games.db` — persisted via the
@@ -52,8 +68,9 @@ that happen after first paint; one-shot animations cleared by timer, not
 animationend; every interaction answers back before the round-trip
 completes (pending states).
 
-**Next session**: Quick Battle + the rating model (live Elo + raw matches +
-periodic Bradley-Terry refit + matchmaker), then the mirror.
+**Next session**: the mirror (personal tier list from `user_skin_ratings`,
+contrarian takes, taste profile, wardrobe completion) — it feeds off Quick
+Battle's data, which is now flowing.
 
 ## Landscape & differentiation
 

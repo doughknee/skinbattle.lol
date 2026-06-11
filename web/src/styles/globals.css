@@ -57,6 +57,11 @@
   --animate-zoom-step: zoom-step 0.7s cubic-bezier(0.22, 1, 0.36, 1) both;
   --animate-reveal-splash: reveal-splash 1.1s cubic-bezier(0.22, 1, 0.36, 1)
     both;
+  /* Quick Battle: the next pair stepping into the ring / the feedback line
+     answering the pick. */
+  --animate-battle-in: battle-in 0.35s cubic-bezier(0.22, 1, 0.36, 1) both;
+  --animate-feedback-pop: feedback-pop 0.35s cubic-bezier(0.22, 1, 0.36, 1)
+    both;
 }
 
 /* ── Motion ─────────────────────────────────────────────────── */
@@ -156,6 +161,31 @@
   }
 }
 
+/* The incoming battle pair settles into place — subtle, because it plays on
+   every pick and the loop must never feel like waiting on a transition. */
+@keyframes battle-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.99);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* The feedback line popping in under the new pair. */
+@keyframes feedback-pop {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
 /* Shimmer sweep for skeleton loaders. */
 @keyframes shimmer {
   to {
@@ -247,6 +277,8 @@
   .animate-tile-pop,
   .animate-zoom-step,
   .animate-reveal-splash,
+  .animate-battle-in,
+  .animate-feedback-pop,
   .route-progress-bar {
     animation: none !important;
   }

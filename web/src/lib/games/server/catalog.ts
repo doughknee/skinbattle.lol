@@ -25,14 +25,14 @@ interface DDragonChampion {
   skins: { id: string; num: number; name: string }[]
 }
 
-function getMeta(db: DatabaseSync, k: string): string | null {
+export function getMeta(db: DatabaseSync, k: string): string | null {
   const row = db.prepare('SELECT v FROM catalog_meta WHERE k = ?').get(k) as
     | { v: string }
     | undefined
   return row?.v ?? null
 }
 
-function setMeta(db: DatabaseSync, k: string, v: string): void {
+export function setMeta(db: DatabaseSync, k: string, v: string): void {
   db.prepare(
     'INSERT INTO catalog_meta (k, v) VALUES (?, ?) ON CONFLICT (k) DO UPDATE SET v = excluded.v',
   ).run(k, v)
