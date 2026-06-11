@@ -465,10 +465,10 @@ export async function submitBattleVote(
   // Feedback — principle 1: every pick answers back within the same round
   // trip that fetched the next pair.
   const agreement = pairAgreement(db, pairKey, winnerId)
-  const winnerSkin = skinName(db, winnerId)
   const feedback: BattleFeedback = {
     winnerSkinId: winnerId,
-    winnerName: winnerSkin,
+    winnerName: skinName(db, winnerId),
+    loserName: skinName(db, loserId),
     delta: Math.round(live.winnerDelta),
     rating: Math.round(live.winner.rating),
     uncertainty: Math.round(live.winner.uncertainty),

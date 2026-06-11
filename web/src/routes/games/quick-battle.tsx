@@ -53,30 +53,46 @@ export const Route = createFileRoute('/games/quick-battle')({
   component: QuickBattlePage,
 })
 
+// How long the pick is acknowledged (winner blooms, loser concedes) before
+// the next pair steps in. The vote request fires at pick time, so this beat
+// runs concurrently with the network — it costs nothing.
+const PICK_HOLD_MS = 280
+
 // ─── battle cards ───────────────────────────────────────────────────────────
 
 function BattleCard({
   skin,
   side,
+  verdict,
   onPick,
   onBroken,
   animate,
 }: {
   skin: BattleSkin
   side: 'a' | 'b'
+  // During the acknowledgment beat: how this card fared.
+  verdict: 'winner' | 'loser' | null
   onPick: (skinId: string) => void
   onBroken: (skinId: string) => void
   // False for the pair that's part of the page's first paint — entrance
   // animations are reserved for pairs that arrive after it.
   animate: boolean
 }) {
+  const verdictAnim =
+    verdict === 'winner'
+      ? 'animate-battle-win z-10 outline-gold2'
+      : verdict === 'loser'
+        ? 'animate-battle-lose'
+        : ''
+  const entrance = animate
+    ? side === 'a'
+      ? 'animate-battle-in-a'
+      : 'animate-battle-in-b'
+    : ''
   return (
     <button
       onClick={() => onPick(skin.skinId)}
-      className={`group relative aspect-video w-full cursor-pointer overflow-hidden bg-hextech-black/60 text-left outline outline-icon/20 -outline-offset-2 transition duration-150 hover:outline-gold2 ${
-        animate ? 'animate-battle-in' : ''
-      }`}
-      style={animate && side === 'b' ? { animationDelay: '60ms' } : undefined}
+      className={`group relative aspect-video w-full cursor-pointer overflow-hidden bg-hextech-black/60 text-left outline outline-icon/20 -outline-offset-2 transition duration-150 hover:outline-gold2 ${entrance} ${verdictAnim}`}
     >
       <img
         src={skin.splashUrl}
@@ -110,7 +126,12 @@ function FeedbackBar({ feedback }: { feedback: BattleFeedback | null }) {
           <span className="font-serif font-bold text-gold1">
             {feedback.winnerName}
           </span>
-          <span className="font-bold text-blue2">+{feedback.delta}</span>
+          <span className="animate-delta-pop inline-block font-bold text-blue2">
+            +{feedback.delta}
+          </span>
+          <span className="text-grey1">
+            beat <span className="text-gold1/80">{feedback.loserName}</span>
+          </span>
           <span className="text-gold2">
             <FontAwesomeIcon icon={faArrowTrendUp} className="mr-1 h-3.5" />#
             {feedback.rank}
@@ -128,9 +149,7 @@ function FeedbackBar({ feedback }: { feedback: BattleFeedback | null }) {
             </span>
           ) : (
             <span className="text-grey1">
-              · {feedback.rating} ± {feedback.uncertainty} ·{' '}
-              {feedback.battles}{' '}
-              {feedback.battles === 1 ? 'battle' : 'battles'}
+              · {feedback.rating} ± {feedback.uncertainty}
             </span>
           )}
         </p>
@@ -143,6 +162,56 @@ function FeedbackBar({ feedback }: { feedback: BattleFeedback | null }) {
   )
 }
 
+// ─── session history ────────────────────────────────────────────────────────
+
+interface HistoryEntry {
+  id: number
+  winnerName: string
+  loserName: string
+  delta: number
+  rank: number
+  agreementPct: number | null
+}
+
+const HISTORY_CAP = 8
+
+// The answer to "wait, what did I just vote on?" — this session's verdicts,
+// newest first. Lives below the action buttons so growing it never shifts
+// anything interactive.
+function SessionHistory({ entries }: { entries: HistoryEntry[] }) {
+  if (entries.length === 0) return null
+  return (
+    <section className="mt-12 max-w-2xl">
+      <h2 className="mb-3 font-serif text-lg font-bold text-gold2">
+        Your verdicts this session
+      </h2>
+      <ol className="flex flex-col gap-1.5">
+        {entries.map((e, i) => (
+          <li
+            key={e.id}
+            className={`flex h-10 items-center gap-2 overflow-hidden whitespace-nowrap bg-hextech-black/30 px-3 text-sm outline outline-icon/10 -outline-offset-1 ${
+              i === 0 ? 'animate-fade-in' : ''
+            }`}
+          >
+            <span className="min-w-0 truncate font-bold text-gold1">
+              {e.winnerName}
+            </span>
+            <span className="shrink-0 font-bold text-blue2">+{e.delta}</span>
+            <span className="shrink-0 text-grey1">beat</span>
+            <span className="min-w-0 truncate text-grey1">{e.loserName}</span>
+            <span className="ml-auto shrink-0 text-gold2">#{e.rank}</span>
+            {e.agreementPct !== null && (
+              <span className="shrink-0 text-grey1">
+                · {e.agreementPct}% agree
+              </span>
+            )}
+          </li>
+        ))}
+      </ol>
+    </section>
+  )
+}
+
 // ─── page ───────────────────────────────────────────────────────────────────
 
 interface View {
@@ -151,6 +220,8 @@ interface View {
   feedback: BattleFeedback | null
   stats: BattleStats
 }
+
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms))
 
 function QuickBattlePage() {
   const initial = Route.useLoaderData()
@@ -161,6 +232,9 @@ function QuickBattlePage() {
     stats: initial.stats,
   })
   const [session, setSession] = useState(0)
+  const [history, setHistory] = useState<HistoryEntry[]>([])
+  // Which side is being acknowledged as the pick, during the hold beat.
+  const [pickedSide, setPickedSide] = useState<'a' | 'b' | null>(null)
   const viewRef = useRef(view)
   viewRef.current = view
   const busyRef = useRef(false)
@@ -179,7 +253,8 @@ function QuickBattlePage() {
     if (initial.refit) console.log('rating refit:', initial.refit)
   }, [initial.refit])
 
-  // Recovery path (vote rejected, broken splash): re-deal from the server.
+  // Recovery path (vote rejected, broken splash on screen): re-deal both
+  // pairs from the server.
   const resync = useCallback(async () => {
     try {
       const s = await fetchQuickBattle({
@@ -208,19 +283,28 @@ function QuickBattlePage() {
       ].slice(-16)
       picksMadeRef.current += 1
       setSession((s) => s + 1)
-      // Advance instantly — the vote settles in the background and answers
-      // back into the feedback bar under the pair that's already on screen.
-      setView({ ...v, current: v.next, next: null })
+      setPickedSide(winnerId === voted.a.skinId ? 'a' : 'b')
+
+      // The vote is in flight DURING the acknowledgment beat, so the hold
+      // costs nothing — by the time the next pair steps in, the feedback is
+      // usually already on its way back.
+      const votePromise = submitBattleVote({
+        data: {
+          pairToken: voted.token,
+          winnerId,
+          recent: recentRef.current,
+          restoreToken: guestRestoreToken(),
+        },
+      })
+      votePromise.catch(() => {
+        /* handled after the hold — this just silences the unhandled gap */
+      })
+      await sleep(PICK_HOLD_MS)
+      setPickedSide(null)
+      setView((prev) => (prev.next ? { ...prev, current: prev.next, next: null } : prev))
 
       try {
-        const res = await submitBattleVote({
-          data: {
-            pairToken: voted.token,
-            winnerId,
-            recent: recentRef.current,
-            restoreToken: guestRestoreToken(),
-          },
-        })
+        const res = await votePromise
         rememberGuestToken(res.guestToken)
         setView((prev) => ({
           ...prev,
@@ -228,6 +312,19 @@ function QuickBattlePage() {
           feedback: res.feedback,
           stats: res.stats,
         }))
+        setHistory((h) =>
+          [
+            {
+              id: res.stats.total,
+              winnerName: res.feedback.winnerName,
+              loserName: res.feedback.loserName,
+              delta: res.feedback.delta,
+              rank: res.feedback.rank,
+              agreementPct: res.feedback.agreementPct,
+            },
+            ...h,
+          ].slice(0, HISTORY_CAP),
+        )
       } catch (err) {
         setSession((s) => s - 1)
         toast(
@@ -244,8 +341,8 @@ function QuickBattlePage() {
     [resync],
   )
 
-  // A splash that 404s would leave half the matchup invisible — skip the
-  // pair and remember the broken skin for this session.
+  // A broken splash in the ON-SCREEN pair (CDN hiccup — the catalog sweep
+  // benches known-dead ones): skip the pair and remember the skin.
   const broken = useCallback(
     (skinId: string) => {
       recentRef.current = [...recentRef.current, skinId].slice(-16)
@@ -253,6 +350,21 @@ function QuickBattlePage() {
     },
     [resync],
   )
+
+  // A broken splash in the PRELOADED pair: swap in a replacement quietly,
+  // before the player ever sees it — the on-screen battle is not touched.
+  const brokenNext = useCallback(async (skinId: string) => {
+    recentRef.current = [...recentRef.current, skinId].slice(-16)
+    try {
+      const s = await fetchQuickBattle({
+        data: { restoreToken: guestRestoreToken() },
+      })
+      setView((prev) => (prev.next ? { ...prev, next: s.pair } : prev))
+    } catch {
+      // If the replacement fetch fails, the visible-card fallback will
+      // recover when (if) the pair is actually shown.
+    }
+  }, [])
 
   // Desktop: arrow keys keep the loop on the keyboard.
   useEffect(() => {
@@ -268,7 +380,7 @@ function QuickBattlePage() {
   const { current, feedback, stats } = view
   // The pair on screen at first paint renders settled; every pair after it
   // plays its entrance.
-  const animatePair = picksMadeRef.current > 0
+  const animatePair = picksMadeRef.current > 0 && pickedSide === null
 
   return (
     <div className="container mx-auto max-w-5xl px-6 pt-28 pb-16">
@@ -307,6 +419,7 @@ function QuickBattlePage() {
         <BattleCard
           skin={current.a}
           side="a"
+          verdict={pickedSide ? (pickedSide === 'a' ? 'winner' : 'loser') : null}
           onPick={pick}
           onBroken={broken}
           animate={animatePair}
@@ -314,11 +427,16 @@ function QuickBattlePage() {
         <BattleCard
           skin={current.b}
           side="b"
+          verdict={pickedSide ? (pickedSide === 'b' ? 'winner' : 'loser') : null}
           onPick={pick}
           onBroken={broken}
           animate={animatePair}
         />
-        <span className="pointer-events-none absolute left-1/2 top-1/2 z-10 flex h-12 w-12 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-hextech-black/90 font-serif text-sm font-bold text-gold2 outline outline-gold5 -outline-offset-2">
+        <span
+          className={`pointer-events-none absolute left-1/2 top-1/2 z-10 flex h-12 w-12 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-hextech-black/90 font-serif text-sm font-bold text-gold2 outline outline-gold5 -outline-offset-2 ${
+            animatePair ? 'animate-tile-pop' : ''
+          }`}
+        >
           VS
         </span>
       </div>
@@ -352,12 +470,23 @@ function QuickBattlePage() {
         )}
       </div>
 
+      <SessionHistory entries={history} />
+
       {/* Preload the next pair's splashes while the current one is on screen
-          — by the time it's dealt in, both images are already decoded. */}
+          — by the time it's dealt in, both images are already decoded. A
+          preload that 403s gets its pair replaced before it's ever shown. */}
       {view.next && (
         <div aria-hidden className="hidden">
-          <img src={view.next.a.splashUrl} alt="" />
-          <img src={view.next.b.splashUrl} alt="" />
+          <img
+            src={view.next.a.splashUrl}
+            alt=""
+            onError={() => void brokenNext(view.next!.a.skinId)}
+          />
+          <img
+            src={view.next.b.splashUrl}
+            alt=""
+            onError={() => void brokenNext(view.next!.b.skinId)}
+          />
         </div>
       )}
     </div>

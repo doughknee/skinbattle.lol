@@ -106,6 +106,7 @@ export interface BattleStats {
 export interface BattleFeedback {
   winnerSkinId: string
   winnerName: string
+  loserName: string
   delta: number
   rating: number
   uncertainty: number

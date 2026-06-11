@@ -121,13 +121,18 @@ CREATE TABLE IF NOT EXISTS battle_nonces (
 );
 
 -- Skin catalog cached from Data Dragon (re-synced when the patch changes).
+-- splash_ok: championFull.json lists some chroma variants WITHOUT the
+-- parenthesized suffix the sync filter catches ("Zac Sweet Orange") — their
+-- splash URLs 403. A background sweep after each sync HEAD-checks every
+-- splash and clears the flag; game pools only deal splash_ok skins.
 CREATE TABLE IF NOT EXISTS catalog_skins (
   id            TEXT PRIMARY KEY,       -- ddragon skin id, e.g. '266001'
   champion_id   TEXT NOT NULL,          -- ddragon champion id, e.g. 'Aatrox'
   champion_name TEXT NOT NULL,          -- display name, e.g. 'Miss Fortune'
   num           INTEGER NOT NULL,
   name          TEXT NOT NULL,
-  splash_url    TEXT NOT NULL
+  splash_url    TEXT NOT NULL,
+  splash_ok     INTEGER NOT NULL DEFAULT 1
 );
 CREATE TABLE IF NOT EXISTS catalog_meta (
   k TEXT PRIMARY KEY,
@@ -143,6 +148,15 @@ export function getDb(): DatabaseSync {
   db = new DatabaseSync(join(DATA_DIR, 'games.db'))
   db.exec('PRAGMA journal_mode = WAL')
   db.exec(SCHEMA)
+  // Additive migration for databases created before splash_ok existed
+  // (CREATE TABLE IF NOT EXISTS won't add columns to an existing table).
+  try {
+    db.exec(
+      'ALTER TABLE catalog_skins ADD COLUMN splash_ok INTEGER NOT NULL DEFAULT 1',
+    )
+  } catch {
+    // Column already exists.
+  }
   return db
 }
 

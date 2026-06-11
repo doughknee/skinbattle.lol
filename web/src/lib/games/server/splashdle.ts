@@ -58,7 +58,9 @@ async function getOrCreatePuzzle(
 
   const assetVersion = await ensureCatalog(db)
   const pool = db
-    .prepare('SELECT id FROM catalog_skins ORDER BY champion_id, num')
+    .prepare(
+      'SELECT id FROM catalog_skins WHERE splash_ok = 1 ORDER BY champion_id, num',
+    )
     .all() as unknown as { id: string }[]
   if (pool.length === 0) throw new Error('skin catalog is empty')
 
