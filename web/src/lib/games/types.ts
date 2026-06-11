@@ -72,6 +72,10 @@ export interface DailyHubState {
     userBattles: number
     communityBattles: number
   }
+  // The Mirror's hub card shows how much of a reflection exists yet.
+  mirror: {
+    skinsRated: number
+  }
   guestToken: string
 }
 
@@ -137,4 +141,67 @@ export interface BattleVoteResult {
   nextPair: BattlePair
   stats: BattleStats
   guestToken: string
+}
+
+// ─── The Mirror ─────────────────────────────────────────────────────────────
+
+export type TierName = 'S' | 'A' | 'B' | 'C' | 'D'
+
+export interface MirrorSkin {
+  skinId: string
+  name: string
+  championName: string
+  splashUrl: string
+  rating: number // personal rating, rounded
+  battles: number // this user's battles involving the skin
+}
+
+export interface MirrorTier {
+  tier: TierName
+  skins: MirrorSkin[] // rating desc
+}
+
+// A take only qualifies once both sides have a real sample (the thresholds
+// live in server/mirror.ts) — otherwise "contrarian" is just noise.
+export interface ContrarianTake {
+  skinId: string
+  name: string
+  championName: string
+  splashUrl: string
+  personal: number
+  community: number
+  communityRank: number
+  gap: number // personal − community; positive = you're hotter than the room
+  personalBattles: number
+  communityBattles: number
+}
+
+export interface TasteChampion {
+  championId: string
+  championName: string
+  delta: number // champion's avg personal rating − your overall avg, rounded
+  skinsRated: number
+}
+
+export interface ChampionCompletion {
+  championId: string
+  championName: string
+  rated: number
+  total: number
+}
+
+export interface MirrorState {
+  guestToken: string
+  tier: 'guest' | 'member'
+  totalBattles: number
+  skinsRated: number
+  catalogTotal: number
+  championsTouched: number
+  championsTotal: number
+  tiers: MirrorTier[] // empty until the first battle (the page shows a preview)
+  contrarian: ContrarianTake[] // |gap| desc
+  tasteOver: TasteChampion[]
+  tasteUnder: TasteChampion[]
+  completion: ChampionCompletion[] // champions touched, most-rated first
+  completionMore: number // touched champions beyond the list cap
 }

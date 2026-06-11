@@ -51,6 +51,18 @@ expire, and (3) a persistent identity worth investing in. Games are sequenced by
   votes (principle 1). Guest votes at 0.5 weight; 40/min + 500/day guest
   rate limits (60/min + 1500/day members); pairs are HMAC-signed single-use
   tokens so only matchmaker-dealt pairs can be voted, once each.
+- ✅ **The Mirror** (2026-06-11) — live at `/games/mirror`, the read surface
+  over Quick Battle's data (principle 2). Personal tier list auto-built from
+  battle history (fixed floors on the personal Elo scale: S ≥ 1590,
+  A ≥ 1520, B ≥ 1480, C ≥ 1410, D below — one battle already moves a skin
+  out of B; S/D are earned over ~4-5 consistent results), contrarian takes
+  (≥ 2 personal + ≥ 8 community battles on the same skin, gap ≥ 50, both
+  directions), champion-level taste profile (skin-line profiling needs the
+  Meraki facts dataset — later session), wardrobe completion overall +
+  per-champion (principle 4). Strictly read-only — viewing never mints a
+  user; empty state previews what the mirror becomes with a first-battle
+  CTA; guests with ≥ 20 battles get the passive "keep your tier list"
+  sign-in nudge (principle 9). Hub card + Quick Battle links close the loop.
 - ◻ Leaderboards, feedback surface beyond Quick Battle (rank deltas on skin
   pages), patch ingestion pipeline (beyond 12-hourly catalog re-sync),
   static facts dataset, OG cards/stable URLs — **not started**.
@@ -68,9 +80,9 @@ that happen after first paint; one-shot animations cleared by timer, not
 animationend; every interaction answers back before the round-trip
 completes (pending states).
 
-**Next session**: the mirror (personal tier list from `user_skin_ratings`,
-contrarian takes, taste profile, wardrobe completion) — it feeds off Quick
-Battle's data, which is now flowing.
+**Next session**: OG share cards + stable URLs (Phase 0 infra) — the mirror
+is designed so a share card can be derived from it (`/u/<name>` in the
+stable-URL table); citability needs permanent link targets.
 
 ## Landscape & differentiation
 

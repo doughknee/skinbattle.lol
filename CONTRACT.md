@@ -62,6 +62,7 @@ schema mirrors Postgres conventions so the port is mechanical.
 - `fetchSplashdleOptions()` → guessable skin catalog for autocomplete
 - `fetchQuickBattle({ restoreToken?, refit? })` → current pair + preloaded next pair + battle stats. Pairs are HMAC-signed stateless tokens (no row written on read); `refit` triggers the manual Bradley-Terry refit (guarded by `GAMES_ADMIN_SECRET` when set; reachable for cron via `GET /games/quick-battle?refit=…` which runs the loader)
 - `submitBattleVote({ pairToken, winnerId, recent?, restoreToken? })` → appends the raw `battle_voted` event, applies the live Elo update (global + personal), burns the pair nonce, enforces rate limits, and returns feedback (delta, rank, agreement %) + the next pair
+- `fetchMirror({ restoreToken? })` → the Mirror (`/games/mirror`): personal tier list bucketed from `user_skin_ratings`, contrarian takes (personal vs community rating gaps with minimum battle counts on both sides), champion taste profile, wardrobe completion. Strictly read-only — never mints a user, never writes
 
 **Rating model** (`web/src/lib/games/server/ratings.ts`): live Glicko-lite
 per pick (start 1500 ± 350, K 16–64 scaled by uncertainty, floor ± 60, guest
