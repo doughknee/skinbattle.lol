@@ -18,7 +18,7 @@ import type {
 import { appendEvent, DATA_DIR, getDb } from './db'
 import { MAX_GUESSES, puzzleNumber, seedFloats, utcToday } from './daily'
 import { allCatalogSkins, ensureCatalog, getCatalogSkin } from './catalog'
-import { ensureUser, type GameUser } from './guests'
+import { ensureUser, peekUser, type GameUser } from './guests'
 import { getStreak, recordCompletion } from './streaks'
 
 const GAME = 'splashdle'
@@ -249,7 +249,29 @@ async function assembleState(
 
 // ─── public surface (called from server functions) ──────────────────────────
 
+// Read-only: viewing the puzzle never writes. Anonymous visitors (no
+// cookie, no backup token — including every crawler) get a playable state
+// with an empty guestToken; their user record is minted by their first
+// guess, not their first pageview.
 export async function splashdleState(
+  restoreToken?: string | null,
+): Promise<SplashdleState> {
+  const db = getDb()
+  const date = utcToday()
+  const puzzle = await getOrCreatePuzzle(db, date)
+
+  const known = peekUser(db, restoreToken)
+  const user = known?.user ?? { id: '', trustTier: 'guest' as const }
+  const result = (known && readResult(db, user.id, date)) ?? {
+    status: 'in_progress' as const,
+    guesses: [],
+  }
+
+  return assembleState(db, date, user, known?.token ?? '', puzzle, result)
+}
+
+export async function submitSplashdleGuess(
+  skinId: string,
   restoreToken?: string | null,
 ): Promise<SplashdleState> {
   const db = getDb()
@@ -257,6 +279,8 @@ export async function splashdleState(
   const { user, token } = ensureUser(db, restoreToken)
   const puzzle = await getOrCreatePuzzle(db, date)
 
+  // First guess starts the puzzle: the result row and puzzle_started event
+  // are written here, not on pageview, so only real players leave a trace.
   let result = readResult(db, user.id, date)
   if (!result) {
     db.prepare(
@@ -274,21 +298,7 @@ export async function splashdleState(
     })
     result = { status: 'in_progress', guesses: [] }
   }
-
-  return assembleState(db, date, user, token, puzzle, result)
-}
-
-export async function submitSplashdleGuess(
-  skinId: string,
-  restoreToken?: string | null,
-): Promise<SplashdleState> {
-  const db = getDb()
-  const date = utcToday()
-  const { user, token } = ensureUser(db, restoreToken)
-  const puzzle = await getOrCreatePuzzle(db, date)
-
-  const result = readResult(db, user.id, date)
-  if (!result || result.status !== 'in_progress') {
+  if (result.status !== 'in_progress') {
     throw new Error("Today's Splashdle is already finished — come back tomorrow!")
   }
   if (result.guesses.length >= MAX_GUESSES) {
@@ -382,12 +392,13 @@ export async function dailyHub(
 ): Promise<DailyHubState> {
   const db = getDb()
   const date = utcToday()
-  const { user, token } = ensureUser(db, restoreToken)
-  const result = readResult(db, user.id, date)
+  const known = peekUser(db, restoreToken)
+  const user = known?.user ?? { id: '', trustTier: 'guest' as const }
+  const result = known ? readResult(db, user.id, date) : null
   const streakRow = getStreak(db, user.id, GAME)
   return {
     date,
-    guestToken: token,
+    guestToken: known?.token ?? '',
     games: [
       {
         id: GAME,

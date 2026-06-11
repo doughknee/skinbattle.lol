@@ -17,12 +17,13 @@ export interface GameUser {
   trustTier: 'guest' | 'member'
 }
 
-// Resolve the user for this request, minting a guest if needed. Must be
-// called inside a server-function handler (it reads/writes request cookies).
-export function ensureUser(
+// Resolve an EXISTING user for this request without creating anything.
+// Read paths (page views) use this so crawlers and drive-by visits never
+// write rows — a user is only minted by their first actual play.
+export function peekUser(
   db: DatabaseSync,
   restoreToken?: string | null,
-): { user: GameUser; token: string } {
+): { user: GameUser; token: string } | null {
   const now = new Date().toISOString()
 
   // Cookie first; then the localStorage backup the client passed along.
@@ -44,7 +45,20 @@ export function ensureUser(
       token,
     }
   }
+  return null
+}
 
+// Resolve the user for this request, minting a guest if needed. Write
+// paths (submitting a guess) use this. Must be called inside a
+// server-function handler (it reads/writes request cookies).
+export function ensureUser(
+  db: DatabaseSync,
+  restoreToken?: string | null,
+): { user: GameUser; token: string } {
+  const existing = peekUser(db, restoreToken)
+  if (existing) return existing
+
+  const now = new Date().toISOString()
   const token = randomBytes(16).toString('hex')
   const id = randomUUID()
   db.prepare(
