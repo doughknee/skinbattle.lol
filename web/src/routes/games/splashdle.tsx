@@ -16,7 +16,6 @@ import {
   faShareNodes,
 } from '@fortawesome/free-solid-svg-icons'
 import ErrorState from '~/components/ErrorState'
-import SkeletonSwap from '~/components/SkeletonSwap'
 import { toast } from '~/components/Toaster'
 import { btnPrimarySm, btnSecondarySm } from '~/lib/ui'
 import {
@@ -32,6 +31,11 @@ import type {
 } from '~/lib/games/types'
 
 export const Route = createFileRoute('/games/splashdle')({
+  // Data loads BEFORE the route renders (SSR on first visit, prefetched on
+  // navigation), and the crop ships inside the payload as a data URL — the
+  // page arrives complete in one paint, so there are no loading states.
+  loader: () =>
+    fetchSplashdleState({ data: { restoreToken: guestRestoreToken() } }),
   head: () => ({
     meta: [
       { title: 'Splashdle — Skin Battle' },
@@ -42,6 +46,13 @@ export const Route = createFileRoute('/games/splashdle')({
       },
     ],
   }),
+  errorComponent: ({ error }) => (
+    <ErrorState
+      title="Couldn't load today's Splashdle"
+      message={error.message}
+      back={{ to: '/games', label: 'Back to games' }}
+    />
+  ),
   component: SplashdlePage,
 })
 
@@ -54,26 +65,23 @@ function LoadedSplash({
   src,
   anim,
   alt,
-  onLoaded,
 }: {
   src: string
   anim: string
   alt: string
-  onLoaded?: () => void
 }) {
-  const [loaded, setLoaded] = useState(false)
-  const mark = () => {
-    setLoaded(true)
-    onLoaded?.()
-  }
+  // Data-URL crops are already in memory — render immediately (this also
+  // keeps the server-rendered first paint visible before hydration). Only
+  // network images (the final reveal) wait for decode.
+  const [loaded, setLoaded] = useState(() => src.startsWith('data:'))
   return (
     <img
       src={src}
       alt={alt}
       ref={(el) => {
-        if (el?.complete) mark()
+        if (el?.complete) setLoaded(true)
       }}
-      onLoad={mark}
+      onLoad={() => setLoaded(true)}
       className={`relative h-full w-full object-cover ${loaded ? anim : 'opacity-0'}`}
     />
   )
@@ -86,16 +94,13 @@ function SplashViewport({
   state,
   shake,
   soft,
-  onImageLoaded,
 }: {
   state: SplashdleState
   shake: boolean
   // True while showing the image that was already current at page load:
-  // it replaces a skeleton, so it materializes with a plain fade instead
-  // of playing a zoom/reveal entrance on top of the loading state.
+  // it's part of the page's first paint, so it gets a plain fade instead
+  // of a zoom/reveal entrance.
   soft: boolean
-  // Lets the page know the region is visually ready (drives SkeletonSwap).
-  onImageLoaded?: () => void
 }) {
   const playing = state.status === 'in_progress'
   const [pair, setPair] = useState({
@@ -130,7 +135,6 @@ function SplashViewport({
         key={`${state.status}-${state.zoomLevel}`}
         src={pair.current}
         anim={anim}
-        onLoaded={onImageLoaded}
         alt={
           playing
             ? 'A cropped sliver of a mystery skin splash'
@@ -288,8 +292,11 @@ function GuessInput({
     () => (open ? matchOptions(searchable, query) : []),
     [searchable, query, open],
   )
-  const noMatch =
-    open && !selected && norm(query).length >= 2 && matches.length === 0
+  // The options list loads in the background after first paint; until it
+  // arrives, typing shows a loading row — never a false "no skins match".
+  const listLoading = options.length === 0
+  const typed = open && !selected && norm(query).length >= 2
+  const noMatch = typed && !listLoading && matches.length === 0
 
   // Keep the keyboard flow unbroken: focus on mount and re-focus the moment
   // a submission settles (mouse-only on touch devices — popping the soft
@@ -423,6 +430,11 @@ function GuessInput({
               ↑↓ navigate · Enter select · Enter again to guess
             </li>
           </ul>
+        )}
+        {typed && listLoading && (
+          <div className="animate-pop absolute z-20 mt-1 w-full bg-hextech-black/95 px-4 py-3 text-sm text-grey1 outline outline-icon/30 -outline-offset-1 backdrop-blur-xl">
+            Loading the skin list…
+          </div>
         )}
         {noMatch && (
           <div className="animate-pop absolute z-20 mt-1 w-full bg-hextech-black/95 px-4 py-3 text-sm text-grey1 outline outline-icon/30 -outline-offset-1 backdrop-blur-xl">
@@ -608,7 +620,9 @@ function ResultPanel({
           <FontAwesomeIcon icon={faArrowLeft} className="h-4" />
           Daily Hub
         </Link>
-        <span className="text-sm text-grey1">
+        {/* Time-derived, so the server-rendered text can lag the client's
+            by a minute — not worth a hydration warning. */}
+        <span className="text-sm text-grey1" suppressHydrationWarning>
           Next Splashdle in {countdown}
         </span>
       </div>
@@ -619,48 +633,43 @@ function ResultPanel({
 // ─── page ───────────────────────────────────────────────────────────────────
 
 function SplashdlePage() {
-  const [state, setState] = useState<SplashdleState | null>(null)
+  const initial = Route.useLoaderData()
+  const [state, setState] = useState<SplashdleState>(initial)
   const [options, setOptions] = useState<GuessOption[]>([])
-  const [error, setError] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
   const [pending, setPending] = useState<GuessOption | null>(null)
-  // Flips when the first crop has decoded — the splash skeleton dissolves
-  // on this, not on data arrival.
-  const [imgReady, setImgReady] = useState(false)
   const [shake, setShake] = useState(false)
   const shakeTimer = useRef<number | undefined>(undefined)
   useEffect(() => () => window.clearTimeout(shakeTimer.current), [])
 
-  // What the board looked like when the page loaded. Content present at
-  // load swaps in from the skeletons without entrance animations — playing
-  // an entrance on top of a skeleton reads as a flash. Only things that
-  // happen after load (new guesses, the live win) animate.
-  const loadedWith = useRef<{ guessCount: number; finished: boolean } | null>(
-    null,
-  )
+  // What the board looked like on the page's first paint. That content is
+  // part of the page entrance, so it renders settled — only things that
+  // happen after load (new guesses, the live win) play game animations.
+  const loadedWith = useRef({
+    guessCount: initial.guesses.length,
+    finished: initial.status !== 'in_progress',
+  })
 
+  // Resync if the route loader refreshes while mounted.
+  useEffect(() => {
+    setState(initial)
+  }, [initial])
+
+  // Mirror the guest token to localStorage as a cookie backup.
+  useEffect(() => {
+    rememberGuestToken(state.guestToken)
+  }, [state.guestToken])
+
+  // The autocomplete list loads in the background; it's only needed once
+  // the player starts typing.
   useEffect(() => {
     let cancelled = false
-    fetchSplashdleState({ data: { restoreToken: guestRestoreToken() } })
-      .then((s) => {
-        if (cancelled) return
-        rememberGuestToken(s.guestToken)
-        loadedWith.current ??= {
-          guessCount: s.guesses.length,
-          finished: s.status !== 'in_progress',
-        }
-        setState(s)
-      })
-      .catch((err) => {
-        if (!cancelled)
-          setError(err instanceof Error ? err.message : 'Something went wrong.')
-      })
     fetchSplashdleOptions()
       .then((o) => {
         if (!cancelled) setOptions(o)
       })
       .catch(() => {
-        /* the state call surfaces connectivity errors */
+        /* the dropdown shows a loading row until it arrives */
       })
     return () => {
       cancelled = true
@@ -696,25 +705,13 @@ function SplashdlePage() {
     }
   }, [])
 
-  if (error) {
-    return (
-      <ErrorState
-        title="Couldn't load today's Splashdle"
-        message={error}
-        back={{ to: '/games', label: 'Back to games' }}
-      />
-    )
-  }
-
-  const playing = state?.status === 'in_progress'
-  const guessedIds = new Set(state?.guesses.map((g) => g.skinId) ?? [])
-  // Still showing exactly what was on the board at page load?
+  const playing = state.status === 'in_progress'
+  const guessedIds = new Set(state.guesses.map((g) => g.skinId))
+  // Still showing exactly what was on the board at first paint?
   const atLoadState =
-    !!state &&
-    !!loadedWith.current &&
     state.guesses.length === loadedWith.current.guessCount &&
     !playing === loadedWith.current.finished
-  const animateFrom = loadedWith.current?.guessCount ?? 0
+  const animateFrom = loadedWith.current.guessCount
 
   return (
     <div className="container mx-auto max-w-3xl px-6 pt-28 pb-16">
@@ -724,10 +721,9 @@ function SplashdlePage() {
         </p>
         <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1">
           <h1 className="font-serif text-4xl md:text-5xl font-bold text-gold1">
-            Splashdle{' '}
-            {state && <span className="text-gold2">#{state.puzzleNumber}</span>}
+            Splashdle <span className="text-gold2">#{state.puzzleNumber}</span>
           </h1>
-          {state && playing && (
+          {playing && (
             <span className="text-grey1">
               Guess {state.guesses.length + 1} of {state.maxGuesses}
             </span>
@@ -737,84 +733,54 @@ function SplashdlePage() {
 
       <div className="flex flex-col gap-6">
         {/* The splash. While playing this is a server-cropped sliver that
-            pulls back with every miss; on completion it's the full reveal.
-            Its skeleton dissolves only once the first image has DECODED —
-            data arriving isn't visually ready yet. */}
-        <SkeletonSwap
-          ready={!!state && imgReady}
-          skeleton={<div className="skeleton aspect-video w-full" />}
-        >
-          {state && (
-            <SplashViewport
-              state={state}
-              shake={shake}
-              soft={atLoadState}
-              onImageLoaded={() => setImgReady(true)}
-            />
-          )}
-        </SkeletonSwap>
+            pulls back with every miss; on completion it's the full reveal. */}
+        <SplashViewport state={state} shake={shake} soft={atLoadState} />
 
-        <SkeletonSwap
-          ready={!!state}
-          skeleton={
-            <div className="flex flex-col gap-6">
-              <div className="skeleton h-12 w-full" />
-              <div className="skeleton h-5 w-72 max-w-full" />
-              <div className="flex flex-col gap-2">
-                {Array.from({ length: 6 }, (_, i) => (
-                  <div key={i} className="skeleton h-11 w-full" />
-                ))}
-              </div>
-            </div>
-          }
-        >
-          {state && (
-            <div className="flex flex-col gap-6">
-              {playing ? (
-            <>
-              <GuessInput
-                options={options}
-                disabled={submitting || options.length === 0}
-                submitting={submitting}
-                guessed={guessedIds}
-                onSubmit={guess}
-              />
-              <p className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-grey1">
-                <span>
-                  <FontAwesomeIcon
-                    icon={faCheck}
-                    className="mr-1.5 h-3 text-gold2"
-                  />
-                  Wrong guesses zoom the splash out. A gold square means you
-                  named the right champion's wrong skin.
+        {playing ? (
+          <>
+            <GuessInput
+              options={options}
+              disabled={submitting}
+              submitting={submitting}
+              guessed={guessedIds}
+              onSubmit={guess}
+            />
+            <p className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-grey1">
+              <span>
+                <FontAwesomeIcon
+                  icon={faCheck}
+                  className="mr-1.5 h-3 text-gold2"
+                />
+                Wrong guesses zoom the splash out. A gold square means you
+                named the right champion's wrong skin.
+              </span>
+              {state.streak.current > 0 && (
+                <span className="flex items-center gap-1.5 font-bold text-gold2">
+                  <FontAwesomeIcon icon={faFire} className="h-3.5" />
+                  {state.streak.current}-day streak on the line
                 </span>
-                {state.streak.current > 0 && (
-                  <span className="flex items-center gap-1.5 font-bold text-gold2">
-                    <FontAwesomeIcon icon={faFire} className="h-3.5" />
-                    {state.streak.current}-day streak on the line
-                  </span>
-                )}
-              </p>
-              <GuessBoard
-                guesses={state.guesses}
-                pending={pending}
-                maxGuesses={state.maxGuesses}
-                animateFrom={animateFrom}
-              />
-            </>
-          ) : (
-            <>
-              <ResultPanel state={state} animate={!loadedWith.current?.finished} />
-              <GuessBoard
-                guesses={state.guesses}
-                maxGuesses={state.maxGuesses}
-                animateFrom={animateFrom}
-              />
-            </>
-          )}
-            </div>
-          )}
-        </SkeletonSwap>
+              )}
+            </p>
+            <GuessBoard
+              guesses={state.guesses}
+              pending={pending}
+              maxGuesses={state.maxGuesses}
+              animateFrom={animateFrom}
+            />
+          </>
+        ) : (
+          <>
+            <ResultPanel
+              state={state}
+              animate={!loadedWith.current.finished}
+            />
+            <GuessBoard
+              guesses={state.guesses}
+              maxGuesses={state.maxGuesses}
+              animateFrom={animateFrom}
+            />
+          </>
+        )}
       </div>
     </div>
   )

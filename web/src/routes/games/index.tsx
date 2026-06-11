@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from '@tanstack/react-router'
-import { useCallback, useEffect, useState } from 'react'
+import { useEffect } from 'react'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import type { IconDefinition } from '@fortawesome/fontawesome-svg-core'
 import {
@@ -13,15 +13,20 @@ import {
 } from '@fortawesome/free-solid-svg-icons'
 import PageHeader from '~/components/PageHeader'
 import ErrorState from '~/components/ErrorState'
-import SkeletonSwap from '~/components/SkeletonSwap'
 import { fetchDailyHub } from '~/lib/games/serverFns'
 import { guestRestoreToken, rememberGuestToken } from '~/lib/games/client'
-import type { DailyHubState, HubGame } from '~/lib/games/types'
+import type { HubGame } from '~/lib/games/types'
 
 export const Route = createFileRoute('/games/')({
+  // Data loads BEFORE the route renders (SSR on first visit, prefetched on
+  // navigation) — the page arrives complete, no loading states to decorate.
+  loader: () => fetchDailyHub({ data: { restoreToken: guestRestoreToken() } }),
   head: () => ({
     meta: [{ title: 'Games — Skin Battle' }],
   }),
+  errorComponent: ({ error }) => (
+    <ErrorState title="Couldn't load today's games" message={error.message} />
+  ),
   component: GamesHubPage,
 })
 
@@ -119,30 +124,16 @@ const upcoming: { name: string; blurb: string; icon: IconDefinition }[] = [
 ]
 
 function GamesHubPage() {
-  const [hub, setHub] = useState<DailyHubState | null>(null)
-  const [error, setError] = useState<string | null>(null)
+  const hub = Route.useLoaderData()
 
-  const load = useCallback(async () => {
-    setError(null)
-    try {
-      const data = await fetchDailyHub({
-        data: { restoreToken: guestRestoreToken() },
-      })
-      rememberGuestToken(data.guestToken)
-      setHub(data)
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Something went wrong.')
-    }
-  }, [])
-
+  // Mirror the guest token to localStorage as a cookie backup.
   useEffect(() => {
-    load()
-  }, [load])
+    rememberGuestToken(hub.guestToken)
+  }, [hub.guestToken])
 
-  const done = hub
-    ? hub.games.filter((g) => g.status === 'won' || g.status === 'lost').length
-    : 0
-  const total = hub?.games.length ?? 1
+  const done = hub.games.filter(
+    (g) => g.status === 'won' || g.status === 'lost',
+  ).length
 
   return (
     <div className="container mx-auto px-6 pt-28 pb-16">
@@ -161,29 +152,16 @@ function GamesHubPage() {
           <h2 className="font-serif text-2xl md:text-3xl font-bold text-gold2">
             Today's Challenges
           </h2>
-          {hub && (
-            <span className="text-sm font-bold text-grey1">
-              {done}/{total} complete
-            </span>
-          )}
+          <span className="text-sm font-bold text-grey1">
+            {done}/{hub.games.length} complete
+          </span>
         </div>
 
-        {error ? (
-          <ErrorState title="Couldn't load today's games" message={error} />
-        ) : (
-          <SkeletonSwap
-            ready={!!hub}
-            skeleton={<div className="skeleton h-40 w-full" />}
-          >
-            {hub && (
-              <div className="flex flex-col gap-4">
-                {hub.games.map((g) => (
-                  <SplashdleCard key={g.id} game={g} />
-                ))}
-              </div>
-            )}
-          </SkeletonSwap>
-        )}
+        <div className="stagger flex flex-col gap-4">
+          {hub.games.map((g) => (
+            <SplashdleCard key={g.id} game={g} />
+          ))}
+        </div>
       </section>
 
       <section className="mt-16 max-w-3xl">
