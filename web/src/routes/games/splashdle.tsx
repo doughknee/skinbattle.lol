@@ -10,6 +10,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import {
   faArrowLeft,
   faCheck,
+  faCircleNotch,
   faFire,
   faMagnifyingGlass,
   faShareNodes,
@@ -56,12 +57,14 @@ function GuessSlots({ state }: { state: SplashdleState }) {
     <div className="flex items-center gap-2">
       {Array.from({ length: state.maxGuesses }, (_, i) => {
         const g = state.guesses[i]
+        // Key flips when a slot fills so the square remounts and pops in.
+        const justFilled = g && i === state.guesses.length - 1
         return (
           <span
-            key={i}
+            key={g ? `filled-${i}` : `empty-${i}`}
             className={`h-4 w-4 outline -outline-offset-1 ${
               g ? guessTone(g) : 'bg-hextech-black/40 outline-icon/30'
-            }`}
+            } ${justFilled ? 'animate-tile-pop' : ''}`}
           />
         )
       })}
@@ -129,16 +132,48 @@ function matchOptions(
   return [...starts, ...wordMatches].slice(0, 8)
 }
 
+// Gold-tint the words of a suggestion that the query matched, so the list
+// shows WHY each result is there.
+function HighlightedName({ name, query }: { name: string; query: string }) {
+  const tokens = norm(query).split(' ').filter(Boolean)
+  if (tokens.length === 0) return <>{name}</>
+  return (
+    <>
+      {name.split(/(\s+)/).map((part, i) => {
+        const collapsed = norm(part).replace(/\s+/g, '')
+        const hit = collapsed && tokens.some((t) => collapsed.startsWith(t))
+        return hit ? (
+          <span key={i} className="text-gold2">
+            {part}
+          </span>
+        ) : (
+          <span key={i}>{part}</span>
+        )
+      })}
+    </>
+  )
+}
+
+// Versionless Data Dragon loading portrait — small, cacheable, and gives the
+// suggestion list faces instead of a wall of text.
+const championPortrait = (championId: string) =>
+  `https://ddragon.leagueoflegends.com/cdn/img/champion/loading/${championId}_0.jpg`
+
+const finePointer = () =>
+  typeof window !== 'undefined' && window.matchMedia('(pointer: fine)').matches
+
 function GuessInput({
   options,
   disabled,
+  submitting,
   guessed,
   onSubmit,
 }: {
   options: GuessOption[]
   disabled: boolean
+  submitting: boolean
   guessed: Set<string>
-  onSubmit: (skinId: string) => void
+  onSubmit: (opt: GuessOption) => void
 }) {
   const [query, setQuery] = useState('')
   const [selected, setSelected] = useState<GuessOption | null>(null)
@@ -151,6 +186,22 @@ function GuessInput({
     () => (open ? matchOptions(searchable, query) : []),
     [searchable, query, open],
   )
+  const noMatch =
+    open && !selected && norm(query).length >= 2 && matches.length === 0
+
+  // Keep the keyboard flow unbroken: focus on mount and re-focus the moment
+  // a submission settles (mouse-only on touch devices — popping the soft
+  // keyboard over the splash would hide the new crop).
+  useEffect(() => {
+    if (finePointer()) inputRef.current?.focus()
+  }, [])
+  const wasDisabled = useRef(disabled)
+  useEffect(() => {
+    if (wasDisabled.current && !disabled && finePointer()) {
+      inputRef.current?.focus()
+    }
+    wasDisabled.current = disabled
+  }, [disabled])
 
   const pick = (o: GuessOption) => {
     setSelected(o)
@@ -164,11 +215,10 @@ function GuessInput({
       toast('You already guessed that skin.', 'error')
       return
     }
-    onSubmit(selected.skinId)
+    onSubmit(selected)
     setQuery('')
     setSelected(null)
     setOpen(false)
-    inputRef.current?.focus()
   }
 
   const onKeyDown = (e: React.KeyboardEvent) => {
@@ -224,12 +274,14 @@ function GuessInput({
           onFocus={() => setOpen(true)}
           onBlur={() => setTimeout(() => setOpen(false), 120)}
           onKeyDown={onKeyDown}
-          className="h-12 w-full bg-hextech-black/40 pl-11 pr-4 text-gold1 placeholder-grey1 outline outline-icon/30 -outline-offset-1 transition duration-150 hover:outline-icon focus:outline-gold2 disabled:cursor-not-allowed disabled:opacity-40"
+          className={`h-12 w-full bg-hextech-black/40 pl-11 pr-4 text-gold1 placeholder-grey1 outline -outline-offset-1 transition duration-150 hover:outline-icon focus:outline-gold2 disabled:cursor-not-allowed disabled:opacity-40 ${
+            selected ? 'outline-gold2/70' : 'outline-icon/30'
+          }`}
         />
         {open && matches.length > 0 && (
           <ul
             role="listbox"
-            className="animate-pop absolute z-20 mt-1 max-h-80 w-full overflow-y-auto bg-hextech-black/95 outline outline-icon/30 -outline-offset-1 backdrop-blur-xl"
+            className="animate-pop absolute z-20 mt-1 max-h-96 w-full overflow-y-auto bg-hextech-black/95 outline outline-icon/30 -outline-offset-1 backdrop-blur-xl"
           >
             {matches.map((o, i) => {
               const used = guessed.has(o.skinId)
@@ -243,18 +295,37 @@ function GuessInput({
                     if (!used) pick(o)
                   }}
                   onMouseEnter={() => setHighlight(i)}
-                  className={`flex cursor-pointer items-baseline justify-between gap-3 px-4 py-2.5 ${
+                  className={`flex cursor-pointer items-center gap-3 px-3 py-2 transition-colors duration-75 ${
                     i === highlight ? 'bg-gold5/20' : ''
                   } ${used ? 'cursor-not-allowed opacity-40' : ''}`}
                 >
-                  <span className="font-bold text-gold1">{o.name}</span>
-                  <span className="shrink-0 text-sm text-grey1">
-                    {o.championName}
+                  <img
+                    src={championPortrait(o.championId)}
+                    loading="lazy"
+                    alt=""
+                    className="h-10 w-8 shrink-0 object-cover object-top outline outline-icon/20 -outline-offset-1"
+                  />
+                  <span className="min-w-0 truncate font-bold text-gold1">
+                    <HighlightedName name={o.name} query={query} />
+                  </span>
+                  <span className="ml-auto shrink-0 text-sm text-grey1">
+                    {used ? 'guessed' : o.championName}
                   </span>
                 </li>
               )
             })}
+            <li
+              aria-hidden
+              className="hidden border-t border-icon/20 px-3 py-1.5 text-[11px] uppercase tracking-widest text-grey1 sm:block"
+            >
+              ↑↓ navigate · Enter select · Enter again to guess
+            </li>
           </ul>
+        )}
+        {noMatch && (
+          <div className="animate-pop absolute z-20 mt-1 w-full bg-hextech-black/95 px-4 py-3 text-sm text-grey1 outline outline-icon/30 -outline-offset-1 backdrop-blur-xl">
+            No skins match "{query.trim()}" — try the champion's name.
+          </div>
         )}
       </div>
       <button
@@ -262,6 +333,9 @@ function GuessInput({
         disabled={disabled || !selected}
         className={btnPrimarySm}
       >
+        {submitting && (
+          <FontAwesomeIcon icon={faCircleNotch} className="h-4 animate-spin" />
+        )}
         Guess
       </button>
     </div>
@@ -270,14 +344,35 @@ function GuessInput({
 
 // ─── past guesses ───────────────────────────────────────────────────────────
 
-function GuessHistory({ guesses }: { guesses: SplashdleGuess[] }) {
-  if (guesses.length === 0) return null
+function GuessHistory({
+  guesses,
+  pending,
+}: {
+  guesses: SplashdleGuess[]
+  pending?: GuessOption | null
+}) {
+  if (guesses.length === 0 && !pending) return null
   return (
     <ul className="flex flex-col gap-2">
-      {[...guesses].reverse().map((g) => (
+      {pending && (
+        <li className="animate-pop flex items-center gap-3 bg-hextech-black/30 px-4 py-2.5 outline outline-icon/20 -outline-offset-1">
+          <span className="skeleton h-3.5 w-3.5 shrink-0" />
+          <span className="min-w-0 truncate font-bold text-grey1">
+            {pending.name}
+          </span>
+          <span className="ml-auto shrink-0 text-sm text-grey1">
+            {pending.championName}
+          </span>
+        </li>
+      )}
+      {[...guesses].reverse().map((g, i) => (
         <li
           key={g.skinId}
-          className="animate-fade-in flex items-center gap-3 bg-hextech-black/30 px-4 py-2.5 outline outline-icon/20 -outline-offset-1"
+          // Only the newest row animates in; older rows would re-trigger on
+          // every state change otherwise.
+          className={`flex items-center gap-3 bg-hextech-black/30 px-4 py-2.5 outline outline-icon/20 -outline-offset-1 ${
+            i === 0 && !pending ? 'animate-pop' : ''
+          }`}
         >
           <span
             className={`h-3.5 w-3.5 shrink-0 outline -outline-offset-1 ${guessTone(g)}`}
@@ -335,10 +430,12 @@ function ResultPanel({ state }: { state: SplashdleState }) {
   const answer = state.answer!
 
   return (
-    <div className="animate-fade-up flex flex-col gap-5">
+    <div className="stagger flex flex-col gap-5">
       <div>
         <p className="mb-1 text-sm font-semibold uppercase tracking-[0.3em] text-gold2">
-          {won ? `Solved in ${state.guesses.length}/${state.maxGuesses}` : 'Out of guesses'}
+          {won
+            ? `Solved in ${state.guesses.length}/${state.maxGuesses}`
+            : 'Out of guesses'}
         </p>
         <h2 className="font-serif text-3xl md:text-4xl font-bold text-gold1">
           {answer.name}
@@ -355,9 +452,7 @@ function ResultPanel({ state }: { state: SplashdleState }) {
           </span>
         )}
         {state.streak.best > 1 && (
-          <span className="text-sm text-grey1">
-            Best: {state.streak.best}
-          </span>
+          <span className="text-sm text-grey1">Best: {state.streak.best}</span>
         )}
       </div>
 
@@ -385,6 +480,10 @@ function SplashdlePage() {
   const [options, setOptions] = useState<GuessOption[]>([])
   const [error, setError] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
+  const [pending, setPending] = useState<GuessOption | null>(null)
+  const [shake, setShake] = useState(false)
+  const shakeTimer = useRef<number | undefined>(undefined)
+  useEffect(() => () => window.clearTimeout(shakeTimer.current), [])
 
   useEffect(() => {
     let cancelled = false
@@ -410,26 +509,34 @@ function SplashdlePage() {
     }
   }, [])
 
-  const guess = useCallback(
-    async (skinId: string) => {
-      setSubmitting(true)
-      try {
-        const next = await submitSplashdleGuess({
-          data: { skinId, restoreToken: guestRestoreToken() },
-        })
-        rememberGuestToken(next.guestToken)
-        setState(next)
-      } catch (err) {
-        toast(
-          err instanceof Error ? err.message : 'Something went wrong.',
-          'error',
-        )
-      } finally {
-        setSubmitting(false)
+  const guess = useCallback(async (opt: GuessOption) => {
+    setSubmitting(true)
+    setPending(opt)
+    try {
+      const next = await submitSplashdleGuess({
+        data: { skinId: opt.skinId, restoreToken: guestRestoreToken() },
+      })
+      rememberGuestToken(next.guestToken)
+      const last = next.guesses[next.guesses.length - 1]
+      // A full miss jolts the splash; a near-miss (right champion) doesn't —
+      // warm should never feel like rejection. Cleared on a timer rather
+      // than animationend, which never fires in a backgrounded tab.
+      if (last && !last.correct && !last.championMatch) {
+        setShake(true)
+        window.clearTimeout(shakeTimer.current)
+        shakeTimer.current = window.setTimeout(() => setShake(false), 600)
       }
-    },
-    [],
-  )
+      setState(next)
+    } catch (err) {
+      toast(
+        err instanceof Error ? err.message : 'Something went wrong.',
+        'error',
+      )
+    } finally {
+      setPending(null)
+      setSubmitting(false)
+    }
+  }, [])
 
   if (error) {
     return (
@@ -471,8 +578,12 @@ function SplashdlePage() {
       ) : (
         <div className="flex flex-col gap-6">
           {/* The splash. While playing this is a server-cropped sliver that
-              widens with every miss; on completion it's the full reveal. */}
-          <figure className="relative aspect-video w-full overflow-hidden bg-hextech-black/60 outline outline-gold5/60 -outline-offset-2">
+              pulls back with every miss; on completion it's the full reveal. */}
+          <figure
+            className={`relative aspect-video w-full overflow-hidden bg-hextech-black/60 outline outline-gold5/60 -outline-offset-2 ${
+              shake ? 'animate-shake' : ''
+            }`}
+          >
             <img
               key={`${state.status}-${state.zoomLevel}`}
               src={state.image}
@@ -481,7 +592,9 @@ function SplashdlePage() {
                   ? 'A cropped sliver of a mystery skin splash'
                   : `${state.answer?.name} splash art`
               }
-              className="animate-fade-in h-full w-full object-cover"
+              className={`h-full w-full object-cover ${
+                playing ? 'animate-zoom-step' : 'animate-reveal-splash'
+              }`}
             />
             {playing && (
               <figcaption className="absolute bottom-0 right-0 bg-hextech-black/70 px-3 py-1 text-xs font-bold uppercase tracking-widest text-gold2">
@@ -504,12 +617,16 @@ function SplashdlePage() {
               <GuessInput
                 options={options}
                 disabled={submitting || options.length === 0}
+                submitting={submitting}
                 guessed={guessedIds}
                 onSubmit={guess}
               />
-              <GuessHistory guesses={state.guesses} />
+              <GuessHistory guesses={state.guesses} pending={pending} />
               <p className="text-sm text-grey1">
-                <FontAwesomeIcon icon={faCheck} className="mr-1.5 h-3 text-gold2" />
+                <FontAwesomeIcon
+                  icon={faCheck}
+                  className="mr-1.5 h-3 text-gold2"
+                />
                 Wrong guesses zoom the splash out. A gold square means you
                 named the right champion's wrong skin.
               </p>

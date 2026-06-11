@@ -65,7 +65,7 @@ function SplashdleCard({ game }: { game: HubGame }) {
   return (
     <Link
       to="/games/splashdle"
-      className={`${cardShell} group flex flex-col gap-4 transition duration-150 hover:bg-hextech-black/50 hover:outline-gold2/60`}
+      className={`${cardShell} group flex flex-col gap-4 transition duration-200 hover:-translate-y-0.5 hover:bg-hextech-black/50 hover:outline-gold2/60`}
     >
       <div className="flex items-start justify-between gap-3">
         <div className="flex items-center gap-4">
