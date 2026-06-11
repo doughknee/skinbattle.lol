@@ -168,7 +168,13 @@ services:
       - LOGTO_APP_ID=${LOGTO_APP_ID}
       - LOGTO_RESOURCE=${LOGTO_AUDIENCE:-https://api.skinbattle.lol}
       - PORT=3000
+    volumes:
+      # Games data: SQLite db (guests, streaks, append-only event log) +
+      # cached splash crops. MUST persist across deploys — raw events are
+      # never deleted by design (GAMES_ROADMAP.md principle 8).
+      - gamesdata:/app/.data
 
 volumes:
   pgdata:
   redisdata:
+  gamesdata:

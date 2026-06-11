@@ -1,0 +1,140 @@
+// SQLite persistence for the games framework (server-only).
+//
+// Why SQLite in the web tier and not the Go API + Postgres: the games
+// vertical slice has to be playable end-to-end wherever the web app runs,
+// and the Go service (api/) needs Docker + Postgres + Redis + Logto to come
+// up. The schema below deliberately mirrors the future Postgres migration
+// (snake_case, append-only events, same columns) so porting is a mechanical
+// move, not a redesign — see "Games framework" in CONTRACT.md.
+//
+// node:sqlite is built into Node 22 (experimental but stable API), so this
+// adds zero native dependencies.
+
+import { DatabaseSync } from 'node:sqlite'
+import { mkdirSync } from 'node:fs'
+import { join } from 'node:path'
+
+// Local data root: SQLite db + cached splash crops. Overridable so a deploy
+// can point it at a mounted volume.
+export const DATA_DIR =
+  process.env.GAMES_DATA_DIR || join(process.cwd(), '.data')
+
+const SCHEMA = `
+-- A guest is a real user record without credentials (design principle 9).
+-- Sign-up later ATTACHES a logto_sub to this same row; merging two accounts
+-- sets merged_into instead of deleting anything — events stay lossless.
+CREATE TABLE IF NOT EXISTS game_users (
+  id           TEXT PRIMARY KEY,        -- uuid
+  guest_token  TEXT UNIQUE,             -- cookie credential (random 128-bit hex)
+  logto_sub    TEXT UNIQUE,             -- set when credentials attach (stubbed for now)
+  merged_into  TEXT,                    -- target user id after an account merge
+  created_at   TEXT NOT NULL,
+  last_seen_at TEXT NOT NULL
+);
+
+-- Raw events are the source of truth (design principle 8): append-only,
+-- never updated, never deleted. question_asked / asset_version / trust_tier
+-- are recorded from day one even though each has a single value today.
+CREATE TABLE IF NOT EXISTS game_events (
+  id             INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id        TEXT NOT NULL,
+  game           TEXT NOT NULL,
+  puzzle_date    TEXT NOT NULL,         -- YYYY-MM-DD (UTC)
+  type           TEXT NOT NULL,         -- puzzle_started | guess_submitted | puzzle_completed
+  payload        TEXT NOT NULL,         -- JSON
+  question_asked TEXT NOT NULL,         -- e.g. 'guess-the-skin'
+  asset_version  TEXT NOT NULL,         -- Data Dragon patch the assets came from
+  trust_tier     TEXT NOT NULL,         -- 'guest' | 'member'
+  created_at     TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_game_events_user ON game_events (user_id, game, puzzle_date);
+
+-- The day's puzzle, frozen on first request so a mid-day catalog refresh
+-- can never change the answer under players.
+CREATE TABLE IF NOT EXISTS daily_puzzles (
+  game        TEXT NOT NULL,
+  puzzle_date TEXT NOT NULL,
+  payload     TEXT NOT NULL,            -- JSON: { skinId, cx, cy, assetVersion }
+  created_at  TEXT NOT NULL,
+  PRIMARY KEY (game, puzzle_date)
+);
+
+-- Per-user per-day result. Derived state for fast reads — the events table
+-- can always rebuild it.
+CREATE TABLE IF NOT EXISTS daily_results (
+  user_id      TEXT NOT NULL,
+  game         TEXT NOT NULL,
+  puzzle_date  TEXT NOT NULL,
+  status       TEXT NOT NULL,           -- in_progress | won | lost
+  guesses      TEXT NOT NULL,           -- JSON array of guess records
+  completed_at TEXT,
+  PRIMARY KEY (user_id, game, puzzle_date)
+);
+
+-- Streaks are per-user per-game. freeze_tokens and best_streak exist from
+-- day one (design principle 7); freeze redemption ships later.
+CREATE TABLE IF NOT EXISTS streaks (
+  user_id          TEXT NOT NULL,
+  game             TEXT NOT NULL,
+  current_streak   INTEGER NOT NULL DEFAULT 0,
+  best_streak      INTEGER NOT NULL DEFAULT 0,
+  last_result_date TEXT,                -- last puzzle date that counted
+  freeze_tokens    INTEGER NOT NULL DEFAULT 0,
+  PRIMARY KEY (user_id, game)
+);
+
+-- Skin catalog cached from Data Dragon (re-synced when the patch changes).
+CREATE TABLE IF NOT EXISTS catalog_skins (
+  id            TEXT PRIMARY KEY,       -- ddragon skin id, e.g. '266001'
+  champion_id   TEXT NOT NULL,          -- ddragon champion id, e.g. 'Aatrox'
+  champion_name TEXT NOT NULL,          -- display name, e.g. 'Miss Fortune'
+  num           INTEGER NOT NULL,
+  name          TEXT NOT NULL,
+  splash_url    TEXT NOT NULL
+);
+CREATE TABLE IF NOT EXISTS catalog_meta (
+  k TEXT PRIMARY KEY,
+  v TEXT NOT NULL
+);
+`
+
+let db: DatabaseSync | null = null
+
+export function getDb(): DatabaseSync {
+  if (db) return db
+  mkdirSync(DATA_DIR, { recursive: true })
+  db = new DatabaseSync(join(DATA_DIR, 'games.db'))
+  db.exec('PRAGMA journal_mode = WAL')
+  db.exec(SCHEMA)
+  return db
+}
+
+export interface GameEvent {
+  userId: string
+  game: string
+  puzzleDate: string
+  type: 'puzzle_started' | 'guess_submitted' | 'puzzle_completed'
+  payload: Record<string, unknown>
+  questionAsked: string
+  assetVersion: string
+  trustTier: 'guest' | 'member'
+}
+
+// The only write path for game_events — inserts only, by design.
+export function appendEvent(d: DatabaseSync, e: GameEvent): void {
+  d.prepare(
+    `INSERT INTO game_events
+       (user_id, game, puzzle_date, type, payload, question_asked, asset_version, trust_tier, created_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+  ).run(
+    e.userId,
+    e.game,
+    e.puzzleDate,
+    e.type,
+    JSON.stringify(e.payload),
+    e.questionAsked,
+    e.assetVersion,
+    e.trustTier,
+    new Date().toISOString(),
+  )
+}
