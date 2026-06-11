@@ -6,6 +6,10 @@ export function getRouter() {
     routeTree,
     scrollRestoration: true,
     defaultPreload: 'intent',
+    // Show route skeletons quickly (default is a full second of blank
+    // waiting), but once shown keep them up briefly so they don't flash.
+    defaultPendingMs: 200,
+    defaultPendingMinMs: 400,
   })
   return router
 }

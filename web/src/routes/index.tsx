@@ -13,6 +13,7 @@ import {
 import type { IconDefinition } from '@fortawesome/fontawesome-svg-core'
 import SkinCard from '~/components/SkinCard'
 import EmptyState from '~/components/EmptyState'
+import { HomeSkeleton } from '~/components/Skeletons'
 import { api } from '~/lib/api'
 import { btnPrimary, btnSecondary } from '~/lib/ui'
 import type { Skin } from '~/lib/types'
@@ -44,6 +45,7 @@ export const Route = createFileRoute('/')({
       return { championCount: 170, skinCount: 0, featured: null, trending: [] }
     }
   },
+  pendingComponent: HomeSkeleton,
   component: HomePage,
 })
 
@@ -108,18 +110,27 @@ function HomePage() {
 
         <div className="container mx-auto px-6 relative z-10 flex min-h-[92vh] flex-col justify-center pt-24 pb-20">
           <div className="max-w-2xl">
-            <p className="mb-4 text-sm font-semibold uppercase tracking-[0.3em] text-gold2">
+            <p className="animate-fade-up mb-4 text-sm font-semibold uppercase tracking-[0.3em] text-gold2">
               Community Skin Rankings
             </p>
-            <h1 className="text-shadow-hero font-serif text-5xl md:text-7xl font-bold leading-[1.05] text-gold1">
+            <h1
+              className="animate-fade-up text-shadow-hero font-serif text-5xl md:text-7xl font-bold leading-[1.05] text-gold1"
+              style={{ animationDelay: '100ms' }}
+            >
               Settle the skin debate.
             </h1>
-            <p className="text-shadow-hero mt-6 max-w-xl text-lg md:text-xl text-grey1">
+            <p
+              className="animate-fade-up text-shadow-hero mt-6 max-w-xl text-lg md:text-xl text-grey1"
+              style={{ animationDelay: '200ms' }}
+            >
               Stop scrolling endless Reddit threads. Vote, star, and ban your way
               to a definitive, community-built ranking of every League skin.
             </p>
 
-            <div className="mt-10 flex flex-col sm:flex-row gap-4">
+            <div
+              className="animate-fade-up mt-10 flex flex-col sm:flex-row gap-4"
+              style={{ animationDelay: '300ms' }}
+            >
               <Link to="/champions" className={`group ${btnPrimary}`}>
                 Start Voting
                 <FontAwesomeIcon
@@ -133,7 +144,10 @@ function HomePage() {
             </div>
 
             {/* Stat strip */}
-            <div className="mt-14 flex flex-wrap gap-x-12 gap-y-6">
+            <div
+              className="animate-fade-up mt-14 flex flex-wrap gap-x-12 gap-y-6"
+              style={{ animationDelay: '400ms' }}
+            >
               <Stat value={formatCount(championCount)} label="Champions" />
               {skinCount > 0 && (
                 <Stat value={formatCount(skinCount)} label="Skins to rank" />
@@ -150,7 +164,7 @@ function HomePage() {
           title="How It Works"
           subtitle="Four ways to weigh in. The community average decides the rankings."
         />
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="stagger grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
           {steps.map((s) => (
             <div
               key={s.title}
@@ -194,7 +208,7 @@ function HomePage() {
             compact
           />
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="stagger grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {trending.map((skin: Skin) => (
               <SkinCard
                 key={skin.id}
@@ -216,7 +230,7 @@ function HomePage() {
           title="What's Coming Next"
           subtitle="SkinBattle is just getting started. Here's what's on the way."
         />
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="stagger grid grid-cols-1 md:grid-cols-3 gap-6">
           {upcoming.map((f) => (
             <div
               key={f.title}

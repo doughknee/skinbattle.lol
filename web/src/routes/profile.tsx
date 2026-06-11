@@ -67,7 +67,7 @@ function VoteSection({ title, skins }: { title: string; skins: Skin[] }) {
           {skins.length}
         </span>
       </h2>
-      <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-5 gap-4">
+      <div className="stagger mt-8 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-5 gap-4">
         {skins.map((skin) => (
           <SkinCard
             key={skin.id}
@@ -160,7 +160,7 @@ function ProfilePage() {
       />
 
       {/* Stat strip */}
-      <div className="mb-20 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="stagger mb-20 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatTile
           icon={faStar}
           value={`${starred.length}/${MAX_STARS}`}

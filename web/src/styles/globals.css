@@ -44,6 +44,122 @@
   --color-grey3: #1e2328;
   --color-grey-cool: #1e282d;
   --color-hextech-black: #010a13;
+
+  /* Motion tokens — entrance animations used across pages. */
+  --animate-fade-up: fade-up 0.6s cubic-bezier(0.22, 1, 0.36, 1) both;
+  --animate-fade-in: fade-in 0.5s ease-out both;
+}
+
+/* ── Motion ─────────────────────────────────────────────────── */
+
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* Shimmer sweep for skeleton loaders. */
+@keyframes shimmer {
+  to {
+    transform: translateX(100%);
+  }
+}
+
+/* Indeterminate streak for the top route-loading bar. */
+@keyframes route-progress {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(400%);
+  }
+}
+
+/* Skeleton block: dark slab with a faint gold shimmer sweeping across. */
+.skeleton {
+  position: relative;
+  overflow: hidden;
+  background-color: color-mix(in srgb, var(--color-grey3) 75%, transparent);
+}
+.skeleton::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(200, 170, 110, 0.09),
+    transparent
+  );
+  animation: shimmer 1.6s infinite;
+}
+
+/* Staggered card cascade: each direct child fades up with a small delay.
+   Capped after the first dozen so deep grids don't wait forever. */
+.stagger > * {
+  animation: fade-up 0.6s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.stagger > :nth-child(2) {
+  animation-delay: 50ms;
+}
+.stagger > :nth-child(3) {
+  animation-delay: 100ms;
+}
+.stagger > :nth-child(4) {
+  animation-delay: 150ms;
+}
+.stagger > :nth-child(5) {
+  animation-delay: 200ms;
+}
+.stagger > :nth-child(6) {
+  animation-delay: 250ms;
+}
+.stagger > :nth-child(7) {
+  animation-delay: 300ms;
+}
+.stagger > :nth-child(8) {
+  animation-delay: 350ms;
+}
+.stagger > :nth-child(9) {
+  animation-delay: 400ms;
+}
+.stagger > :nth-child(10) {
+  animation-delay: 450ms;
+}
+.stagger > :nth-child(11) {
+  animation-delay: 500ms;
+}
+.stagger > :nth-child(12) {
+  animation-delay: 550ms;
+}
+.stagger > :nth-child(n + 13) {
+  animation-delay: 600ms;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .stagger > *,
+  .animate-fade-up,
+  .animate-fade-in {
+    animation: none !important;
+  }
+  .skeleton::after {
+    animation: none;
+  }
 }
 
 .svg-inline--fa {

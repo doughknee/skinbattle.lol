@@ -14,7 +14,7 @@ export default function PageHeader({
   className?: string
 }) {
   return (
-    <header className={`max-w-3xl ${className}`}>
+    <header className={`animate-fade-up max-w-3xl ${className}`}>
       {eyebrow && (
         <p className="mb-3 text-sm font-semibold uppercase tracking-[0.3em] text-gold2">
           {eyebrow}

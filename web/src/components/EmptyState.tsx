@@ -23,7 +23,7 @@ export default function EmptyState({
 }) {
   return (
     <div
-      className={`flex flex-col items-center bg-hextech-black/30 px-6 text-center outline outline-icon/20 -outline-offset-2 ${compact ? 'py-8' : 'py-14'}`}
+      className={`animate-fade-in flex flex-col items-center bg-hextech-black/30 px-6 text-center outline outline-icon/20 -outline-offset-2 ${compact ? 'py-8' : 'py-14'}`}
     >
       <div
         className={`flex items-center justify-center rounded-full bg-hextech-black/60 outline outline-gold5/60 -outline-offset-2 ${compact ? 'mb-4 h-12 w-12' : 'mb-5 h-16 w-16'}`}
