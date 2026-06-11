@@ -22,9 +22,12 @@ const SITE_DESCRIPTION =
   'Community-built rankings for every League of Legends skin. Upvote, star, and ban your way to the definitive list.'
 
 export const Route = createRootRoute({
-  // Runs on the server during SSR; the result is serialized to the client, so
-  // browser navigations reuse the same values without re-reading env.
+  // Runs on the server during SSR; the result is serialized to the client.
+  // staleTime keeps it from re-running on client-side navigations — the
+  // config is per-deployment static, and re-runs in the browser can't read
+  // server env anyway.
   loader: () => ({ config: readServerConfig() }),
+  staleTime: Infinity,
   head: () => ({
     meta: [
       { charSet: 'utf-8' },

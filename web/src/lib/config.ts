@@ -28,6 +28,14 @@ function viteFallback(): PublicConfig {
 
 // Read on the SERVER (SSR) from runtime env, falling back to build-time VITE_*.
 export function readServerConfig(): PublicConfig {
+  // The root loader calls this on client-side navigations too (e.g. a
+  // same-route navigate), where server env doesn't exist. Reuse the
+  // runtime-injected config — returning empty strings here would replace the
+  // Logto client with one pointing at an empty endpoint, flipping the UI to
+  // signed-out and breaking sign-in until a full reload.
+  if (typeof window !== 'undefined' && window.__APP_CONFIG__) {
+    return window.__APP_CONFIG__
+  }
   const env = (typeof process !== 'undefined' && process.env) || ({} as Record<string, string | undefined>)
   const fb = viteFallback()
   return {
