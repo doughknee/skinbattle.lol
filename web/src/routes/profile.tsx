@@ -60,7 +60,7 @@ function StatTile({
 
 function VoteSection({ title, skins }: { title: string; skins: Skin[] }) {
   return (
-    <section className="mb-20">
+    <section className="animate-fade-up mb-20">
       <h2 className="font-serif text-3xl md:text-4xl font-bold mb-2 text-gold2">
         {title}
         <span className="ml-3 text-lg font-normal text-grey1">
@@ -199,7 +199,7 @@ function ProfilePage() {
       )}
 
       {/* Account settings */}
-      <section className="border-t border-icon/20 pt-12">
+      <section className="animate-fade-up border-t border-icon/20 pt-12">
         <h2 className="font-serif text-3xl md:text-4xl font-bold mb-8 text-gold2">
           Account
         </h2>

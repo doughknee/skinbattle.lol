@@ -29,7 +29,7 @@ interface SkinCardProps {
 }
 
 const chipBase =
-  'flex h-10 min-w-0 flex-1 cursor-pointer items-center justify-center gap-1.5 text-sm font-bold outline -outline-offset-1 transition duration-150 disabled:cursor-not-allowed disabled:opacity-50'
+  'flex h-10 min-w-0 flex-1 cursor-pointer items-center justify-center gap-1.5 text-sm font-bold outline -outline-offset-1 transition duration-150 active:scale-[0.96] disabled:cursor-not-allowed disabled:opacity-50'
 const chipIdle =
   'bg-hextech-black/40 text-grey1 outline-icon/30 hover:text-gold1 hover:outline-icon'
 const chipGoldActive = 'bg-gold5/30 text-gold1 outline-gold2'
@@ -159,12 +159,13 @@ export default function SkinCard({
   }
 
   return (
-    <div className="group relative bg-hextech-black/30 transition duration-300 hover:shadow-[0_0_28px_-6px_rgba(200,170,110,0.35)]">
+    <div className="group relative flex h-full flex-col bg-hextech-black/30 transition duration-300 hover:shadow-[0_0_28px_-6px_rgba(200,170,110,0.35)]">
       {/* Border drawn on an overlay so it stays visible over the splash art —
-          the image's hover transform otherwise paints above an inset outline. */}
+          the image's hover transform otherwise paints above an inset outline.
+          Offset -1 keeps it flush with the edge so the image sits inside it. */}
       <div
         aria-hidden
-        className="pointer-events-none absolute inset-0 z-10 outline outline-icon/25 -outline-offset-2 transition duration-300 group-hover:outline-icon"
+        className="pointer-events-none absolute inset-0 z-10 outline outline-icon/25 -outline-offset-1 transition duration-300 group-hover:outline-icon"
       />
       <button
         type="button"
@@ -200,7 +201,9 @@ export default function SkinCard({
         )}
       </button>
 
-      <div className="px-3 pt-3 text-center">
+      {/* flex-1 absorbs row-height differences from wrapping names, so the
+          vote controls stay bottom-aligned across a row of cards. */}
+      <div className="flex flex-1 flex-col items-center justify-center px-3 pt-3 text-center">
         {showChampion && (
           <Link
             to="/champions/$id"
