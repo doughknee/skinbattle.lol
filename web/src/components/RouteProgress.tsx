@@ -26,10 +26,7 @@ export default function RouteProgress() {
       aria-hidden
       className={`pointer-events-none fixed left-0 top-0 z-[110] h-0.5 w-full overflow-hidden transition-opacity duration-250 ${isPending ? 'opacity-100' : 'opacity-0'}`}
     >
-      <div
-        className="h-full w-1/3 bg-gradient-to-r from-transparent via-gold2 to-transparent"
-        style={{ animation: 'route-progress 1s ease-in-out infinite' }}
-      />
+      <div className="route-progress-bar h-full w-1/3 bg-gradient-to-r from-transparent via-gold2 to-transparent" />
     </div>
   )
 }

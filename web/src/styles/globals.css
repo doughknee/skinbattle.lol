@@ -88,6 +88,9 @@
     transform: translateX(400%);
   }
 }
+.route-progress-bar {
+  animation: route-progress 1s ease-in-out infinite;
+}
 
 /* Skeleton block: dark slab with a faint gold shimmer sweeping across. */
 .skeleton {
@@ -154,7 +157,8 @@
 @media (prefers-reduced-motion: reduce) {
   .stagger > *,
   .animate-fade-up,
-  .animate-fade-in {
+  .animate-fade-in,
+  .route-progress-bar {
     animation: none !important;
   }
   .skeleton::after {
