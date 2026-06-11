@@ -7,6 +7,12 @@ import tailwindcss from '@tailwindcss/vite'
 export default defineConfig({
   server: {
     port: Number(process.env.PORT) || 3000,
+    // The games SQLite db (+ WAL) and splash-crop cache live under .data and
+    // are written on every play — without this, each vote/guess in dev
+    // triggers a full page reload.
+    watch: {
+      ignored: ['**/.data/**'],
+    },
     // Dev: proxy browser-side /api calls to the Go API so dev mirrors the
     // production same-origin setup (no CORS). SSR loaders use API_INTERNAL_URL.
     proxy: {

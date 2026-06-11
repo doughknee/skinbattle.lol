@@ -40,7 +40,7 @@ CREATE TABLE IF NOT EXISTS game_events (
   user_id        TEXT NOT NULL,
   game           TEXT NOT NULL,
   puzzle_date    TEXT NOT NULL,         -- YYYY-MM-DD (UTC)
-  type           TEXT NOT NULL,         -- puzzle_started | guess_submitted | puzzle_completed
+  type           TEXT NOT NULL,         -- puzzle_started | guess_submitted | puzzle_completed | battle_voted
   payload        TEXT NOT NULL,         -- JSON
   question_asked TEXT NOT NULL,         -- e.g. 'guess-the-skin'
   asset_version  TEXT NOT NULL,         -- Data Dragon patch the assets came from
@@ -48,6 +48,10 @@ CREATE TABLE IF NOT EXISTS game_events (
   created_at     TEXT NOT NULL
 );
 CREATE INDEX IF NOT EXISTS idx_game_events_user ON game_events (user_id, game, puzzle_date);
+-- Battle agreement lookups ("X% agree with you") and community totals scan
+-- by matchup, so index the pair key straight out of the JSON payload.
+CREATE INDEX IF NOT EXISTS idx_game_events_battle_pair
+  ON game_events (game, type, json_extract(payload, '$.pairKey'));
 
 -- The day's puzzle, frozen on first request so a mid-day catalog refresh
 -- can never change the answer under players.
@@ -83,14 +87,52 @@ CREATE TABLE IF NOT EXISTS streaks (
   PRIMARY KEY (user_id, game)
 );
 
+-- Quick Battle rating state, one row per skin that has fought at least one
+-- battle. Ratings are DERIVED (the raw match log in game_events is the
+-- truth): a cheap live Elo-style update keeps them fresh per pick, and a
+-- periodic Bradley-Terry refit recomputes them from scratch — so this table
+-- can always be rebuilt. uncertainty makes confidence visible ("1480 ± 90").
+CREATE TABLE IF NOT EXISTS skin_ratings (
+  skin_id     TEXT PRIMARY KEY,
+  rating      REAL NOT NULL,
+  uncertainty REAL NOT NULL,
+  battles     INTEGER NOT NULL DEFAULT 0,  -- raw count (unweighted)
+  wins        INTEGER NOT NULL DEFAULT 0,
+  updated_at  TEXT NOT NULL
+);
+
+-- The same pick that updates the global rating updates the user's personal
+-- rating (the mirror's data source). Sparse by nature — most users see a
+-- given skin once or twice — so it's a plain Elo value, no uncertainty.
+CREATE TABLE IF NOT EXISTS user_skin_ratings (
+  user_id    TEXT NOT NULL,
+  skin_id    TEXT NOT NULL,
+  rating     REAL NOT NULL,
+  battles    INTEGER NOT NULL DEFAULT 0,
+  updated_at TEXT NOT NULL,
+  PRIMARY KEY (user_id, skin_id)
+);
+
+-- Replay guard for signed battle-pair tokens: each issued pair may be voted
+-- on exactly once. Rows are pruned shortly after the token's own expiry.
+CREATE TABLE IF NOT EXISTS battle_nonces (
+  nonce   TEXT PRIMARY KEY,
+  used_at TEXT NOT NULL
+);
+
 -- Skin catalog cached from Data Dragon (re-synced when the patch changes).
+-- splash_ok: championFull.json lists some chroma variants WITHOUT the
+-- parenthesized suffix the sync filter catches ("Zac Sweet Orange") — their
+-- splash URLs 403. A background sweep after each sync HEAD-checks every
+-- splash and clears the flag; game pools only deal splash_ok skins.
 CREATE TABLE IF NOT EXISTS catalog_skins (
   id            TEXT PRIMARY KEY,       -- ddragon skin id, e.g. '266001'
   champion_id   TEXT NOT NULL,          -- ddragon champion id, e.g. 'Aatrox'
   champion_name TEXT NOT NULL,          -- display name, e.g. 'Miss Fortune'
   num           INTEGER NOT NULL,
   name          TEXT NOT NULL,
-  splash_url    TEXT NOT NULL
+  splash_url    TEXT NOT NULL,
+  splash_ok     INTEGER NOT NULL DEFAULT 1
 );
 CREATE TABLE IF NOT EXISTS catalog_meta (
   k TEXT PRIMARY KEY,
@@ -106,6 +148,15 @@ export function getDb(): DatabaseSync {
   db = new DatabaseSync(join(DATA_DIR, 'games.db'))
   db.exec('PRAGMA journal_mode = WAL')
   db.exec(SCHEMA)
+  // Additive migration for databases created before splash_ok existed
+  // (CREATE TABLE IF NOT EXISTS won't add columns to an existing table).
+  try {
+    db.exec(
+      'ALTER TABLE catalog_skins ADD COLUMN splash_ok INTEGER NOT NULL DEFAULT 1',
+    )
+  } catch {
+    // Column already exists.
+  }
   return db
 }
 
@@ -113,7 +164,7 @@ export interface GameEvent {
   userId: string
   game: string
   puzzleDate: string
-  type: 'puzzle_started' | 'guess_submitted' | 'puzzle_completed'
+  type: 'puzzle_started' | 'guess_submitted' | 'puzzle_completed' | 'battle_voted'
   payload: Record<string, unknown>
   questionAsked: string
   assetVersion: string

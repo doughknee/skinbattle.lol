@@ -25,14 +25,14 @@ interface DDragonChampion {
   skins: { id: string; num: number; name: string }[]
 }
 
-function getMeta(db: DatabaseSync, k: string): string | null {
+export function getMeta(db: DatabaseSync, k: string): string | null {
   const row = db.prepare('SELECT v FROM catalog_meta WHERE k = ?').get(k) as
     | { v: string }
     | undefined
   return row?.v ?? null
 }
 
-function setMeta(db: DatabaseSync, k: string, v: string): void {
+export function setMeta(db: DatabaseSync, k: string, v: string): void {
   db.prepare(
     'INSERT INTO catalog_meta (k, v) VALUES (?, ?) ON CONFLICT (k) DO UPDATE SET v = excluded.v',
   ).run(k, v)
@@ -60,6 +60,9 @@ export async function ensureCatalog(db: DatabaseSync): Promise<string> {
     syncedAt &&
     Date.now() - Date.parse(syncedAt) < SYNC_INTERVAL_MS
   ) {
+    // Catalog is fresh, but the splash sweep may not have run for this
+    // version yet (e.g. a db created before sweeps existed).
+    maybeSweepSplashes(db, version)
     return version
   }
 
@@ -76,6 +79,7 @@ export async function ensureCatalog(db: DatabaseSync): Promise<string> {
       setMeta(db, 'dd_version', latest)
     }
     setMeta(db, 'synced_at', new Date().toISOString())
+    maybeSweepSplashes(db, latest)
     return latest
   } catch (err) {
     if (populated && version) {
@@ -133,6 +137,59 @@ function replaceCatalog(
   }
 }
 
+// championFull.json has a second class of phantom entries beyond the
+// parenthesized chromas filtered at sync: chroma variants with plain names
+// ("Zac Sweet Orange", "Worlds 2017 Ashe Chroma" — 64 in patch 16.12) whose
+// splash URLs 403. No name pattern catches them reliably, so after each
+// patch sync a background sweep HEAD-checks every splash once and clears
+// splash_ok on the dead ones. Until the sweep lands (~30 s), the client's
+// broken-image fallback covers the gap.
+const SWEEP_CONCURRENCY = 32
+let sweepRunning = false
+
+function maybeSweepSplashes(db: DatabaseSync, version: string): void {
+  if (sweepRunning || getMeta(db, 'splash_sweep_version') === version) return
+  sweepRunning = true
+  setImmediate(async () => {
+    try {
+      const skins = db
+        .prepare('SELECT id, splash_url AS url FROM catalog_skins')
+        .all() as unknown as { id: string; url: string }[]
+      const broken: string[] = []
+      const queue = [...skins]
+      await Promise.all(
+        Array.from({ length: SWEEP_CONCURRENCY }, async () => {
+          for (let s = queue.pop(); s; s = queue.pop()) {
+            try {
+              const res = await fetch(s.url, {
+                method: 'HEAD',
+                signal: AbortSignal.timeout(10_000),
+              })
+              if (res.status === 403 || res.status === 404) broken.push(s.id)
+              // Other failures (5xx, timeouts) are transient — leave the
+              // skin in play rather than benching it on a CDN hiccup.
+            } catch {
+              /* network blip: same call — keep the skin */
+            }
+          }
+        }),
+      )
+      const clear = db.prepare(
+        'UPDATE catalog_skins SET splash_ok = 0 WHERE id = ?',
+      )
+      for (const id of broken) clear.run(id)
+      setMeta(db, 'splash_sweep_version', version)
+      console.log(
+        `splash sweep (${version}): ${skins.length} checked, ${broken.length} benched`,
+      )
+    } catch (err) {
+      console.error('splash sweep failed:', err)
+    } finally {
+      sweepRunning = false
+    }
+  })
+}
+
 const SKIN_COLUMNS =
   'id, champion_id AS championId, champion_name AS championName, num, name, splash_url AS splashUrl'
 
@@ -146,8 +203,11 @@ export function getCatalogSkin(
   return row ?? null
 }
 
+// Skins eligible for play surfaces — excludes swept-out phantom entries.
 export function allCatalogSkins(db: DatabaseSync): CatalogSkin[] {
   return db
-    .prepare(`SELECT ${SKIN_COLUMNS} FROM catalog_skins ORDER BY champion_id, num`)
+    .prepare(
+      `SELECT ${SKIN_COLUMNS} FROM catalog_skins WHERE splash_ok = 1 ORDER BY champion_id, num`,
+    )
     .all() as unknown as CatalogSkin[]
 }

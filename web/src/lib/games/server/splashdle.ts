@@ -20,6 +20,7 @@ import { MAX_GUESSES, puzzleNumber, seedFloats, utcToday } from './daily'
 import { allCatalogSkins, ensureCatalog, getCatalogSkin } from './catalog'
 import { ensureUser, peekUser, type GameUser } from './guests'
 import { getStreak, recordCompletion } from './streaks'
+import { communityBattleCount, userBattleCounts } from './quickbattle'
 
 const GAME = 'splashdle'
 // Recorded on every event so themed variants can be added later without
@@ -57,7 +58,9 @@ async function getOrCreatePuzzle(
 
   const assetVersion = await ensureCatalog(db)
   const pool = db
-    .prepare('SELECT id FROM catalog_skins ORDER BY champion_id, num')
+    .prepare(
+      'SELECT id FROM catalog_skins WHERE splash_ok = 1 ORDER BY champion_id, num',
+    )
     .all() as unknown as { id: string }[]
   if (pool.length === 0) throw new Error('skin catalog is empty')
 
@@ -399,6 +402,10 @@ export async function dailyHub(
   return {
     date,
     guestToken: known?.token ?? '',
+    quickBattle: {
+      userBattles: userBattleCounts(db, known?.user.id ?? null).total,
+      communityBattles: communityBattleCount(db),
+    },
     games: [
       {
         id: GAME,

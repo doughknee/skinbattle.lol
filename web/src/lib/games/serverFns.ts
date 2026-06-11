@@ -6,7 +6,13 @@
 // their signatures and become thin fetch wrappers — components don't change.
 
 import { createServerFn } from '@tanstack/react-start'
-import type { DailyHubState, GuessOption, SplashdleState } from './types'
+import type {
+  BattleVoteResult,
+  DailyHubState,
+  GuessOption,
+  QuickBattleState,
+  SplashdleState,
+} from './types'
 
 // Every game call may carry the localStorage backup of the guest token so a
 // cleared cookie can be restored without losing progress (see server/guests.ts).
@@ -41,3 +47,22 @@ export const fetchSplashdleOptions = createServerFn({ method: 'GET' }).handler(
     return splashdleOptions()
   },
 )
+
+// Quick Battle state: the current pair plus a preloaded next pair. `refit`
+// manually triggers the Bradley-Terry refit (guarded by GAMES_ADMIN_SECRET
+// when set) — reachable via /games/quick-battle?refit=… for cron/curl.
+export const fetchQuickBattle = createServerFn({ method: 'POST' })
+  .inputValidator((d: GuestInput & { refit?: string }) => d)
+  .handler(async ({ data }): Promise<QuickBattleState> => {
+    const { quickBattleState } = await import('./server/quickbattle')
+    return quickBattleState(data.restoreToken, data.refit)
+  })
+
+export const submitBattleVote = createServerFn({ method: 'POST' })
+  .inputValidator(
+    (d: GuestInput & { pairToken: string; winnerId: string; recent?: string[] }) => d,
+  )
+  .handler(async ({ data }): Promise<BattleVoteResult> => {
+    const { submitBattleVote: submit } = await import('./server/quickbattle')
+    return submit(data.pairToken, data.winnerId, data.recent, data.restoreToken)
+  })

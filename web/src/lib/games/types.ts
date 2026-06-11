@@ -66,5 +66,75 @@ export interface HubGame {
 export interface DailyHubState {
   date: string
   games: HubGame[]
+  // Quick Battle is endless, not a daily — its hub card shows volume, not a
+  // checklist slot.
+  quickBattle: {
+    userBattles: number
+    communityBattles: number
+  }
+  guestToken: string
+}
+
+// ─── Quick Battle ───────────────────────────────────────────────────────────
+
+export interface BattleSkin {
+  skinId: string
+  name: string
+  championId: string
+  championName: string
+  splashUrl: string
+}
+
+// Ratings are deliberately absent pre-pick (they'd bias the vote); they
+// arrive in the feedback. `token` is the server-signed claim that this exact
+// matchup was dealt by the matchmaker.
+export interface BattlePair {
+  token: string
+  a: BattleSkin
+  b: BattleSkin
+}
+
+export interface BattleStats {
+  total: number // this user's lifetime battles
+  today: number
+  community: number // all battles ever fought, by everyone
+  tier: 'guest' | 'member'
+}
+
+// What a pick answers back with (principle 1): the winner's rating movement
+// and new rank always; "X% agree" once the matchup has a real sample.
+export interface BattleFeedback {
+  winnerSkinId: string
+  winnerName: string
+  loserName: string
+  delta: number
+  rating: number
+  uncertainty: number
+  battles: number
+  rank: number
+  rankBefore: number | null // null = this was the skin's placement battle
+  agreementPct: number | null // null until the matchup has enough votes
+  pairVotes: number
+}
+
+export interface RefitSummary {
+  skins: number
+  events: number
+  iterations: number
+  tookMs: number
+}
+
+export interface QuickBattleState {
+  pair: BattlePair
+  next: BattlePair // preloaded so the first pick has zero wait
+  stats: BattleStats
+  guestToken: string
+  refit?: RefitSummary // present only when a manual refit was triggered
+}
+
+export interface BattleVoteResult {
+  feedback: BattleFeedback
+  nextPair: BattlePair
+  stats: BattleStats
   guestToken: string
 }
