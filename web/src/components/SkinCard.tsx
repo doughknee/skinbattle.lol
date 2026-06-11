@@ -45,7 +45,7 @@ export default function SkinCard({
   showChampion = false,
   rank,
 }: SkinCardProps) {
-  const { isAuthenticated, getApiToken, login } = useAuth()
+  const { isAuthenticated, withApiToken, login } = useAuth()
 
   const [totals, setTotals] = useState<VoteTotals>({
     total_votes: skin.total_votes || 0,
@@ -84,16 +84,18 @@ export default function SkinCard({
     })
     setPending(true)
     try {
-      const token = await getApiToken()
-      if (!token) throw new Error('Please sign in to vote.')
-      const data = await api.vote(
-        {
-          skinId: skin.id,
-          vote: next.vote as -1 | 0 | 1,
-          star: next.star,
-          x: next.x,
-        },
-        token,
+      const data = await withApiToken(
+        (token) =>
+          api.vote(
+            {
+              skinId: skin.id,
+              vote: next.vote as -1 | 0 | 1,
+              star: next.star,
+              x: next.x,
+            },
+            token,
+          ),
+        'Please sign in to vote.',
       )
       if (data.totals) setTotals(data.totals)
       onSuccess?.()

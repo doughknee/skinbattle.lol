@@ -85,7 +85,7 @@ function VoteSection({ title, skins }: { title: string; skins: Skin[] }) {
 }
 
 function ProfilePage() {
-  const { isAuthenticated, isLoading, getApiToken } = useAuth()
+  const { isAuthenticated, isLoading, withApiToken } = useAuth()
 
   const [skins, setSkins] = useState<Skin[]>([])
   const [me, setMe] = useState<Me | null>(null)
@@ -100,12 +100,9 @@ function ProfilePage() {
         setLoading(true)
         setErrorMsg(null)
         if (!isAuthenticated) return
-        const token = await getApiToken()
-        if (!token) return
-        const [votes, meData] = await Promise.all([
-          api.userVotes(token),
-          api.me(token),
-        ])
+        const [votes, meData] = await withApiToken((token) =>
+          Promise.all([api.userVotes(token), api.me(token)]),
+        )
         if (!cancelled) {
           setSkins(votes.skins || [])
           setMe(meData)
@@ -123,7 +120,7 @@ function ProfilePage() {
     return () => {
       cancelled = true
     }
-  }, [isAuthenticated, isLoading, getApiToken])
+  }, [isAuthenticated, isLoading, withApiToken])
 
   if (isLoading || loading)
     return <RouteSkeleton quip="Blaming the jungler..." />

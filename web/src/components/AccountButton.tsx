@@ -5,42 +5,75 @@ import { faRightToBracket, faUserGear } from '@fortawesome/free-solid-svg-icons'
 import { api } from '~/lib/api'
 import { useAuth } from '~/lib/useAuth'
 
-// Cache the username across mounts so navigation doesn't refetch /me.
-let cachedUsername: string | null = null
+// Cache the username across mounts AND hard reloads (localStorage), so the
+// header shows the name immediately instead of waiting on /me every load.
+const USERNAME_KEY = 'sb:username'
+
+function readCachedUsername(): string | null {
+  if (typeof window === 'undefined') return null
+  try {
+    return localStorage.getItem(USERNAME_KEY)
+  } catch {
+    return null
+  }
+}
+
+let cachedUsername: string | null = readCachedUsername()
+
+function writeCachedUsername(value: string | null) {
+  cachedUsername = value
+  if (typeof window === 'undefined') return
+  try {
+    if (value === null) localStorage.removeItem(USERNAME_KEY)
+    else localStorage.setItem(USERNAME_KEY, value)
+  } catch {
+    /* storage unavailable — in-memory cache still works */
+  }
+}
 
 export default function AccountButton() {
   const navigate = useNavigate()
-  const { isAuthenticated, getApiToken, login } = useAuth()
+  const { isAuthenticated, isLoading, withApiToken, login } = useAuth()
   const [username, setUsername] = useState<string | null>(cachedUsername)
 
   useEffect(() => {
+    if (isLoading) return
     if (!isAuthenticated) {
-      cachedUsername = null
+      writeCachedUsername(null)
       setUsername(null)
       return
     }
-    if (cachedUsername) {
-      setUsername(cachedUsername)
-      return
-    }
+    // Show the cached name instantly, but still reconcile against /me in the
+    // background (covers renames and a different account signing in).
+    if (cachedUsername) setUsername(cachedUsername)
     let cancelled = false
     ;(async () => {
-      const token = await getApiToken()
-      if (!token) return
       try {
-        const me = await api.me(token)
-        if (!cancelled && me?.username) {
-          cachedUsername = me.username
-          setUsername(me.username)
+        const me = await withApiToken((token) => api.me(token))
+        if (me?.username && me.username !== cachedUsername) {
+          writeCachedUsername(me.username)
+          if (!cancelled) setUsername(me.username)
         }
       } catch {
-        /* fall back to the generic "Account" label */
+        /* fall back to the cached or generic "Account" label */
       }
     })()
     return () => {
       cancelled = true
     }
-  }, [isAuthenticated, getApiToken])
+  }, [isAuthenticated, isLoading, withApiToken])
+
+  // While the SDK restores the session from storage (and during SSR), the
+  // auth state is unknown — render a placeholder instead of flashing
+  // "Sign in" at a signed-in user on every page load.
+  if (isLoading) {
+    return (
+      <div
+        aria-hidden
+        className="h-10 w-10 animate-pulse bg-hextech-black/40 outline outline-icon/30 -outline-offset-1 sm:w-28"
+      />
+    )
+  }
 
   const label = isAuthenticated ? (username ?? 'Account') : 'Sign in'
 
