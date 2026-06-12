@@ -13,7 +13,13 @@ const ORIGIN =
 export function ogMeta(opts: {
   title: string
   description: string
-  card: 'games' | 'splashdle' | 'quick-battle' | 'mirror' | 'price-check'
+  card:
+    | 'games'
+    | 'splashdle'
+    | 'quick-battle'
+    | 'mirror'
+    | 'price-check'
+    | 'drought'
   path: string
 }): Record<string, string>[] {
   const image = `${ORIGIN}/og/${opts.card}`

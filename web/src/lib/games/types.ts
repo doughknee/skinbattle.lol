@@ -183,6 +183,34 @@ export interface PriceCheckState {
   guestToken: string
 }
 
+// ─── Insights: the Skin Drought Index ───────────────────────────────────────
+
+export interface DroughtRow {
+  rank: number
+  championId: string
+  championName: string
+  days: number
+  lastSkinId: string
+  lastSkinName: string
+  lastSkinSplashUrl: string
+  lastSkinDate: string // YYYY-MM-DD
+  skinCount: number
+}
+
+export interface DroughtState {
+  date: string // UTC day the numbers are relative to
+  rows: DroughtRow[] // drought days desc
+  // Champions with no dated skins (typically brand-new — the facts snapshot
+  // hasn't caught up). Listed honestly rather than silently dropped.
+  undated: { championId: string; championName: string; skinCount: number }[]
+  stats: {
+    champions: number
+    longestDays: number
+    overTwoYears: number // champions with 730+ day droughts
+    averageDays: number
+  }
+}
+
 // ─── The Mirror ─────────────────────────────────────────────────────────────
 
 export type TierName = 'S' | 'A' | 'B' | 'C' | 'D'
