@@ -25,4 +25,4 @@ export const btnSecondarySm = `${btnBase} ${neutralTone} px-6 py-3`
 export const btnChip = `${btnBase} ${neutralTone} h-10 px-5 text-sm`
 
 // Destructive action (delete account).
-export const btnDanger = `${btnBase} bg-red-950/30 px-6 py-3 text-red-300 outline-red-400/40 hover:bg-red-950/60 hover:outline-red-400`
+export const btnDanger = `${btnBase} bg-danger-surface/30 px-6 py-3 text-danger outline-danger-border/40 hover:bg-danger-surface/60 hover:outline-danger-border`

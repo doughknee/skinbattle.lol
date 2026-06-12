@@ -67,7 +67,20 @@ export const GLOW_RGB = '200, 170, 110'
 // Tailwind token because nothing else on the site uses it.
 export const GOLD_HOVER = '#d9bb80'
 
-// Off-brand danger red the OG cards currently use (= Tailwind red-300). Named
-// and centralized here, but flagged for the semantic-color pass (Item 5) —
-// it is intentionally NOT part of PALETTE.
-export const OG_RED = '#fca5a5'
+// Semantic state colors. The hextech palette has no red or green, so these are
+// the one sanctioned off-palette hue family — defined once here and mirrored as
+// `--color-danger*` / `--color-success` tokens in globals.css (the drift guard
+// asserts the match). Keys are the `--color-<key>` suffixes used there.
+export const SEMANTIC = {
+  danger: '#fca5a5', // danger text / icon
+  'danger-border': '#f87171', // danger outlines & borders
+  'danger-surface': '#450a0a', // danger fills (tinted with /opacity at use)
+  success: '#047857', // correct / success fills
+  'success-border': '#34d399', // success outlines & borders
+} as const
+
+export type SemanticToken = keyof typeof SEMANTIC
+
+// The OG cards render outside the browser and can't read the danger token, so
+// they reference the same value here directly.
+export const OG_RED = SEMANTIC.danger

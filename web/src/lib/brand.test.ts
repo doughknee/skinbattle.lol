@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs'
 import { describe, it, expect } from 'vitest'
-import { PALETTE, GLOW_RGB, GOLD_HOVER } from './brand'
+import { PALETTE, SEMANTIC, GLOW_RGB, GOLD_HOVER } from './brand'
 
 // Drift guard for the brand palette. brand.ts is canonical; the two files
 // below carry literal copies because they can't import TS at runtime (Tailwind
@@ -16,6 +16,14 @@ const logtoCss = read('../../../logto-signin-custom.css')
 
 describe('globals.css @theme matches brand.ts', () => {
   for (const [name, hex] of Object.entries(PALETTE)) {
+    it(`--color-${name} = ${hex}`, () => {
+      expect(globalsCss).toContain(`--color-${name}: ${hex};`)
+    })
+  }
+})
+
+describe('globals.css semantic tokens match brand.ts', () => {
+  for (const [name, hex] of Object.entries(SEMANTIC)) {
     it(`--color-${name} = ${hex}`, () => {
       expect(globalsCss).toContain(`--color-${name}: ${hex};`)
     })

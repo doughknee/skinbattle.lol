@@ -188,7 +188,7 @@ function SkinPage() {
                   </span>
                 )}
                 {state.votes.bans > 0 && (
-                  <span className="font-bold text-red-300">
+                  <span className="font-bold text-danger">
                     <FontAwesomeIcon icon={faBan} className="mr-1 h-3" />
                     {state.votes.bans.toLocaleString()}
                   </span>
@@ -214,7 +214,7 @@ function SkinPage() {
                   <>
                     {' '}
                     ·{' '}
-                    <b className={state.personal.gap > 0 ? 'text-blue2' : 'text-red-300'}>
+                    <b className={state.personal.gap > 0 ? 'text-blue2' : 'text-danger'}>
                       {state.personal.gap > 0 ? '+' : '−'}
                       {Math.abs(state.personal.gap)} vs the room
                     </b>

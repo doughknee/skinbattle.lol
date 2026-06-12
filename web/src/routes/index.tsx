@@ -300,7 +300,7 @@ const plateChip =
 const plateChipIdle =
   'bg-hextech-black/40 text-grey1 outline-icon/30 hover:text-gold1 hover:outline-icon'
 const plateChipGold = 'bg-gold5/30 text-gold1 outline-gold2'
-const plateChipRed = 'bg-red-950/50 text-red-300 outline-red-400/70'
+const plateChipRed = 'bg-danger-surface/50 text-danger outline-danger-border/70'
 
 // The featured skin's info + inline star/ban. This is the site's voting
 // model in miniature: act on it here and you've learned the whole system.

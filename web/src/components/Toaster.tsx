@@ -55,7 +55,7 @@ export default function Toaster() {
           role="status"
           className={`w-fit max-w-full bg-hextech-black/95 px-4 py-2.5 text-sm font-semibold shadow-lg outline -outline-offset-1 backdrop-blur ${
             t.type === 'error'
-              ? 'text-red-300 outline-red-400/60'
+              ? 'text-danger outline-danger-border/60'
               : 'text-gold1 outline-gold2/60'
           }`}
         >

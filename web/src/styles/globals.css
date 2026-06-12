@@ -45,6 +45,15 @@
   --color-grey-cool: #1e282d;
   --color-hextech-black: #010a13;
 
+  /* Semantic state colors — the hextech palette has no red/green, so danger
+     and success are the one sanctioned off-palette family. Kept in lockstep
+     with lib/brand.ts (SEMANTIC) by brand.test.ts. */
+  --color-danger: #fca5a5;
+  --color-danger-border: #f87171;
+  --color-danger-surface: #450a0a;
+  --color-success: #047857;
+  --color-success-border: #34d399;
+
   /* Signature gold glow — gold2 at varying intensity, the one bloom the brand
      uses. `glow` is the card hover bloom; `glow-sm` is the tight dot/diamond
      glow. Both are sourced from --color-gold2 so the color never drifts. */

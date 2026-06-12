@@ -18,10 +18,10 @@ export default function ErrorState({
 }) {
   return (
     <div className="animate-fade-in container mx-auto flex flex-col items-center px-6 pt-36 pb-24 text-center">
-      <div className="mb-5 flex h-16 w-16 items-center justify-center rounded-full bg-hextech-black/60 outline outline-red-400/40 -outline-offset-2">
+      <div className="mb-5 flex h-16 w-16 items-center justify-center rounded-full bg-hextech-black/60 outline outline-danger-border/40 -outline-offset-2">
         <FontAwesomeIcon
           icon={faTriangleExclamation}
-          className="h-6 text-red-300"
+          className="h-6 text-danger"
         />
       </div>
       <h1 className="mb-2 font-serif text-3xl font-bold text-gold1">{title}</h1>

@@ -292,7 +292,7 @@ function PickGroup({
               onClick={() => onRemove(skin, kind)}
               aria-label={`${kind === 'star' ? 'Unstar' : 'Unban'} ${name}`}
               title={kind === 'star' ? 'Remove star' : 'Remove ban'}
-              className="flex h-10 w-10 shrink-0 cursor-pointer items-center justify-center text-grey1 outline outline-transparent hover:text-red-300 hover:outline-red-400/50 transition duration-150"
+              className="flex h-10 w-10 shrink-0 cursor-pointer items-center justify-center text-grey1 outline outline-transparent hover:text-danger hover:outline-danger-border/50 transition duration-150"
             >
               <FontAwesomeIcon icon={faXmark} className="h-4" />
             </button>

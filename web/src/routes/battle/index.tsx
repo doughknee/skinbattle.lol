@@ -130,7 +130,7 @@ const markChip =
 const markIdle =
   'bg-hextech-black/70 text-grey1 outline-icon/30 hover:text-gold1 hover:outline-gold2'
 const markGold = 'bg-gold5/40 text-gold1 outline-gold2'
-const markRed = 'bg-red-950/60 text-red-300 outline-red-400/70'
+const markRed = 'bg-danger-surface/60 text-danger outline-danger-border/70'
 
 function BattleCard({
   skin,
