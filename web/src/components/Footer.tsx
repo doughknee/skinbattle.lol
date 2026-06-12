@@ -6,6 +6,19 @@ import {
   SITE_SECTIONS,
   type SitePage,
 } from '~/lib/siteMap'
+import { SUPPORT_URL } from '~/lib/support'
+
+// The honeyfruit: League's healing fruit, standing in for "buy me a coffee"
+// - the site is free, so the support ask is one quiet line in the basement.
+function HoneyfruitIcon({ className = '' }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 16 16" className={className} aria-hidden="true">
+      <circle cx="8" cy="9.5" r="5.5" fill="#e87da0" />
+      <path d="M8 4.5C8 2.5 9.5 1.2 11.2 1.2 11.2 3.4 9.8 4.6 8 4.5Z" fill="#7ac74f" />
+      <circle cx="6.2" cy="8.2" r="1.1" fill="#f6b8cd" />
+    </svg>
+  )
+}
 
 // The footer is the full sitemap, rendered from the site-map registry - one
 // column per top-level section. New registry entries appear here for free.
@@ -77,7 +90,19 @@ export default function Footer() {
         </p>
       </div>
       <div className="border-t border-icon/10 py-4 text-center text-xs text-grey1/70">
-        © {new Date().getFullYear()} skinbattle.lol
+        <p className="flex flex-wrap items-center justify-center gap-x-2 gap-y-1 px-6">
+          <span>© {new Date().getFullYear()} skinbattle.lol</span>
+          <span aria-hidden>·</span>
+          <a
+            href={SUPPORT_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="group inline-flex items-center gap-1.5 transition duration-150 hover:text-gold1"
+          >
+            <HoneyfruitIcon className="h-3.5 w-3.5 transition duration-150 group-hover:scale-125" />
+            runs on honeyfruit — toss one
+          </a>
+        </p>
       </div>
     </footer>
   )
