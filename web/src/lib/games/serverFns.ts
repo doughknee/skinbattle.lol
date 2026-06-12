@@ -14,6 +14,8 @@ import type {
   MirrorState,
   PriceCheckState,
   QuickBattleState,
+  RankingsIndex,
+  RankingsState,
   SkinPageState,
   SplashdleState,
 } from './types'
@@ -65,6 +67,21 @@ export const submitPriceGuess = createServerFn({ method: 'POST' })
     const { submitPriceGuess: submit } = await import('./server/pricecheck')
     return submit(data.tier, data.restoreToken)
   })
+
+// Ranking slices are fully anonymous derived data, like the Drought Index.
+export const fetchRankings = createServerFn({ method: 'POST' })
+  .inputValidator((d: { slice: string }) => d)
+  .handler(async ({ data }): Promise<RankingsState | null> => {
+    const { rankingsState } = await import('./server/rankings')
+    return rankingsState(data.slice)
+  })
+
+export const fetchRankingsIndex = createServerFn({ method: 'GET' }).handler(
+  async (): Promise<RankingsIndex> => {
+    const { rankingsIndex } = await import('./server/rankings')
+    return rankingsIndex()
+  },
+)
 
 // Skin pages are read-only (peekUser — viewing never mints a user). Returns
 // null for unknown slugs/ids; the route turns that into a 404.

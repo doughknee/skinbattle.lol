@@ -195,6 +195,48 @@ export interface PriceCheckState {
   guestToken: string
 }
 
+// ─── Ranking slices ─────────────────────────────────────────────────────────
+
+export interface RankingRow {
+  rank: number
+  skinId: string
+  slug: string
+  name: string
+  championName: string
+  splashUrl: string
+  rating: number
+  uncertainty: number
+  battles: number
+  cost: number | null
+}
+
+export interface RankingsState {
+  slice: string
+  title: string
+  subtitle: string
+  rows: RankingRow[] // rated skins, rating desc, capped
+  ratedCount: number
+  totalCount: number
+  medianBattles: number
+  // True until the slice has real sample depth — rendered as the
+  // "Early Rankings — still calibrating" banner (thin data is a call to
+  // action, not an embarrassment).
+  calibrating: boolean
+}
+
+export interface SliceLink {
+  slice: string
+  label: string
+  count: number
+}
+
+export interface RankingsIndex {
+  prices: SliceLink[]
+  years: SliceLink[]
+  lines: SliceLink[]
+  champions: SliceLink[]
+}
+
 // ─── Skin pages (stable URLs) ───────────────────────────────────────────────
 
 export interface SkinPageState {

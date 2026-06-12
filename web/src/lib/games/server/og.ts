@@ -507,6 +507,72 @@ export async function skinOgResponse(skinId: string): Promise<Response> {
   }
 }
 
+// Ranking-slice OG card: slice title + top-3 podium text over the #1 skin's
+// splash. Cached per slice per UTC day.
+export async function rankingsOgResponse(slice: string): Promise<Response> {
+  const { rankingsState } = await import('./rankings')
+  const state = await rankingsState(slice)
+  if (!state) return new Response('Not found', { status: 404 })
+
+  try {
+    const dir = join(DATA_DIR, 'cache')
+    mkdirSync(dir, { recursive: true })
+    const path = join(dir, `og-rankings-${slice}-${utcToday()}.png`)
+    let png: Buffer
+    if (existsSync(path)) {
+      png = readFileSync(path)
+    } else {
+      const top = state.rows.slice(0, 3)
+      const bg = top[0] ? await fetchAsDataUri(top[0].splashUrl) : null
+      const medals = ['1.', '2.', '3.']
+      const node = frame(bg ? splashBg(bg) : null, [
+        el(
+          'div',
+          { flexDirection: 'column', gap: 14, justifyContent: 'center', flexGrow: 1 },
+          eyebrow('Community rankings'),
+          title(state.title, 60),
+          ...(top.length > 0
+            ? top.map((r, i) =>
+                text(`${medals[i]} ${r.name} — ${r.rating}`, {
+                  fontFamily: 'Inter',
+                  fontWeight: i === 0 ? 600 : 400,
+                  fontSize: i === 0 ? 30 : 26,
+                  color: i === 0 ? C.gold1 : C.grey1,
+                }),
+              )
+            : [body('No battles in this slice yet — be the first.')]),
+          state.calibrating
+            ? text('Early rankings — still calibrating', {
+                fontFamily: 'Inter',
+                fontWeight: 400,
+                fontSize: 22,
+                color: C.blue2,
+              })
+            : body(''),
+        ),
+      ])
+      const svg = await satori(node as never, {
+        width: W,
+        height: H,
+        fonts: fonts() as never,
+      })
+      png = Buffer.from(
+        new Resvg(svg, { fitTo: { mode: 'width', value: W } }).render().asPng(),
+      )
+      writeFileSync(path, png)
+    }
+    return new Response(new Uint8Array(png), {
+      headers: {
+        'content-type': 'image/png',
+        'cache-control': 'public, max-age=3600',
+      },
+    })
+  } catch (err) {
+    console.error(`og rankings card render failed (${slice}):`, err)
+    return new Response('Card unavailable', { status: 500 })
+  }
+}
+
 export async function ogCardResponse(card: string): Promise<Response> {
   if (!(OG_CARDS as readonly string[]).includes(card)) {
     return new Response('Not found', { status: 404 })

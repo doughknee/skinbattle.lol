@@ -13,6 +13,7 @@ import { btnPrimarySm, btnSecondarySm } from '~/lib/ui'
 import { fetchSkinPage } from '~/lib/games/serverFns'
 import { guestRestoreToken, rememberGuestToken } from '~/lib/games/client'
 import { ogMeta } from '~/lib/games/ogMeta'
+import { kebab } from '~/lib/games/slug'
 
 export const Route = createFileRoute('/skins_/$slug')({
   // Stable URLs, immutable key: any slug whose trailing ID resolves gets
@@ -210,9 +211,14 @@ function SkinPage() {
             <div className="flex flex-col gap-1 text-sm text-grey1">
               {state.facts.cost !== null && (
                 <p>
-                  <b className="text-gold1">
+                  <Link
+                    to="/rankings/$slice"
+                    params={{ slice: `price-${state.facts.cost}` }}
+                    className="font-bold text-gold1 transition duration-150 hover:text-gold2"
+                    title={`Best ${state.facts.cost.toLocaleString()} RP skins`}
+                  >
                     {state.facts.cost.toLocaleString()} RP
-                  </b>
+                  </Link>
                   {state.facts.availability === 'Legacy' && (
                     <span> · Legacy vault — not even buyable anymore</span>
                   )}
@@ -222,9 +228,21 @@ function SkinPage() {
               {state.facts.sets.filter((s) => s !== 'Legacy').length > 0 && (
                 <p>
                   Skin line:{' '}
-                  <b className="text-gold1">
-                    {state.facts.sets.filter((s) => s !== 'Legacy').join(', ')}
-                  </b>
+                  {state.facts.sets
+                    .filter((s) => s !== 'Legacy')
+                    .map((s, i) => (
+                      <span key={s}>
+                        {i > 0 && ', '}
+                        <Link
+                          to="/rankings/$slice"
+                          params={{ slice: `line-${kebab(s)}` }}
+                          className="font-bold text-gold1 transition duration-150 hover:text-gold2"
+                          title={`Best ${s} skins`}
+                        >
+                          {s}
+                        </Link>
+                      </span>
+                    ))}
                 </p>
               )}
             </div>
@@ -248,6 +266,14 @@ function SkinPage() {
         >
           <FontAwesomeIcon icon={faArrowLeft} className="h-4" />
           {state.championName}'s wardrobe
+        </Link>
+        <Link
+          to="/rankings/$slice"
+          params={{ slice: `champion-${state.championId.toLowerCase()}` }}
+          className={btnSecondarySm}
+        >
+          <FontAwesomeIcon icon={faRankingStar} className="h-4" />
+          {state.championName} rankings
         </Link>
       </div>
     </div>
