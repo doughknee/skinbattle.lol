@@ -17,6 +17,7 @@ import { ensureCatalog } from './catalog'
 import { utcToday } from './daily'
 import { communityBattleCount } from './quickbattle'
 import { splashdleOgInfo } from './splashdle'
+import { PALETTE, OG_RED } from '~/lib/brand'
 
 export const OG_CARDS = [
   'games',
@@ -33,15 +34,16 @@ export type OgCard = (typeof OG_CARDS)[number]
 const W = 1200
 const H = 630
 
-// Hextech palette (mirrors globals.css).
+// Hextech palette, sourced from the canonical brand constants (satori renders
+// outside the browser, so it can't read the Tailwind/CSS tokens).
 const C = {
-  black: '#010a13',
-  gold1: '#f0e6d2',
-  gold2: '#c8aa6e',
-  gold5: '#785a28',
-  blue2: '#0ac8b9',
-  grey1: '#a09b8c',
-  red: '#fca5a5',
+  black: PALETTE['hextech-black'],
+  gold1: PALETTE.gold1,
+  gold2: PALETTE.gold2,
+  gold5: PALETTE.gold5,
+  blue2: PALETTE.blue2,
+  grey1: PALETTE.grey1,
+  red: OG_RED,
 }
 
 // ─── fonts ──────────────────────────────────────────────────────────────────
