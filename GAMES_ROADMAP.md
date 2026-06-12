@@ -116,6 +116,16 @@ expire, and (3) a persistent identity worth investing in. Games are sequenced by
   OG cards (`/og/rankings/<slice>`: top-3 podium over the #1 splash).
   Cross-linked: skin pages link their price tier / skin line / champion
   slices; hub Insights section links the index.
+- ✅ **Chroma Vision** (2026-06-12) — the fourth daily, live at
+  `/games/chroma-vision`: name the skin from its colors alone. The splash
+  renders as a server-side color mosaic (jimp downsample → nearest-neighbor
+  upscale, PNG) that sharpens per miss: 5×3 blocks at level 0 → 44 columns
+  at level 5. Same contracts as Splashdle (six guesses, champion-match 🟨,
+  frozen daily puzzle, answer never reaches the client mid-game, streaks,
+  share grid, hub checklist, spoiler-free OG card with the level-0 mosaic).
+  Shared guess machinery extracted to `components/games/GuessKit.tsx`
+  (combobox, board, viewport, result panel) — Splashdle now uses it too.
+  The hub's "On the way" section is retired: every announced game shipped.
 - ◻ Leaderboards (need named users — Logto attachment first) — **not
   started**.
 
@@ -132,11 +142,9 @@ that happen after first paint; one-shot animations cleared by timer, not
 animationend; every interaction answers back before the round-trip
 completes (pending states).
 
-**Next session**: Chroma Vision (the fourth daily — name the skin from its
-color palette, derived from splashes with jimp), which completes the
-Phase 1 daily lineup. After that, the solo-buildable roadmap is essentially
-done: leaderboards need named users (Logto attachment — blocked on test
-credentials), and Phase 2+ is gated on real community data/DAU by design.
+**Phase 1 is complete.** The solo-buildable roadmap is done: leaderboards
+need named users (Logto attachment — blocked on test credentials), and
+Phase 2+ is gated on real community data/DAU by design.
 
 ## Landscape & differentiation
 

@@ -1,7 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faCheck, faFire } from '@fortawesome/free-solid-svg-icons'
+import { faFire, faPalette } from '@fortawesome/free-solid-svg-icons'
 import ErrorState from '~/components/ErrorState'
 import { toast } from '~/components/Toaster'
 import {
@@ -11,50 +11,50 @@ import {
   ResultPanel,
 } from '~/components/games/GuessKit'
 import {
+  fetchChromaVision,
   fetchSplashdleOptions,
-  fetchSplashdleState,
-  submitSplashdleGuess,
+  submitChromaGuess,
 } from '~/lib/games/serverFns'
 import { guestRestoreToken, rememberGuestToken } from '~/lib/games/client'
 import { ogMeta } from '~/lib/games/ogMeta'
-import type { GuessOption, SplashdleState } from '~/lib/games/types'
+import type { ChromaVisionState, GuessOption } from '~/lib/games/types'
 
-export const Route = createFileRoute('/games/splashdle')({
+export const Route = createFileRoute('/games/chroma-vision')({
   // Data loads BEFORE the route renders (SSR on first visit, prefetched on
-  // navigation), and the crop ships inside the payload as a data URL — the
-  // page arrives complete in one paint, so there are no loading states.
+  // navigation), and the mosaic ships inside the payload as a data URL —
+  // the page arrives complete in one paint, no loading states.
   loader: () =>
-    fetchSplashdleState({ data: { restoreToken: guestRestoreToken() } }),
+    fetchChromaVision({ data: { restoreToken: guestRestoreToken() } }),
   head: () => ({
     meta: [
-      { title: 'Splashdle — Skin Battle' },
+      { title: 'Chroma Vision — Skin Battle' },
       {
         name: 'description',
         content:
-          'Name the League skin from a sliver of its splash art. A new puzzle every day.',
+          'Name the League skin from its colors alone. The mosaic sharpens with every miss — six guesses, hard mode.',
       },
       ...ogMeta({
-        title: 'Splashdle — Skin Battle',
+        title: 'Chroma Vision — Skin Battle',
         description:
-          'Name the League skin from a sliver of its splash art. It zooms out with every miss — six guesses, new puzzle daily.',
-        card: 'splashdle',
-        path: '/games/splashdle',
+          'Name the League skin from its colors alone. The mosaic sharpens with every miss — six guesses, hard mode.',
+        card: 'chroma-vision',
+        path: '/games/chroma-vision',
       }),
     ],
   }),
   errorComponent: ({ error }) => (
     <ErrorState
-      title="Couldn't load today's Splashdle"
+      title="Couldn't load today's Chroma Vision"
       message={error.message}
       back={{ to: '/games', label: 'Back to games' }}
     />
   ),
-  component: SplashdlePage,
+  component: ChromaVisionPage,
 })
 
-function SplashdlePage() {
+function ChromaVisionPage() {
   const initial = Route.useLoaderData()
-  const [state, setState] = useState<SplashdleState>(initial)
+  const [state, setState] = useState<ChromaVisionState>(initial)
   const [options, setOptions] = useState<GuessOption[]>([])
   const [submitting, setSubmitting] = useState(false)
   const [pending, setPending] = useState<GuessOption | null>(null)
@@ -62,9 +62,8 @@ function SplashdlePage() {
   const shakeTimer = useRef<number | undefined>(undefined)
   useEffect(() => () => window.clearTimeout(shakeTimer.current), [])
 
-  // What the board looked like on the page's first paint. That content is
-  // part of the page entrance, so it renders settled — only things that
-  // happen after load (new guesses, the live win) play game animations.
+  // What the board looked like on the page's first paint — that content
+  // renders settled; only post-load guesses play game animations.
   const loadedWith = useRef({
     guessCount: initial.guesses.length,
     finished: initial.status !== 'in_progress',
@@ -80,8 +79,8 @@ function SplashdlePage() {
     rememberGuestToken(state.guestToken)
   }, [state.guestToken])
 
-  // The autocomplete list loads in the background; it's only needed once
-  // the player starts typing.
+  // The autocomplete list (the full skin catalog, shared with Splashdle)
+  // loads in the background; it's only needed once the player types.
   useEffect(() => {
     let cancelled = false
     fetchSplashdleOptions()
@@ -100,14 +99,13 @@ function SplashdlePage() {
     setSubmitting(true)
     setPending(opt)
     try {
-      const next = await submitSplashdleGuess({
+      const next = await submitChromaGuess({
         data: { skinId: opt.skinId, restoreToken: guestRestoreToken() },
       })
       rememberGuestToken(next.guestToken)
       const last = next.guesses[next.guesses.length - 1]
-      // A full miss jolts the splash; a near-miss (right champion) doesn't —
-      // warm should never feel like rejection. Cleared on a timer rather
-      // than animationend, which never fires in a backgrounded tab.
+      // Full miss jolts the mosaic; a right-champion near-miss doesn't.
+      // Cleared on a timer, never animationend (backgrounded tabs).
       if (last && !last.correct && !last.championMatch) {
         setShake(true)
         window.clearTimeout(shakeTimer.current)
@@ -127,7 +125,6 @@ function SplashdlePage() {
 
   const playing = state.status === 'in_progress'
   const guessedIds = new Set(state.guesses.map((g) => g.skinId))
-  // Still showing exactly what was on the board at first paint?
   const atLoadState =
     state.guesses.length === loadedWith.current.guessCount &&
     !playing === loadedWith.current.finished
@@ -137,11 +134,12 @@ function SplashdlePage() {
     <div className="container mx-auto max-w-3xl px-6 pt-28 pb-16">
       <header className="animate-fade-up mb-8">
         <p className="mb-2 text-sm font-semibold uppercase tracking-[0.3em] text-gold2">
-          Daily · guess the skin
+          Daily · hard mode · colors only
         </p>
         <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1">
           <h1 className="font-serif text-4xl md:text-5xl font-bold text-gold1">
-            Splashdle <span className="text-gold2">#{state.puzzleNumber}</span>
+            Chroma Vis<span className="italic">ion</span>{' '}
+            <span className="text-gold2">#{state.puzzleNumber}</span>
           </h1>
           {playing && (
             <span className="text-grey1">
@@ -152,16 +150,17 @@ function SplashdlePage() {
       </header>
 
       <div className="flex flex-col gap-6">
-        {/* The splash. While playing this is a server-cropped sliver that
-            pulls back with every miss; on completion it's the full reveal. */}
+        {/* The mosaic: pure color composition at first, the silhouette
+            emerging block by block with each miss; the full reveal at the
+            end. */}
         <GuessViewport
           image={state.image}
           levelKey={`${state.status}-${state.zoomLevel}`}
           playing={playing}
           shake={shake}
           soft={atLoadState}
-          caption={`Zoom ${state.zoomLevel + 1}/${state.totalLevels}`}
-          playingAlt="A cropped sliver of a mystery skin splash"
+          caption={`Mosaic ${state.zoomLevel + 1}/${state.totalLevels}`}
+          playingAlt="A color mosaic of a mystery skin splash"
           answerName={state.answer?.name}
         />
 
@@ -177,11 +176,11 @@ function SplashdlePage() {
             <p className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-grey1">
               <span>
                 <FontAwesomeIcon
-                  icon={faCheck}
+                  icon={faPalette}
                   className="mr-1.5 h-3 text-gold2"
                 />
-                Wrong guesses zoom the splash out. A gold square means you
-                named the right champion's wrong skin.
+                It's all in the palette. Wrong guesses sharpen the mosaic — a
+                gold square means right champion, wrong skin.
               </span>
               {state.streak.current > 0 && (
                 <span className="flex items-center gap-1.5 font-bold text-gold2">
@@ -207,7 +206,7 @@ function SplashdlePage() {
               answer={state.answer!}
               shareText={state.shareText}
               animate={!loadedWith.current.finished}
-              gameName="Splashdle"
+              gameName="Chroma Vision"
             />
             <GuessBoard
               guesses={state.guesses}

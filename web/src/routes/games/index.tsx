@@ -8,7 +8,6 @@ import {
   faFire,
   faHourglassHalf,
   faImage,
-  faLock,
   faPalette,
   faRankingStar,
   faShuffle,
@@ -79,6 +78,15 @@ const GAME_CARDS: Record<
     icon: faCoins,
     wonLabel: (g) => `Scored ${g.score ?? 0}/${g.maxGuesses}`,
     lostLabel: 'Better luck tomorrow',
+  },
+  'chroma-vision': {
+    to: '/games/chroma-vision',
+    name: 'Chroma Vision',
+    blurb:
+      'Name the skin from its colors alone — the mosaic sharpens with every miss. Hard mode.',
+    icon: faPalette,
+    wonLabel: (g) => `Solved ${g.guessesUsed}/${g.maxGuesses}`,
+    lostLabel: 'Out of guesses',
   },
 }
 
@@ -225,13 +233,6 @@ function MirrorCard({ mirror }: { mirror: { skinsRated: number } }) {
   )
 }
 
-const upcoming: { name: string; blurb: string; icon: IconDefinition }[] = [
-  {
-    name: 'Chroma Vision',
-    blurb: 'Name the skin from its colors alone. Hard mode.',
-    icon: faPalette,
-  },
-]
 
 function GamesHubPage() {
   const hub = Route.useLoaderData()
@@ -365,28 +366,6 @@ function GamesHubPage() {
         </div>
       </section>
 
-      <section className="mt-16 max-w-3xl">
-        <h2 className="mb-2 font-serif text-2xl font-bold text-gold2">
-          On the way
-        </h2>
-        <p className="mb-6 text-grey1">
-          The Daily Hub grows from here — one checklist, one share grid.
-        </p>
-        <div className="stagger grid grid-cols-1 gap-4 sm:grid-cols-3">
-          {upcoming.map((u) => (
-            <div key={u.name} className={`${cardShell} opacity-60`}>
-              <div className="mb-3 flex h-11 w-11 items-center justify-center rounded-full bg-hextech-black/60 outline outline-icon/30 -outline-offset-2">
-                <FontAwesomeIcon icon={u.icon} className="h-4 text-icon" />
-              </div>
-              <h3 className="mb-1 flex items-center gap-2 font-serif text-lg font-bold text-gold1">
-                {u.name}
-                <FontAwesomeIcon icon={faLock} className="h-3 text-grey1" />
-              </h3>
-              <p className="text-sm text-grey1">{u.blurb}</p>
-            </div>
-          ))}
-        </div>
-      </section>
     </div>
   )
 }

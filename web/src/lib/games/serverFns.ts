@@ -8,6 +8,7 @@
 import { createServerFn } from '@tanstack/react-start'
 import type {
   BattleVoteResult,
+  ChromaVisionState,
   DailyHubState,
   DroughtState,
   GuessOption,
@@ -47,12 +48,28 @@ export const submitSplashdleGuess = createServerFn({ method: 'POST' })
     return submit(data.skinId, data.restoreToken)
   })
 
+// The guessable catalog for autocomplete — shared by Splashdle and Chroma
+// Vision (both guess across the full skin pool).
 export const fetchSplashdleOptions = createServerFn({ method: 'GET' }).handler(
   async (): Promise<GuessOption[]> => {
     const { splashdleOptions } = await import('./server/splashdle')
     return splashdleOptions()
   },
 )
+
+export const fetchChromaVision = createServerFn({ method: 'POST' })
+  .inputValidator((d: GuestInput) => d)
+  .handler(async ({ data }): Promise<ChromaVisionState> => {
+    const { chromaVisionState } = await import('./server/chromavision')
+    return chromaVisionState(data.restoreToken)
+  })
+
+export const submitChromaGuess = createServerFn({ method: 'POST' })
+  .inputValidator((d: GuestInput & { skinId: string }) => d)
+  .handler(async ({ data }): Promise<ChromaVisionState> => {
+    const { submitChromaGuess: submit } = await import('./server/chromavision')
+    return submit(data.skinId, data.restoreToken)
+  })
 
 export const fetchPriceCheck = createServerFn({ method: 'POST' })
   .inputValidator((d: GuestInput) => d)
