@@ -117,35 +117,57 @@ Coolify command).
 
 ## Sign-in & security features (Logto console checklist)
 
-Password change, forgot password, and passkeys are **Logto sign-in-experience features**,
-not app code — the app's Account tab links to Logto's hosted Account Center at
-**`{LOGTO_ENDPOINT}/account/security`** ("Manage sign-in & security"). Identity stays in
-Logto. Note the path: the bare `/account` base renders Logto's deliberate not-found page
-(as of v1.40 the security page is the Account Center's only released page; the profile
-page is still behind Logto's dev-features flag), so links must target `/account/security`.
+Password change, email change, and social-connector linking are **native** on the app's
+Account tab (`/profile?tab=account`) — `SecuritySettings.tsx` talks to Logto's Account
+API (`{LOGTO_ENDPOINT}/api/my-account` + `/api/verifications`, CORS-open by design)
+using the opaque access token. Passkeys and 2-step verification still link out to the
+hosted Account Center security page at **`{LOGTO_ENDPOINT}/account/security`**. Note the
+path: the bare `/account` base renders Logto's deliberate not-found page (as of v1.40
+the security page is the Account Center's only released page), so links must target
+`/account/security`.
 
 Version requirements (the compose files pin `svhd/logto`; if you bump, stay ≥ these):
 - **≥ v1.38** — passkey sign-in (first-class WebAuthn login).
-- **≥ v1.39** — Account Center security page (MFA management, social linking, account deletion entry).
+- **≥ v1.39** — Account Center security page + Account API (both gated by the same
+  Account Center settings).
 
 Console toggles (all under the generated Logto **admin** domain):
 
-1. **Account Center** (the hosted self-service page): **Console → Sign-in & account →
-   Account center** → enable the page and toggle the fields users may view/edit
-   (username, password, email, MFA/passkeys). Leave **username** editable in mind:
-   renames made there propagate back to the app on the next JIT profile sync; renames
-   made in the app's Account tab go through `PATCH /api/me`, which patches Logto first.
+1. **Account Center settings — required for the app's native security section.**
+   **Console → Sign-in & account → Account center** → enable, and set at least
+   **email**, **password**, and **social** to *Edit*. The same settings drive both the
+   Account API (which the app's security section calls) and the hosted page; if the
+   Account API is unreachable or disabled the app falls back to a plain link-out.
+   Equivalent Management API call (M2M token with the Management API role):
+   ```
+   PATCH {LOGTO_ENDPOINT}/api/account-center
+   {"enabled": true, "fields": {"email": "Edit", "password": "Edit", "social": "Edit",
+    "username": "Edit", "name": "Off", "avatar": "Off", "profile": "Off",
+    "phone": "Off", "mfa": "Edit", "customData": "Off"}}
+   ```
    If you enable the Account Center **delete account** entry, point its delete-account
    URL at `https://skinbattle.lol/profile?tab=account` so deletions run through the app
    (which removes local votes/stats *and* the Logto user).
-2. **Forgot password**: first configure an **Email connector** (**Console → Connectors →
-   Email and SMS connectors** — SMTP or a provider). Then **Console → Sign-in & account →
-   Sign-up and sign-in** → keep **Password** enabled as a sign-in method and enable
-   **Email verification code** under **Forgot password**. The "Forgot password?" link then
-   appears on the hosted sign-in page automatically.
-3. **Password change** (signed-in users): handled by the Account Center password section
-   (enabled in step 1). No app code involved.
-4. **Passkeys (WebAuthn)** — two independent toggles:
+2. **Social connector redirect URIs — required for "Connected accounts".**
+   The native link flow sends the provider back to **`https://skinbattle.lol/social-callback`**.
+   That exact URL must be registered with each provider:
+   - **Discord** developer portal → your app → OAuth2 → Redirects → add
+     `https://skinbattle.lol/social-callback` (keep the existing
+     `https://auth.skinbattle.lol/callback/<connector-id>` used by sign-in).
+   - **Google** Cloud console → OAuth client → Authorized redirect URIs → add the same.
+   The hosted Account Center's own linking flow uses yet another redirect —
+   `https://auth.skinbattle.lol/account/callback/social/<connector-id>` — which is why
+   linking from the hosted page fails with "invalid uri" unless you also register that.
+   With the native flow in the app this is optional.
+3. **Email connector — required for email change & forgot password.** The native email
+   flow and identity verification send codes through Logto's email connector
+   (**Console → Connectors → Email and SMS connectors** — SMTP or a provider). Without
+   one, "change email" and "email me a code" fail at the send step.
+4. **Forgot password**: with the email connector in place, **Console → Sign-in &
+   account → Sign-up and sign-in** → keep **Password** enabled as a sign-in method and
+   enable **Email verification code** under **Forgot password**. The "Forgot password?"
+   link then appears on the hosted sign-in page automatically.
+5. **Passkeys (WebAuthn)** — two independent toggles:
    - *Passkey sign-in* (passwordless login): **Console → Sign-in & account → Sign-up and
      sign-in** → enable **Passkey** ("Continue with passkey" button, optional autofill).
    - *Passkey as 2-step verification*: **Console → Multi-factor auth** → enable
@@ -153,6 +175,17 @@ Console toggles (all under the generated Logto **admin** domain):
    WebAuthn requires the Logto endpoint to be served over **HTTPS on a stable domain**
    (the passkey is bound to e.g. `auth.skinbattle.lol` — changing the auth domain later
    orphans enrolled passkeys). `localhost` works for dev.
+6. **Sign-in page branding**: **Console → Sign-in & account → Sign-in experience →
+   Branding** → set the app logo to **`https://skinbattle.lol/icon-512.png`**
+   (512×512; `https://skinbattle.lol/favicon.svg` also works and scales cleanly) and
+   the brand color to **`#c8aa6e`** (the site's gold). `logto-signin-custom.css` at the
+   repo root is the custom-CSS source of truth for the rest of the hextech theme — it
+   currently *replaces* the logo with a SKINBATTLE.LOL wordmark, so drop that block if
+   you'd rather show the image logo you set here.
+
+Heads-up after deploying the Identities scope change (`web/src/lib/logto.ts`): scopes
+are baked into each user's grant at sign-in, so **existing sessions must sign out and
+back in** before the Connected-accounts section works; the app shows a hint until then.
 
 ## 7. Migrating existing users to Logto
 Existing accounts live in the old `users` table with bcrypt `password_hash` values
