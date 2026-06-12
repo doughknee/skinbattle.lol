@@ -63,7 +63,10 @@ services:
       retries: 20
 
   logto:
-    image: svhd/logto:latest
+    # Pinned: `latest` once updated the console code over a database still
+    # shaped for the old version, crashing the admin console. Bump this tag
+    # deliberately; the entrypoint deploys pending DB alterations on boot.
+    image: svhd/logto:1.40.1
     restart: unless-stopped
     depends_on:
       postgres:
@@ -83,7 +86,7 @@ services:
     entrypoint:
       - sh
       - -c
-      - 'npm run cli db seed -- --swe || true && npm start'
+      - 'npm run cli db alteration deploy latest || true && npm run cli db seed -- --swe || true && npm start'
 
   # One-shot: bootstrap a Logto M2M application with Management API access, so the
   # stack can be configured programmatically and the api service can delete Logto
