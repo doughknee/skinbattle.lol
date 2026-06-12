@@ -2,9 +2,11 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from '@tanstack/react-router'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faMagnifyingGlass, faUser, faShirt } from '@fortawesome/free-solid-svg-icons'
+import type { IconDefinition } from '@fortawesome/fontawesome-svg-core'
 import { api } from '~/lib/api'
 import { Spinner } from '~/components/Skeletons'
 import { championDisplayName, displaySkinName } from '~/lib/skinName'
+import { allSitePages, quickNavPages } from '~/lib/siteMap'
 import type { Champion } from '~/lib/types'
 
 const OPEN_EVENT = 'sb:open-search'
@@ -14,14 +16,27 @@ export function openCommandPalette() {
   window.dispatchEvent(new CustomEvent(OPEN_EVENT))
 }
 
-interface Entry {
+type Entry = {
   key: string
-  kind: 'champion' | 'skin'
   label: string
   sub: string
-  championId: string
   haystack: string
-}
+} & (
+  | { kind: 'page'; to: string; icon: IconDefinition }
+  | { kind: 'champion' | 'skin'; championId: string }
+)
+
+// Every navigable page, from the site-map registry. Static — built once.
+const pageEntries: Entry[] = allSitePages().map((p) => ({
+  key: `p-${p.to}`,
+  kind: 'page',
+  label: p.label,
+  sub: p.blurb,
+  to: p.to,
+  icon: p.icon,
+  haystack: `${p.label} ${p.to} ${p.search ?? ''}`.toLowerCase(),
+}))
+const quickNavKeys = new Set(quickNavPages().map((p) => `p-${p.to}`))
 
 // Champions (with their skin lists) are fetched once per session and reused
 // across palette opens.
@@ -36,8 +51,15 @@ function loadCatalog(): Promise<Champion[]> {
   return catalogPromise
 }
 
+const MAX_PAGES = 5
 const MAX_CHAMPIONS = 6
 const MAX_SKINS = 10
+
+const GROUP_LABELS: Record<Entry['kind'], string> = {
+  page: 'Pages',
+  champion: 'Champions',
+  skin: 'Skins',
+}
 
 export default function CommandPalette() {
   const [open, setOpen] = useState(false)
@@ -65,7 +87,7 @@ export default function CommandPalette() {
     }
   }, [])
 
-  // Build the searchable index on first open.
+  // Build the searchable champion/skin index on first open.
   useEffect(() => {
     if (!open || entries.length > 0) return
     let cancelled = false
@@ -101,7 +123,7 @@ export default function CommandPalette() {
         setEntries(built)
       })
       .catch(() => {
-        /* palette just shows no results if the catalog fails to load */
+        /* pages still work if the catalog fails to load */
       })
     return () => {
       cancelled = true
@@ -119,19 +141,33 @@ export default function CommandPalette() {
 
   const results = useMemo(() => {
     const q = query.trim().toLowerCase()
+    if (!q) {
+      // Before typing: the main sections, then the champion roster.
+      const quick = pageEntries.filter((p) => quickNavKeys.has(p.key))
+      const champions = entries
+        .filter((e) => e.kind === 'champion')
+        .slice(0, MAX_CHAMPIONS)
+      return [...quick, ...champions]
+    }
+    const pages: Entry[] = []
+    for (const p of pageEntries) {
+      if (p.haystack.includes(q)) {
+        pages.push(p)
+        if (pages.length >= MAX_PAGES) break
+      }
+    }
     const champions: Entry[] = []
     const skins: Entry[] = []
     for (const e of entries) {
-      if (q && !e.haystack.includes(q)) continue
+      if (!e.haystack.includes(q)) continue
       if (e.kind === 'champion') {
         if (champions.length < MAX_CHAMPIONS) champions.push(e)
-      } else if (q) {
-        // Skins only show up once the user starts typing.
-        if (skins.length < MAX_SKINS) skins.push(e)
+      } else if (skins.length < MAX_SKINS) {
+        skins.push(e)
       }
       if (champions.length >= MAX_CHAMPIONS && skins.length >= MAX_SKINS) break
     }
-    return [...champions, ...skins]
+    return [...pages, ...champions, ...skins]
   }, [entries, query])
 
   useEffect(() => {
@@ -141,10 +177,14 @@ export default function CommandPalette() {
   const select = useCallback(
     (entry: Entry) => {
       setOpen(false)
-      navigate({
-        to: '/champions/$id',
-        params: { id: entry.championId.toLowerCase() },
-      })
+      if (entry.kind === 'page') {
+        navigate({ to: entry.to })
+      } else {
+        navigate({
+          to: '/champions/$id',
+          params: { id: entry.championId.toLowerCase() },
+        })
+      }
     },
     [navigate],
   )
@@ -173,7 +213,7 @@ export default function CommandPalette() {
 
   if (!open) return null
 
-  const firstSkinIndex = results.findIndex((r) => r.kind === 'skin')
+  const loadingCatalog = entries.length === 0
 
   return (
     <div
@@ -185,7 +225,7 @@ export default function CommandPalette() {
       <div
         role="dialog"
         aria-modal="true"
-        aria-label="Search champions and skins"
+        aria-label="Search pages, champions, and skins"
         className="animate-pop mx-auto mt-[12vh] w-full max-w-xl px-4"
       >
         <div className="bg-hextech-black/95 shadow-2xl outline outline-gold2/40 -outline-offset-1">
@@ -200,8 +240,8 @@ export default function CommandPalette() {
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               onKeyDown={onInputKeyDown}
-              placeholder="Search champions and skins…"
-              aria-label="Search champions and skins"
+              placeholder="Search pages, champions, and skins…"
+              aria-label="Search pages, champions, and skins"
               className="h-12 w-full bg-transparent text-gold1 placeholder-grey1 outline-none"
             />
             <kbd className="shrink-0 px-1.5 py-0.5 text-[10px] font-bold text-grey1 outline outline-icon/30">
@@ -214,29 +254,26 @@ export default function CommandPalette() {
             role="listbox"
             className="max-h-[50vh] overflow-y-auto py-2"
           >
-            {entries.length === 0 ? (
-              <li
-                role="status"
-                className="flex items-center justify-center gap-2.5 px-4 py-6 text-sm text-grey1"
-              >
-                <Spinner className="h-4 w-4" />
-                Loading the roster…
-              </li>
-            ) : results.length === 0 ? (
-              <li className="px-4 py-6 text-center text-sm text-grey1">
-                No champions or skins match “{query}”.
-              </li>
+            {results.length === 0 ? (
+              loadingCatalog ? (
+                <li
+                  role="status"
+                  className="flex items-center justify-center gap-2.5 px-4 py-6 text-sm text-grey1"
+                >
+                  <Spinner className="h-4 w-4" />
+                  Loading the roster…
+                </li>
+              ) : (
+                <li className="px-4 py-6 text-center text-sm text-grey1">
+                  Nothing matches “{query}”.
+                </li>
+              )
             ) : (
               results.map((entry, i) => (
                 <li key={entry.key} data-index={i}>
-                  {i === firstSkinIndex && (
+                  {(i === 0 || results[i - 1].kind !== entry.kind) && (
                     <p className="px-4 pb-1 pt-2 text-xs font-semibold uppercase tracking-widest text-gold2/70">
-                      Skins
-                    </p>
-                  )}
-                  {i === 0 && entry.kind === 'champion' && (
-                    <p className="px-4 pb-1 text-xs font-semibold uppercase tracking-widest text-gold2/70">
-                      Champions
+                      {GROUP_LABELS[entry.kind]}
                     </p>
                   )}
                   <button
@@ -251,18 +288,33 @@ export default function CommandPalette() {
                     }`}
                   >
                     <FontAwesomeIcon
-                      icon={entry.kind === 'champion' ? faUser : faShirt}
-                      className="h-3.5 shrink-0 text-gold2/80"
+                      icon={
+                        entry.kind === 'page'
+                          ? entry.icon
+                          : entry.kind === 'champion'
+                            ? faUser
+                            : faShirt
+                      }
+                      className="h-3.5 w-4 shrink-0 text-gold2/80"
                     />
                     <span className="min-w-0 flex-1 truncate text-sm font-semibold">
                       {entry.label}
                     </span>
-                    <span className="shrink-0 truncate text-xs italic text-grey1">
+                    <span className="shrink-0 max-w-[45%] truncate text-xs italic text-grey1">
                       {entry.sub}
                     </span>
                   </button>
                 </li>
               ))
+            )}
+            {loadingCatalog && results.length > 0 && (
+              <li
+                role="status"
+                className="flex items-center gap-2.5 px-4 py-3 text-xs text-grey1"
+              >
+                <Spinner className="h-3.5 w-3.5" />
+                Loading champions and skins…
+              </li>
             )}
           </ul>
         </div>

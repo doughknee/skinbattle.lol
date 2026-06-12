@@ -1,0 +1,6 @@
+User-agent: *
+Allow: /
+Disallow: /profile
+Disallow: /callback
+
+Sitemap: https://skinbattle.lol/sitemap.xml

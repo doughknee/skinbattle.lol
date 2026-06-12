@@ -2,9 +2,11 @@ import { Link } from '@tanstack/react-router'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faMap } from '@fortawesome/free-solid-svg-icons'
 import { btnPrimarySm, btnSecondarySm } from '~/lib/ui'
+import { SITE_SECTIONS } from '~/lib/siteMap'
 
 // Designed 404, registered as the router's notFoundComponent so a bad URL
-// looks intentional instead of a bare default message.
+// looks intentional instead of a bare default message. Suggestions come from
+// the site-map registry, so they stay current as sections change.
 export default function NotFound() {
   return (
     <div className="container mx-auto flex flex-col items-center px-6 pt-36 pb-24 text-center">
@@ -25,9 +27,12 @@ export default function NotFound() {
         <Link to="/" className={btnPrimarySm}>
           Back to Home
         </Link>
-        <Link to="/champions" className={btnSecondarySm}>
-          Browse Champions
-        </Link>
+        {SITE_SECTIONS.map((s) => (
+          <Link key={s.to} to={s.to} className={btnSecondarySm}>
+            <FontAwesomeIcon icon={s.icon} className="h-4" />
+            {s.label}
+          </Link>
+        ))}
       </div>
     </div>
   )

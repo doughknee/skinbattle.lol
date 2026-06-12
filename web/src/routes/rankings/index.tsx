@@ -1,7 +1,11 @@
 import { createFileRoute, Link } from '@tanstack/react-router'
 import { useMemo, useState } from 'react'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faMagnifyingGlass } from '@fortawesome/free-solid-svg-icons'
+import {
+  faCrown,
+  faHourglassHalf,
+  faMagnifyingGlass,
+} from '@fortawesome/free-solid-svg-icons'
 import PageHeader from '~/components/PageHeader'
 import ErrorState from '~/components/ErrorState'
 import { fetchRankingsIndex } from '~/lib/games/serverFns'
@@ -73,7 +77,7 @@ function RankingsIndexPage() {
   return (
     <div className="container mx-auto max-w-4xl px-6 pt-28 pb-16">
       <PageHeader
-        eyebrow="Insights · every slice is a link"
+        eyebrow="Every slice is a link"
         title={
           <>
             Rank<span className="italic">ings</span>
@@ -135,6 +139,49 @@ function RankingsIndexPage() {
               …and {index.champions.length - 24} more — type to find them.
             </span>
           )}
+        </div>
+      </section>
+
+      <section className="animate-fade-up mt-12">
+        <h2 className="mb-1 font-serif text-2xl font-bold text-gold2">
+          More verdicts
+        </h2>
+        <p className="mb-4 text-sm text-grey1">
+          The rest of the community record, beyond the battle ratings.
+        </p>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <Link
+            to="/awards"
+            className="group flex items-center gap-4 bg-hextech-black/30 p-5 outline outline-icon/20 -outline-offset-2 transition duration-200 hover:-translate-y-0.5 hover:bg-hextech-black/50 hover:outline-gold2/60"
+          >
+            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-hextech-black/60 outline outline-gold5/60 -outline-offset-2">
+              <FontAwesomeIcon icon={faCrown} className="h-5 text-gold2" />
+            </div>
+            <div>
+              <h3 className="font-serif text-xl font-bold text-gold1 transition duration-150 group-hover:text-gold2">
+                Awards
+              </h3>
+              <p className="text-sm text-grey1">
+                Most starred, most banned — the community's superlatives.
+              </p>
+            </div>
+          </Link>
+          <Link
+            to="/rankings/drought"
+            className="group flex items-center gap-4 bg-hextech-black/30 p-5 outline outline-icon/20 -outline-offset-2 transition duration-200 hover:-translate-y-0.5 hover:bg-hextech-black/50 hover:outline-gold2/60"
+          >
+            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-hextech-black/60 outline outline-gold5/60 -outline-offset-2">
+              <FontAwesomeIcon icon={faHourglassHalf} className="h-5 text-gold2" />
+            </div>
+            <div>
+              <h3 className="font-serif text-xl font-bold text-gold1 transition duration-150 group-hover:text-gold2">
+                The Drought Index
+              </h3>
+              <p className="text-sm text-grey1">
+                Days since every champion's last skin, ranked.
+              </p>
+            </div>
+          </Link>
         </div>
       </section>
     </div>
