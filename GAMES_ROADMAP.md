@@ -148,6 +148,18 @@ expire, and (3) a persistent identity worth investing in. Games are sequenced by
   players and pitches sign-in; honest empty states before anyone signs in.
   Hub Community section + OG card. With this, **every Phase 0 item is
   shipped.**
+- ✅ **Facts source swap: Meraki → League Wiki** (2026-06-12) — Meraki's CDN
+  froze around patch 25.06 (mid-2025): a fresh snapshot still had no skin
+  newer than 2025-04-30, leaving "New this patch" empty and 12 long-shipped
+  skins flagged Upcoming. `snapshot-facts.mjs` now reads the wiki's
+  `Module:SkinData/data` directly (the dataset Meraki mirrored; parsed with
+  a strict mini Lua-table parser that fails loudly on format drift) — skin
+  id reconstructed as championKey×1000+num, so the Data Dragon join needs no
+  name matching. Rarity (still unread by any surface) tops up from
+  CommunityDragon best-effort, carrying previous values on outage. Result:
+  1,925 skins (was 1,797), all release-dated, newest two weeks ahead;
+  ~100% catalog coverage (the only misses are splash-swept phantom chromas).
+  Same output schema, workflow, and runtime code — only the source moved.
 
 **Architecture note**: game state currently lives in the TanStack Start SSR
 layer (server functions + SQLite at `web/.data/games.db` — persisted via the
@@ -339,14 +351,13 @@ Shared infrastructure every game reuses. Build once; each later game becomes a
 - **Static skin facts dataset** — RP price, rarity, availability, skin line,
   chroma count. ✅ Feasibility confirmed (2026-06-11): Data Dragon has no
   price/rarity; CommunityDragon has rarity but 801/2,087 skins are `kNoRarity`
-  (all budget tiers), so rarity → price doesn't work alone. **Source: Meraki
-  Analytics CDN** (`cdn.merakianalytics.com/riot/lol/resources/latest/en-US/
-  champions/<Champ>.json`) — has explicit per-skin `cost` in RP, `rarity`, and
-  `availability` (Available vs Legacy — exclude/mark legacy skins in Price
-  Check). Community-maintained, so snapshot it into our own committed dataset
-  via a periodic pull script; never depend on it at runtime. ⚠ `releaseDate`
-  was null in sampling — release-year games need a separate source (wiki or
-  skin-ID ordering as a rough proxy) before being promised.
+  (all budget tiers), so rarity → price doesn't work alone. ~~**Source: Meraki
+  Analytics CDN**~~ → superseded 2026-06-12: Meraki froze at patch 25.06, the
+  source is now the **League Wiki's `Module:SkinData/data`** (per-skin `cost`
+  in RP, `availability` incl. Legacy/Upcoming, `set`, full `release` dates —
+  it's the dataset Meraki itself mirrored), rarity topped up from
+  CommunityDragon. Community-maintained, so snapshot it into our own committed
+  dataset via a periodic pull script; never depend on it at runtime.
 
 ### Scoped: guest-first play
 
@@ -390,7 +401,7 @@ Runs unattended; staleness is how fan sites die. Daily check (patches land
    (hash/URL change) trigger an asset-version epoch bump → uncertainty widening
    per the ASU policy.
 3. **Ingest** — new skins: assets, names, IDs, skin-line tags; re-snapshot the
-   Meraki facts dataset and diff prices/availability (legacy-vaulting changes
+   wiki facts dataset and diff prices/availability (legacy-vaulting changes
    Price Check's pool).
 4. **Activate** — new skins enter the placement-match queue with the "new"
    badge and boosted matchmaking frequency.
@@ -401,7 +412,7 @@ Runs unattended; staleness is how fan sites die. Daily check (patches land
    six weeks with zero new skins) pings us instead of silently rotting. New
    ingests land in a lightweight review queue: auto-live, human-glanced.
 
-Scope guard: live-patch skins only (Data Dragon = live). Meraki's "Upcoming"
+Scope guard: live-patch skins only (Data Dragon = live). The wiki's "Upcoming"
 availability flag is the future hook for Release Day Predictions, not Phase 0.
 
 ### Scoped: stable URLs & share cards

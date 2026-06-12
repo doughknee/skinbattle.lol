@@ -1,13 +1,14 @@
 # Unattended facts refresh (GAMES_ROADMAP, "patch-cadence pipeline"):
-# re-snapshots the Meraki skin-facts dataset twice a week and opens a PR
-# when the data actually changed (the snapshot script is idempotent — no
-# timestamp churn). League patches land ~biweekly, so this catches new
-# skins, price changes, and legacy-vaulting within a few days.
+# re-snapshots the skin-facts dataset (League Wiki SkinData + CommunityDragon
+# rarity) twice a week and opens a PR when the data actually changed (the
+# snapshot script is idempotent — no timestamp churn). League patches land
+# ~biweekly, so this catches new skins, price changes, and legacy-vaulting
+# within a few days.
 #
-# Alerting falls out for free: if Meraki breaks or moves, the run fails and
+# Alerting falls out for free: if the wiki breaks or moves, the run fails and
 # GitHub emails the failure — staleness never goes silent. The snapshot
-# script also refuses to write a mostly-empty dataset, so a half-broken CDN
-# can't replace good data.
+# script also refuses to write a mostly-empty dataset, so a half-broken
+# source can't replace good data.
 name: facts-snapshot
 
 on:
@@ -37,9 +38,10 @@ jobs:
           commit-message: |
             chore: refresh skin-facts snapshot
 
-            Automated Meraki re-snapshot (facts-snapshot workflow).
+            Automated re-snapshot (facts-snapshot workflow).
           body: |
-            Automated skin-facts refresh from the Meraki Analytics CDN.
+            Automated skin-facts refresh from the League Wiki's SkinData
+            module (rarity from CommunityDragon).
 
             Review the diff for new skins, price changes, and
             legacy-vaulting, then merge — Price Check pools, skin pages,

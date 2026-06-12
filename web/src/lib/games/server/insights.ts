@@ -25,7 +25,7 @@ export interface NewSkin {
   name: string
   championName: string
   splashUrl: string
-  release: string | null // null = Meraki lists it as Upcoming
+  release: string | null // null = the wiki hasn't dated it yet
   upcoming: boolean
 }
 

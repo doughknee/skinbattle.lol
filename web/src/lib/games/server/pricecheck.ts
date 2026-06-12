@@ -1,5 +1,5 @@
 // Price Check engine (server-only): five skins a day, guess each one's RP
-// tier. Prices come from the committed Meraki snapshot (server/facts.ts) —
+// tier. Prices come from the committed facts snapshot (server/facts.ts) —
 // never fetched at runtime. Legacy skins stay in the pool and surface a fun
 // fact ("not even buyable anymore"), per the roadmap.
 //
