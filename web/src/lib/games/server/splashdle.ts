@@ -376,6 +376,22 @@ export async function submitSplashdleGuess(
   return assembleState(db, date, user, token, puzzle, { status, guesses })
 }
 
+// Data for the Splashdle OG share card: today's puzzle number plus the
+// level-0 crop — exactly what a new player sees first, so it's spoiler-free
+// by definition.
+export async function splashdleOgInfo(): Promise<{
+  puzzleNumber: number
+  crop: string
+}> {
+  const db = getDb()
+  const date = utcToday()
+  const puzzle = await getOrCreatePuzzle(db, date)
+  return {
+    puzzleNumber: puzzleNumber(date),
+    crop: await cropDataUrl(db, date, puzzle, 0),
+  }
+}
+
 // Autocomplete options for the guess input — the full guessable catalog.
 export async function splashdleOptions(): Promise<GuessOption[]> {
   const db = getDb()

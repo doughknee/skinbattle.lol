@@ -25,6 +25,8 @@ COPY --from=build /app/package.json /app/package-lock.json* ./
 RUN npm ci --omit=dev || npm install --omit=dev
 COPY --from=build /app/dist ./dist
 COPY --from=build /app/server.mjs ./server.mjs
+# OG share-card fonts (lib/games/server/og.ts reads them at runtime).
+COPY --from=build /app/assets ./assets
 
 EXPOSE 3000
 
