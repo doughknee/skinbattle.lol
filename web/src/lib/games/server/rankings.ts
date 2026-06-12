@@ -16,6 +16,8 @@ import { allCatalogSkins, ensureCatalog, type CatalogSkin } from './catalog'
 import { factsFor, PRICE_TIERS } from './facts'
 import { kebab, skinSlug } from '../slug'
 
+// Page size: the route loads the first page server-side and "Show more"
+// pulls deeper pages by offset.
 const ROW_CAP = 100
 // Roadmap threshold: rankings count as calibrated once the median rated
 // skin has ~10 battles.
@@ -99,6 +101,7 @@ function resolveSlice(db: DatabaseSync, slice: string): Slice | null {
 
 export async function rankingsState(
   slice: string,
+  offset = 0,
 ): Promise<RankingsState | null> {
   const db = getDb()
   await ensureCatalog(db)
@@ -130,8 +133,11 @@ export async function rankingsState(
   const medianBattles =
     battles.length > 0 ? battles[Math.floor(battles.length / 2)] : 0
 
-  const rows: RankingRow[] = rated.slice(0, ROW_CAP).map((x, i) => ({
-    rank: i + 1,
+  // Clamp the page start: negative or fractional input degrades to page
+  // one, past-the-end yields an empty page (the client stops asking).
+  const start = Math.min(Math.max(0, Math.trunc(offset)), rated.length)
+  const rows: RankingRow[] = rated.slice(start, start + ROW_CAP).map((x, i) => ({
+    rank: start + i + 1,
     skinId: x.skin.id,
     slug: skinSlug(x.skin.name, x.skin.id),
     name: x.skin.name,

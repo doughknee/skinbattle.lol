@@ -96,11 +96,12 @@ export const fetchLeaderboards = createServerFn({ method: 'GET' }).handler(
 )
 
 // Ranking slices are fully anonymous derived data, like the Drought Index.
+// `offset` pages through slices deeper than one page of rows.
 export const fetchRankings = createServerFn({ method: 'POST' })
-  .inputValidator((d: { slice: string }) => d)
+  .inputValidator((d: { slice: string; offset?: number }) => d)
   .handler(async ({ data }): Promise<RankingsState | null> => {
     const { rankingsState } = await import('./server/rankings')
-    return rankingsState(data.slice)
+    return rankingsState(data.slice, data.offset ?? 0)
   })
 
 export const fetchRankingsIndex = createServerFn({ method: 'GET' }).handler(
