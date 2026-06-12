@@ -14,6 +14,7 @@ import {
   faCheckToSlot,
   faCoins,
   faCrown,
+  faFileContract,
   faHourglassHalf,
   faHouse,
   faImage,
@@ -23,6 +24,7 @@ import {
   faRoad,
   faRocket,
   faScaleUnbalanced,
+  faShieldHalved,
   faShirt,
   faShuffle,
   faTrophy,
@@ -235,6 +237,20 @@ export const SECONDARY_PAGES: SitePage[] = [
     blurb: 'The rating system behind the lists, explained for humans.',
     icon: faChartLine,
     search: 'elo rating explainer how it works bradley terry calibrating uncertainty mmr math',
+  },
+  {
+    to: '/privacy',
+    label: 'Privacy',
+    blurb: 'What the site collects (very little), why, and how to delete it.',
+    icon: faShieldHalved,
+    search: 'privacy policy data gdpr cookies delete legal',
+  },
+  {
+    to: '/terms',
+    label: 'Terms',
+    blurb: 'The ground rules for a free fan project.',
+    icon: faFileContract,
+    search: 'terms of use service legal rules riot disclaimer',
   },
 ]
 
