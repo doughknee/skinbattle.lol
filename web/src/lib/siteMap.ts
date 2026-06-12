@@ -10,6 +10,7 @@
 //   button. Leaf content (champion/skin pages, slices) never appears in nav.
 
 import {
+  faChartLine,
   faCoins,
   faCrown,
   faHourglassHalf,
@@ -18,6 +19,8 @@ import {
   faListOl,
   faPalette,
   faRankingStar,
+  faRoad,
+  faRocket,
   faScaleUnbalanced,
   faShirt,
   faShuffle,
@@ -117,29 +120,6 @@ export const SITE_SECTIONS: SiteSection[] = [
     ],
   },
   {
-    to: '/skins',
-    label: 'Skins',
-    blurb: 'The catalog — every skin, every champion, ready to vote on.',
-    icon: faShirt,
-    search: 'catalog browse splash art collection',
-    children: [
-      {
-        to: '/skins',
-        label: 'All Skins',
-        blurb: 'The full catalog — search, sort, and cast your votes.',
-        icon: faShirt,
-        search: 'catalog browse every skin',
-      },
-      {
-        to: '/champions',
-        label: 'By Champion',
-        blurb: 'Every champion and their wardrobe — vote skin by skin.',
-        icon: faUsers,
-        search: 'roster champions browse vote wardrobe',
-      },
-    ],
-  },
-  {
     to: '/rankings',
     label: 'Rankings',
     blurb: 'The community verdict, sliced every way an argument needs.',
@@ -180,13 +160,63 @@ export const SITE_SECTIONS: SiteSection[] = [
       },
     ],
   },
+  {
+    to: '/skins',
+    label: 'Skins',
+    blurb: 'The catalog — every skin, every champion, ready to star or ban.',
+    icon: faShirt,
+    search: 'catalog browse splash art collection',
+    children: [
+      {
+        to: '/skins',
+        label: 'All Skins',
+        blurb: 'The full catalog — search, sort, and spend your stars and bans.',
+        icon: faShirt,
+        search: 'catalog browse every skin',
+      },
+      {
+        to: '/champions',
+        label: 'By Champion',
+        blurb: 'Every champion and their wardrobe — star and ban skin by skin.',
+        icon: faUsers,
+        search: 'roster champions browse vote wardrobe',
+      },
+    ],
+  },
+]
+
+// Secondary pages: real destinations that aren't one of the three doors.
+// They live in the footer, the command palette, and the sitemap — never in
+// the navbar (the doors stay three).
+export const SECONDARY_PAGES: SitePage[] = [
+  {
+    to: '/roadmap',
+    label: 'Roadmap',
+    blurb: 'What is live, what is next, and the milestones that unlock it.',
+    icon: faRoad,
+    search: 'roadmap upcoming future plans skin cup hot takes milestones progress eras',
+  },
+  {
+    to: '/releases',
+    label: 'Releases',
+    blurb: 'What just shipped, in plain language.',
+    icon: faRocket,
+    search: 'releases changelog updates news whats new patch notes shipped',
+  },
+  {
+    to: '/rankings/elo',
+    label: 'How Rankings Work',
+    blurb: 'The rating system behind the lists, explained for humans.',
+    icon: faChartLine,
+    search: 'elo rating explainer how it works bradley terry calibrating uncertainty mmr math',
+  },
 ]
 
 // Flat, deduped list of every navigable page — powers the command palette.
 export function allSitePages(): SitePage[] {
   const seen = new Set<string>()
   const out: SitePage[] = []
-  for (const p of [HOME, ...SITE_SECTIONS, PROFILE]) {
+  for (const p of [HOME, ...SITE_SECTIONS, PROFILE, ...SECONDARY_PAGES]) {
     if (!seen.has(p.to)) {
       seen.add(p.to)
       out.push(p)

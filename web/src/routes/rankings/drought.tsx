@@ -116,11 +116,7 @@ function DroughtPage() {
     <div className="container mx-auto max-w-4xl px-6 pt-28 pb-16">
       <PageHeader
         eyebrow="Rankings · updated daily"
-        title={
-          <>
-            The Skin Dr<span className="italic">ought</span> Index
-          </>
-        }
+        title="The Skin Drought Index"
         subtitle="Days since every champion's last skin, ranked. Settle the argument with a link."
         className="mb-10"
       />

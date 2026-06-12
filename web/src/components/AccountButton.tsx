@@ -4,56 +4,45 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faRightToBracket, faUserGear } from '@fortawesome/free-solid-svg-icons'
 import { api } from '~/lib/api'
 import { useAuth } from '~/lib/useAuth'
-
-// Cache the username across mounts AND hard reloads (localStorage), so the
-// header shows the name immediately instead of waiting on /me every load.
-const USERNAME_KEY = 'sb:username'
-
-function readCachedUsername(): string | null {
-  if (typeof window === 'undefined') return null
-  try {
-    return localStorage.getItem(USERNAME_KEY)
-  } catch {
-    return null
-  }
-}
-
-let cachedUsername: string | null = readCachedUsername()
-
-function writeCachedUsername(value: string | null) {
-  cachedUsername = value
-  if (typeof window === 'undefined') return
-  try {
-    if (value === null) localStorage.removeItem(USERNAME_KEY)
-    else localStorage.setItem(USERNAME_KEY, value)
-  } catch {
-    /* storage unavailable — in-memory cache still works */
-  }
-}
+import { championIconUrl, useDDragonVersion } from '~/lib/ddragon'
+import {
+  PROFILE_UPDATED_EVENT,
+  clearCachedProfile,
+  readCachedProfile,
+  writeCachedProfile,
+  type CachedProfile,
+} from '~/lib/profileCache'
 
 export default function AccountButton() {
   const navigate = useNavigate()
   const { isAuthenticated, isLoading, withApiToken, login } = useAuth()
-  const [username, setUsername] = useState<string | null>(cachedUsername)
+  // Cached profile (localStorage) shows the name/avatar immediately instead
+  // of waiting on /me every load; /me reconciles it in the background.
+  const [profile, setProfile] = useState<CachedProfile>(() =>
+    readCachedProfile(),
+  )
+  const ddVersion = useDDragonVersion()
 
   useEffect(() => {
     if (isLoading) return
     if (!isAuthenticated) {
-      writeCachedUsername(null)
-      setUsername(null)
+      clearCachedProfile()
+      setProfile({ username: null, avatarChampionId: null })
       return
     }
-    // Show the cached name instantly, but still reconcile against /me in the
-    // background (covers renames and a different account signing in).
-    if (cachedUsername) setUsername(cachedUsername)
+    // Reconcile against /me (covers renames, avatar changes, and a different
+    // account signing in on this browser).
     let cancelled = false
     ;(async () => {
       try {
         const me = await withApiToken((token) => api.me(token))
-        if (me?.username && me.username !== cachedUsername) {
-          writeCachedUsername(me.username)
-          if (!cancelled) setUsername(me.username)
+        if (!me?.username) return
+        const fresh: CachedProfile = {
+          username: me.username,
+          avatarChampionId: me.avatar_champion_id ?? null,
         }
+        writeCachedProfile(fresh)
+        if (!cancelled) setProfile(fresh)
       } catch {
         /* fall back to the cached or generic "Account" label */
       }
@@ -62,6 +51,15 @@ export default function AccountButton() {
       cancelled = true
     }
   }, [isAuthenticated, isLoading, withApiToken])
+
+  // Live updates from the Account tab (rename / avatar change) in-session.
+  useEffect(() => {
+    const onUpdate = (e: Event) => {
+      setProfile((e as CustomEvent).detail as CachedProfile)
+    }
+    window.addEventListener(PROFILE_UPDATED_EVENT, onUpdate)
+    return () => window.removeEventListener(PROFILE_UPDATED_EVENT, onUpdate)
+  }, [])
 
   // While the SDK restores the session from storage (and during SSR), the
   // auth state is unknown — render a placeholder instead of flashing
@@ -75,7 +73,11 @@ export default function AccountButton() {
     )
   }
 
-  const label = isAuthenticated ? (username ?? 'Account') : 'Sign in'
+  const label = isAuthenticated ? (profile.username ?? 'Account') : 'Sign in'
+  const avatarUrl =
+    isAuthenticated && profile.avatarChampionId && ddVersion
+      ? championIconUrl(profile.avatarChampionId, ddVersion)
+      : null
 
   return (
     <button
@@ -91,10 +93,18 @@ export default function AccountButton() {
       title={isAuthenticated ? 'Your profile' : 'Sign in'}
       className="flex h-10 cursor-pointer items-center gap-2 bg-hextech-black/40 px-3 text-sm font-bold text-grey1 outline outline-icon/30 -outline-offset-1 hover:text-gold1 hover:outline-icon transition duration-150"
     >
-      <FontAwesomeIcon
-        icon={isAuthenticated ? faUserGear : faRightToBracket}
-        className="h-4 text-gold2"
-      />
+      {avatarUrl ? (
+        <img
+          src={avatarUrl}
+          alt=""
+          className="h-6 w-6 outline outline-gold5/60 -outline-offset-1"
+        />
+      ) : (
+        <FontAwesomeIcon
+          icon={isAuthenticated ? faUserGear : faRightToBracket}
+          className="h-4 text-gold2"
+        />
+      )}
       <span className="hidden max-w-[9rem] truncate sm:inline">{label}</span>
     </button>
   )

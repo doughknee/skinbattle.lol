@@ -304,6 +304,36 @@ export interface SkinPageState {
   guestToken: string
 }
 
+// ─── Home page ──────────────────────────────────────────────────────────────
+
+// One hero slide: a catalog skin plus whatever live standing it has. The Elo
+// rank is null until the skin has fought at least one battle.
+export interface HomeSlide {
+  skinId: string
+  slug: string // stable URL: /skins/<slug>
+  name: string
+  championId: string
+  championName: string
+  splashUrl: string
+  cost: number | null // RP price from the facts snapshot
+  rank: number | null // Elo rank among rated skins
+  battles: number
+}
+
+export interface HomeState {
+  date: string // UTC day the slide set is seeded from
+  slides: HomeSlide[]
+  community: {
+    battles: number // all battles ever fought, by everyone
+    rated: number // skins with at least one battle
+    catalog: number // playable skins in the catalog
+  }
+  drought: {
+    top: DroughtRow[]
+    stats: DroughtState['stats']
+  } | null // null = no dated skins yet; the section hides itself
+}
+
 // ─── Insights: the Skin Drought Index ───────────────────────────────────────
 
 export interface DroughtRow {
@@ -341,6 +371,7 @@ export interface MirrorSkin {
   skinId: string
   slug: string // stable URL: /skins/<slug>
   name: string
+  championId: string
   championName: string
   splashUrl: string
   rating: number // personal rating, rounded
@@ -399,4 +430,16 @@ export interface MirrorState {
   tasteUnder: TasteEntry[]
   completion: ChampionCompletion[] // champions touched, most-rated first
   completionMore: number // touched champions beyond the list cap
+}
+
+// Live community totals for the public roadmap's milestone meters. The star
+// and ban totals come from the Go API and are null when it is unreachable
+// (the page renders without them rather than failing).
+export interface RoadmapState {
+  battles: number
+  ratedSkins: number // skins with at least one battle
+  totalSkins: number // full catalog size
+  medianBattles: number // median battles among rated skins
+  starsGiven: number | null
+  bansCast: number | null
 }

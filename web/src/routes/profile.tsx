@@ -2,8 +2,6 @@ import { createFileRoute, Link } from '@tanstack/react-router'
 import { useEffect, useState } from 'react'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import {
-  faArrowUp,
-  faArrowDown,
   faStar,
   faBan,
   faCheckToSlot,
@@ -14,10 +12,9 @@ import type { IconDefinition } from '@fortawesome/fontawesome-svg-core'
 import SkinCard from '~/components/SkinCard'
 import EmptyState from '~/components/EmptyState'
 import ErrorState from '~/components/ErrorState'
-import LogoutButton from '~/components/LogoutButton'
-import DeleteAccountButton from '~/components/DeleteAccountButton'
+import AccountSettings from '~/components/AccountSettings'
 import MirrorView from '~/components/MirrorView'
-import { Spinner } from '~/components/Skeletons'
+import { AccountTabSkeleton, VotesTabSkeleton } from '~/components/Skeletons'
 import { api } from '~/lib/api'
 import { useAuth } from '~/lib/useAuth'
 import { btnPrimarySm } from '~/lib/ui'
@@ -26,9 +23,9 @@ import { guestRestoreToken, rememberGuestToken } from '~/lib/games/client'
 import { ogMeta } from '~/lib/games/ogMeta'
 import type { Me, Skin } from '~/lib/types'
 
-// Per-user quota, mirrored from CONTRACT.md (max 3 stars / 3 bans).
-const MAX_STARS = 3
-const MAX_X = 3
+// Per-user quota, mirrored from CONTRACT.md (max 10 stars / 10 bans).
+const MAX_STARS = 10
+const MAX_X = 10
 
 type Tab = 'mirror' | 'votes' | 'account'
 
@@ -40,7 +37,8 @@ export const Route = createFileRoute('/profile')({
   validateSearch: (s: Record<string, unknown>): { tab?: Tab } =>
     s.tab === 'votes' || s.tab === 'account' ? { tab: s.tab } : {},
   // The Mirror loads before render (SSR-complete, read-only — viewing mints
-  // nothing). Votes/account are auth-only and load client-side per tab.
+  // nothing). Votes/account are auth-only; the page prefetches both payloads
+  // in the background once auth resolves, so tab switches are instant.
   loader: () => fetchMirror({ data: { restoreToken: guestRestoreToken() } }),
   head: () => ({
     meta: [
@@ -88,15 +86,6 @@ function SignInGate({ message }: { message: string }) {
   )
 }
 
-function TabLoading() {
-  return (
-    <div className="flex items-center gap-3 py-10 text-sm text-grey1">
-      <Spinner className="h-4 w-4" />
-      Loading…
-    </div>
-  )
-}
-
 // ─── votes tab ──────────────────────────────────────────────────────────────
 
 function StatTile({
@@ -140,7 +129,6 @@ function VoteSection({ title, skins }: { title: string; skins: Skin[] }) {
             key={skin.id}
             skin={skin}
             championId={skin.champion_id}
-            initialVote={skin.user_vote}
             initialStar={skin.user_star}
             initialX={skin.user_x}
             showChampion
@@ -151,62 +139,38 @@ function VoteSection({ title, skins }: { title: string; skins: Skin[] }) {
   )
 }
 
-function VotesTab() {
-  const { isAuthenticated, isLoading, withApiToken } = useAuth()
-  const [skins, setSkins] = useState<Skin[]>([])
-  const [loading, setLoading] = useState(true)
-  const [errorMsg, setErrorMsg] = useState<string | null>(null)
+// Renders the prefetched voting record (fetched by ProfilePage the moment
+// auth resolves); `skins` is null while the background fetch is in flight.
+function VotesTab({
+  skins,
+  error,
+}: {
+  skins: Skin[] | null
+  error: string | null
+}) {
+  const { isAuthenticated, isLoading } = useAuth()
 
-  useEffect(() => {
-    let cancelled = false
-    async function load() {
-      if (isLoading) return
-      try {
-        setLoading(true)
-        setErrorMsg(null)
-        if (!isAuthenticated) return
-        const votes = await withApiToken((token) => api.userVotes(token))
-        if (!cancelled) setSkins(votes.skins || [])
-      } catch (err) {
-        if (!cancelled)
-          setErrorMsg(
-            err instanceof Error ? err.message : 'Failed to load your votes',
-          )
-      } finally {
-        if (!cancelled) setLoading(false)
-      }
-    }
-    load()
-    return () => {
-      cancelled = true
-    }
-  }, [isAuthenticated, isLoading, withApiToken])
-
-  if (isLoading || (isAuthenticated && loading)) return <TabLoading />
-  if (!isAuthenticated)
+  if (!isLoading && !isAuthenticated)
     return (
-      <SignInGate message="Stars, bans, and up/down votes belong to your account — sign in to see your voting record." />
+      <SignInGate message="Stars and bans belong to your account — sign in to see your voting record." />
     )
-  if (errorMsg)
-    return <ErrorState title="Couldn't load your votes" message={errorMsg} />
+  if (error)
+    return <ErrorState title="Couldn't load your votes" message={error} />
+  if (isLoading || !skins) return <VotesTabSkeleton />
 
-  const upvoted = skins.filter((skin) => skin.user_vote === 1)
-  const downvoted = skins.filter((skin) => skin.user_vote === -1)
   const starred = skins.filter((skin) => skin.user_star)
   const xed = skins.filter((skin) => skin.user_x)
 
   // Only sections with content render — the stat strip already accounts for
-  // all four buckets, so empty grids would just repeat "0".
+  // both buckets, so empty grids would just repeat "0".
   const voteSections = [
     { title: 'Starred Skins', skins: starred },
     { title: 'Banned Skins', skins: xed },
-    { title: 'Upvoted Skins', skins: upvoted },
-    { title: 'Downvoted Skins', skins: downvoted },
   ].filter((s) => s.skins.length > 0)
 
   return (
     <>
-      <div className="stagger mb-20 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="stagger mb-20 grid grid-cols-1 gap-4 sm:grid-cols-2">
         <StatTile
           icon={faStar}
           value={`${starred.length}/${MAX_STARS}`}
@@ -216,12 +180,6 @@ function VotesTab() {
           icon={faBan}
           value={`${xed.length}/${MAX_X}`}
           label="Bans used"
-        />
-        <StatTile icon={faArrowUp} value={`${upvoted.length}`} label="Upvoted" />
-        <StatTile
-          icon={faArrowDown}
-          value={`${downvoted.length}`}
-          label="Downvoted"
         />
       </div>
 
@@ -245,71 +203,26 @@ function VotesTab() {
 
 // ─── account tab ────────────────────────────────────────────────────────────
 
-function AccountTab() {
-  const { isAuthenticated, isLoading, withApiToken } = useAuth()
-  const [me, setMe] = useState<Me | null>(null)
-  const [loading, setLoading] = useState(true)
+// Renders the prefetched account payload; `settled` flips once the background
+// fetch finished (even on failure — the settings card just shows less).
+function AccountTab({
+  me,
+  settled,
+  onChange,
+}: {
+  me: Me | null
+  settled: boolean
+  onChange: (me: Me) => void
+}) {
+  const { isAuthenticated, isLoading } = useAuth()
 
-  useEffect(() => {
-    let cancelled = false
-    async function load() {
-      if (isLoading) return
-      try {
-        setLoading(true)
-        if (!isAuthenticated) return
-        const meData = await withApiToken((token) => api.me(token))
-        if (!cancelled) setMe(meData)
-      } catch {
-        /* the settings card just shows less */
-      } finally {
-        if (!cancelled) setLoading(false)
-      }
-    }
-    load()
-    return () => {
-      cancelled = true
-    }
-  }, [isAuthenticated, isLoading, withApiToken])
-
-  if (isLoading || (isAuthenticated && loading)) return <TabLoading />
-  if (!isAuthenticated)
+  if (!isLoading && !isAuthenticated)
     return (
       <SignInGate message="Sign in to manage your account — and to attach your guest battles and streaks to a name that holds leaderboard spots." />
     )
+  if (isLoading || !settled) return <AccountTabSkeleton />
 
-  return (
-    <div className="animate-fade-up w-full max-w-md bg-hextech-black/30 outline outline-icon/20 -outline-offset-2 p-8">
-      {me?.username && (
-        <div className="mb-5">
-          <div className="text-xs uppercase tracking-widest text-grey1 mb-1">
-            Username
-          </div>
-          <div className="text-lg text-gold1 font-serif">{me.username}</div>
-        </div>
-      )}
-      <div className="mb-8">
-        <div className="text-xs uppercase tracking-widest text-grey1 mb-1">
-          Email
-        </div>
-        <div className="text-lg text-gold1 font-serif break-all">
-          {me?.email}
-        </div>
-      </div>
-
-      <LogoutButton />
-
-      <div className="mt-8 border-t border-red-400/20 pt-6">
-        <p className="mb-1 text-xs font-semibold uppercase tracking-widest text-red-300/80">
-          Danger zone
-        </p>
-        <p className="mb-4 text-sm text-grey1">
-          Deleting your account permanently removes your votes, stars, and
-          bans.
-        </p>
-        <DeleteAccountButton />
-      </div>
-    </div>
-  )
+  return <AccountSettings me={me} onChange={onChange} />
 }
 
 // ─── page ───────────────────────────────────────────────────────────────────
@@ -324,11 +237,49 @@ function ProfilePage() {
   const mirror = Route.useLoaderData()
   const { tab } = Route.useSearch()
   const active: Tab = tab ?? 'mirror'
+  const { isAuthenticated, isLoading, withApiToken } = useAuth()
 
   // Mirror the guest token to localStorage as a cookie backup.
   useEffect(() => {
     rememberGuestToken(mirror.guestToken)
   }, [mirror.guestToken])
+
+  // Prefetch both auth-only tabs' payloads as soon as auth resolves, so
+  // switching to Votes or Account renders cached data instead of refetching.
+  const [votes, setVotes] = useState<Skin[] | null>(null)
+  const [votesError, setVotesError] = useState<string | null>(null)
+  const [me, setMe] = useState<Me | null>(null)
+  const [meSettled, setMeSettled] = useState(false)
+
+  useEffect(() => {
+    if (isLoading || !isAuthenticated) return
+    let cancelled = false
+    withApiToken((token) => api.userVotes(token))
+      .then((votesData) => {
+        if (cancelled) return
+        setVotes(votesData.skins || [])
+        setVotesError(null)
+      })
+      .catch((err) => {
+        if (cancelled) return
+        setVotesError(
+          err instanceof Error ? err.message : 'Failed to load your votes',
+        )
+      })
+    withApiToken((token) => api.me(token))
+      .then((meData) => {
+        if (!cancelled) setMe(meData)
+      })
+      .catch(() => {
+        /* the settings card just shows less */
+      })
+      .finally(() => {
+        if (!cancelled) setMeSettled(true)
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [isAuthenticated, isLoading, withApiToken])
 
   return (
     <div className="container mx-auto max-w-5xl px-6 pt-28 pb-16">
@@ -337,7 +288,7 @@ function ProfilePage() {
           Your taste, reflected
         </p>
         <h1 className="font-serif text-4xl font-bold text-gold1 md:text-5xl">
-          The M<span className="italic">irror</span>
+          The Mirror
         </h1>
       </header>
 
@@ -361,8 +312,10 @@ function ProfilePage() {
       </div>
 
       {active === 'mirror' && <MirrorView state={mirror} />}
-      {active === 'votes' && <VotesTab />}
-      {active === 'account' && <AccountTab />}
+      {active === 'votes' && <VotesTab skins={votes} error={votesError} />}
+      {active === 'account' && (
+        <AccountTab me={me} settled={meSettled} onChange={setMe} />
+      )}
     </div>
   )
 }

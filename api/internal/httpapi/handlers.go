@@ -5,6 +5,7 @@ import (
 	"errors"
 	"log"
 	"net/http"
+	"regexp"
 	"strings"
 
 	"github.com/go-chi/chi/v5"
@@ -221,10 +222,11 @@ func (h *handlers) getAwards(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-// voteRequest is the JSON body for POST /api/votes.
+// voteRequest is the JSON body for POST /api/votes. Stale clients may still
+// send a legacy `vote` field — the decoder drops unknown fields, so it is
+// silently ignored rather than rejected.
 type voteRequest struct {
 	SkinID string `json:"skinId"`
-	Vote   *int   `json:"vote"`
 	Star   *bool  `json:"star"`
 	X      *bool  `json:"x"`
 }
@@ -245,10 +247,6 @@ func (h *handlers) postVote(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusBadRequest, "skinId is required")
 		return
 	}
-	if req.Vote == nil {
-		writeError(w, http.StatusBadRequest, "vote is required")
-		return
-	}
 	if req.Star == nil {
 		writeError(w, http.StatusBadRequest, "star is required")
 		return
@@ -258,17 +256,9 @@ func (h *handlers) postVote(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Validate vote value.
-	voteVal := *req.Vote
-	if voteVal != -1 && voteVal != 0 && voteVal != 1 {
-		writeError(w, http.StatusBadRequest, "vote must be -1, 0, or 1")
-		return
-	}
-
 	inp := store.VoteInput{
 		SkinID: req.SkinID,
 		UserID: user.LocalID,
-		Vote:   voteVal,
 		Star:   *req.Star,
 		X:      *req.X,
 	}
@@ -343,6 +333,16 @@ func (h *handlers) getUserVotes(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
+// meJSON is the response shape shared by GET and PATCH /api/me.
+func meJSON(info *store.UserInfo) map[string]interface{} {
+	return map[string]interface{}{
+		"id":                 info.ID,
+		"email":              info.Email,
+		"username":           info.Username,
+		"avatar_champion_id": info.AvatarChampionID,
+	}
+}
+
 // GET /api/me  (required auth)
 func (h *handlers) getMe(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
@@ -359,11 +359,134 @@ func (h *handlers) getMe(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	writeJSON(w, http.StatusOK, map[string]interface{}{
-		"id":       info.ID,
-		"email":    info.Email,
-		"username": info.Username,
-	})
+	writeJSON(w, http.StatusOK, meJSON(info))
+}
+
+// usernamePattern mirrors Logto's username rules (letters, digits, and
+// underscores; no leading digit). The 3–30 length cap is our own.
+var usernamePattern = regexp.MustCompile(`^[A-Za-z_][A-Za-z0-9_]{2,29}$`)
+
+// patchMeRequest is the JSON body for PATCH /api/me. Both fields are
+// optional; for the avatar, "" clears it while absent leaves it unchanged.
+type patchMeRequest struct {
+	Username         *string `json:"username"`
+	AvatarChampionID *string `json:"avatarChampionId"`
+}
+
+// PATCH /api/me  (required auth)
+func (h *handlers) patchMe(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	user := auth.UserFromContext(ctx)
+
+	var req patchMeRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeError(w, http.StatusBadRequest, "invalid JSON body")
+		return
+	}
+	if req.Username == nil && req.AvatarChampionID == nil {
+		writeError(w, http.StatusBadRequest, "nothing to update: provide username and/or avatarChampionId")
+		return
+	}
+
+	if req.Username != nil {
+		trimmed := strings.TrimSpace(*req.Username)
+		if !usernamePattern.MatchString(trimmed) {
+			writeError(w, http.StatusBadRequest,
+				"username must be 3–30 characters of letters, numbers, or underscores, and cannot start with a number")
+			return
+		}
+		req.Username = &trimmed
+	}
+
+	// A rename has to reach Logto: the JIT provisioner re-syncs the local row
+	// from the Logto profile, so a local-only rename would be reverted within
+	// minutes. Skip the round-trip when the name isn't actually changing.
+	// Tracked so a failed local update can put Logto back (see below).
+	var renamedInLogto bool
+	var renameLogtoID, previousUsername string
+	if req.Username != nil {
+		current, err := h.store.GetUserByID(ctx, user.LocalID)
+		if err != nil {
+			log.Printf("store.GetUserByID: %v", err)
+			writeError(w, http.StatusInternalServerError, "internal error")
+			return
+		}
+		if current == nil {
+			writeError(w, http.StatusNotFound, "user not found")
+			return
+		}
+		if current.Username == *req.Username {
+			req.Username = nil // no-op rename; UpdateUserProfile keeps the value
+		} else {
+			// Fail before anything changes anywhere: the local table holds
+			// names Logto doesn't know about (legacy accounts, placeholder
+			// rows), and renaming Logto first against a name a local row
+			// already owns would leave the two stores disagreeing.
+			taken, err := h.store.UsernameTaken(ctx, *req.Username, user.LocalID)
+			if err != nil {
+				log.Printf("store.UsernameTaken: %v", err)
+				writeError(w, http.StatusInternalServerError, "internal error")
+				return
+			}
+			if taken {
+				writeError(w, http.StatusConflict, "that username is already taken")
+				return
+			}
+			logtoID, err := h.store.GetUserLogtoID(ctx, user.LocalID)
+			if err != nil {
+				log.Printf("store.GetUserLogtoID: %v", err)
+				writeError(w, http.StatusInternalServerError, "internal error")
+				return
+			}
+			// Legacy rows without a logto_id have nothing to sync; everyone
+			// else must succeed against Logto before the local row moves.
+			if logtoID != "" {
+				switch err := h.logto.UpdateUsername(ctx, logtoID, *req.Username); {
+				case errors.Is(err, logto.ErrNotConfigured):
+					writeError(w, http.StatusServiceUnavailable,
+						"username changes are unavailable: the identity service is not configured for profile updates")
+					return
+				case errors.Is(err, logto.ErrUsernameTaken):
+					writeError(w, http.StatusConflict, "that username is already taken")
+					return
+				case err != nil:
+					log.Printf("logto.UpdateUsername %s: %v", logtoID, err)
+					writeError(w, http.StatusBadGateway, "couldn't update the username with the sign-in service")
+					return
+				}
+				renamedInLogto = true
+				renameLogtoID = logtoID
+				previousUsername = current.Username
+			}
+		}
+	}
+
+	info, err := h.store.UpdateUserProfile(ctx, user.LocalID, req.Username, req.AvatarChampionID)
+	if err != nil {
+		// Lost a race on the unique constraint after Logto already renamed:
+		// put Logto back so the JIT re-sync can't wedge this account.
+		if errors.Is(err, store.ErrUsernameTaken) && renamedInLogto {
+			if rerr := h.logto.UpdateUsername(ctx, renameLogtoID, previousUsername); rerr != nil {
+				log.Printf("logto.UpdateUsername revert %s -> %q: %v", renameLogtoID, previousUsername, rerr)
+			}
+		}
+		switch {
+		case errors.Is(err, store.ErrUsernameTaken):
+			writeError(w, http.StatusConflict, "that username is already taken")
+		case errors.Is(err, store.ErrUnknownChampion):
+			writeError(w, http.StatusBadRequest, "avatarChampionId does not match a known champion")
+		default:
+			log.Printf("store.UpdateUserProfile: %v", err)
+			writeError(w, http.StatusInternalServerError, "internal error")
+		}
+		return
+	}
+	if info == nil {
+		writeError(w, http.StatusNotFound, "user not found")
+		return
+	}
+
+	writeJSON(w, http.StatusOK, meJSON(info))
 }
 
 // DELETE /api/user  (required auth)

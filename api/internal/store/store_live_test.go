@@ -3,6 +3,7 @@ package store
 import (
 	"context"
 	"errors"
+	"fmt"
 	"os"
 	"testing"
 
@@ -26,8 +27,12 @@ func TestVoteLive(t *testing.T) {
 	defer pool.Close()
 
 	// Use a clearly-namespaced fixture so we never touch seeded data.
+	// One skin more than the star budget, so the over-budget case has a target.
 	const champ = "ZZ_TestChamp"
-	skins := []string{"zz_skin_1", "zz_skin_2", "zz_skin_3", "zz_skin_4"}
+	skins := make([]string, StarBudget+1)
+	for i := range skins {
+		skins[i] = fmt.Sprintf("zz_skin_%02d", i+1)
+	}
 
 	cleanup := func() {
 		_, _ = pool.Exec(ctx, `DELETE FROM users WHERE email IN ('zz_test@example.com', 'zz_test2@example.com')`)
@@ -55,18 +60,29 @@ func TestVoteLive(t *testing.T) {
 
 	st := New(pool)
 
-	// 1. Basic upvote recomputes total_votes.
-	totals, _, err := st.Vote(ctx, VoteInput{SkinID: skins[0], UserID: userID, Vote: 1})
+	// 1. A star write recomputes total_stars, and the legacy vote column
+	//    stays untouched (zero on the fresh row).
+	totals, _, err := st.Vote(ctx, VoteInput{SkinID: skins[0], UserID: userID, Star: true})
 	if err != nil {
 		t.Fatalf("vote 1: %v", err)
 	}
-	if totals.TotalVotes != 1 {
-		t.Fatalf("expected total_votes=1, got %d", totals.TotalVotes)
+	if totals.TotalStars != 1 {
+		t.Fatalf("expected total_stars=1, got %d", totals.TotalStars)
+	}
+	var legacyVote, legacyTotalVotes int
+	if err := pool.QueryRow(ctx,
+		`SELECT usv.vote, sk.total_votes FROM user_skin_votes usv JOIN skins sk ON sk.id = usv.skin_id
+		 WHERE usv.skin_id = $1 AND usv.user_id = $2`, skins[0], userID,
+	).Scan(&legacyVote, &legacyTotalVotes); err != nil {
+		t.Fatalf("read legacy vote columns: %v", err)
+	}
+	if legacyVote != 0 || legacyTotalVotes != 0 {
+		t.Fatalf("legacy vote columns must stay frozen, got vote=%d total_votes=%d", legacyVote, legacyTotalVotes)
 	}
 
-	// 2. Three stars across three skins are allowed.
-	for _, s := range skins[:3] {
-		if _, _, err := st.Vote(ctx, VoteInput{SkinID: s, UserID: userID, Vote: 1, Star: true}); err != nil {
+	// 2. A full budget of stars across distinct skins is allowed.
+	for _, s := range skins[:StarBudget] {
+		if _, _, err := st.Vote(ctx, VoteInput{SkinID: s, UserID: userID, Star: true}); err != nil {
 			t.Fatalf("star %s: %v", s, err)
 		}
 	}
@@ -74,29 +90,29 @@ func TestVoteLive(t *testing.T) {
 	if err != nil {
 		t.Fatalf("stats: %v", err)
 	}
-	if stats.UsedStars != 3 {
-		t.Fatalf("expected usedStars=3, got %d", stats.UsedStars)
+	if stats.UsedStars != StarBudget {
+		t.Fatalf("expected usedStars=%d, got %d", StarBudget, stats.UsedStars)
 	}
 
-	// 3. A fourth star must be rejected with ErrStarLimit (and rolled back).
-	if _, _, err := st.Vote(ctx, VoteInput{SkinID: skins[3], UserID: userID, Vote: 1, Star: true}); !errors.Is(err, ErrStarLimit) {
-		t.Fatalf("expected ErrStarLimit on 4th star, got %v", err)
+	// 3. One star over budget must be rejected with ErrStarLimit (and rolled back).
+	if _, _, err := st.Vote(ctx, VoteInput{SkinID: skins[StarBudget], UserID: userID, Star: true}); !errors.Is(err, ErrStarLimit) {
+		t.Fatalf("expected ErrStarLimit on star %d, got %v", StarBudget+1, err)
 	}
 	stats, _ = st.UserStats(ctx, userID)
-	if stats.UsedStars != 3 {
-		t.Fatalf("after rejected 4th star, expected usedStars still 3, got %d", stats.UsedStars)
+	if stats.UsedStars != StarBudget {
+		t.Fatalf("after rejected over-budget star, expected usedStars still %d, got %d", StarBudget, stats.UsedStars)
 	}
 
 	// 4. Re-voting the same skin (toggle star off) is not a new star → no limit error.
-	if _, _, err := st.Vote(ctx, VoteInput{SkinID: skins[0], UserID: userID, Vote: 1, Star: false}); err != nil {
+	if _, _, err := st.Vote(ctx, VoteInput{SkinID: skins[0], UserID: userID, Star: false}); err != nil {
 		t.Fatalf("toggle star off: %v", err)
 	}
 	stats, _ = st.UserStats(ctx, userID)
-	if stats.UsedStars != 2 {
-		t.Fatalf("after toggling one star off, expected usedStars=2, got %d", stats.UsedStars)
+	if stats.UsedStars != StarBudget-1 {
+		t.Fatalf("after toggling one star off, expected usedStars=%d, got %d", StarBudget-1, stats.UsedStars)
 	}
 
-	t.Logf("live vote logic OK: votes recompute, 3-star cap enforced + rolled back, toggle works")
+	t.Logf("live vote logic OK: stars recompute, %d-star budget enforced + rolled back, toggle works", StarBudget)
 
 	// 5. Deleting a user anonymizes their votes instead of removing them:
 	//    the rows stay (user_id NULL), so totals keep counting them even after
@@ -105,14 +121,14 @@ func TestVoteLive(t *testing.T) {
 		t.Fatalf("delete user: %v", err)
 	}
 
-	var anonVotes int
+	var anonStars int
 	if err := pool.QueryRow(ctx,
-		`SELECT COUNT(*) FROM user_skin_votes WHERE skin_id = $1 AND user_id IS NULL`, skins[0],
-	).Scan(&anonVotes); err != nil {
-		t.Fatalf("count anonymized votes: %v", err)
+		`SELECT COUNT(*) FROM user_skin_votes WHERE skin_id = $1 AND user_id IS NULL AND star = true`, skins[1],
+	).Scan(&anonStars); err != nil {
+		t.Fatalf("count anonymized stars: %v", err)
 	}
-	if anonVotes != 1 {
-		t.Fatalf("expected 1 anonymized vote row on %s after user delete, got %d", skins[0], anonVotes)
+	if anonStars != 1 {
+		t.Fatalf("expected 1 anonymized star row on %s after user delete, got %d", skins[1], anonStars)
 	}
 
 	var user2ID int64
@@ -123,13 +139,13 @@ func TestVoteLive(t *testing.T) {
 	}
 
 	// Re-voting on the same skin recounts totals from user_skin_votes; the
-	// deleted user's (now anonymous) upvote must still be included.
-	totals, _, err = st.Vote(ctx, VoteInput{SkinID: skins[0], UserID: user2ID, Vote: 1})
+	// deleted user's (now anonymous) star must still be included.
+	totals, _, err = st.Vote(ctx, VoteInput{SkinID: skins[1], UserID: user2ID, Star: true})
 	if err != nil {
 		t.Fatalf("vote by second user after delete: %v", err)
 	}
-	if totals.TotalVotes != 2 {
-		t.Fatalf("expected total_votes=2 (anonymized + new vote), got %d", totals.TotalVotes)
+	if totals.TotalStars != 2 {
+		t.Fatalf("expected total_stars=2 (anonymized + new star), got %d", totals.TotalStars)
 	}
 
 	t.Logf("deleted-user votes retained OK: anonymized row survives delete and still counts in recount")

@@ -1,6 +1,11 @@
 import { Link } from '@tanstack/react-router'
 import { CrownMark, Wordmark } from './Brand'
-import { PROFILE, SITE_SECTIONS, type SitePage } from '~/lib/siteMap'
+import {
+  PROFILE,
+  SECONDARY_PAGES,
+  SITE_SECTIONS,
+  type SitePage,
+} from '~/lib/siteMap'
 
 // The footer is the full sitemap, rendered from the site-map registry — one
 // column per top-level section. New registry entries appear here for free.
@@ -35,14 +40,14 @@ export default function Footer() {
 
   return (
     <footer className="mt-24 border-t border-icon/20 bg-hextech-black/40">
-      <div className="container mx-auto grid gap-10 px-6 py-12 sm:grid-cols-2 md:grid-cols-[1.5fr_1fr_1fr_1fr_0.9fr]">
+      <div className="container mx-auto grid gap-10 px-6 py-12 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-[1.5fr_1fr_1fr_1fr_0.9fr_0.9fr]">
         <div>
           <p className="flex items-center gap-2.5">
             <CrownMark className="h-9 w-9" />
             <Wordmark className="text-lg" />
           </p>
           <p className="mt-3 max-w-xs text-sm text-grey1">
-            Community-built rankings for every League of Legends skin. Upvote,
+            Community-built rankings for every League of Legends skin. Battle,
             star, and ban your way to the definitive list.
           </p>
         </div>
@@ -54,6 +59,7 @@ export default function Footer() {
           return <Column key={s.to} title={s.label} pages={pages} />
         })}
         <Column title="You" pages={you} />
+        <Column title="The Site" pages={SECONDARY_PAGES} />
       </div>
 
       <div className="container mx-auto px-6 pb-8">

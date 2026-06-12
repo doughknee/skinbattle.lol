@@ -16,8 +16,6 @@ import { championDisplayName, displaySkinName } from '~/lib/skinName'
 import type { AwardsResponse } from '~/lib/types'
 
 const sortOptions = [
-  { value: 'total_votes_desc', label: 'Most Votes' },
-  { value: 'total_votes_asc', label: 'Least Votes' },
   { value: 'total_stars_desc', label: 'Most Stars' },
   { value: 'total_stars_asc', label: 'Least Stars' },
   { value: 'total_x_desc', label: 'Most Bans' },
@@ -49,7 +47,7 @@ function SkinsPage() {
 
   const [awards, setAwards] = useState<AwardsResponse>(baseAwards)
   const [query, setQuery] = useState('')
-  const [sortBy, setSortBy] = useState('total_votes_desc')
+  const [sortBy, setSortBy] = useState('total_stars_desc')
   const [currentPage, setCurrentPage] = useState(1)
   const gridRef = useRef<HTMLDivElement>(null)
 
@@ -86,12 +84,6 @@ function SkinsPage() {
         )
       : [...awards.allSkins]
     switch (sortBy) {
-      case 'total_votes_desc':
-        filtered.sort((a, b) => (b.total_votes || 0) - (a.total_votes || 0))
-        break
-      case 'total_votes_asc':
-        filtered.sort((a, b) => (a.total_votes || 0) - (b.total_votes || 0))
-        break
       case 'total_stars_desc':
         filtered.sort((a, b) => (b.total_stars || 0) - (a.total_stars || 0))
         break
@@ -133,7 +125,7 @@ function SkinsPage() {
       <PageHeader
         eyebrow="The catalog"
         title="Skins"
-        subtitle="Every skin in the game, ranked by the community. Search, sort, and cast your votes."
+        subtitle="Every skin in the game, ranked by the community. Search, sort, and spend your stars and bans."
         className="mb-8"
       />
 
@@ -199,7 +191,6 @@ function SkinsPage() {
                 key={skin.id}
                 skin={skin}
                 championId={skin.champion_id}
-                initialVote={skin.user_vote ?? 0}
                 initialStar={skin.user_star ?? false}
                 initialX={skin.user_x ?? false}
                 showChampion

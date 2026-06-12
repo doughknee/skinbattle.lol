@@ -195,7 +195,7 @@ function PriceCheckPage() {
         </p>
         <div className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-1">
           <h1 className="font-serif text-4xl font-bold text-gold1 md:text-5xl">
-            Price Ch<span className="italic">eck</span> #{state.puzzleNumber}
+            Price Check #{state.puzzleNumber}
           </h1>
           <p className="text-sm text-grey1">
             {finished ? (

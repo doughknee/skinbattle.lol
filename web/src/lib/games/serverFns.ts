@@ -11,6 +11,7 @@ import type {
   ChromaVisionState,
   DailyHubState,
   DroughtState,
+  HomeState,
   GuessOption,
   LeaderboardsState,
   MirrorState,
@@ -18,6 +19,7 @@ import type {
   QuickBattleState,
   RankingsIndex,
   RankingsState,
+  RoadmapState,
   SkinPageState,
   SplashdleState,
 } from './types'
@@ -96,11 +98,12 @@ export const fetchLeaderboards = createServerFn({ method: 'GET' }).handler(
 )
 
 // Ranking slices are fully anonymous derived data, like the Drought Index.
+// `offset` pages through slices deeper than one page of rows.
 export const fetchRankings = createServerFn({ method: 'POST' })
-  .inputValidator((d: { slice: string }) => d)
+  .inputValidator((d: { slice: string; offset?: number }) => d)
   .handler(async ({ data }): Promise<RankingsState | null> => {
     const { rankingsState } = await import('./server/rankings')
-    return rankingsState(data.slice)
+    return rankingsState(data.slice, data.offset ?? 0)
   })
 
 export const fetchRankingsIndex = createServerFn({ method: 'GET' }).handler(
@@ -119,12 +122,31 @@ export const fetchSkinPage = createServerFn({ method: 'POST' })
     return skinPageState(data.slug, data.restoreToken)
   })
 
+// Home page state: the daily hero slide set + live community numbers.
+// Anonymous like the Drought Index — personalization happens client-side
+// against the Go API once the visitor is signed in.
+export const fetchHome = createServerFn({ method: 'GET' }).handler(
+  async (): Promise<HomeState> => {
+    const { homeState } = await import('./server/home')
+    return homeState()
+  },
+)
+
 // The Drought Index is fully anonymous — no guest token, nothing
 // personalized, pure derived data over the catalog + facts snapshot.
 export const fetchDrought = createServerFn({ method: 'GET' }).handler(
   async (): Promise<DroughtState> => {
     const { droughtIndex } = await import('./server/insights')
     return droughtIndex()
+  },
+)
+
+// Roadmap totals are anonymous derived data: community-wide battle volume,
+// rating coverage, and star/ban totals for the milestone meters.
+export const fetchRoadmap = createServerFn({ method: 'GET' }).handler(
+  async (): Promise<RoadmapState> => {
+    const { roadmapState } = await import('./server/roadmap')
+    return roadmapState()
   },
 )
 

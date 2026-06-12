@@ -1,17 +1,17 @@
-import { createFileRoute, Link } from '@tanstack/react-router'
+import { createFileRoute } from '@tanstack/react-router'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import {
   faArrowTrendUp,
+  faCompress,
+  faExpand,
   faFire,
-  faRankingStar,
   faShuffle,
   faUsers,
 } from '@fortawesome/free-solid-svg-icons'
 import ErrorState from '~/components/ErrorState'
 import { toast } from '~/components/Toaster'
 import TodayStrip from '~/components/games/TodayStrip'
-import { btnSecondarySm } from '~/lib/ui'
 import {
   fetchDailyHub,
   fetchQuickBattle,
@@ -98,7 +98,19 @@ export const Route = createFileRoute('/battle/')({
 // runs concurrently with the network — it costs nothing.
 const PICK_HOLD_MS = 280
 
+// Upper bound on the first-load gate: if both splashes haven't decoded by
+// then, the reveal plays anyway over whatever has arrived. The <head>
+// preloads make the happy path tens of milliseconds — this only exists so
+// a struggling CDN can't hold the page hostage.
+const REVEAL_GATE_MAX_MS = 2000
+
 // ─── battle cards ───────────────────────────────────────────────────────────
+
+// How a pair arrives on stage. 'gate': held as a shimmering slab while the
+// first pair's splashes decode. 'reveal': the one-time first-load ceremony.
+// 'round': the quick per-pick entrance. 'settled': no entrance (the pair is
+// mid-verdict).
+type Entrance = 'gate' | 'reveal' | 'round' | 'settled'
 
 function BattleCard({
   skin,
@@ -106,7 +118,7 @@ function BattleCard({
   verdict,
   onPick,
   onBroken,
-  animate,
+  entrance,
 }: {
   skin: BattleSkin
   side: 'a' | 'b'
@@ -114,9 +126,7 @@ function BattleCard({
   verdict: 'winner' | 'loser' | null
   onPick: (skinId: string) => void
   onBroken: (skinId: string) => void
-  // False for the pair that's part of the page's first paint — entrance
-  // animations are reserved for pairs that arrive after it.
-  animate: boolean
+  entrance: Entrance
 }) {
   const verdictAnim =
     verdict === 'winner'
@@ -124,15 +134,25 @@ function BattleCard({
       : verdict === 'loser'
         ? 'animate-battle-lose'
         : ''
-  const entrance = animate
-    ? side === 'a'
-      ? 'animate-battle-in-a'
-      : 'animate-battle-in-b'
-    : ''
+  const entranceAnim =
+    entrance === 'reveal'
+      ? side === 'a'
+        ? 'animate-battle-reveal-a'
+        : 'animate-battle-reveal-b'
+      : entrance === 'round'
+        ? side === 'a'
+          ? 'animate-battle-in-a'
+          : 'animate-battle-in-b'
+        : entrance === 'gate'
+          ? 'skeleton'
+          : ''
+  // Behind the gate the card is a branded shimmer slab: the <img> is mounted
+  // (so it downloads and decodes) but invisible until the reveal plays.
+  const gated = entrance === 'gate' ? 'opacity-0' : ''
   return (
     <button
       onClick={() => onPick(skin.skinId)}
-      className={`group relative aspect-video w-full cursor-pointer overflow-hidden bg-hextech-black/60 text-left outline outline-icon/20 -outline-offset-2 transition duration-150 hover:outline-gold2 ${entrance} ${verdictAnim}`}
+      className={`group relative aspect-video w-full cursor-pointer overflow-hidden bg-hextech-black/60 text-left outline outline-icon/20 -outline-offset-2 transition duration-150 hover:outline-gold2 ${entranceAnim} ${verdictAnim}`}
     >
       <img
         src={skin.splashUrl}
@@ -141,9 +161,11 @@ function BattleCard({
         fetchPriority="high"
         decoding="async"
         onError={() => onBroken(skin.skinId)}
-        className="h-full w-full object-cover transition duration-200 group-hover:scale-[1.03]"
+        className={`h-full w-full object-cover transition duration-200 group-hover:scale-[1.03] ${gated}`}
       />
-      <span className="pointer-events-none absolute inset-x-0 bottom-0 flex flex-col bg-gradient-to-t from-hextech-black/95 via-hextech-black/60 to-transparent px-4 pb-3 pt-10">
+      <span
+        className={`pointer-events-none absolute inset-x-0 bottom-0 flex flex-col bg-gradient-to-t from-hextech-black/95 via-hextech-black/60 to-transparent px-4 pb-3 pt-10 ${gated}`}
+      >
         <span className="font-serif text-lg font-bold leading-tight text-gold1 md:text-xl">
           {skin.name}
         </span>
@@ -169,7 +191,7 @@ function FeedbackBar({ feedback }: { feedback: BattleFeedback | null }) {
           <span className="font-serif font-bold text-gold1">
             {feedback.winnerName}
           </span>
-          <span className="animate-delta-pop inline-block font-bold text-blue2">
+          <span className="animate-delta-pop delta-glow inline-block text-base font-bold text-blue2 md:text-lg">
             +{feedback.delta}
           </span>
           <span className="text-grey1">
@@ -180,7 +202,8 @@ function FeedbackBar({ feedback }: { feedback: BattleFeedback | null }) {
             {feedback.rank}
             {feedback.rankBefore !== null &&
               feedback.rankBefore > feedback.rank && (
-                <span className="ml-1 text-blue2">
+                // Pops a beat after the delta — rank climbing is the payoff.
+                <span className="animate-delta-pop ml-1 inline-block font-bold text-blue2 [animation-delay:120ms]">
                   ↑{feedback.rankBefore - feedback.rank}
                 </span>
               )}
@@ -252,14 +275,7 @@ function SessionHistory({ entries }: { entries: HistoryEntry[] }) {
         ))}
       </ol>
       <p className="mt-3 text-sm text-grey1">
-        Every verdict sharpens{' '}
-        <Link
-          to="/profile"
-          className="font-bold text-gold2 transition duration-150 hover:text-gold1"
-        >
-          your Mirror
-        </Link>{' '}
-        — the tier list your picks are building.
+        Every verdict sharpens the tier list your picks are building.
       </p>
     </section>
   )
@@ -288,6 +304,13 @@ function BattlePage() {
   const [history, setHistory] = useState<HistoryEntry[]>([])
   // Which side is being acknowledged as the pick, during the hold beat.
   const [pickedSide, setPickedSide] = useState<'a' | 'b' | null>(null)
+  // False until the first pair's splashes have decoded (or the gate times
+  // out) — flipping it plays the reveal ceremony. SSR and the pre-hydration
+  // paint both render the gated state, so the gate holds from first paint.
+  const [revealed, setRevealed] = useState(false)
+  const revealedRef = useRef(false)
+  // Theater mode: the arena takes over the viewport in a fixed overlay.
+  const [theater, setTheater] = useState(false)
   const viewRef = useRef(view)
   viewRef.current = view
   const busyRef = useRef(false)
@@ -305,6 +328,50 @@ function BattlePage() {
   useEffect(() => {
     if (initial.refit) console.log('rating refit:', initial.refit)
   }, [initial.refit])
+
+  // The full-load gate: hold the reveal until BOTH splashes have actually
+  // decoded, so the ceremony never plays over half-painted images. The
+  // <head> preloads usually make this near-instant; the race caps how long
+  // a slow CDN can hold the page. A decode failure opens the gate too —
+  // the visible card's onError path owns broken-splash recovery.
+  useEffect(() => {
+    let alive = true
+    const decoded = (url: string) => {
+      const img = new Image()
+      img.src = url
+      return img.decode().catch(() => {})
+    }
+    void Promise.race([
+      Promise.all([
+        decoded(initial.pair.a.splashUrl),
+        decoded(initial.pair.b.splashUrl),
+      ]),
+      sleep(REVEAL_GATE_MAX_MS),
+    ]).then(() => {
+      if (!alive) return
+      revealedRef.current = true
+      setRevealed(true)
+    })
+    return () => {
+      alive = false
+    }
+  }, [initial.pair])
+
+  // Theater chrome: Esc backs out, and the page behind the overlay keeps
+  // its scroll position.
+  useEffect(() => {
+    if (!theater) return
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setTheater(false)
+    }
+    window.addEventListener('keydown', onKey)
+    const prevOverflow = document.documentElement.style.overflow
+    document.documentElement.style.overflow = 'hidden'
+    return () => {
+      window.removeEventListener('keydown', onKey)
+      document.documentElement.style.overflow = prevOverflow
+    }
+  }, [theater])
 
   // Recovery path (vote rejected, broken splash on screen): re-deal both
   // pairs from the server.
@@ -324,8 +391,9 @@ function BattlePage() {
     async (winnerId: string) => {
       const v = viewRef.current
       // The only wait in the loop: a pick before the previous round trip
-      // settles (faster than the network) is dropped, not queued.
-      if (!v.next || busyRef.current) return
+      // settles (faster than the network) is dropped, not queued. No voting
+      // on a pair that's still behind the first-load gate either.
+      if (!revealedRef.current || !v.next || busyRef.current) return
       busyRef.current = true
 
       const voted = v.current
@@ -431,9 +499,71 @@ function BattlePage() {
   }, [pick])
 
   const { current, feedback, stats } = view
-  // The pair on screen at first paint renders settled; every pair after it
-  // plays its entrance.
-  const animatePair = picksMadeRef.current > 0 && pickedSide === null
+  // The first pair holds behind the gate until its splashes decode, then
+  // plays the one-time reveal ceremony; every pair after it gets the quick
+  // per-round entrance. During the verdict beat nothing re-enters.
+  const entrance: Entrance = !revealed
+    ? 'gate'
+    : pickedSide !== null
+      ? 'settled'
+      : picksMadeRef.current === 0
+        ? 'reveal'
+        : 'round'
+
+  const vsAnim =
+    entrance === 'gate'
+      ? 'opacity-0'
+      : entrance === 'reveal'
+        ? 'animate-vs-slam'
+        : entrance === 'round'
+          ? 'animate-vs-pop'
+          : ''
+
+  // One arena, two stages: the same cards render into the normal page flow
+  // or into the theater overlay. Keyed per pair so each matchup remounts
+  // and plays its entrance.
+  const arena = (
+    <div
+      key={current.token}
+      className={`relative grid w-full grid-cols-1 md:grid-cols-2 ${
+        theater ? 'gap-2 md:gap-3' : 'gap-3 md:gap-4'
+      }`}
+    >
+      <BattleCard
+        skin={current.a}
+        side="a"
+        verdict={pickedSide ? (pickedSide === 'a' ? 'winner' : 'loser') : null}
+        onPick={pick}
+        onBroken={broken}
+        entrance={entrance}
+      />
+      <BattleCard
+        skin={current.b}
+        side="b"
+        verdict={pickedSide ? (pickedSide === 'b' ? 'winner' : 'loser') : null}
+        onPick={pick}
+        onBroken={broken}
+        entrance={entrance}
+      />
+      <span
+        className={`pointer-events-none absolute left-1/2 top-1/2 z-10 flex h-12 w-12 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-hextech-black/90 font-serif text-sm font-bold text-gold2 outline outline-gold5 -outline-offset-2 ${vsAnim}`}
+      >
+        VS
+      </span>
+      {!theater && (
+        <button
+          onClick={() => setTheater(true)}
+          aria-label="Enter theater mode"
+          title="Theater mode"
+          className={`absolute right-2 top-2 z-20 flex h-9 w-9 cursor-pointer items-center justify-center bg-hextech-black/70 text-grey1 outline outline-icon/30 -outline-offset-1 transition duration-150 hover:text-gold1 hover:outline-gold2 ${
+            revealed ? '' : 'pointer-events-none opacity-0'
+          }`}
+        >
+          <FontAwesomeIcon icon={faExpand} className="h-4" />
+        </button>
+      )}
+    </div>
+  )
 
   return (
     <div className="container mx-auto max-w-5xl px-6 pt-28 pb-16">
@@ -443,7 +573,7 @@ function BattlePage() {
         </p>
         <div className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-1">
           <h1 className="font-serif text-4xl md:text-5xl font-bold text-gold1">
-            Quick B<span className="italic">attle</span>
+            Head-to-Head
           </h1>
           <p className="flex items-center gap-4 text-sm text-grey1">
             {session > 0 && (
@@ -463,38 +593,55 @@ function BattlePage() {
       </header>
 
       {/* The arena. Stacked on mobile (thumb-first — share links open on
-          phones), side by side from md up. Keyed per pair so each matchup
-          remounts and plays its entrance. */}
-      <div
-        key={current.token}
-        className="relative grid grid-cols-1 gap-3 md:grid-cols-2 md:gap-4"
-      >
-        <BattleCard
-          skin={current.a}
-          side="a"
-          verdict={pickedSide ? (pickedSide === 'a' ? 'winner' : 'loser') : null}
-          onPick={pick}
-          onBroken={broken}
-          animate={animatePair}
-        />
-        <BattleCard
-          skin={current.b}
-          side="b"
-          verdict={pickedSide ? (pickedSide === 'b' ? 'winner' : 'loser') : null}
-          onPick={pick}
-          onBroken={broken}
-          animate={animatePair}
-        />
-        <span
-          className={`pointer-events-none absolute left-1/2 top-1/2 z-10 flex h-12 w-12 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-hextech-black/90 font-serif text-sm font-bold text-gold2 outline outline-gold5 -outline-offset-2 ${
-            animatePair ? 'animate-tile-pop' : ''
-          }`}
+          phones), side by side from md up. In theater mode it relocates
+          into the fullscreen overlay below; everything else on the page
+          stays put behind it. */}
+      {theater ? (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label="Battle theater"
+          className="fixed inset-0 z-[85] flex flex-col bg-hextech-black"
         >
-          VS
-        </span>
-      </div>
-
-      <FeedbackBar feedback={feedback} />
+          <div className="flex items-center justify-between gap-4 px-4 py-3">
+            <p className="flex items-baseline gap-4 text-xs font-semibold uppercase tracking-[0.3em] text-gold2">
+              Which do you like more?
+              {session > 0 && (
+                <span className="flex items-center gap-1.5 text-sm normal-case tracking-normal text-gold1">
+                  <FontAwesomeIcon icon={faFire} className="h-3" />
+                  {session} this session
+                </span>
+              )}
+            </p>
+            <button
+              onClick={() => setTheater(false)}
+              aria-label="Exit theater mode"
+              title="Exit theater (Esc)"
+              className="flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center bg-hextech-black/60 text-grey1 outline outline-icon/30 -outline-offset-1 transition duration-150 hover:text-gold1 hover:outline-gold2"
+            >
+              <FontAwesomeIcon icon={faCompress} className="h-4" />
+            </button>
+          </div>
+          {/* m-auto centers the arena and degrades to scrolling on windows
+              too short for it. The max-widths keep both cards on screen:
+              stacked (8/9 = one 16:9 card ÷ 2) below md, side by side
+              (32/9 = two 16:9 cards) above. */}
+          <div className="flex min-h-0 flex-1 overflow-y-auto px-3">
+            <div className="m-auto w-full max-w-[calc((100dvh-13rem)*8/9)] md:max-w-[calc((100dvh-11rem)*32/9)]">
+              {arena}
+            </div>
+          </div>
+          <FeedbackBar feedback={feedback} />
+          <p className="hidden pb-3 text-center text-xs text-grey1 md:block">
+            ← and → vote · Esc exits theater
+          </p>
+        </div>
+      ) : (
+        <>
+          {arena}
+          <FeedbackBar feedback={feedback} />
+        </>
+      )}
 
       <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-3">
         <p className="flex items-center gap-2 text-sm text-grey1">
@@ -509,19 +656,13 @@ function BattlePage() {
         </p>
       </div>
 
-      <div className="mt-10 flex flex-wrap items-center gap-x-6 gap-y-3">
-        <Link to="/profile" className={btnSecondarySm}>
-          <FontAwesomeIcon icon={faRankingStar} className="h-4" />
-          Your Mirror
-        </Link>
-        {stats.tier === 'guest' && (
-          <p className="text-sm text-grey1">
-            <FontAwesomeIcon icon={faShuffle} className="mr-1.5 h-3 text-gold2" />
-            Playing as a guest — your picks count at reduced weight. Sign in to
-            vote at full strength.
-          </p>
-        )}
-      </div>
+      {stats.tier === 'guest' && (
+        <p className="mt-10 text-sm text-grey1">
+          <FontAwesomeIcon icon={faShuffle} className="mr-1.5 h-3 text-gold2" />
+          Playing as a guest — your picks count at reduced weight. Sign in to
+          vote at full strength.
+        </p>
+      )}
 
       <SessionHistory entries={history} />
 

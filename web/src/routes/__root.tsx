@@ -21,7 +21,7 @@ import { readServerConfig, type PublicConfig } from '~/lib/config'
 const SITE_URL = 'https://skinbattle.lol'
 const SITE_TITLE = 'SKINBATTLE.LOL — League of Legends Skin Rankings'
 const SITE_DESCRIPTION =
-  'Community-built rankings for every League of Legends skin. Upvote, star, and ban your way to the definitive list.'
+  'Community-built rankings for every League of Legends skin. Battle, star, and ban your way to the definitive list.'
 
 export const Route = createRootRoute({
   // Runs on the server during SSR; the result is serialized to the client.

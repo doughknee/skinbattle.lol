@@ -11,8 +11,8 @@ export interface QuotaStats {
   usedX: number
 }
 
-export const MAX_STARS = 3
-export const MAX_X = 3
+export const MAX_STARS = 10
+export const MAX_X = 10
 
 const STORAGE_KEY = 'sb:quota'
 

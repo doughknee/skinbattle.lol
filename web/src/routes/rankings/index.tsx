@@ -2,6 +2,7 @@ import { createFileRoute, Link } from '@tanstack/react-router'
 import { useMemo, useState } from 'react'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import {
+  faChartLine,
   faCrown,
   faHourglassHalf,
   faMagnifyingGlass,
@@ -78,11 +79,7 @@ function RankingsIndexPage() {
     <div className="container mx-auto max-w-4xl px-6 pt-28 pb-16">
       <PageHeader
         eyebrow="Every slice is a link"
-        title={
-          <>
-            Rank<span className="italic">ings</span>
-          </>
-        }
+        title="Rankings"
         subtitle="The community ranking, sliced every way an argument needs: price tier, skin line, champion, year."
         className="mb-6"
       />
@@ -179,6 +176,22 @@ function RankingsIndexPage() {
               </h3>
               <p className="text-sm text-grey1">
                 Days since every champion's last skin, ranked.
+              </p>
+            </div>
+          </Link>
+          <Link
+            to="/rankings/elo"
+            className="group flex items-center gap-4 bg-hextech-black/30 p-5 outline outline-icon/20 -outline-offset-2 transition duration-200 hover:-translate-y-0.5 hover:bg-hextech-black/50 hover:outline-gold2/60"
+          >
+            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-hextech-black/60 outline outline-gold5/60 -outline-offset-2">
+              <FontAwesomeIcon icon={faChartLine} className="h-5 text-gold2" />
+            </div>
+            <div>
+              <h3 className="font-serif text-xl font-bold text-gold1 transition duration-150 group-hover:text-gold2">
+                How the rankings work
+              </h3>
+              <p className="text-sm text-grey1">
+                The rating system behind these lists, explained for humans.
               </p>
             </div>
           </Link>
