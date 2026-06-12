@@ -148,12 +148,19 @@ export function getDb(): DatabaseSync {
   db = new DatabaseSync(join(DATA_DIR, 'games.db'))
   db.exec('PRAGMA journal_mode = WAL')
   db.exec(SCHEMA)
-  // Additive migration for databases created before splash_ok existed
+  // Additive migrations for databases created before these columns existed
   // (CREATE TABLE IF NOT EXISTS won't add columns to an existing table).
   try {
     db.exec(
       'ALTER TABLE catalog_skins ADD COLUMN splash_ok INTEGER NOT NULL DEFAULT 1',
     )
+  } catch {
+    // Column already exists.
+  }
+  // Display name for leaderboards, captured from the verified Logto ID
+  // token at attach time (guests have none — boards are members-only).
+  try {
+    db.exec('ALTER TABLE game_users ADD COLUMN username TEXT')
   } catch {
     // Column already exists.
   }

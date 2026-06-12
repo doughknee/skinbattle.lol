@@ -8,10 +8,14 @@ export const Route = createFileRoute('/games-attach')({
   server: {
     handlers: {
       POST: async ({ request }) => {
-        const { verifyLogtoToken, attachSub } = await import(
+        const { verifyLogtoToken, verifyLogtoIdToken, attachSub } = await import(
           '~/lib/games/server/attach'
         )
-        let body: { accessToken?: string; restoreToken?: string | null }
+        let body: {
+          accessToken?: string
+          idToken?: string
+          restoreToken?: string | null
+        }
         try {
           body = await request.json()
         } catch {
@@ -24,9 +28,15 @@ export const Route = createFileRoute('/games-attach')({
         if (!sub) {
           return Response.json({ error: 'Invalid token.' }, { status: 401 })
         }
+        // Optional: the ID token only contributes the display name.
+        const username =
+          typeof body.idToken === 'string' && body.idToken
+            ? await verifyLogtoIdToken(body.idToken, sub)
+            : null
         const result = attachSub(
           sub,
           typeof body.restoreToken === 'string' ? body.restoreToken : null,
+          username,
         )
         return Response.json(result)
       },

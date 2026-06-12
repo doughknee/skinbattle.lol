@@ -26,6 +26,7 @@ export const OG_CARDS = [
   'price-check',
   'chroma-vision',
   'drought',
+  'leaderboards',
 ] as const
 export type OgCard = (typeof OG_CARDS)[number]
 
@@ -391,6 +392,31 @@ async function buildCard(card: OgCard): Promise<Node> {
               ),
             ),
           ),
+        ),
+      ])
+    }
+    case 'leaderboards': {
+      const { leaderboardsState } = await import('./leaderboards')
+      const lb = await leaderboardsState()
+      const top = lb.battleBoards.find((b) => b.period === 'all')?.entries[0]
+      return frame(null, [
+        el(
+          'div',
+          { flexDirection: 'column', gap: 18, justifyContent: 'center', flexGrow: 1 },
+          eyebrow('Community · named players only'),
+          title('Leaderboards', 84),
+          body('Streaks, fastest daily solves, and battle volume.'),
+          top
+            ? text(
+                `Most battles: ${top.name} — ${top.battles.toLocaleString('en-US')}`,
+                {
+                  fontFamily: 'Inter',
+                  fontWeight: 600,
+                  fontSize: 30,
+                  color: C.gold1,
+                },
+              )
+            : body('The boards are open — be the first name on them.'),
         ),
       ])
     }

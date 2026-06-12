@@ -8,6 +8,7 @@
 
 import { useEffect, useRef } from 'react'
 import { useAuth } from '~/lib/useAuth'
+import { getLogtoClient } from '~/lib/logtoClient'
 import { guestRestoreToken, rememberGuestToken } from '~/lib/games/client'
 
 const SESSION_KEY = 'sb:attached'
@@ -28,12 +29,18 @@ export default function GuestAttachment() {
       try {
         const accessToken = await getApiToken()
         if (!accessToken) return
+        // The ID token carries the username claim for leaderboard display
+        // names; optional — attachment works without it.
+        const idToken = await getLogtoClient()
+          ?.getIdToken()
+          .catch(() => null)
         const res = await fetch('/games-attach', {
           method: 'POST',
           credentials: 'include',
           headers: { 'content-type': 'application/json' },
           body: JSON.stringify({
             accessToken,
+            idToken: idToken ?? undefined,
             restoreToken: guestRestoreToken(),
           }),
         })

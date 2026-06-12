@@ -138,8 +138,16 @@ expire, and (3) a persistent identity worth investing in. Games are sequenced by
   switched to the account's credential. Verified e2e against a mock JWKS
   with self-signed tokens (`scripts/mock-logto.mjs`) — the production code
   path, no bypass. The Mirror's "keep your tier list" promise is real now.
-- ◻ Leaderboards (now unblocked — named users exist once people sign in) —
-  **not started**.
+- ✅ **Leaderboards** (2026-06-12) — `/leaderboards`, members-only by
+  design (guests see the boards, never occupy them): today's fastest
+  solves (Splashdle / Chroma Vision, fewest guesses then earliest), streak
+  boards for all three dailies, Quick Battle volume (week + all-time).
+  Display names captured at attach time from the **verified Logto ID
+  token** (aud = app id, sub must match the access token's) — names
+  refresh on every attach so renames follow. Guest banner counts the named
+  players and pitches sign-in; honest empty states before anyone signs in.
+  Hub Community section + OG card. With this, **every Phase 0 item is
+  shipped.**
 
 **Architecture note**: game state currently lives in the TanStack Start SSR
 layer (server functions + SQLite at `web/.data/games.db` — persisted via the
@@ -154,9 +162,10 @@ that happen after first paint; one-shot animations cleared by timer, not
 animationend; every interaction answers back before the round-trip
 completes (pending states).
 
-**Phase 1 is complete, including conversion.** Remaining: leaderboards
-(buildable now that accounts attach), and Phase 2+ — gated on real
-community data/DAU by design.
+**Phases 0 and 1 are complete, including conversion and leaderboards.**
+Everything that remains (Skin Cup, Hot Takes, Wishlist Battles, Daily
+Draft, Discord bot, Phase 3) is gated on real community data/DAU by
+design — the flywheel is built; it needs players now.
 
 ## Landscape & differentiation
 

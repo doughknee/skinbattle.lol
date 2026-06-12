@@ -200,6 +200,35 @@ export interface PriceCheckState {
   guestToken: string
 }
 
+// ─── Leaderboards ───────────────────────────────────────────────────────────
+
+export interface StreakBoardEntry {
+  rank: number
+  name: string
+  current: number
+  best: number
+}
+
+export interface SolveBoardEntry {
+  rank: number
+  name: string
+  guesses: number
+}
+
+export interface VolumeBoardEntry {
+  rank: number
+  name: string
+  battles: number
+}
+
+export interface LeaderboardsState {
+  date: string
+  memberCount: number
+  streakBoards: { game: GameId; entries: StreakBoardEntry[] }[]
+  todayBoards: { game: 'splashdle' | 'chroma-vision'; entries: SolveBoardEntry[] }[]
+  battleBoards: { period: 'week' | 'all'; entries: VolumeBoardEntry[] }[]
+}
+
 // ─── Ranking slices ─────────────────────────────────────────────────────────
 
 export interface RankingRow {
