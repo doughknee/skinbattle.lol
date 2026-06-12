@@ -24,6 +24,7 @@ export const OG_CARDS = [
   'quick-battle',
   'mirror',
   'price-check',
+  'chroma-vision',
   'drought',
 ] as const
 export type OgCard = (typeof OG_CARDS)[number]
@@ -320,6 +321,39 @@ async function buildCard(card: OgCard): Promise<Node> {
               ),
             ),
           ),
+        ),
+      ])
+    }
+    case 'chroma-vision': {
+      const { chromaOgInfo } = await import('./chromavision')
+      const info = await chromaOgInfo()
+      return frame(null, [
+        el(
+          'div',
+          { gap: 48, alignItems: 'center', flexGrow: 1 },
+          el(
+            'div',
+            { flexDirection: 'column', gap: 18, flexGrow: 1, width: 540 },
+            eyebrow('Daily · hard mode · colors only'),
+            title(`Chroma Vision #${info.puzzleNumber}`, 70),
+            body(
+              'Name the skin from its colors alone. The mosaic sharpens with every miss — six guesses.',
+            ),
+          ),
+          {
+            type: 'img',
+            props: {
+              src: info.mosaic,
+              width: 460,
+              height: 259,
+              style: {
+                width: 460,
+                height: 259,
+                objectFit: 'cover',
+                border: `2px solid ${C.gold5}`,
+              },
+            },
+          },
         ),
       ])
     }

@@ -59,7 +59,8 @@ schema mirrors Postgres conventions so the port is mechanical.
 - `fetchDailyHub({ restoreToken? })` → today's per-game status + streaks + Quick Battle volume counts
 - `fetchSplashdleState({ restoreToken? })` → puzzle state (server-cropped image as a data URL; the full splash URL is only revealed after completion)
 - `submitSplashdleGuess({ skinId, restoreToken? })` → validated guess, updated state
-- `fetchSplashdleOptions()` → guessable skin catalog for autocomplete
+- `fetchSplashdleOptions()` → guessable skin catalog for autocomplete (shared by Splashdle and Chroma Vision)
+- `fetchChromaVision({ restoreToken? })` / `submitChromaGuess({ skinId, restoreToken? })` → Chroma Vision (`/games/chroma-vision`): the splash as a server-rendered color mosaic (data URL) that sharpens per miss — 5×3 blocks → 44 columns over six levels; same six-guess/champion-hint/streak contracts as Splashdle
 - `fetchQuickBattle({ restoreToken?, refit? })` → current pair + preloaded next pair + battle stats. Pairs are HMAC-signed stateless tokens (no row written on read); `refit` triggers the manual Bradley-Terry refit (guarded by `GAMES_ADMIN_SECRET` when set; reachable for cron via `GET /games/quick-battle?refit=…` which runs the loader)
 - `submitBattleVote({ pairToken, winnerId, recent?, restoreToken? })` → appends the raw `battle_voted` event, applies the live Elo update (global + personal), burns the pair nonce, enforces rate limits, and returns feedback (delta, rank, agreement %) + the next pair
 - `fetchPriceCheck({ restoreToken? })` / `submitPriceGuess({ tier, restoreToken? })` → Price Check (`/games/price-check`): five seeded skins a day, guess each one's RP tier. Prices come from the committed Meraki snapshot (`web/src/lib/games/data/skin-facts.json`, refreshed by `web/scripts/snapshot-facts.mjs` — never fetched at runtime). The unanswered round's price never reaches the client; win = 3+ exact of 5

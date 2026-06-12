@@ -1,50 +1,43 @@
-// Splashdle engine (server-only): a tight crop of a skin splash that zooms
-// out with each wrong guess. 6 guesses, guess-the-skin across the full
-// catalog. All state is server-authoritative — the client only ever sees
-// the crop for its current zoom level, so the answer can't be peeked from
-// a splash URL or the full image until the game is over.
+// Chroma Vision engine (server-only): name the skin from its colors alone.
+// The splash is rendered as a coarse color mosaic that sharpens with each
+// miss — level 0 is pure color composition (5×3 blocks), level 5 is a
+// 44-column pixelation where the silhouette finally emerges. Hard mode by
+// design (the roadmap's rotation slot).
+//
+// Same contracts as Splashdle: server-authoritative state (the answer and
+// its splash URL never reach the client mid-game — mosaics ship as data
+// URLs), the daily puzzle is seeded from the date and frozen in
+// daily_puzzles, reads never write.
 
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
-import { Jimp } from 'jimp'
+import { Jimp, ResizeStrategy } from 'jimp'
 import type { DatabaseSync } from 'node:sqlite'
-import type {
-  DailyHubState,
-  GuessOption,
-  SplashdleGuess,
-  SplashdleState,
-  StreakInfo,
-} from '../types'
+import type { ChromaVisionState, SplashdleGuess, StreakInfo } from '../types'
 import { appendEvent, DATA_DIR, getDb } from './db'
 import { MAX_GUESSES, puzzleNumber, seedFloats, utcToday } from './daily'
 import { allCatalogSkins, ensureCatalog, getCatalogSkin } from './catalog'
 import { ensureUser, peekUser, type GameUser } from './guests'
 import { getStreak, recordCompletion } from './streaks'
-import { communityBattleCount, userBattleCounts } from './quickbattle'
-import { priceCheckHubInfo, ROUNDS as PRICE_ROUNDS } from './pricecheck'
-import { chromaHubInfo } from './chromavision'
-import { newThisPatch } from './insights'
 
-const GAME = 'splashdle'
-// Recorded on every event so themed variants can be added later without
-// poisoning the dataset (rating-system design: store which question was asked).
-const QUESTION = 'guess-the-skin'
+const GAME = 'chroma-vision'
+const QUESTION = 'guess-the-skin-from-its-colors'
+// Puzzle #1's date.
+const EPOCH = '2026-06-12'
 
-// Crop width as a fraction of the splash, per zoom level. Level = number of
-// guesses made so far; the last level is what a player on their 6th guess sees.
-const LEVELS = [0.14, 0.2, 0.28, 0.38, 0.52, 0.7]
+// Mosaic columns per level (rows follow 16:9). Level = guesses made so far.
+const LEVEL_COLS = [5, 8, 12, 18, 28, 44]
+// Rendered size of the mosaic image.
+const OUT_W = 960
+const OUT_H = 540
 
 interface PuzzleRow {
   skinId: string
-  cx: number
-  cy: number
   assetVersion: string
 }
 
 // ─── puzzle selection ───────────────────────────────────────────────────────
 
-// The day's puzzle is deterministic from the date, then frozen in the db so
-// a mid-day patch sync can never swap the answer under players.
 async function getOrCreatePuzzle(
   db: DatabaseSync,
   date: string,
@@ -60,17 +53,13 @@ async function getOrCreatePuzzle(
   if (existing) return JSON.parse(existing.payload) as PuzzleRow
 
   const assetVersion = await ensureCatalog(db)
-  const pool = db
-    .prepare(
-      'SELECT id FROM catalog_skins WHERE splash_ok = 1 ORDER BY champion_id, num',
-    )
-    .all() as unknown as { id: string }[]
+  const pool = allCatalogSkins(db)
   if (pool.length === 0) throw new Error('skin catalog is empty')
 
-  const [pick, rx, ry] = seedFloats(`${GAME}:${date}`, 3)
-  // The seeded pick is only a starting point: a catalog entry can lack real
-  // splash art (Riot data is messy), so walk forward until one fetches.
-  // Deterministic, and the winner is frozen in daily_puzzles anyway.
+  const [pick] = seedFloats(`${GAME}:${date}`, 1)
+  // The seeded pick is only a starting point: walk forward until a splash
+  // actually fetches (Riot data is messy). Deterministic, and the winner is
+  // frozen in daily_puzzles anyway.
   const start = Math.floor(pick * pool.length) % pool.length
   let skinId: string | null = null
   for (let i = 0; i < 25 && !skinId; i++) {
@@ -79,14 +68,7 @@ async function getOrCreatePuzzle(
   }
   if (!skinId) throw new Error('no candidate skin with a fetchable splash')
 
-  const puzzle: PuzzleRow = {
-    skinId,
-    // Crop center, kept away from the edges; biased slightly above center
-    // where splash subjects tend to sit.
-    cx: 0.3 + rx * 0.4,
-    cy: 0.28 + ry * 0.36,
-    assetVersion,
-  }
+  const puzzle: PuzzleRow = { skinId, assetVersion }
   db.prepare(
     'INSERT OR IGNORE INTO daily_puzzles (game, puzzle_date, payload, created_at) VALUES (?, ?, ?, ?)',
   ).run(GAME, date, JSON.stringify(puzzle), new Date().toISOString())
@@ -102,8 +84,6 @@ function cacheDir(): string {
   return dir
 }
 
-// Download the splash for a candidate skin into the day's cache slot.
-// Returns false (without caching) when the asset doesn't exist.
 async function fetchSplashToCache(
   db: DatabaseSync,
   date: string,
@@ -132,35 +112,30 @@ async function fullSplash(db: DatabaseSync, date: string, puzzle: PuzzleRow) {
 const clamp = (v: number, lo: number, hi: number) =>
   Math.max(lo, Math.min(hi, v))
 
-// 16:9 crop around the puzzle's center point at the given zoom level,
-// cached on disk (6 crops per day, total).
-async function cropDataUrl(
+// Mosaic for a level: squash the splash down to cols×rows (averaging each
+// region into one color), then blow it back up with nearest-neighbor so the
+// blocks stay crisp. PNG, not JPEG — hard block edges artifact badly.
+// Cached on disk (6 mosaics per day, total).
+async function mosaicDataUrl(
   db: DatabaseSync,
   date: string,
   puzzle: PuzzleRow,
   level: number,
 ): Promise<string> {
-  const lv = clamp(level, 0, LEVELS.length - 1)
-  const path = join(cacheDir(), `${GAME}-${date}-L${lv}.jpg`)
+  const lv = clamp(level, 0, LEVEL_COLS.length - 1)
+  const path = join(cacheDir(), `${GAME}-${date}-L${lv}.png`)
   if (existsSync(path)) {
-    return `data:image/jpeg;base64,${readFileSync(path).toString('base64')}`
+    return `data:image/png;base64,${readFileSync(path).toString('base64')}`
   }
 
+  const cols = LEVEL_COLS[lv]
+  const rows = Math.max(2, Math.round((cols * 9) / 16))
   const image = await Jimp.fromBuffer(await fullSplash(db, date, puzzle))
-  const W = image.width
-  const H = image.height
-  let w = Math.round(LEVELS[lv] * W)
-  let h = Math.round((w * 9) / 16)
-  if (h > H) {
-    h = H
-    w = Math.min(W, Math.round((h * 16) / 9))
-  }
-  const x = clamp(Math.round(puzzle.cx * W - w / 2), 0, W - w)
-  const y = clamp(Math.round(puzzle.cy * H - h / 2), 0, H - h)
-  image.crop({ x, y, w, h })
-  const out = await image.getBuffer('image/jpeg', { quality: 82 })
+  image.resize({ w: cols, h: rows })
+  image.resize({ w: OUT_W, h: OUT_H, mode: ResizeStrategy.NEAREST_NEIGHBOR })
+  const out = await image.getBuffer('image/png')
   writeFileSync(path, out)
-  return `data:image/jpeg;base64,${Buffer.from(out).toString('base64')}`
+  return `data:image/png;base64,${Buffer.from(out).toString('base64')}`
 }
 
 // ─── result rows ────────────────────────────────────────────────────────────
@@ -188,18 +163,19 @@ function readResult(
 
 // ─── share text ─────────────────────────────────────────────────────────────
 
-// Spoiler-free by construction: the grid encodes guess quality, never names.
 function buildShareText(
   date: string,
   result: ResultRow,
   streak: StreakInfo,
 ): string {
   const score =
-    result.status === 'won' ? `${result.guesses.length}/${MAX_GUESSES}` : `X/${MAX_GUESSES}`
+    result.status === 'won'
+      ? `${result.guesses.length}/${MAX_GUESSES}`
+      : `X/${MAX_GUESSES}`
   const grid = result.guesses
     .map((g) => (g.correct ? '🟩' : g.championMatch ? '🟨' : '🟥'))
     .join('')
-  const lines = [`Splashdle #${puzzleNumber(date)} ${score}`, grid]
+  const lines = [`Chroma Vision #${puzzleNumber(date, EPOCH)} ${score}`, grid]
   if (result.status === 'won' && streak.current > 1) {
     lines.push(`🔥 ${streak.current}-day streak`)
   }
@@ -216,21 +192,21 @@ async function assembleState(
   token: string,
   puzzle: PuzzleRow,
   result: ResultRow,
-): Promise<SplashdleState> {
+): Promise<ChromaVisionState> {
   const finished = result.status !== 'in_progress'
-  const zoomLevel = clamp(result.guesses.length, 0, LEVELS.length - 1)
+  const level = clamp(result.guesses.length, 0, LEVEL_COLS.length - 1)
   const streakRow = getStreak(db, user.id, GAME)
   const streak = { current: streakRow.current, best: streakRow.best }
 
-  const base: SplashdleState = {
+  const base: ChromaVisionState = {
     date,
-    puzzleNumber: puzzleNumber(date),
+    puzzleNumber: puzzleNumber(date, EPOCH),
     maxGuesses: MAX_GUESSES,
     status: result.status,
     guesses: result.guesses,
     image: '',
-    zoomLevel,
-    totalLevels: LEVELS.length,
+    zoomLevel: level,
+    totalLevels: LEVEL_COLS.length,
     streak,
     guestToken: token,
   }
@@ -248,20 +224,18 @@ async function assembleState(
     }
     base.shareText = buildShareText(date, result, streak)
   } else {
-    base.image = await cropDataUrl(db, date, puzzle, zoomLevel)
+    base.image = await mosaicDataUrl(db, date, puzzle, level)
   }
   return base
 }
 
 // ─── public surface (called from server functions) ──────────────────────────
 
-// Read-only: viewing the puzzle never writes. Anonymous visitors (no
-// cookie, no backup token — including every crawler) get a playable state
-// with an empty guestToken; their user record is minted by their first
-// guess, not their first pageview.
-export async function splashdleState(
+// Read-only: viewing the puzzle never writes (peekUser; the user record is
+// minted by the first guess, not the first pageview).
+export async function chromaVisionState(
   restoreToken?: string | null,
-): Promise<SplashdleState> {
+): Promise<ChromaVisionState> {
   const db = getDb()
   const date = utcToday()
   const puzzle = await getOrCreatePuzzle(db, date)
@@ -272,21 +246,18 @@ export async function splashdleState(
     status: 'in_progress' as const,
     guesses: [],
   }
-
   return assembleState(db, date, user, known?.token ?? '', puzzle, result)
 }
 
-export async function submitSplashdleGuess(
+export async function submitChromaGuess(
   skinId: string,
   restoreToken?: string | null,
-): Promise<SplashdleState> {
+): Promise<ChromaVisionState> {
   const db = getDb()
   const date = utcToday()
   const { user, token } = ensureUser(db, restoreToken)
   const puzzle = await getOrCreatePuzzle(db, date)
 
-  // First guess starts the puzzle: the result row and puzzle_started event
-  // are written here, not on pageview, so only real players leave a trace.
   let result = readResult(db, user.id, date)
   if (!result) {
     db.prepare(
@@ -297,7 +268,7 @@ export async function submitSplashdleGuess(
       game: GAME,
       puzzleDate: date,
       type: 'puzzle_started',
-      payload: { puzzleNumber: puzzleNumber(date) },
+      payload: { puzzleNumber: puzzleNumber(date, EPOCH) },
       questionAsked: QUESTION,
       assetVersion: puzzle.assetVersion,
       trustTier: user.trustTier,
@@ -305,7 +276,7 @@ export async function submitSplashdleGuess(
     result = { status: 'in_progress', guesses: [] }
   }
   if (result.status !== 'in_progress') {
-    throw new Error("Today's Splashdle is already finished — come back tomorrow!")
+    throw new Error("Today's Chroma Vision is already finished — come back tomorrow!")
   }
   if (result.guesses.length >= MAX_GUESSES) {
     throw new Error('No guesses left.')
@@ -379,91 +350,28 @@ export async function submitSplashdleGuess(
   return assembleState(db, date, user, token, puzzle, { status, guesses })
 }
 
-// Data for the Splashdle OG share card: today's puzzle number plus the
-// level-0 crop — exactly what a new player sees first, so it's spoiler-free
-// by definition.
-export async function splashdleOgInfo(): Promise<{
+// The hub's checklist slot, read-only.
+export function chromaHubInfo(
+  db: DatabaseSync,
+  userId: string | null,
+  date: string,
+): { status: ResultRow['status'] | 'not_started'; guessesUsed: number } {
+  const result = userId ? readResult(db, userId, date) : null
+  if (!result) return { status: 'not_started', guessesUsed: 0 }
+  return { status: result.status, guessesUsed: result.guesses.length }
+}
+
+// Data for the OG share card: today's puzzle number plus the level-0 mosaic
+// — 15 color blocks reveal essentially nothing, spoiler-free by definition.
+export async function chromaOgInfo(): Promise<{
   puzzleNumber: number
-  crop: string
+  mosaic: string
 }> {
   const db = getDb()
   const date = utcToday()
   const puzzle = await getOrCreatePuzzle(db, date)
   return {
-    puzzleNumber: puzzleNumber(date),
-    crop: await cropDataUrl(db, date, puzzle, 0),
-  }
-}
-
-// Autocomplete options for the guess input — the full guessable catalog.
-export async function splashdleOptions(): Promise<GuessOption[]> {
-  const db = getDb()
-  await ensureCatalog(db)
-  return allCatalogSkins(db).map((s) => ({
-    skinId: s.id,
-    name: s.name,
-    championId: s.championId,
-    championName: s.championName,
-  }))
-}
-
-// The Daily Hub's today-checklist. Read-only: visiting the hub must not
-// start a puzzle (no puzzle_started event, no result row).
-export async function dailyHub(
-  restoreToken?: string | null,
-): Promise<DailyHubState> {
-  const db = getDb()
-  const date = utcToday()
-  const known = peekUser(db, restoreToken)
-  const user = known?.user ?? { id: '', trustTier: 'guest' as const }
-  const result = known ? readResult(db, user.id, date) : null
-  const streakRow = getStreak(db, user.id, GAME)
-  const price = priceCheckHubInfo(db, known?.user.id ?? null, date)
-  const priceStreak = getStreak(db, user.id, 'price-check')
-  const chroma = chromaHubInfo(db, known?.user.id ?? null, date)
-  const chromaStreak = getStreak(db, user.id, 'chroma-vision')
-  return {
-    date,
-    guestToken: known?.token ?? '',
-    quickBattle: {
-      userBattles: userBattleCounts(db, known?.user.id ?? null).total,
-      communityBattles: communityBattleCount(db),
-    },
-    mirror: {
-      skinsRated: known
-        ? (
-            db
-              .prepare(
-                'SELECT COUNT(*) AS c FROM user_skin_ratings WHERE user_id = ? AND battles > 0',
-              )
-              .get(known.user.id) as { c: number }
-          ).c
-        : 0,
-    },
-    newSkins: newThisPatch(db, date),
-    games: [
-      {
-        id: GAME,
-        status: result ? result.status : 'not_started',
-        guessesUsed: result?.guesses.length ?? 0,
-        maxGuesses: MAX_GUESSES,
-        streak: { current: streakRow.current, best: streakRow.best },
-      },
-      {
-        id: 'price-check',
-        status: price.status === 'not_started' ? 'not_started' : price.status,
-        guessesUsed: price.rounds,
-        maxGuesses: PRICE_ROUNDS,
-        score: price.score,
-        streak: { current: priceStreak.current, best: priceStreak.best },
-      },
-      {
-        id: 'chroma-vision',
-        status: chroma.status,
-        guessesUsed: chroma.guessesUsed,
-        maxGuesses: MAX_GUESSES,
-        streak: { current: chromaStreak.current, best: chromaStreak.best },
-      },
-    ],
+    puzzleNumber: puzzleNumber(date, EPOCH),
+    mosaic: await mosaicDataUrl(db, date, puzzle, 0),
   }
 }

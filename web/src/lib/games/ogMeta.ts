@@ -19,6 +19,7 @@ export function ogMeta(opts: {
     | 'quick-battle'
     | 'mirror'
     | 'price-check'
+    | 'chroma-vision'
     | 'drought'
   // Overrides the card-derived image path (e.g. `/og/skin/<id>`).
   imagePath?: string

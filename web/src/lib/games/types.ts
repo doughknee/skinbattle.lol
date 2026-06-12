@@ -1,7 +1,7 @@
 // Shared (client-safe) types for the games framework. Server-only logic
 // lives under ./server — never import that from components.
 
-export type GameId = 'splashdle' | 'price-check'
+export type GameId = 'splashdle' | 'price-check' | 'chroma-vision'
 
 export type DailyStatus = 'not_started' | 'in_progress' | 'won' | 'lost'
 
@@ -47,6 +47,11 @@ export interface SplashdleState {
   // Echoed so the client can keep a localStorage backup of the guest cookie.
   guestToken: string
 }
+
+// Chroma Vision shares Splashdle's state shape exactly — same six-guess
+// board, same champion-match hint; `image` is the color mosaic instead of a
+// crop and `zoomLevel` is the mosaic resolution level.
+export type ChromaVisionState = SplashdleState
 
 export interface GuessOption {
   skinId: string
