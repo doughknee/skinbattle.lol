@@ -38,7 +38,7 @@ function NavItem({ section }: { section: SiteSection }) {
       title={section.label}
       className={`flex h-full items-center gap-2 px-2.5 transition duration-350 md:px-3.5 ${itemHover} ${
         active ? itemShade : ''
-      } ${section.accent ? 'bg-gold5/15' : ''}`}
+      } ${section.accent ? 'bg-gold5/15 animate-battle-beacon' : ''}`}
     >
       <FontAwesomeIcon
         icon={section.icon}

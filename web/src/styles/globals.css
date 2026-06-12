@@ -68,6 +68,9 @@
   --animate-feedback-pop: feedback-pop 0.18s ease-out both;
   --animate-delta-pop: delta-pop 0.3s cubic-bezier(0.22, 1, 0.36, 1) both;
   --animate-history-in: history-in 0.18s ease-out both;
+  /* The navbar's Battle tab — a slow gold ember so the brand verb reads as
+     alive, not merely hovered. Infinite and subtle by design. */
+  --animate-battle-beacon: battle-beacon 2.8s ease-in-out infinite;
 }
 
 /* ── Motion ─────────────────────────────────────────────────── */
@@ -258,6 +261,18 @@
 }
 
 /* Shimmer sweep for skeleton loaders. */
+@keyframes battle-beacon {
+  0%,
+  100% {
+    box-shadow: inset 0 -10px 16px -10px
+      color-mix(in srgb, var(--color-gold2) 30%, transparent);
+  }
+  50% {
+    box-shadow: inset 0 -18px 24px -8px
+      color-mix(in srgb, var(--color-gold2) 70%, transparent);
+  }
+}
+
 @keyframes shimmer {
   to {
     transform: translateX(100%);
@@ -357,6 +372,13 @@
   .animate-history-in,
   .route-progress-bar {
     animation: none !important;
+  }
+  /* Static ember instead of the pulse — the accent stays distinguishable
+     from hover without motion. */
+  .animate-battle-beacon {
+    animation: none !important;
+    box-shadow: inset 0 -14px 20px -9px
+      color-mix(in srgb, var(--color-gold2) 50%, transparent);
   }
   .skeleton::after {
     animation: none;

@@ -65,9 +65,18 @@ export const SITE_SECTIONS: SiteSection[] = [
     label: 'Battle',
     blurb: 'Two skins. Pick one. Every vote builds the rankings.',
     icon: faShuffle,
-    search: 'play quick battle versus swipe endless vote',
+    // Carries the head-to-head terms too: the palette dedupes the child that
+    // points at this same path, so its keywords must live here.
+    search: 'play quick battle versus head to head 1v1 swipe endless vote',
     accent: true,
     children: [
+      {
+        to: '/battle',
+        label: 'Head-to-Head',
+        blurb: 'Quick Battle — two skins, pick one. Endless.',
+        icon: faShuffle,
+        search: 'versus quick battle head to head 1v1 swipe endless vs',
+      },
       {
         to: '/battle/splashdle',
         label: 'Splashdle',
