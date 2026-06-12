@@ -185,7 +185,7 @@ function SkinPage() {
                 )}
               </p>
               <Link
-                to="/games/mirror"
+                to="/battle/mirror"
                 className="text-sm font-bold text-gold2 transition duration-150 hover:text-gold1"
               >
                 See your full Mirror →
@@ -255,7 +255,7 @@ function SkinPage() {
       </section>
 
       <div className="mt-8 flex flex-wrap items-center gap-3">
-        <Link to="/games/quick-battle" className={btnPrimarySm}>
+        <Link to="/battle" className={btnPrimarySm}>
           <FontAwesomeIcon icon={faShuffle} className="h-4" />
           Battle skins like this
         </Link>

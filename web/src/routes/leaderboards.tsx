@@ -1,9 +1,9 @@
 import { createFileRoute, redirect } from '@tanstack/react-router'
 
-// Leaderboards moved under /games (it's a games feature) — kept as a
-// redirect so old bookmarks and shared links keep working.
+// Leaderboards live under /battle — direct redirect (no chains) so old
+// bookmarks keep working.
 export const Route = createFileRoute('/leaderboards')({
   beforeLoad: () => {
-    throw redirect({ to: '/games/leaderboards' })
+    throw redirect({ to: '/battle/leaderboards' })
   },
 })

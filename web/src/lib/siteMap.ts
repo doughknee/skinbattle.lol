@@ -4,11 +4,14 @@
 // from this registry. To add a page to the site: create the route file, then
 // add one entry here — it shows up in every navigation surface at once.
 // Nothing should hand-roll its own list of site links.
+//
+// The model (see ROUTES.md): three doors, three verbs.
+//   Battle = do. Skins = find. Rankings = see. Plus You behind the account
+//   button. Leaf content (champion/skin pages, slices) never appears in nav.
 
 import {
   faCoins,
   faCrown,
-  faDice,
   faHourglassHalf,
   faHouse,
   faImage,
@@ -37,6 +40,8 @@ export interface SitePage {
 export interface SiteSection extends SitePage {
   // Dropdown/footer items. The section entry itself is the landing page.
   children?: SitePage[]
+  // The navbar renders this section as the highlighted brand action.
+  accent?: boolean
 }
 
 export const HOME: SitePage = {
@@ -56,6 +61,51 @@ export const PROFILE: SitePage = {
 }
 
 export const SITE_SECTIONS: SiteSection[] = [
+  {
+    to: '/battle',
+    label: 'Battle',
+    blurb: 'Two skins. Pick one. Every vote builds the rankings.',
+    icon: faShuffle,
+    search: 'play quick battle versus swipe endless vote',
+    accent: true,
+    children: [
+      {
+        to: '/battle/splashdle',
+        label: 'Splashdle',
+        blurb: 'Daily: name the skin from a sliver of its splash.',
+        icon: faImage,
+        search: 'wordle guess splash daily',
+      },
+      {
+        to: '/battle/price-check',
+        label: 'Price Check',
+        blurb: 'Daily: guess what each skin cost in RP.',
+        icon: faCoins,
+        search: 'rp cost price guess daily',
+      },
+      {
+        to: '/battle/chroma-vision',
+        label: 'Chroma Vision',
+        blurb: 'Daily: name the skin from its colors alone.',
+        icon: faPalette,
+        search: 'colors mosaic hard mode daily',
+      },
+      {
+        to: '/battle/leaderboards',
+        label: 'Leaderboards',
+        blurb: 'Streaks, fastest solves, and battle volume.',
+        icon: faTrophy,
+        search: 'top players streaks ranks community',
+      },
+      {
+        to: '/battle/mirror',
+        label: 'The Mirror',
+        blurb: 'The tier list your battles build.',
+        icon: faScaleUnbalanced,
+        search: 'my taste tier list hot takes wardrobe',
+      },
+    ],
+  },
   {
     to: '/champions',
     label: 'Champions',
@@ -92,11 +142,11 @@ export const SITE_SECTIONS: SiteSection[] = [
         search: 'price tier skin line year champion slice',
       },
       {
-        to: '/awards',
+        to: '/rankings/awards',
         label: 'Awards',
         blurb: 'Most starred, most banned — community superlatives.',
         icon: faCrown,
-        search: 'best worst starred banned superlatives',
+        search: 'best worst starred banned superlatives awards',
       },
       {
         to: '/rankings/drought',
@@ -104,57 +154,6 @@ export const SITE_SECTIONS: SiteSection[] = [
         blurb: "Days since every champion's last skin, ranked.",
         icon: faHourglassHalf,
         search: 'insights days since last skin waiting forgotten',
-      },
-    ],
-  },
-  {
-    to: '/games',
-    label: 'Games',
-    blurb: 'Daily challenges for skin connoisseurs.',
-    icon: faDice,
-    search: 'play daily puzzle hub challenges',
-    children: [
-      {
-        to: '/games/splashdle',
-        label: 'Splashdle',
-        blurb: 'Name the skin from a sliver of its splash.',
-        icon: faImage,
-        search: 'wordle guess splash daily',
-      },
-      {
-        to: '/games/price-check',
-        label: 'Price Check',
-        blurb: 'Guess what each skin cost in RP.',
-        icon: faCoins,
-        search: 'rp cost price guess daily',
-      },
-      {
-        to: '/games/chroma-vision',
-        label: 'Chroma Vision',
-        blurb: 'Name the skin from its colors alone.',
-        icon: faPalette,
-        search: 'colors mosaic hard mode daily',
-      },
-      {
-        to: '/games/quick-battle',
-        label: 'Quick Battle',
-        blurb: 'Two skins. Pick one. Endless.',
-        icon: faShuffle,
-        search: 'versus swipe battle endless',
-      },
-      {
-        to: '/games/mirror',
-        label: 'The Mirror',
-        blurb: 'The tier list your battles build.',
-        icon: faScaleUnbalanced,
-        search: 'my taste tier list hot takes wardrobe',
-      },
-      {
-        to: '/games/leaderboards',
-        label: 'Leaderboards',
-        blurb: 'Streaks, fastest solves, and battle volume.',
-        icon: faTrophy,
-        search: 'top players streaks ranks community',
       },
     ],
   },

@@ -130,7 +130,7 @@ export const fetchDrought = createServerFn({ method: 'GET' }).handler(
 
 // Quick Battle state: the current pair plus a preloaded next pair. `refit`
 // manually triggers the Bradley-Terry refit (guarded by GAMES_ADMIN_SECRET
-// when set) — reachable via /games/quick-battle?refit=… for cron/curl.
+// when set) — reachable via /battle?refit=… for cron/curl.
 export const fetchQuickBattle = createServerFn({ method: 'POST' })
   .inputValidator((d: GuestInput & { refit?: string }) => d)
   .handler(async ({ data }): Promise<QuickBattleState> => {

@@ -150,7 +150,7 @@ function RankingSlicePage() {
       )}
 
       <div className="mt-10 flex flex-wrap items-center gap-3">
-        <Link to="/games/quick-battle" className={btnPrimarySm}>
+        <Link to="/battle" className={btnPrimarySm}>
           <FontAwesomeIcon icon={faShuffle} className="h-4" />
           Battle to sharpen this list
         </Link>

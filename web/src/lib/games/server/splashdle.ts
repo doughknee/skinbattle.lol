@@ -203,7 +203,7 @@ function buildShareText(
   if (result.status === 'won' && streak.current > 1) {
     lines.push(`🔥 ${streak.current}-day streak`)
   }
-  lines.push('skinbattle.lol/games')
+  lines.push('skinbattle.lol/battle')
   return lines.join('\n')
 }
 

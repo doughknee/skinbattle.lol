@@ -62,9 +62,9 @@ const steps: { icon: IconDefinition; title: string; blurb: string }[] = [
   },
 ]
 
-// The games hub pages (5 games + leaderboards), straight from the site map so
-// the home page never drifts from what's actually live.
-const gamePages = SITE_SECTIONS.find((s) => s.to === '/games')?.children ?? []
+// The Battle door's pages (dailies + leaderboards), straight from the site
+// map so the home page never drifts from what's actually live.
+const gamePages = SITE_SECTIONS.find((s) => s.to === '/battle')?.children ?? []
 
 function formatCount(n: number): string {
   return n.toLocaleString('en-US')
@@ -112,15 +112,15 @@ function HomePage() {
               className="animate-fade-up mt-10 flex flex-col sm:flex-row gap-4"
               style={{ animationDelay: '300ms' }}
             >
-              <Link to="/champions" className={`group ${btnPrimary}`}>
-                Start Voting
+              <Link to="/battle" className={`group ${btnPrimary}`}>
+                Battle Now
                 <FontAwesomeIcon
                   icon={faArrowRight}
                   className="h-4 transition-transform duration-150 group-hover:translate-x-1"
                 />
               </Link>
-              <Link to="/awards" className={btnSecondary}>
-                See the Awards
+              <Link to="/rankings" className={btnSecondary}>
+                See the Rankings
               </Link>
             </div>
 
@@ -173,7 +173,7 @@ function HomePage() {
             </p>
           </div>
           <Link
-            to="/awards"
+            to="/rankings/awards"
             className="hidden sm:inline-flex items-center gap-2 font-serif font-bold text-grey1 hover:text-gold1 transition duration-150 whitespace-nowrap"
           >
             View all awards
@@ -227,8 +227,8 @@ function HomePage() {
           ))}
         </div>
         <div className="mt-10 text-center">
-          <Link to="/games" className={`group ${btnSecondary}`}>
-            Browse all games
+          <Link to="/battle" className={`group ${btnSecondary}`}>
+            Enter the battle
             <FontAwesomeIcon
               icon={faArrowRight}
               className="h-4 transition-transform duration-150 group-hover:translate-x-1"
@@ -244,11 +244,11 @@ function HomePage() {
             Ready to crown the best?
           </h2>
           <p className="mx-auto max-w-2xl text-lg text-grey1 mb-8">
-            Jump in and start ranking. Every vote shapes the definitive list of
-            League's best — and worst — skins.
+            Jump in and start ranking. Every battle shapes the definitive list
+            of League's best — and worst — skins.
           </p>
-          <Link to="/champions" className={`group ${btnPrimary}`}>
-            Start Voting
+          <Link to="/battle" className={`group ${btnPrimary}`}>
+            Battle Now
             <FontAwesomeIcon
               icon={faArrowRight}
               className="h-4 transition-transform duration-150 group-hover:translate-x-1"
