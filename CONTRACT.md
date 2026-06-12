@@ -31,8 +31,13 @@ Skin {
 | POST | `/api/votes` | required | `{ skinId: string, vote: -1\|0\|1, star: bool, x: bool }` | `{ message, totals: {total_votes,total_stars,total_x} }` |
 | GET | `/api/user/stats` | required | — | `{ usedStars: int, usedX: int }` |
 | GET | `/api/user/votes` | required | — | `{ skins: Skin[] }` (only skins where vote!=0 or star or x) |
-| GET | `/api/me` | required | — | `{ id, email, username }` |
+| GET | `/api/me` | required | — | `{ id, email, username, avatar_champion_id }` (`avatar_champion_id` nullable) |
+| PATCH | `/api/me` | required | `{ username?: string, avatarChampionId?: string }` (partial; `avatarChampionId: ""` clears the avatar) | updated `{ id, email, username, avatar_champion_id }` |
 | DELETE | `/api/user` | required | — | `{ message }` (deletes local rows; deletes Logto user via Management API if configured) |
+
+### PATCH /api/me rules
+- `username`: 3–30 chars matching `^[A-Za-z_][A-Za-z0-9_]*$` (Logto's username alphabet) → else 400. Renames are synced to Logto **first** (the JIT provisioner re-syncs the local row from the Logto profile, so a local-only rename would be reverted): 409 if taken (locally or in Logto), **503 if Logto M2M creds are not configured**, 502 if Logto errors. Legacy rows without a `logto_id` update locally only.
+- `avatarChampionId`: must be a `champions.id` from the catalog → else 400. Stored locally only (`users.avatar_champion_id`); the frontend renders it as the Data Dragon champion square icon.
 
 ## Business rules (must preserve exactly)
 - `vote` must be one of `-1, 0, 1`; `star`/`x` must be booleans → else 400.

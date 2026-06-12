@@ -14,8 +14,7 @@ import type { IconDefinition } from '@fortawesome/fontawesome-svg-core'
 import SkinCard from '~/components/SkinCard'
 import EmptyState from '~/components/EmptyState'
 import ErrorState from '~/components/ErrorState'
-import LogoutButton from '~/components/LogoutButton'
-import DeleteAccountButton from '~/components/DeleteAccountButton'
+import AccountSettings from '~/components/AccountSettings'
 import MirrorView from '~/components/MirrorView'
 import { AccountTabSkeleton, VotesTabSkeleton } from '~/components/Skeletons'
 import { api } from '~/lib/api'
@@ -228,39 +227,7 @@ function AccountTab({ me, settled }: { me: Me | null; settled: boolean }) {
     )
   if (isLoading || !settled) return <AccountTabSkeleton />
 
-  return (
-    <div className="animate-fade-up w-full max-w-md bg-hextech-black/30 outline outline-icon/20 -outline-offset-2 p-8">
-      {me?.username && (
-        <div className="mb-5">
-          <div className="text-xs uppercase tracking-widest text-grey1 mb-1">
-            Username
-          </div>
-          <div className="text-lg text-gold1 font-serif">{me.username}</div>
-        </div>
-      )}
-      <div className="mb-8">
-        <div className="text-xs uppercase tracking-widest text-grey1 mb-1">
-          Email
-        </div>
-        <div className="text-lg text-gold1 font-serif break-all">
-          {me?.email}
-        </div>
-      </div>
-
-      <LogoutButton />
-
-      <div className="mt-8 border-t border-red-400/20 pt-6">
-        <p className="mb-1 text-xs font-semibold uppercase tracking-widest text-red-300/80">
-          Danger zone
-        </p>
-        <p className="mb-4 text-sm text-grey1">
-          Deleting your account permanently removes your votes, stars, and
-          bans.
-        </p>
-        <DeleteAccountButton />
-      </div>
-    </div>
-  )
+  return <AccountSettings me={me} onChange={setMe} />
 }
 
 // ─── page ───────────────────────────────────────────────────────────────────

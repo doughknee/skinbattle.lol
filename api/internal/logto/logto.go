@@ -1,8 +1,10 @@
 package logto
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"log"
@@ -12,6 +14,14 @@ import (
 	"sync"
 	"time"
 )
+
+// ErrNotConfigured is returned by writes that must NOT silently no-op when
+// M2M credentials are absent (unlike DeleteUser, which is best-effort).
+var ErrNotConfigured = errors.New("logto management API not configured")
+
+// ErrUsernameTaken is returned when Logto rejects a username because another
+// Logto user already holds it.
+var ErrUsernameTaken = errors.New("username already in use")
 
 // Client is a Logto Management API client.
 // If M2M credentials are not configured, DeleteUser is a no-op.
@@ -137,6 +147,54 @@ func (c *Client) GetUser(ctx context.Context, logtoUserID string) (*UserProfile,
 		return nil, fmt.Errorf("parse user response: %w", err)
 	}
 	return &profile, nil
+}
+
+// UpdateUsername patches the username of the user identified by logtoUserID
+// via the Logto Management API. Logto is the source of truth for usernames —
+// the JIT provisioner re-syncs the local row from the Logto profile — so this
+// returns ErrNotConfigured rather than no-opping when M2M creds are absent:
+// a local-only rename would be silently reverted on the next sync.
+func (c *Client) UpdateUsername(ctx context.Context, logtoUserID, username string) error {
+	if !c.Configured() {
+		return ErrNotConfigured
+	}
+
+	token, err := c.m2mToken(ctx)
+	if err != nil {
+		return fmt.Errorf("obtain M2M token: %w", err)
+	}
+
+	body, err := json.Marshal(map[string]string{"username": username})
+	if err != nil {
+		return fmt.Errorf("encode username patch: %w", err)
+	}
+
+	apiURL := c.endpoint + "/api/users/" + url.PathEscape(logtoUserID)
+	req, err := http.NewRequestWithContext(ctx, http.MethodPatch, apiURL, bytes.NewReader(body))
+	if err != nil {
+		return fmt.Errorf("build update request: %w", err)
+	}
+	req.Header.Set("Authorization", "Bearer "+token)
+	req.Header.Set("Content-Type", "application/json")
+
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return fmt.Errorf("update user request: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode == http.StatusOK {
+		log.Printf("logto: updated username for user %s", logtoUserID)
+		return nil
+	}
+
+	raw, _ := io.ReadAll(resp.Body)
+	// Logto reports collisions as 422 with code `user.username_already_in_use`.
+	if resp.StatusCode == http.StatusUnprocessableEntity &&
+		strings.Contains(string(raw), "username_already_in_use") {
+		return ErrUsernameTaken
+	}
+	return fmt.Errorf("update username for %s: status %d: %s", logtoUserID, resp.StatusCode, string(raw))
 }
 
 // DeleteUser deletes the user identified by logtoUserID (the `sub` claim)

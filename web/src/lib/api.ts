@@ -13,6 +13,7 @@ import type {
   Champion,
   Me,
   Skin,
+  UpdateMeRequest,
   UserStats,
   UserVotesResponse,
   VoteRequest,
@@ -103,6 +104,9 @@ export const api = {
     request<UserVotesResponse>('/user/votes', { token }),
 
   me: (token: string) => request<Me>('/me', { token }),
+
+  updateMe: (body: UpdateMeRequest, token: string) =>
+    request<Me>('/me', { method: 'PATCH', token, body }),
 
   deleteAccount: (token: string) =>
     request<{ message: string }>('/user', { method: 'DELETE', token }),
