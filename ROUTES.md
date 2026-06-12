@@ -31,11 +31,12 @@ Route count is not a smell; door count is.
   /battle/price-check    Daily: guess the RP
   /battle/chroma-vision  Daily: name the skin from its colors
   /battle/leaderboards   Streaks, fastest solves, battle volume
-/skins                   The catalog — one browser, two lenses:
-                         "All skins" and "By champion" (?view= param, PR 2)
+/skins                   The catalog door — "All Skins" lens (tab bar links
+                         the two lenses; one nav door, two routes)
   /skins/$slug           Leaf: skin dossier (see display rules)
+/champions               The catalog's "By Champion" lens (keeps its URL;
+                         lives under the Skins door in every nav surface)
   /champions/$id         Leaf: champion dossier — wardrobe, lore, voting.
-                         Reached via the champion lens, search, slices, links.
 /rankings                Every verdict surface
   /rankings/$slice       Leaf: all | price-* | line-* | champion-* | year-*
   /rankings/drought      Days since each champion's last skin
@@ -95,7 +96,7 @@ canonical rank everywhere; votes remain engagement + superlative currency.
 | /leaderboards         | /battle/leaderboards (retargeted stub) |
 | /awards               | /rankings/awards       |
 | /insights/drought     | /rankings/drought (existing stub) |
-| /champions (index)    | /skins?view=champions (PR 2) |
+| /champions (index)    | stays — it IS the "By champion" lens of the Skins door (PR 2; no redirect needed, both pages share the catalog tab bar) |
 | /account, /user/votes | /profile (existing stubs) |
 
 Champion detail pages keep their URLs (/champions/$id) — they're leaf content,

@@ -28,14 +28,14 @@ function Column({ title, pages }: { title: string; pages: SitePage[] }) {
 }
 
 export default function Footer() {
-  // Childless sections (Champions, Skins) group into one "Explore" column
-  // alongside the profile link; each section with children gets its own.
-  const explore = [...SITE_SECTIONS.filter((s) => !s.children?.length), PROFILE]
+  // Each section with children gets its own column; anything childless plus
+  // the profile link groups into a final "You" column.
+  const you = [...SITE_SECTIONS.filter((s) => !s.children?.length), PROFILE]
   const grouped = SITE_SECTIONS.filter((s) => (s.children?.length ?? 0) > 0)
 
   return (
     <footer className="mt-24 border-t border-icon/20 bg-hextech-black/40">
-      <div className="container mx-auto grid gap-10 px-6 py-12 md:grid-cols-[1.6fr_1fr_1fr_1fr]">
+      <div className="container mx-auto grid gap-10 px-6 py-12 sm:grid-cols-2 md:grid-cols-[1.5fr_1fr_1fr_1fr_0.9fr]">
         <div>
           <p className="flex items-center gap-2.5">
             <CrownMark className="h-9 w-9" />
@@ -47,13 +47,13 @@ export default function Footer() {
           </p>
         </div>
 
-        <Column title="Explore" pages={explore} />
         {grouped.map((s) => {
           // Section landing first, children after — minus any child that
           // points back at the landing page (e.g. "Browse the Slices").
           const pages = [s, ...s.children!.filter((c) => c.to !== s.to)]
           return <Column key={s.to} title={s.label} pages={pages} />
         })}
+        <Column title="You" pages={you} />
       </div>
 
       <div className="container mx-auto px-6 pb-8">

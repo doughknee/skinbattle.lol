@@ -107,18 +107,27 @@ export const SITE_SECTIONS: SiteSection[] = [
     ],
   },
   {
-    to: '/champions',
-    label: 'Champions',
-    blurb: 'Every champion and their wardrobe — vote skin by skin.',
-    icon: faUsers,
-    search: 'roster browse vote',
-  },
-  {
     to: '/skins',
     label: 'Skins',
-    blurb: 'The full skin catalog — search, sort, and explore.',
+    blurb: 'The catalog — every skin, every champion, ready to vote on.',
     icon: faShirt,
-    search: 'catalog browse splash art',
+    search: 'catalog browse splash art collection',
+    children: [
+      {
+        to: '/skins',
+        label: 'All Skins',
+        blurb: 'The full catalog — search, sort, and cast your votes.',
+        icon: faShirt,
+        search: 'catalog browse every skin',
+      },
+      {
+        to: '/champions',
+        label: 'By Champion',
+        blurb: 'Every champion and their wardrobe — vote skin by skin.',
+        icon: faUsers,
+        search: 'roster champions browse vote wardrobe',
+      },
+    ],
   },
   {
     to: '/rankings',

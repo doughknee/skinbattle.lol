@@ -3,6 +3,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faMagnifyingGlass, faShirt } from '@fortawesome/free-solid-svg-icons'
 import SkinCard from '~/components/SkinCard'
+import CatalogTabs from '~/components/CatalogTabs'
 import Dropdown from '~/components/Dropdown'
 import EmptyState from '~/components/EmptyState'
 import ErrorState from '~/components/ErrorState'
@@ -130,11 +131,13 @@ function SkinsPage() {
   return (
     <div className="container mx-auto px-6 pt-28 pb-12">
       <PageHeader
-        eyebrow="The full collection"
+        eyebrow="The catalog"
         title="Skins"
         subtitle="Every skin in the game, ranked by the community. Search, sort, and cast your votes."
-        className="mb-10"
+        className="mb-8"
       />
+
+      <CatalogTabs active="skins" />
 
       {/* Toolbar: search / sort / count */}
       <div className="mb-8 flex flex-wrap items-center gap-3">

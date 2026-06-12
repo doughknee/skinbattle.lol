@@ -7,6 +7,7 @@ import {
   faTableCells,
 } from '@fortawesome/free-solid-svg-icons'
 import { api } from '~/lib/api'
+import CatalogTabs from '~/components/CatalogTabs'
 import Dropdown from '~/components/Dropdown'
 import EmptyState from '~/components/EmptyState'
 import ErrorState from '~/components/ErrorState'
@@ -104,11 +105,13 @@ function ChampionsPage() {
   return (
     <div className="container mx-auto px-6 pt-28 pb-12">
       <PageHeader
-        eyebrow="Browse the roster"
+        eyebrow="The catalog"
         title="Champions"
         subtitle="Click on a champion to view and vote on their skins."
-        className="mb-10"
+        className="mb-8"
       />
+
+      <CatalogTabs active="champions" />
 
       {/* Toolbar: search / sort / density */}
       <div className="mb-8 flex flex-wrap items-center gap-3">
