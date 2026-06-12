@@ -35,7 +35,7 @@ services:
       retries: 10
 
   logto:
-    image: svhd/logto:latest
+    image: svhd/logto:1.40.1
     depends_on:
       postgres:
         condition: service_healthy
@@ -44,7 +44,7 @@ services:
       DB_URL: postgres://skinbattle:skinbattle@postgres:5432/logto
       ENDPOINT: http://localhost:3001
       ADMIN_ENDPOINT: http://localhost:3002
-    entrypoint: ["sh", "-c", "npm run cli db seed -- --swe && npm start"]
+    entrypoint: ["sh", "-c", "npm run cli db alteration deploy latest || true && npm run cli db seed -- --swe && npm start"]
     ports:
       - "3001:3001"  # Logto OIDC endpoint (used by api + web)
       - "3002:3002"  # Logto admin console
