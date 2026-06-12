@@ -43,7 +43,11 @@ function NavItem({ section }: { section: SiteSection }) {
       title={section.label}
       className={`relative flex h-full items-center gap-2 overflow-hidden px-2.5 transition duration-350 md:px-3.5 ${itemHover} ${
         active ? itemShade : ''
-      } ${section.accent ? 'bg-gold5/15 battle-accent' : ''}`}
+      } ${
+        // Battle's three states: idle = embers only (faint glow on hover),
+        // active = the full ember bed + gold tint.
+        section.accent ? (active ? 'bg-gold5/15 battle-accent' : 'battle-idle') : ''
+      }`}
     >
       {section.accent && (
         <span className="battle-embers" aria-hidden>
@@ -57,13 +61,11 @@ function NavItem({ section }: { section: SiteSection }) {
       )}
       <FontAwesomeIcon
         icon={section.icon}
-        className={`h-5 ${
-          active || section.accent ? 'text-gold1' : 'text-icon'
-        }`}
+        className={`h-5 ${active ? 'text-gold1' : 'text-icon'}`}
       />
       <span
         className={`hidden font-serif text-sm font-bold md:inline ${
-          active || section.accent ? 'text-gold1' : 'text-grey1'
+          active ? 'text-gold1' : 'text-grey1'
         }`}
       >
         {section.label}
