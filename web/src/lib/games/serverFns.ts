@@ -18,6 +18,7 @@ import type {
   QuickBattleState,
   RankingsIndex,
   RankingsState,
+  RoadmapState,
   SkinPageState,
   SplashdleState,
 } from './types'
@@ -125,6 +126,15 @@ export const fetchDrought = createServerFn({ method: 'GET' }).handler(
   async (): Promise<DroughtState> => {
     const { droughtIndex } = await import('./server/insights')
     return droughtIndex()
+  },
+)
+
+// Roadmap totals are anonymous derived data: community-wide battle volume,
+// rating coverage, and star/ban totals for the milestone meters.
+export const fetchRoadmap = createServerFn({ method: 'GET' }).handler(
+  async (): Promise<RoadmapState> => {
+    const { roadmapState } = await import('./server/roadmap')
+    return roadmapState()
   },
 )
 

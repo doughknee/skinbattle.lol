@@ -117,7 +117,13 @@ function RankingSlicePage() {
             <b>Early Rankings — still calibrating.</b> {state.ratedCount} of{' '}
             {state.totalCount} skins rated, median{' '}
             {state.medianBattles} {state.medianBattles === 1 ? 'battle' : 'battles'}{' '}
-            each. Every Quick Battle pick sharpens this list.
+            each. Every Quick Battle pick sharpens this list.{' '}
+            <Link
+              to="/rankings/elo"
+              className="font-semibold underline underline-offset-2 transition duration-150 hover:text-gold1"
+            >
+              How the rankings work
+            </Link>
           </span>
         </p>
       )}
