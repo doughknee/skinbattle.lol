@@ -67,9 +67,11 @@ Notes:
      - Copy the **App ID** → this is `VITE_LOGTO_APP_ID`.
   2. **API Resources → Create**. Identifier: `https://api.skinbattle.lol`
      (this exact string is `LOGTO_AUDIENCE` and `VITE_LOGTO_RESOURCE`).
-  3. *(Optional, for account deletion)* **Applications → Create → Machine-to-Machine**.
-     Grant it the **Logto Management API** role. Copy App ID/Secret →
-     `LOGTO_M2M_APP_ID` / `LOGTO_M2M_APP_SECRET` on the API service.
+  3. *(Optional, for account deletion & username changes)* **Applications → Create →
+     Machine-to-Machine**. Grant it the **Logto Management API** role. Copy App ID/Secret →
+     `LOGTO_M2M_APP_ID` / `LOGTO_M2M_APP_SECRET` on the API service. Without these,
+     account deletion only removes local data and `PATCH /api/me` rejects username
+     changes with a 503 (avatar changes still work — they're local-only).
 
 ## 4. API service (`/api`)
 - New resource → **Dockerfile / Git**, base directory `api`.
@@ -112,6 +114,42 @@ DATABASE_URL=postgres://...@<host>:5432/skinbattle npm run import
 ```
 Run it from anywhere that can reach Postgres (locally over a tunnel, or a one-off
 Coolify command).
+
+## Sign-in & security features (Logto console checklist)
+
+Password change, forgot password, and passkeys are **Logto sign-in-experience features**,
+not app code — the app's Account tab links to Logto's hosted Account Center at
+**`{LOGTO_ENDPOINT}/account`** ("Manage sign-in & security"). Identity stays in Logto.
+
+Version requirements (the compose files use `svhd/logto:latest`; if you pin, pin ≥ these):
+- **≥ v1.38** — passkey sign-in (first-class WebAuthn login).
+- **≥ v1.39** — Account Center security page (MFA management, social linking, account deletion entry).
+
+Console toggles (all under the generated Logto **admin** domain):
+
+1. **Account Center** (the hosted self-service page): **Console → Sign-in & account →
+   Account center** → enable the page and toggle the fields users may view/edit
+   (username, password, email, MFA/passkeys). Leave **username** editable in mind:
+   renames made there propagate back to the app on the next JIT profile sync; renames
+   made in the app's Account tab go through `PATCH /api/me`, which patches Logto first.
+   If you enable the Account Center **delete account** entry, point its delete-account
+   URL at `https://skinbattle.lol/profile?tab=account` so deletions run through the app
+   (which removes local votes/stats *and* the Logto user).
+2. **Forgot password**: first configure an **Email connector** (**Console → Connectors →
+   Email and SMS connectors** — SMTP or a provider). Then **Console → Sign-in & account →
+   Sign-up and sign-in** → keep **Password** enabled as a sign-in method and enable
+   **Email verification code** under **Forgot password**. The "Forgot password?" link then
+   appears on the hosted sign-in page automatically.
+3. **Password change** (signed-in users): handled by the Account Center password section
+   (enabled in step 1). No app code involved.
+4. **Passkeys (WebAuthn)** — two independent toggles:
+   - *Passkey sign-in* (passwordless login): **Console → Sign-in & account → Sign-up and
+     sign-in** → enable **Passkey** ("Continue with passkey" button, optional autofill).
+   - *Passkey as 2-step verification*: **Console → Multi-factor auth** → enable
+     **Passkey (WebAuthn)**.
+   WebAuthn requires the Logto endpoint to be served over **HTTPS on a stable domain**
+   (the passkey is bound to e.g. `auth.skinbattle.lol` — changing the auth domain later
+   orphans enrolled passkeys). `localhost` works for dev.
 
 ## 7. Migrating existing users to Logto
 Existing accounts live in the old `users` table with bcrypt `password_hash` values

@@ -6,6 +6,7 @@ import (
 	"fmt"
 
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
@@ -53,6 +54,14 @@ var ErrStarLimit = errors.New("star limit exceeded: max 3 stars allowed")
 
 // ErrXLimit is returned when a user would exceed 3 x marks.
 var ErrXLimit = errors.New("x limit exceeded: max 3 x marks allowed")
+
+// ErrUsernameTaken is returned when a profile update collides with another
+// user's username (unique constraint on users.username).
+var ErrUsernameTaken = errors.New("username already taken")
+
+// ErrUnknownChampion is returned when an avatar update references a champion
+// id that isn't in the catalog.
+var ErrUnknownChampion = errors.New("unknown champion")
 
 // Store is the data-access layer.
 type Store struct {
@@ -610,21 +619,56 @@ func (s *Store) GetUserLogtoID(ctx context.Context, userID int64) (string, error
 
 // GetUserByID returns basic user info.
 type UserInfo struct {
-	ID       int64
-	Email    string
-	Username string
+	ID               int64
+	Email            string
+	Username         string
+	AvatarChampionID *string
 }
 
 func (s *Store) GetUserByID(ctx context.Context, userID int64) (*UserInfo, error) {
 	var u UserInfo
 	err := s.pool.QueryRow(ctx,
-		`SELECT id, email, username FROM users WHERE id = $1`, userID,
-	).Scan(&u.ID, &u.Email, &u.Username)
+		`SELECT id, email, username, avatar_champion_id FROM users WHERE id = $1`, userID,
+	).Scan(&u.ID, &u.Email, &u.Username, &u.AvatarChampionID)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, nil
 	}
 	if err != nil {
 		return nil, fmt.Errorf("get user %d: %w", userID, err)
+	}
+	return &u, nil
+}
+
+// UpdateUserProfile applies a partial update to the local users row and
+// returns the updated info. A nil username leaves it unchanged; a nil
+// avatarChampionID leaves the avatar unchanged, while a pointer to "" clears
+// it. Returns (nil, nil) if the user no longer exists.
+func (s *Store) UpdateUserProfile(ctx context.Context, userID int64, username, avatarChampionID *string) (*UserInfo, error) {
+	var u UserInfo
+	err := s.pool.QueryRow(ctx, `
+		UPDATE users SET
+			username           = COALESCE($2, username),
+			avatar_champion_id = CASE WHEN $3::text IS NULL THEN avatar_champion_id
+			                          WHEN $3::text = ''   THEN NULL
+			                          ELSE $3::text END
+		WHERE id = $1
+		RETURNING id, email, username, avatar_champion_id`,
+		userID, username, avatarChampionID,
+	).Scan(&u.ID, &u.Email, &u.Username, &u.AvatarChampionID)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return nil, nil
+	}
+	if err != nil {
+		var pgErr *pgconn.PgError
+		if errors.As(err, &pgErr) {
+			switch pgErr.Code {
+			case "23505": // unique_violation → users.username
+				return nil, ErrUsernameTaken
+			case "23503": // foreign_key_violation → avatar_champion_id
+				return nil, ErrUnknownChampion
+			}
+		}
+		return nil, fmt.Errorf("update user %d: %w", userID, err)
 	}
 	return &u, nil
 }
