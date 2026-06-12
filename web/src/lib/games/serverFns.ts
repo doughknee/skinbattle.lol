@@ -11,6 +11,7 @@ import type {
   ChromaVisionState,
   DailyHubState,
   DroughtState,
+  HomeState,
   GuessOption,
   LeaderboardsState,
   MirrorState,
@@ -120,6 +121,16 @@ export const fetchSkinPage = createServerFn({ method: 'POST' })
     const { skinPageState } = await import('./server/skinpage')
     return skinPageState(data.slug, data.restoreToken)
   })
+
+// Home page state: the daily hero slide set + live community numbers.
+// Anonymous like the Drought Index — personalization happens client-side
+// against the Go API once the visitor is signed in.
+export const fetchHome = createServerFn({ method: 'GET' }).handler(
+  async (): Promise<HomeState> => {
+    const { homeState } = await import('./server/home')
+    return homeState()
+  },
+)
 
 // The Drought Index is fully anonymous — no guest token, nothing
 // personalized, pure derived data over the catalog + facts snapshot.
