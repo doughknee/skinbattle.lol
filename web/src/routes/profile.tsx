@@ -17,6 +17,12 @@ import MirrorView from '~/components/MirrorView'
 import { AccountTabSkeleton, VotesTabSkeleton } from '~/components/Skeletons'
 import { api } from '~/lib/api'
 import { useAuth } from '~/lib/useAuth'
+import { championIconUrl, useDDragonVersion } from '~/lib/ddragon'
+import {
+  PROFILE_UPDATED_EVENT,
+  readCachedProfile,
+  type CachedProfile,
+} from '~/lib/profileCache'
 import { btnPrimarySm } from '~/lib/ui'
 import { fetchMirror } from '~/lib/games/serverFns'
 import { guestRestoreToken, rememberGuestToken } from '~/lib/games/client'
@@ -233,6 +239,14 @@ const TABS: { id: Tab; label: string; icon: IconDefinition }[] = [
   { id: 'account', label: 'Account', icon: faUser },
 ]
 
+// The header belongs to the person, not to one tab: the title is the
+// username (when known), and only the eyebrow follows the active tab.
+const TAB_EYEBROWS: Record<Tab, string> = {
+  mirror: 'Your taste, reflected',
+  votes: 'Your stars and bans',
+  account: 'Your settings',
+}
+
 function ProfilePage() {
   const mirror = Route.useLoaderData()
   const { tab } = Route.useSearch()
@@ -243,6 +257,22 @@ function ProfilePage() {
   useEffect(() => {
     rememberGuestToken(mirror.guestToken)
   }, [mirror.guestToken])
+
+  // Header identity: the cached profile paints instantly (same trick as the
+  // navbar's AccountButton), /me corrects it when it lands, and saves from
+  // the Account tab update it live via the profile event.
+  const [profile, setProfile] = useState<CachedProfile>({
+    username: null,
+    avatarChampionId: null,
+  })
+  const ddVersion = useDDragonVersion()
+  useEffect(() => {
+    setProfile(readCachedProfile())
+    const onUpdate = (e: Event) =>
+      setProfile((e as CustomEvent).detail as CachedProfile)
+    window.addEventListener(PROFILE_UPDATED_EVENT, onUpdate)
+    return () => window.removeEventListener(PROFILE_UPDATED_EVENT, onUpdate)
+  }, [])
 
   // Prefetch both auth-only tabs' payloads as soon as auth resolves, so
   // switching to Votes or Account renders cached data instead of refetching.
@@ -268,7 +298,12 @@ function ProfilePage() {
       })
     withApiToken((token) => api.me(token))
       .then((meData) => {
-        if (!cancelled) setMe(meData)
+        if (cancelled) return
+        setMe(meData)
+        setProfile({
+          username: meData.username ?? null,
+          avatarChampionId: meData.avatar_champion_id ?? null,
+        })
       })
       .catch(() => {
         /* the settings card just shows less */
@@ -285,11 +320,20 @@ function ProfilePage() {
     <div className="container mx-auto max-w-5xl px-6 pt-28 pb-16">
       <header className="animate-fade-up mb-8">
         <p className="mb-2 text-sm font-semibold uppercase tracking-[0.3em] text-gold2">
-          Your taste, reflected
+          {TAB_EYEBROWS[active]}
         </p>
-        <h1 className="font-serif text-4xl font-bold text-gold1 md:text-5xl">
-          The Mirror
-        </h1>
+        <div className="flex items-center gap-4">
+          {profile.avatarChampionId && ddVersion && (
+            <img
+              src={championIconUrl(profile.avatarChampionId, ddVersion)}
+              alt=""
+              className="h-12 w-12 shrink-0 outline outline-gold5/60 -outline-offset-1 md:h-14 md:w-14"
+            />
+          )}
+          <h1 className="min-w-0 break-words font-serif text-4xl font-bold text-gold1 md:text-5xl">
+            {profile.username ?? 'Your Profile'}
+          </h1>
+        </div>
       </header>
 
       <div
