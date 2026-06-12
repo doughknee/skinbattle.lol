@@ -38,7 +38,7 @@ const (
 )
 
 // Data Dragon's data calls the champion "Fiddlesticks", but the splash CDN
-// serves some of its skins only under the legacy casing "FiddleSticks" —
+// serves some of its skins only under the legacy casing "FiddleSticks" -
 // three real skins (Star Nemesis, Blood Moon, Flora Fatalis) 403 on the
 // constructed URL. Before hiding a skin, the sweep retries known alias
 // spellings and repoints splash_url at whichever actually serves.
@@ -237,12 +237,12 @@ func Sync(ctx context.Context, pool *pgxpool.Pool, pinnedVersion string) error {
 
 // championFull.json has a second class of phantom entries beyond the
 // parenthesized chromas filtered at sync: chroma variants with plain names
-// ("Zac Sweet Orange", "Worlds 2017 Ashe Chroma" — 61 in patch 16.12) whose
+// ("Zac Sweet Orange", "Worlds 2017 Ashe Chroma" - 61 in patch 16.12) whose
 // splash URLs 403. No name pattern catches them reliably, so once per patch
 // (plus sweepRev) SweepSplashes HEAD-checks every splash and flips splash_ok,
 // which read queries filter on. Rows are never deleted: phantoms may carry
 // votes, and vote data is deliberately kept. The sweep is authoritative both
-// ways — a previously hidden skin whose splash now serves returns to play.
+// ways - a previously hidden skin whose splash now serves returns to play.
 func SweepSplashes(ctx context.Context, pool *pgxpool.Pool, version string) error {
 	stamp := fmt.Sprintf("%s#%d", version, sweepRev)
 	var done string
@@ -371,7 +371,7 @@ func SweepSplashes(ctx context.Context, pool *pgxpool.Pool, version string) erro
 }
 
 // splashDead HEAD-checks a splash URL. known=false means the check was
-// inconclusive (network blip, 5xx) — don't change state on it.
+// inconclusive (network blip, 5xx) - don't change state on it.
 func splashDead(ctx context.Context, url string) (dead, known bool) {
 	req, err := http.NewRequestWithContext(ctx, http.MethodHead, url, nil)
 	if err != nil {

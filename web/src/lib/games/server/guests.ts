@@ -2,7 +2,7 @@
 // record with no credentials attached. The credential is an unguessable
 // 128-bit token kept in an httpOnly cookie, with a localStorage backup the
 // client relays back if the cookie is ever cleared. Sign-up later attaches a
-// logto_sub to this same row — attachment, not migration.
+// logto_sub to this same row - attachment, not migration.
 
 import { randomBytes, randomUUID } from 'node:crypto'
 import type { DatabaseSync } from 'node:sqlite'
@@ -19,7 +19,7 @@ export interface GameUser {
 
 // Resolve an EXISTING user for this request without creating anything.
 // Read paths (page views) use this so crawlers and drive-by visits never
-// write rows — a user is only minted by their first actual play.
+// write rows - a user is only minted by their first actual play.
 export function peekUser(
   db: DatabaseSync,
   restoreToken?: string | null,
@@ -78,7 +78,7 @@ function refreshCookie(token: string): void {
   })
 }
 
-// Point this device at a different record's credential — used by account
+// Point this device at a different record's credential - used by account
 // merges, where the surviving row's token replaces the absorbed guest's.
 export function issueCookie(token: string): void {
   refreshCookie(token)

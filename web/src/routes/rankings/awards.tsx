@@ -26,7 +26,7 @@ function SectionHeading({ title, blurb }: { title: string; blurb: string }) {
 
 // Top 3 on a podium (#1 center, raised) + the rest in a ranked grid.
 function RankedShowcase({ skins }: { skins: Skin[] }) {
-  // A podium needs all three steps — with fewer entries, a plain ranked
+  // A podium needs all three steps - with fewer entries, a plain ranked
   // grid reads better than a lopsided one.
   if (skins.length < 3) {
     return (
@@ -93,7 +93,7 @@ export const Route = createFileRoute('/rankings/awards')({
     return { awards }
   },
   head: () => ({
-    meta: [{ title: 'Awards — Skin Battle' }],
+    meta: [{ title: 'Awards · Skin Battle' }],
   }),
   pendingComponent: () => <RouteSkeleton quip="Invading enemy jungle..." />,
   errorComponent: ({ error }) => (
@@ -108,7 +108,7 @@ function AwardsPage() {
 
   const [awards, setAwards] = useState<AwardsResponse>(baseAwards)
 
-  // Hide skins that haven't actually received any stars/bans yet — ranking
+  // Hide skins that haven't actually received any stars/bans yet - ranking
   // a wall of zeroes reads as broken on a cold start.
   const topStarred = awards.topStarred.filter((s) => (s.total_stars ?? 0) > 0)
   const topXed = awards.topXed.filter((s) => (s.total_x ?? 0) > 0)
@@ -157,7 +157,7 @@ function AwardsPage() {
         title="Awards"
         subtitle={
           <span className="italic">
-            These a(wards) aren’t for vision—they’re for the best (and worst)
+            These a(wards) aren’t for vision. They’re for the best (and worst)
             skins in League. The summoners have spoken.
           </span>
         }
@@ -174,7 +174,7 @@ function AwardsPage() {
           <EmptyState
             icon={faStar}
             title="No stars awarded yet"
-            message="Be the first to crown a favorite — every player gets 10 stars to spend on the skins they love most."
+            message="Be the first to crown a favorite. Every player gets 10 stars to spend on the skins they love most."
             cta={{ to: '/champions', label: 'Start Voting' }}
           />
         ) : (
@@ -200,7 +200,7 @@ function AwardsPage() {
         )}
       </section>
 
-      {/* Most Divisive Section — only once there's real disagreement */}
+      {/* Most Divisive Section - only once there's real disagreement */}
       {divisive.length > 0 && (
         <section className="mb-24">
           <SectionHeading

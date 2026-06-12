@@ -1,4 +1,4 @@
-// Leaderboards (server-only): the Phase 0 boards, members-only by design —
+// Leaderboards (server-only): the Phase 0 boards, members-only by design -
 // guests can see the boards but never occupy them (design doc permission
 // split: named placement is a scarce, public, social surface). Display
 // names come from the verified Logto ID token captured at attach time.

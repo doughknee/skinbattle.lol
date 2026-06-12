@@ -1,8 +1,8 @@
-// The site map — the single source of truth for where everything lives.
+// The site map - the single source of truth for where everything lives.
 //
 // The navbar, footer, command palette, 404 page, and /sitemap.xml all render
 // from this registry. To add a page to the site: create the route file, then
-// add one entry here — it shows up in every navigation surface at once.
+// add one entry here - it shows up in every navigation surface at once.
 // Nothing should hand-roll its own list of site links.
 //
 // The model (see ROUTES.md): three doors, three verbs.
@@ -32,7 +32,7 @@ import type { IconDefinition } from '@fortawesome/fontawesome-svg-core'
 export interface SitePage {
   to: string
   label: string
-  // One-line description — shown in nav dropdowns and the command palette.
+  // One-line description - shown in nav dropdowns and the command palette.
   blurb: string
   icon: IconDefinition
   // Extra match terms for the command palette ("wordle" finds Splashdle).
@@ -61,7 +61,7 @@ export const HOME: SitePage = {
 export const PROFILE: SitePage = {
   to: '/profile',
   label: 'Your Mirror',
-  blurb: 'The tier list your battles build — plus your votes and account.',
+  blurb: 'The tier list your battles build, plus your votes and account.',
   icon: faScaleUnbalanced,
   search: 'profile account settings my votes mirror tier list taste sign in',
 }
@@ -80,7 +80,7 @@ export const SITE_SECTIONS: SiteSection[] = [
       {
         to: '/battle',
         label: 'Head-to-Head',
-        blurb: 'Two skins, pick one. Endless — jump straight in.',
+        blurb: 'Two skins, pick one. Endless. Jump straight in.',
         icon: faShuffle,
         search: 'versus quick battle head to head 1v1 swipe endless vs',
         hero: true,
@@ -145,7 +145,7 @@ export const SITE_SECTIONS: SiteSection[] = [
       {
         to: '/rankings/awards',
         label: 'Awards',
-        blurb: 'Most starred, most banned — community superlatives.',
+        blurb: 'Most starred, most banned: community superlatives.',
         icon: faCrown,
         search: 'best worst starred banned superlatives awards',
         group: 'More ways to settle it',
@@ -163,21 +163,21 @@ export const SITE_SECTIONS: SiteSection[] = [
   {
     to: '/skins',
     label: 'Skins',
-    blurb: 'The catalog — every skin, every champion, ready to star or ban.',
+    blurb: 'The catalog: every skin, every champion, ready to star or ban.',
     icon: faShirt,
     search: 'catalog browse splash art collection',
     children: [
       {
         to: '/skins',
         label: 'All Skins',
-        blurb: 'The full catalog — search, sort, and spend your stars and bans.',
+        blurb: 'The full catalog. Search, sort, and spend your stars and bans.',
         icon: faShirt,
         search: 'catalog browse every skin',
       },
       {
         to: '/champions',
         label: 'By Champion',
-        blurb: 'Every champion and their wardrobe — star and ban skin by skin.',
+        blurb: 'Every champion and their wardrobe. Star and ban skin by skin.',
         icon: faUsers,
         search: 'roster champions browse vote wardrobe',
       },
@@ -186,7 +186,7 @@ export const SITE_SECTIONS: SiteSection[] = [
 ]
 
 // Secondary pages: real destinations that aren't one of the three doors.
-// They live in the footer, the command palette, and the sitemap — never in
+// They live in the footer, the command palette, and the sitemap - never in
 // the navbar (the doors stay three).
 export const SECONDARY_PAGES: SitePage[] = [
   {
@@ -212,7 +212,7 @@ export const SECONDARY_PAGES: SitePage[] = [
   },
 ]
 
-// Flat, deduped list of every navigable page — powers the command palette.
+// Flat, deduped list of every navigable page - powers the command palette.
 export function allSitePages(): SitePage[] {
   const seen = new Set<string>()
   const out: SitePage[] = []
@@ -237,7 +237,7 @@ export function quickNavPages(): SitePage[] {
   return [HOME, ...SITE_SECTIONS, PROFILE]
 }
 
-// Public, crawlable paths for /sitemap.xml (profile is personal — excluded).
+// Public, crawlable paths for /sitemap.xml (profile is personal - excluded).
 export function indexablePaths(): string[] {
   return allSitePages()
     .map((p) => p.to)

@@ -1,5 +1,5 @@
 // Shared (client-safe) types for the games framework. Server-only logic
-// lives under ./server — never import that from components.
+// lives under ./server - never import that from components.
 
 export type GameId = 'splashdle' | 'price-check' | 'chroma-vision'
 
@@ -15,7 +15,7 @@ export interface SplashdleGuess {
   name: string
   championId: string
   championName: string
-  // Wrong skin, right champion — the "warm" hint (🟨 in the share grid).
+  // Wrong skin, right champion - the "warm" hint (🟨 in the share grid).
   championMatch: boolean
   correct: boolean
 }
@@ -29,13 +29,13 @@ export interface SplashdleAnswer {
 }
 
 export interface SplashdleState {
-  date: string // YYYY-MM-DD (UTC) — the puzzle resets at midnight UTC
+  date: string // YYYY-MM-DD (UTC) - the puzzle resets at midnight UTC
   puzzleNumber: number
   maxGuesses: number
   status: 'in_progress' | 'won' | 'lost'
   guesses: SplashdleGuess[]
   // While playing: a base64 data URL of the server-cropped splash (the full
-  // image — and its answer-revealing URL — never reaches the client until the
+  // image - and its answer-revealing URL - never reaches the client until the
   // game is over). After completion: the real full splash URL.
   image: string
   zoomLevel: number
@@ -48,7 +48,7 @@ export interface SplashdleState {
   guestToken: string
 }
 
-// Chroma Vision shares Splashdle's state shape exactly — same six-guess
+// Chroma Vision shares Splashdle's state shape exactly - same six-guess
 // board, same champion-match hint; `image` is the color mosaic instead of a
 // crop and `zoomLevel` is the mosaic resolution level.
 export type ChromaVisionState = SplashdleState
@@ -73,7 +73,7 @@ export interface HubGame {
 export interface DailyHubState {
   date: string
   games: HubGame[]
-  // Quick Battle is endless, not a daily — its hub card shows volume, not a
+  // Quick Battle is endless, not a daily - its hub card shows volume, not a
   // checklist slot.
   quickBattle: {
     userBattles: number
@@ -83,7 +83,7 @@ export interface DailyHubState {
   mirror: {
     skinsRated: number
   }
-  // "New this patch" strip — skins released in the last ~3 weeks plus
+  // "New this patch" strip - skins released in the last ~3 weeks plus
   // Upcoming ones already in the live catalog. Empty outside drop windows;
   // the section hides itself.
   newSkins: {
@@ -164,7 +164,7 @@ export interface BattleVoteResult {
 
 // ─── Price Check ────────────────────────────────────────────────────────────
 
-// An answered round. Facts only ship AFTER the guess — the unanswered
+// An answered round. Facts only ship AFTER the guess - the unanswered
 // round's price never reaches the client.
 export interface PriceRoundResult {
   skinId: string
@@ -174,7 +174,7 @@ export interface PriceRoundResult {
   guess: number
   actual: number
   correct: boolean
-  oneOff: boolean // adjacent tier — the 🟨 in the share grid
+  oneOff: boolean // adjacent tier - the 🟨 in the share grid
   legacy: boolean // fun fact: vaulted, not even buyable anymore
 }
 
@@ -252,8 +252,8 @@ export interface RankingsState {
   ratedCount: number
   totalCount: number
   medianBattles: number
-  // True until the slice has real sample depth — rendered as the
-  // "Early Rankings — still calibrating" banner (thin data is a call to
+  // True until the slice has real sample depth - rendered as the
+  // "Early Rankings - still calibrating" banner (thin data is a call to
   // action, not an embarrassment).
   calibrating: boolean
 }
@@ -275,7 +275,7 @@ export interface RankingsIndex {
 
 export interface SkinPageState {
   skinId: string
-  slug: string // canonical — loaders redirect non-canonical spellings here
+  slug: string // canonical - loaders redirect non-canonical spellings here
   name: string
   championId: string
   championName: string
@@ -293,7 +293,7 @@ export interface SkinPageState {
     battles: number
     wins: number
     rank: number
-    calibrated: boolean // false = "Early ranking — needs more votes"
+    calibrated: boolean // false = "Early ranking: needs more votes"
   } | null // null = never battled
   ratedTotal: number
   personal: {
@@ -352,7 +352,7 @@ export interface DroughtRow {
 export interface DroughtState {
   date: string // UTC day the numbers are relative to
   rows: DroughtRow[] // drought days desc
-  // Champions with no dated skins (typically brand-new — the facts snapshot
+  // Champions with no dated skins (typically brand-new - the facts snapshot
   // hasn't caught up). Listed honestly rather than silently dropped.
   undated: { championId: string; championName: string; skinCount: number }[]
   stats: {
@@ -384,7 +384,7 @@ export interface MirrorTier {
 }
 
 // A take only qualifies once both sides have a real sample (the thresholds
-// live in server/mirror.ts) — otherwise "contrarian" is just noise.
+// live in server/mirror.ts) - otherwise "contrarian" is just noise.
 export interface ContrarianTake {
   skinId: string
   slug: string
@@ -400,7 +400,7 @@ export interface ContrarianTake {
 }
 
 // Taste profile entry: a skin line ("you over-index on Coven") or, where
-// line data is thin, a champion. Both can appear — entries are labeled.
+// line data is thin, a champion. Both can appear - entries are labeled.
 export interface TasteEntry {
   kind: 'line' | 'champion'
   id: string

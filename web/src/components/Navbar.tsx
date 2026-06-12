@@ -16,13 +16,13 @@ import { SITE_SECTIONS, type SiteSection } from '~/lib/siteMap'
 // with children get a hover/focus dropdown on desktop; on mobile the panel is
 // hidden and tapping the section lands on its hub page, which lists the same
 // children. Home lives on the logo; profile behind the account button. The
-// `accent` section (Battle — the brand verb) renders highlighted.
+// `accent` section (Battle - the brand verb) renders highlighted.
 
 const itemShade =
   'bg-linear-to-b from-40% from-transparent via-60% via-gold2/10 to-99% to-gold2/20'
 const itemHover =
   'hover:bg-linear-to-b hover:from-40% hover:from-transparent hover:via-60% hover:via-gold2/10 hover:to-99% hover:to-gold2/40'
-// Same gradient, but driven by the whole .group — the trigger stays lit while
+// Same gradient, but driven by the whole .group - the trigger stays lit while
 // the pointer (or keyboard focus) is anywhere inside its dropdown.
 const groupShade =
   'group-hover:bg-linear-to-b group-hover:from-40% group-hover:from-transparent group-hover:via-60% group-hover:via-gold2/10 group-hover:to-99% group-hover:to-gold2/40 group-focus-within:bg-linear-to-b group-focus-within:from-40% group-focus-within:from-transparent group-focus-within:via-60% group-focus-within:via-gold2/10 group-focus-within:to-99% group-focus-within:to-gold2/40'
@@ -113,7 +113,7 @@ function NavItem({ section }: { section: SiteSection }) {
         } pointer-events-none absolute left-0 top-full w-[22rem] -translate-y-1 opacity-0 transition-all duration-150 group-focus-within:pointer-events-auto group-focus-within:translate-y-0 group-focus-within:opacity-100 group-hover:pointer-events-auto group-hover:translate-y-0 group-hover:opacity-100`}
       >
         <div className="border-t-2 border-t-gold5 bg-hextech-black/95 pb-2 shadow-2xl outline outline-icon/30 -outline-offset-1 backdrop-blur-2xl">
-          {/* The featured destination — the menu leads with what to do. */}
+          {/* The featured destination - the menu leads with what to do. */}
           {hero && (
             <Link
               to={hero.to}
@@ -179,7 +179,7 @@ export default function NavBar() {
           <Wordmark className="hidden text-lg md:inline" />
         </Link>
 
-        {/* Primary nav — Home lives on the logo */}
+        {/* Primary nav - Home lives on the logo */}
         <div className="flex h-full min-w-0 items-center">
           {SITE_SECTIONS.map((s) => (
             <NavItem key={s.to} section={s} />

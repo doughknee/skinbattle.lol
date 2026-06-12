@@ -1,7 +1,7 @@
 // Per-user per-game streak tracking. A streak counts consecutive UTC days
 // with a WIN; a loss resets it to 0 but still marks the day as played.
 // best_streak and freeze_tokens are in the schema from day one (design
-// principle 7) — freeze redemption (bridging a missed day) ships later.
+// principle 7) - freeze redemption (bridging a missed day) ships later.
 
 import type { DatabaseSync } from 'node:sqlite'
 
@@ -35,7 +35,7 @@ function isNextDay(prev: string, cur: string): boolean {
 }
 
 // Record a completed daily and return the updated streak. Idempotent per
-// (user, game, date) — replays of the same completion are no-ops.
+// (user, game, date) - replays of the same completion are no-ops.
 export function recordCompletion(
   db: DatabaseSync,
   userId: string,

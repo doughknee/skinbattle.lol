@@ -1,4 +1,4 @@
-// /sitemap.xml — generated from the site-map registry plus the live catalog,
+// /sitemap.xml - generated from the site-map registry plus the live catalog,
 // so new pages, champions, skins, and ranking slices index automatically.
 // Static pages come from ~/lib/siteMap (the same registry the navbar, footer,
 // and command palette render from); dynamic URLs come from the games catalog.
@@ -45,7 +45,7 @@ export async function sitemapXmlResponse(): Promise<Response> {
   return new Response(xml, {
     headers: {
       'Content-Type': 'application/xml; charset=utf-8',
-      // The catalog changes at most per patch — let CDNs hold it for a day.
+      // The catalog changes at most per patch - let CDNs hold it for a day.
       'Cache-Control': 'public, max-age=86400',
     },
   })

@@ -5,7 +5,7 @@
 // and the Go service (api/) needs Docker + Postgres + Redis + Logto to come
 // up. The schema below deliberately mirrors the future Postgres migration
 // (snake_case, append-only events, same columns) so porting is a mechanical
-// move, not a redesign — see "Games framework" in CONTRACT.md.
+// move, not a redesign - see "Games framework" in CONTRACT.md.
 //
 // node:sqlite is built into Node 22 (experimental but stable API), so this
 // adds zero native dependencies.
@@ -22,7 +22,7 @@ export const DATA_DIR =
 const SCHEMA = `
 -- A guest is a real user record without credentials (design principle 9).
 -- Sign-up later ATTACHES a logto_sub to this same row; merging two accounts
--- sets merged_into instead of deleting anything — events stay lossless.
+-- sets merged_into instead of deleting anything - events stay lossless.
 CREATE TABLE IF NOT EXISTS game_users (
   id           TEXT PRIMARY KEY,        -- uuid
   guest_token  TEXT UNIQUE,             -- cookie credential (random 128-bit hex)
@@ -63,7 +63,7 @@ CREATE TABLE IF NOT EXISTS daily_puzzles (
   PRIMARY KEY (game, puzzle_date)
 );
 
--- Per-user per-day result. Derived state for fast reads — the events table
+-- Per-user per-day result. Derived state for fast reads - the events table
 -- can always rebuild it.
 CREATE TABLE IF NOT EXISTS daily_results (
   user_id      TEXT NOT NULL,
@@ -90,7 +90,7 @@ CREATE TABLE IF NOT EXISTS streaks (
 -- Quick Battle rating state, one row per skin that has fought at least one
 -- battle. Ratings are DERIVED (the raw match log in game_events is the
 -- truth): a cheap live Elo-style update keeps them fresh per pick, and a
--- periodic Bradley-Terry refit recomputes them from scratch — so this table
+-- periodic Bradley-Terry refit recomputes them from scratch - so this table
 -- can always be rebuilt. uncertainty makes confidence visible ("1480 ± 90").
 CREATE TABLE IF NOT EXISTS skin_ratings (
   skin_id     TEXT PRIMARY KEY,
@@ -102,8 +102,8 @@ CREATE TABLE IF NOT EXISTS skin_ratings (
 );
 
 -- The same pick that updates the global rating updates the user's personal
--- rating (the mirror's data source). Sparse by nature — most users see a
--- given skin once or twice — so it's a plain Elo value, no uncertainty.
+-- rating (the mirror's data source). Sparse by nature - most users see a
+-- given skin once or twice - so it's a plain Elo value, no uncertainty.
 CREATE TABLE IF NOT EXISTS user_skin_ratings (
   user_id    TEXT NOT NULL,
   skin_id    TEXT NOT NULL,
@@ -122,7 +122,7 @@ CREATE TABLE IF NOT EXISTS battle_nonces (
 
 -- Skin catalog cached from Data Dragon (re-synced when the patch changes).
 -- splash_ok: championFull.json lists some chroma variants WITHOUT the
--- parenthesized suffix the sync filter catches ("Zac Sweet Orange") — their
+-- parenthesized suffix the sync filter catches ("Zac Sweet Orange") - their
 -- splash URLs 403. A background sweep after each sync HEAD-checks every
 -- splash and clears the flag; game pools only deal splash_ok skins.
 CREATE TABLE IF NOT EXISTS catalog_skins (
@@ -158,7 +158,7 @@ export function getDb(): DatabaseSync {
     // Column already exists.
   }
   // Display name for leaderboards, captured from the verified Logto ID
-  // token at attach time (guests have none — boards are members-only).
+  // token at attach time (guests have none - boards are members-only).
   try {
     db.exec('ALTER TABLE game_users ADD COLUMN username TEXT')
   } catch {
@@ -178,7 +178,7 @@ export interface GameEvent {
   trustTier: 'guest' | 'member'
 }
 
-// The only write path for game_events — inserts only, by design.
+// The only write path for game_events - inserts only, by design.
 export function appendEvent(d: DatabaseSync, e: GameEvent): void {
   d.prepare(
     `INSERT INTO game_events

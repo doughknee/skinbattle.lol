@@ -62,7 +62,7 @@ export default function AccountButton() {
   }, [])
 
   // While the SDK restores the session from storage (and during SSR), the
-  // auth state is unknown — render a placeholder instead of flashing
+  // auth state is unknown - render a placeholder instead of flashing
   // "Sign in" at a signed-in user on every page load.
   if (isLoading) {
     return (

@@ -1,6 +1,6 @@
 // Invisible glue for design principle 9's second half: once a visitor is
 // signed in, bind their Logto identity to this device's games record so
-// guest progress (tier list, streaks, battle history) survives sign-up —
+// guest progress (tier list, streaks, battle history) survives sign-up -
 // and their votes count at member weight from the next refit.
 //
 // Mounted once in __root. Runs at most once per browser session per
@@ -22,7 +22,7 @@ export default function GuestAttachment() {
     try {
       if (sessionStorage.getItem(SESSION_KEY) === '1') return
     } catch {
-      /* storage disabled: attach every session — the server no-ops */
+      /* storage disabled: attach every session - the server no-ops */
     }
     inFlight.current = true
     void (async () => {
@@ -30,7 +30,7 @@ export default function GuestAttachment() {
         const accessToken = await getApiToken()
         if (!accessToken) return
         // The ID token carries the username claim for leaderboard display
-        // names; optional — attachment works without it.
+        // names; optional - attachment works without it.
         const idToken = await getLogtoClient()
           ?.getIdToken()
           .catch(() => null)
@@ -56,13 +56,13 @@ export default function GuestAttachment() {
           /* fine */
         }
         if (result.outcome === 'merged') {
-          // Their device progress just joined the account — loaders cached
+          // Their device progress just joined the account - loaders cached
           // under the old guest are stale now; a soft reload re-reads as
           // the merged account.
           window.location.reload()
         }
       } catch {
-        // Network blip — the next session retries.
+        // Network blip - the next session retries.
       } finally {
         inFlight.current = false
       }

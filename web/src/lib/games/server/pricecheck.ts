@@ -1,12 +1,12 @@
 // Price Check engine (server-only): five skins a day, guess each one's RP
-// tier. Prices come from the committed facts snapshot (server/facts.ts) —
+// tier. Prices come from the committed facts snapshot (server/facts.ts) -
 // never fetched at runtime. Legacy skins stay in the pool and surface a fun
 // fact ("not even buyable anymore"), per the roadmap.
 //
 // Reads never write: viewing the page resolves state with peekUser; the
 // result row, puzzle_started event, and guest user are all created by the
 // first actual guess. The unanswered round's price never reaches the client
-// — only answered rounds carry facts.
+// - only answered rounds carry facts.
 
 import type { DatabaseSync } from 'node:sqlite'
 import type { PriceCheckState, PriceRoundResult, StreakInfo } from '../types'
@@ -21,7 +21,7 @@ const GAME = 'price-check'
 const QUESTION = 'guess-the-rp-tier'
 export const ROUNDS = 5
 // Win = majority exact. One-tier-off earns a 🟨 in the share grid but no
-// point — the agony of 975-vs-1350 is the game.
+// point - the agony of 975-vs-1350 is the game.
 export const WIN_SCORE = 3
 // Puzzle #1's date (first deploy day, UTC).
 const EPOCH = '2026-06-11'
@@ -258,7 +258,7 @@ export async function submitPriceGuess(
     result = { status: 'in_progress', guesses: [] }
   }
   if (result.status !== 'in_progress' || result.guesses.length >= ROUNDS) {
-    throw new Error("Today's Price Check is already finished — come back tomorrow!")
+    throw new Error("Today's Price Check is already finished. Come back tomorrow!")
   }
 
   const skinId = puzzle.skinIds[result.guesses.length]

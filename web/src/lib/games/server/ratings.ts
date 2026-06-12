@@ -1,17 +1,17 @@
-// Rating engine for Quick Battle — "Elo UX, Bradley-Terry truth"
+// Rating engine for Quick Battle - "Elo UX, Bradley-Terry truth"
 // (GAMES_ROADMAP.md, "The rating system").
 //
 // Two layers over one event log:
 //  - applyLiveUpdate: a cheap Glicko-lite update per pick, so every vote can
 //    answer back instantly ("+14, now #23"). K scales with the skin's
-//    uncertainty — fresh skins move fast, settled ones barely twitch.
+//    uncertainty - fresh skins move fast, settled ones barely twitch.
 //  - runRefit: a full Bradley-Terry fit (minorization-maximization) over the
 //    ENTIRE raw match history, producing the canonical ratings the live
 //    updates then continue from. Because it rereads every event, it also
 //    re-weights retroactively: a guest who converts to a member upgrades all
 //    their past votes at the next refit, exactly as the design doc requires.
 //
-// game_events stays the source of truth (principle 8) — every number in
+// game_events stays the source of truth (principle 8) - every number in
 // skin_ratings can be rebuilt from it by a single refit.
 
 import type { DatabaseSync } from 'node:sqlite'
@@ -29,7 +29,7 @@ const K_MIN = 16
 const K_MAX = 64
 
 // Each weighted battle closes 10% of the uncertainty's remaining distance to
-// the floor — roughly ±90 after 25 full-weight battles.
+// the floor - roughly ±90 after 25 full-weight battles.
 const UNCERTAINTY_DECAY = 0.1
 
 // Personal ratings are sparse by nature (most skins are seen a handful of
@@ -145,7 +145,7 @@ export function applyLiveUpdate(
 }
 
 // The same pick, applied to the user's own taste model (the mirror's data
-// source). Unweighted — trust tiers protect the COMMUNITY ranking; a user's
+// source). Unweighted - trust tiers protect the COMMUNITY ranking; a user's
 // personal list is theirs.
 export function applyPersonalUpdate(
   db: DatabaseSync,
@@ -180,7 +180,7 @@ export function applyPersonalUpdate(
   put.run(userId, loserId, l.rating - delta, l.battles + 1, now)
 }
 
-// Rank among skins that have actually fought (battles > 0). ~2k rows — a
+// Rank among skins that have actually fought (battles > 0). ~2k rows - a
 // plain count is cheap.
 export function globalRank(db: DatabaseSync, rating: number): number {
   const row = db
@@ -204,12 +204,12 @@ export interface RefitSummary {
 // algorithm for Bradley-Terry (Hunter 2004): iterate
 //   p_i ← (wins_i + prior) / ( Σ_j n_ij/(p_i+p_j) + 2·prior/(p_i+1) )
 // then map strengths onto the Elo scale (1500 + 400·log10 p, geometric mean
-// anchored at 1500). Synchronous and O(events) per iteration — fine for the
+// anchored at 1500). Synchronous and O(events) per iteration - fine for the
 // web tier at current scale; the Go port can move it to a worker.
 export function runRefit(db: DatabaseSync): RefitSummary {
   const t0 = Date.now()
   // Weigh by the voter's CURRENT trust tier, not the tier recorded at vote
-  // time — this is what makes guest→member conversion retroactive.
+  // time - this is what makes guest→member conversion retroactive.
   const rows = db
     .prepare(
       `SELECT e.payload AS payload, u.logto_sub AS logtoSub

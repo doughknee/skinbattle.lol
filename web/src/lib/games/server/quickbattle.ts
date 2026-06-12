@@ -1,7 +1,7 @@
 // Quick Battle engine (server-only): the matchmaker, signed pair tokens,
 // rate limiting, and the vote write path.
 //
-// Reads never write: fetching pairs mints nothing and stores nothing — each
+// Reads never write: fetching pairs mints nothing and stores nothing - each
 // served pair is an HMAC-signed stateless token, and the user record, rating
 // rows, and event row are all created by the first actual pick. The signed
 // token also closes the obvious forgery hole (you can only vote on a pair
@@ -50,7 +50,7 @@ const AGREEMENT_MIN_VOTES = 5
 
 // Rate limits (anti-abuse, design doc "Data integrity"): the minute window
 // is set above any human snap-judgment pace, the day cap above any human
-// session — both well below what a script can do.
+// session - both well below what a script can do.
 const LIMITS = {
   guest: { perMinute: 40, perDay: 500 },
   member: { perMinute: 60, perDay: 1500 },
@@ -73,7 +73,7 @@ interface RatedSkin {
 // matchmaker owes it placement matches.
 const PLACEMENT_BATTLES = 10
 
-// Pair-type mix (principle 6 — pacing beats efficiency): mostly informative
+// Pair-type mix (principle 6 - pacing beats efficiency): mostly informative
 // pairs, seeded with placement matches, paced with easy dunks and marquee
 // title fights. Never only agonizing 50/50s.
 type PairType = 'informative' | 'placement' | 'dunk' | 'marquee'
@@ -128,7 +128,7 @@ function closeOpponent(
   return null
 }
 
-// Close rating, high uncertainty — the statistically useful pairs, which are
+// Close rating, high uncertainty - the statistically useful pairs, which are
 // also the fun, hard choices.
 function pickInformative(pool: RatedSkin[]): [RatedSkin, RatedSkin] | null {
   if (pool.length < 2) return null
@@ -155,7 +155,7 @@ function pickPlacement(pool: RatedSkin[]): [RatedSkin, RatedSkin] | null {
   return b ? [a, b] : null
 }
 
-// Easy dunk: a clear favorite vs a clear underdog. Free dopamine — and when
+// Easy dunk: a clear favorite vs a clear underdog. Free dopamine - and when
 // the community agrees, confirmation that the system "gets it".
 function pickDunk(pool: RatedSkin[]): [RatedSkin, RatedSkin] | null {
   const rated = pool.filter((s) => s.battles > 0)
@@ -224,7 +224,7 @@ function dealPair(
   }
 }
 
-// Ratings are deliberately NOT sent with the pair — seeing the numbers
+// Ratings are deliberately NOT sent with the pair - seeing the numbers
 // before picking would bias the vote. They come back in the feedback.
 function toBattleSkin(s: RatedSkin): BattleSkin {
   return {
@@ -274,18 +274,18 @@ function signPair(db: DatabaseSync, a: string, b: string, t: PairType): string {
 
 function verifyPairToken(db: DatabaseSync, token: string): PairClaim {
   const dot = token.lastIndexOf('.')
-  if (dot < 1) throw new Error('Malformed battle pair — refresh and try again.')
+  if (dot < 1) throw new Error('Malformed battle pair. Refresh and try again.')
   const payload = token.slice(0, dot)
   const given = Buffer.from(token.slice(dot + 1), 'base64url')
   const expected = Buffer.from(sign(db, payload), 'base64url')
   if (given.length !== expected.length || !timingSafeEqual(given, expected)) {
-    throw new Error('Invalid battle pair — refresh and try again.')
+    throw new Error('Invalid battle pair. Refresh and try again.')
   }
   const claim = JSON.parse(
     Buffer.from(payload, 'base64url').toString('utf8'),
   ) as PairClaim
   if (Date.now() - claim.iat > PAIR_TTL_MS) {
-    throw new Error('That matchup expired — here come fresh ones.')
+    throw new Error('That matchup expired. Here come fresh ones.')
   }
   return claim
 }
@@ -322,12 +322,12 @@ function enforceRateLimit(db: DatabaseSync, user: GameUser): void {
 
   if (count('AND puzzle_date = ?', [utcToday()]) >= limits.perDay) {
     throw new Error(
-      "You've hit today's battle limit — the rankings thank you. Come back tomorrow!",
+      "You've hit today's battle limit. The rankings thank you. Come back tomorrow!",
     )
   }
   const minuteAgo = new Date(Date.now() - 60_000).toISOString()
   if (count('AND created_at > ?', [minuteAgo]) >= limits.perMinute) {
-    throw new Error('Whoa, slow down — give it a few seconds and battle on.')
+    throw new Error('Whoa, slow down. Give it a few seconds and battle on.')
   }
 }
 
@@ -372,7 +372,7 @@ function statsFor(db: DatabaseSync, user: GameUser | null): BattleStats {
 
 // Read-only (no user minted, nothing stored): deal a current pair plus a
 // preload pair so the first pick has zero wait. `refitParam` is the manual
-// refit trigger — guarded by GAMES_ADMIN_SECRET when set (dev: open).
+// refit trigger - guarded by GAMES_ADMIN_SECRET when set (dev: open).
 export async function quickBattleState(
   restoreToken?: string | null,
   refitParam?: string,
@@ -412,7 +412,7 @@ export async function submitBattleVote(
 ): Promise<BattleVoteResult> {
   const db = getDb()
   const assetVersion = await ensureCatalog(db)
-  // First pick mints the guest — the one write a brand-new visitor triggers.
+  // First pick mints the guest - the one write a brand-new visitor triggers.
   const { user, token } = ensureUser(db, restoreToken)
 
   const claim = verifyPairToken(db, pairToken)
@@ -462,7 +462,7 @@ export async function submitBattleVote(
     throw err
   }
 
-  // Feedback — principle 1: every pick answers back within the same round
+  // Feedback - principle 1: every pick answers back within the same round
   // trip that fetched the next pair.
   const agreement = pairAgreement(db, pairKey, winnerId)
   const feedback: BattleFeedback = {

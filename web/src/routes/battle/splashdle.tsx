@@ -21,22 +21,22 @@ import type { GuessOption, SplashdleState } from '~/lib/games/types'
 
 export const Route = createFileRoute('/battle/splashdle')({
   // Data loads BEFORE the route renders (SSR on first visit, prefetched on
-  // navigation), and the crop ships inside the payload as a data URL — the
+  // navigation), and the crop ships inside the payload as a data URL - the
   // page arrives complete in one paint, so there are no loading states.
   loader: () =>
     fetchSplashdleState({ data: { restoreToken: guestRestoreToken() } }),
   head: () => ({
     meta: [
-      { title: 'Splashdle — Skin Battle' },
+      { title: 'Splashdle · Skin Battle' },
       {
         name: 'description',
         content:
           'Name the League skin from a sliver of its splash art. A new puzzle every day.',
       },
       ...ogMeta({
-        title: 'Splashdle — Skin Battle',
+        title: 'Splashdle · Skin Battle',
         description:
-          'Name the League skin from a sliver of its splash art. It zooms out with every miss — six guesses, new puzzle daily.',
+          'Name the League skin from a sliver of its splash art. It zooms out with every miss. Six guesses, new puzzle daily.',
         card: 'splashdle',
         path: '/battle/splashdle',
       }),
@@ -63,7 +63,7 @@ function SplashdlePage() {
   useEffect(() => () => window.clearTimeout(shakeTimer.current), [])
 
   // What the board looked like on the page's first paint. That content is
-  // part of the page entrance, so it renders settled — only things that
+  // part of the page entrance, so it renders settled - only things that
   // happen after load (new guesses, the live win) play game animations.
   const loadedWith = useRef({
     guessCount: initial.guesses.length,
@@ -105,7 +105,7 @@ function SplashdlePage() {
       })
       rememberGuestToken(next.guestToken)
       const last = next.guesses[next.guesses.length - 1]
-      // A full miss jolts the splash; a near-miss (right champion) doesn't —
+      // A full miss jolts the splash; a near-miss (right champion) doesn't -
       // warm should never feel like rejection. Cleared on a timer rather
       // than animationend, which never fires in a backgrounded tab.
       if (last && !last.correct && !last.championMatch) {

@@ -1,6 +1,6 @@
 // Splashdle engine (server-only): a tight crop of a skin splash that zooms
 // out with each wrong guess. 6 guesses, guess-the-skin across the full
-// catalog. All state is server-authoritative — the client only ever sees
+// catalog. All state is server-authoritative - the client only ever sees
 // the crop for its current zoom level, so the answer can't be peeked from
 // a splash URL or the full image until the game is over.
 
@@ -256,7 +256,7 @@ async function assembleState(
 // ─── public surface (called from server functions) ──────────────────────────
 
 // Read-only: viewing the puzzle never writes. Anonymous visitors (no
-// cookie, no backup token — including every crawler) get a playable state
+// cookie, no backup token - including every crawler) get a playable state
 // with an empty guestToken; their user record is minted by their first
 // guess, not their first pageview.
 export async function splashdleState(
@@ -305,7 +305,7 @@ export async function submitSplashdleGuess(
     result = { status: 'in_progress', guesses: [] }
   }
   if (result.status !== 'in_progress') {
-    throw new Error("Today's Splashdle is already finished — come back tomorrow!")
+    throw new Error("Today's Splashdle is already finished. Come back tomorrow!")
   }
   if (result.guesses.length >= MAX_GUESSES) {
     throw new Error('No guesses left.')
@@ -314,7 +314,7 @@ export async function submitSplashdleGuess(
     throw new Error('You already guessed that skin.')
   }
   const guessed = getCatalogSkin(db, skinId)
-  if (!guessed) throw new Error('Unknown skin — pick one from the suggestions.')
+  if (!guessed) throw new Error('Unknown skin. Pick one from the suggestions.')
 
   const answer = getCatalogSkin(db, puzzle.skinId)
   if (!answer) throw new Error(`puzzle skin ${puzzle.skinId} missing from catalog`)
@@ -380,7 +380,7 @@ export async function submitSplashdleGuess(
 }
 
 // Data for the Splashdle OG share card: today's puzzle number plus the
-// level-0 crop — exactly what a new player sees first, so it's spoiler-free
+// level-0 crop - exactly what a new player sees first, so it's spoiler-free
 // by definition.
 export async function splashdleOgInfo(): Promise<{
   puzzleNumber: number
@@ -395,7 +395,7 @@ export async function splashdleOgInfo(): Promise<{
   }
 }
 
-// Autocomplete options for the guess input — the full guessable catalog.
+// Autocomplete options for the guess input - the full guessable catalog.
 export async function splashdleOptions(): Promise<GuessOption[]> {
   const db = getDb()
   await ensureCatalog(db)

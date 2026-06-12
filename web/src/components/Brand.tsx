@@ -1,7 +1,7 @@
 import { useId } from 'react'
 
 /**
- * The "Crown" mark — inline copy of assets/svg/crown-primary.svg so it ships
+ * The "Crown" mark - inline copy of assets/svg/crown-primary.svg so it ships
  * with the bundle (no extra request) and scales crisply at any size.
  * Brand rule: the crown only ever sits on dark navy / near-black.
  */
@@ -55,7 +55,7 @@ export function CrownMark({ className }: { className?: string }) {
 }
 
 /**
- * Canonical wordmark — engraved caps `SKINBATTLE.LOL` in Cinzel, colored per
+ * Canonical wordmark - engraved caps `SKINBATTLE.LOL` in Cinzel, colored per
  * the brand guidelines (SKIN gold1 · BATTLE gold2 · .LOL muted gold).
  */
 export function Wordmark({ className }: { className?: string }) {

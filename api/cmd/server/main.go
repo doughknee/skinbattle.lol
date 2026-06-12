@@ -86,7 +86,7 @@ func run() error {
 
 	// ── Auth middleware ───────────────────────────────────────────────────────
 	// Provisioner: JIT-upsert local user on every authenticated request.
-	// Access tokens scoped to an API resource carry only `sub` — email and
+	// Access tokens scoped to an API resource carry only `sub` - email and
 	// username live in the Logto profile, so fetch them via the Management API.
 	provisioner := func(provCtx context.Context, sub, email, username string) (int64, error) {
 		if email == "" || username == "" {

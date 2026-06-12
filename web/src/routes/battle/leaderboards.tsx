@@ -18,16 +18,16 @@ export const Route = createFileRoute('/battle/leaderboards')({
   loader: () => fetchLeaderboards(),
   head: () => ({
     meta: [
-      { title: 'Leaderboards — Skin Battle' },
+      { title: 'Leaderboards · Skin Battle' },
       {
         name: 'description',
         content:
-          'Streaks, fastest daily solves, and battle volume — the named players of Skin Battle.',
+          'Streaks, fastest daily solves, and battle volume: the named players of Skin Battle.',
       },
       ...ogMeta({
-        title: 'Leaderboards — Skin Battle',
+        title: 'Leaderboards · Skin Battle',
         description:
-          'Streaks, fastest daily solves, and battle volume — the named players of Skin Battle.',
+          'Streaks, fastest daily solves, and battle volume: the named players of Skin Battle.',
         card: 'leaderboards',
         path: '/battle/leaderboards',
       }),
@@ -88,7 +88,7 @@ function LeaderboardsPage() {
       <PageHeader
         eyebrow="Community · named players only"
         title="Leaderboards"
-        subtitle="Streaks, fastest solves, and battle volume. Guests can look — only signed-in players hold a spot."
+        subtitle="Streaks, fastest solves, and battle volume. Guests can look. Only signed-in players hold a spot."
         className="mb-8"
       />
 
@@ -105,7 +105,7 @@ function LeaderboardsPage() {
               </>
             ) : (
               <>
-                The boards are empty — be the first name on them. Your guest
+                The boards are empty. Be the first name on them. Your guest
                 progress attaches the moment you sign in.
               </>
             )}
@@ -175,7 +175,7 @@ function LeaderboardsPage() {
           Battle volume
         </h2>
         <p className="mb-4 text-sm text-grey1">
-          Quick Battle verdicts delivered — every one sharpens the rankings.
+          Head-to-Head verdicts delivered. Every one sharpens the rankings.
         </p>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           {state.battleBoards.map((b) => (

@@ -26,7 +26,7 @@ type Entry = {
   | { kind: 'champion' | 'skin'; championId: string }
 )
 
-// Every navigable page, from the site-map registry. Static — built once.
+// Every navigable page, from the site-map registry. Static - built once.
 const pageEntries: Entry[] = allSitePages().map((p) => ({
   key: `p-${p.to}`,
   kind: 'page',

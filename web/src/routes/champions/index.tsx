@@ -32,7 +32,7 @@ export const Route = createFileRoute('/champions/')({
     return { champions }
   },
   head: () => ({
-    meta: [{ title: 'Champions — Skin Battle' }],
+    meta: [{ title: 'Champions · Skin Battle' }],
   }),
   pendingComponent: () => (
     <RouteSkeleton quip="Stealing baron..." variant="champions" />
@@ -207,7 +207,7 @@ function ChampionCard({
 
   return (
     <li className="group relative overflow-hidden bg-hextech-black/30 transition duration-300 hover:shadow-[0_0_28px_-6px_rgba(200,170,110,0.4)]">
-      {/* Border drawn on an overlay so it stays visible over the splash art —
+      {/* Border drawn on an overlay so it stays visible over the splash art -
           the image's hover transform otherwise paints above an inset outline.
           Offset -1 keeps it flush with the edge so the image sits inside it. */}
       <div

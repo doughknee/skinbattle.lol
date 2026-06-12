@@ -1,11 +1,11 @@
 // OG share-card renderer (server-only): every games surface gets a
 // purpose-built 1200×630 image so links unfurl beautifully on
-// Discord/Twitter/Reddit — "a citation that unfurls badly is a citation
+// Discord/Twitter/Reddit - "a citation that unfurls badly is a citation
 // lost" (GAMES_ROADMAP, stable URLs & share cards).
 //
 // satori lays the card out from a plain VDOM (no React needed) using
-// committed TTFs (web/assets/og — Cinzel + Inter, both OFL), then
-// @resvg/resvg-js rasterizes to PNG. No system fonts, no headless browser —
+// committed TTFs (web/assets/og - Cinzel + Inter, both OFL), then
+// @resvg/resvg-js rasterizes to PNG. No system fonts, no headless browser -
 // works identically in dev (Windows) and the alpine container.
 
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
@@ -55,7 +55,7 @@ function fontsDir(): string {
   ]) {
     if (dir && existsSync(join(dir, 'Cinzel-Bold.ttf'))) return dir
   }
-  throw new Error('OG fonts not found — expected web/assets/og/*.ttf')
+  throw new Error('OG fonts not found; expected web/assets/og/*.ttf')
 }
 
 let fontCache: { name: string; data: Buffer; weight: 400 | 600 | 700 }[] | null =
@@ -247,7 +247,7 @@ async function buildCard(card: OgCard): Promise<Node> {
             eyebrow('Daily · guess the skin'),
             title(`Splashdle #${info.puzzleNumber}`, 76),
             body(
-              'Name the skin from a sliver of its splash. It zooms out with every miss — six guesses.',
+              'Name the skin from a sliver of its splash. It zooms out with every miss. Six guesses.',
             ),
           ),
           {
@@ -275,7 +275,7 @@ async function buildCard(card: OgCard): Promise<Node> {
           'div',
           { flexDirection: 'column', gap: 18, justifyContent: 'center', flexGrow: 1 },
           eyebrow('Endless · which do you like more?'),
-          title('Quick Battle'),
+          title('Head-to-Head'),
           body('Two skins. Pick one. Every vote builds the community ranking.'),
           battlesLine
             ? text(battlesLine, {
@@ -297,7 +297,7 @@ async function buildCard(card: OgCard): Promise<Node> {
           eyebrow('Your taste, reflected'),
           title('The Mirror'),
           body(
-            'The personal tier list your battles build — plus your most contrarian takes.',
+            'The personal tier list your battles build, plus your most contrarian takes.',
           ),
           el(
             'div',
@@ -338,7 +338,7 @@ async function buildCard(card: OgCard): Promise<Node> {
             eyebrow('Daily · hard mode · colors only'),
             title(`Chroma Vision #${info.puzzleNumber}`, 70),
             body(
-              'Name the skin from its colors alone. The mosaic sharpens with every miss — six guesses.',
+              'Name the skin from its colors alone. The mosaic sharpens with every miss. Six guesses.',
             ),
           ),
           {
@@ -367,7 +367,7 @@ async function buildCard(card: OgCard): Promise<Node> {
           { flexDirection: 'column', gap: 18, justifyContent: 'center', flexGrow: 1 },
           eyebrow('Daily · what did it cost?'),
           title(`Price Check #${priceCheckPuzzleNumber(utcToday())}`, 76),
-          body('Five skins. Guess what each cost in RP — legacy relics included.'),
+          body('Five skins. Guess what each cost in RP. Legacy relics included.'),
           el(
             'div',
             { gap: 12, marginTop: 10 },
@@ -408,7 +408,7 @@ async function buildCard(card: OgCard): Promise<Node> {
           body('Streaks, fastest daily solves, and battle volume.'),
           top
             ? text(
-                `Most battles: ${top.name} — ${top.battles.toLocaleString('en-US')}`,
+                `Most battles: ${top.name} · ${top.battles.toLocaleString('en-US')}`,
                 {
                   fontFamily: 'Inter',
                   fontWeight: 600,
@@ -416,7 +416,7 @@ async function buildCard(card: OgCard): Promise<Node> {
                   color: C.gold1,
                 },
               )
-            : body('The boards are open — be the first name on them.'),
+            : body('The boards are open. Be the first name on them.'),
         ),
       ])
     }
@@ -456,7 +456,7 @@ async function buildCard(card: OgCard): Promise<Node> {
           eyebrow('A new puzzle every day'),
           title('Daily Skin Games'),
           body(
-            'Splashdle · Quick Battle · The Mirror — daily challenges for League skin connoisseurs.',
+            'Splashdle · Head-to-Head · The Mirror: daily challenges for League skin connoisseurs.',
           ),
           battlesLine
             ? text(battlesLine, {
@@ -528,7 +528,7 @@ export async function skinOgResponse(skinId: string): Promise<Response> {
       ).c
       const statLine = rating
         ? `${Math.round(rating.rating)} ± ${Math.round(rating.uncertainty)} · #${globalRank(db, rating.rating)} of ${ratedTotal} rated · ${rating.battles} battles`
-        : 'Unranked — no battles fought yet'
+        : 'Unranked: no battles fought yet'
 
       const bg = await fetchAsDataUri(skin.splashUrl)
       const node = frame(bg ? splashBg(bg) : null, [
@@ -593,16 +593,16 @@ export async function rankingsOgResponse(slice: string): Promise<Response> {
           title(state.title, 60),
           ...(top.length > 0
             ? top.map((r, i) =>
-                text(`${medals[i]} ${r.name} — ${r.rating}`, {
+                text(`${medals[i]} ${r.name} · ${r.rating}`, {
                   fontFamily: 'Inter',
                   fontWeight: i === 0 ? 600 : 400,
                   fontSize: i === 0 ? 30 : 26,
                   color: i === 0 ? C.gold1 : C.grey1,
                 }),
               )
-            : [body('No battles in this slice yet — be the first.')]),
+            : [body('No battles in this slice yet. Be the first.')]),
           state.calibrating
-            ? text('Early rankings — still calibrating', {
+            ? text('Early rankings: still calibrating', {
                 fontFamily: 'Inter',
                 fontWeight: 400,
                 fontSize: 22,

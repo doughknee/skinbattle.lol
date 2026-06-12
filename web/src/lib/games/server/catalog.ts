@@ -48,7 +48,7 @@ function skinCount(db: DatabaseSync): number {
 // Make sure the catalog exists and is reasonably fresh. Returns the Data
 // Dragon patch version the catalog was built from (the asset_version stamped
 // on every game event). Falls back to the stale catalog if Riot is
-// unreachable — a slightly old catalog beats a dead game.
+// unreachable - a slightly old catalog beats a dead game.
 export async function ensureCatalog(db: DatabaseSync): Promise<string> {
   const version = getMeta(db, 'dd_version')
   const syncedAt = getMeta(db, 'synced_at')
@@ -113,10 +113,10 @@ function replaceCatalog(
     for (const champ of Object.values(data)) {
       for (const skin of champ.skins) {
         // Base splashes (num 0) are excluded: guessing one is really
-        // guess-the-champion, which is LoLdle's game — not Splashdle's.
+        // guess-the-champion, which is LoLdle's game - not Splashdle's.
         if (skin.num === 0) continue
         // Chroma/variant tiers are listed as skins with a parenthesized
-        // suffix — "Elderwood Wukong (Pearl)" — but have no splash art of
+        // suffix - "Elderwood Wukong (Pearl)" - but have no splash art of
         // their own (the img CDN 403s). ~6,800 of championFull's ~8,900
         // entries are these.
         if (/\s\([^)]+\)$/.test(skin.name)) continue
@@ -139,7 +139,7 @@ function replaceCatalog(
 
 // championFull.json has a second class of phantom entries beyond the
 // parenthesized chromas filtered at sync: chroma variants with plain names
-// ("Zac Sweet Orange", "Worlds 2017 Ashe Chroma" — 61 in patch 16.12) whose
+// ("Zac Sweet Orange", "Worlds 2017 Ashe Chroma" - 61 in patch 16.12) whose
 // splash URLs 403. No name pattern catches them reliably, so after each
 // patch sync a background sweep HEAD-checks every splash once and clears
 // splash_ok on the dead ones. Until the sweep lands (~30 s), the client's
@@ -151,7 +151,7 @@ const SWEEP_REV = 2
 let sweepRunning = false
 
 // Data Dragon's data calls the champion "Fiddlesticks", but the splash CDN
-// serves some of its skins only under the legacy casing "FiddleSticks" —
+// serves some of its skins only under the legacy casing "FiddleSticks" -
 // three real skins (Star Nemesis, Blood Moon, Flora Fatalis) 403 on the
 // constructed URL and got benched as phantoms. Before benching, retry known
 // alias spellings and repoint splash_url at whichever actually serves.
@@ -167,7 +167,7 @@ async function splashDead(url: string): Promise<boolean | null> {
     })
     return res.status === 403 || res.status === 404
   } catch {
-    // Network blip / 5xx: transient — can't tell, don't bench on it.
+    // Network blip / 5xx: transient - can't tell, don't bench on it.
     return null
   }
 }
@@ -258,7 +258,7 @@ export function getCatalogSkin(
   return row ?? null
 }
 
-// Skins eligible for play surfaces — excludes swept-out phantom entries.
+// Skins eligible for play surfaces - excludes swept-out phantom entries.
 export function allCatalogSkins(db: DatabaseSync): CatalogSkin[] {
   return db
     .prepare(

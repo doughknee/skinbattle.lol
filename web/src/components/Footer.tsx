@@ -7,12 +7,12 @@ import {
   type SitePage,
 } from '~/lib/siteMap'
 
-// The footer is the full sitemap, rendered from the site-map registry — one
+// The footer is the full sitemap, rendered from the site-map registry - one
 // column per top-level section. New registry entries appear here for free.
 
 function Column({ title, pages }: { title: string; pages: SitePage[] }) {
   return (
-    <nav aria-label={`Footer — ${title}`}>
+    <nav aria-label={`Footer: ${title}`}>
       <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-gold2">
         {title}
       </p>
@@ -53,7 +53,7 @@ export default function Footer() {
         </div>
 
         {grouped.map((s) => {
-          // Section landing first, children after — minus any child that
+          // Section landing first, children after - minus any child that
           // points back at the landing page (e.g. "Browse the Slices").
           const pages = [s, ...s.children!.filter((c) => c.to !== s.to)]
           return <Column key={s.to} title={s.label} pages={pages} />

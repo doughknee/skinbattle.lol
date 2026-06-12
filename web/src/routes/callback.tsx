@@ -6,7 +6,7 @@ import { Spinner } from '~/components/Skeletons'
 import { btnPrimarySm, btnSecondarySm } from '~/lib/ui'
 
 export const Route = createFileRoute('/callback')({
-  // SSR is meaningless for an OIDC redirect handler — render only on the client.
+  // SSR is meaningless for an OIDC redirect handler - render only on the client.
   ssr: false,
   component: CallbackPage,
 })
@@ -22,7 +22,7 @@ function CallbackPage() {
   })
 
   // Already signed in (e.g. revisiting /callback after the redirect was
-  // consumed) — there's nothing to process, go home.
+  // consumed) - there's nothing to process, go home.
   useEffect(() => {
     if (!isLoading && isAuthenticated && !error) {
       navigate({ to: '/' })
@@ -30,7 +30,7 @@ function CallbackPage() {
   }, [isLoading, isAuthenticated, error, navigate])
 
   // Landing here without a pending sign-in session (refreshed mid-login,
-  // bookmarked URL, new tab) never triggers processing — no error, no
+  // bookmarked URL, new tab) never triggers processing - no error, no
   // navigation, spinner forever. If nothing is happening, bail out.
   useEffect(() => {
     if (isLoading || isAuthenticated || error) return
@@ -39,7 +39,7 @@ function CallbackPage() {
   }, [isLoading, isAuthenticated, error])
 
   // A failed callback (refreshed mid-login, expired or reused link) used to
-  // strand the user on the spinner forever — give them a way out.
+  // strand the user on the spinner forever - give them a way out.
   if (error || stranded) {
     return (
       <div className="fixed inset-0 flex flex-col items-center justify-center gap-6 bg-linear-220 from-gradientTop via-[#0A1428] to-gradientBottom bg-fixed px-6 text-center">

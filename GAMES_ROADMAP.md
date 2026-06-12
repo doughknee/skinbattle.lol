@@ -213,10 +213,11 @@ against these, in priority order:
    themselves: an auto-built personal tier list, "your most contrarian takes,"
    "you over-index on Coven." Every battle sharpens *your* profile, not just the
    global ranking. Protect this above all other features.
-3. **Scarce choices stay sacred.** 3 stars and 3 bans among ~1,600 skins is an
-   agonizing choice, and the agony is the fun — decisions feel meaningful in
-   proportion to what they cost. Never loosen the scarcity. Ritualize changes
-   ("you're dethroning Elementalist Lux?").
+3. **Scarce choices stay sacred.** 10 stars and 10 bans among ~1,600 skins is
+   still a costly choice, and the cost is the fun: decisions feel meaningful in
+   proportion to what they cost. The budget moved from 3 to 10 (2026-06) to give
+   people room to express taste; it stays scarce relative to the catalog.
+   Ritualize changes ("you're dethroning Elementalist Lux?").
 4. **Completion is always visible.** League players are collectors. Per-champion
    wardrobe completion ("rated 82/170 champions") satisfies the collector itch and
    organically pushes users into the unexposed corners of the catalog — the
@@ -271,8 +272,8 @@ graph), and infinite resolution at the top.
 
 | Mechanic | Role |
 |---|---|
-| Up/down | Lightweight personal mark + weak prior in the model. Lowest-friction interaction for casual visitors. **Decision: counts stay publicly visible** — they're alive and responsive early; the Elo ranking takes over as the headline number once dense. |
-| Star ×3 / Ban ×3 | Strongest preference signal we have (choosing 3 of 1,600 is costly = informative). Profile centerpiece ("signature skins"). Scarcity is permanent. |
+| Up/down | **Retired (2026-06).** It was a redundant, weaker ranking signal competing with Elo; pairwise battles carry that job. Postgres columns remain but are frozen. |
+| Star ×10 / Ban ×10 | Strongest preference signal we have (choosing 10 of 1,600 is costly = informative). Profile centerpiece ("signature skins"). Scarcity is permanent; budget raised from 3 (2026-06). |
 | Pairwise battle | Measurement backbone. Feeds global rating + personal rating simultaneously. |
 
 ### Model decisions (design-level)
@@ -377,7 +378,7 @@ swipes wastes the data engine) and anti-abuse needs server visibility. So:
 - **Permission split** (falls out of the principles): anything that's *playing*
   is guest-open — all dailies, Quick Battle, viewing rankings, own tier list.
   Anything *scarce, public, or social* needs an account:
-  - Stars/bans — scarcity is meaningless if clearing cookies grants 3 fresh
+  - Stars/bans: scarcity is meaningless if clearing cookies grants 10 fresh
     stars; this is also the obvious abuse vector.
   - Named leaderboard placement (guests can see boards, not occupy them).
   - Daily Draft submissions & comments — moderation needs accountability.

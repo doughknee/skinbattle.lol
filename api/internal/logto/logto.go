@@ -150,8 +150,8 @@ func (c *Client) GetUser(ctx context.Context, logtoUserID string) (*UserProfile,
 }
 
 // UpdateUsername patches the username of the user identified by logtoUserID
-// via the Logto Management API. Logto is the source of truth for usernames —
-// the JIT provisioner re-syncs the local row from the Logto profile — so this
+// via the Logto Management API. Logto is the source of truth for usernames -
+// the JIT provisioner re-syncs the local row from the Logto profile - so this
 // returns ErrNotConfigured rather than no-opping when M2M creds are absent:
 // a local-only rename would be silently reverted on the next sync.
 func (c *Client) UpdateUsername(ctx context.Context, logtoUserID, username string) error {

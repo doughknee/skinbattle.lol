@@ -14,7 +14,7 @@ export function guestRestoreToken(): string | null {
 }
 
 export function rememberGuestToken(token: string): void {
-  // Empty token = anonymous read (no user minted yet) — keep any existing
+  // Empty token = anonymous read (no user minted yet) - keep any existing
   // backup rather than clobbering it.
   if (!token) return
   try {

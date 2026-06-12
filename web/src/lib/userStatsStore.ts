@@ -29,7 +29,7 @@ function readPersisted(): QuotaStats | null {
       return { usedStars: parsed.usedStars, usedX: parsed.usedX }
     }
   } catch {
-    /* corrupted entry — fall through to defaults */
+    /* corrupted entry - fall through to defaults */
   }
   return null
 }
@@ -46,7 +46,7 @@ function persist() {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(stats))
   } catch {
-    /* storage full/unavailable — stay in-memory only */
+    /* storage full/unavailable - stay in-memory only */
   }
 }
 

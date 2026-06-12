@@ -16,7 +16,7 @@ export const Route = createFileRoute('/rankings/')({
   loader: () => fetchRankingsIndex(),
   head: () => ({
     meta: [
-      { title: 'Rankings — Skin Battle' },
+      { title: 'Rankings · Skin Battle' },
       {
         name: 'description',
         content:
@@ -133,7 +133,7 @@ function RankingsIndexPage() {
           ))}
           {champFilter.trim() === '' && index.champions.length > 24 && (
             <span className="flex h-10 items-center px-2 text-sm text-grey1">
-              …and {index.champions.length - 24} more — type to find them.
+              …and {index.champions.length - 24} more. Type to find them.
             </span>
           )}
         </div>
@@ -159,7 +159,7 @@ function RankingsIndexPage() {
                 Awards
               </h3>
               <p className="text-sm text-grey1">
-                Most starred, most banned — the community's superlatives.
+                Most starred, most banned: the community's superlatives.
               </p>
             </div>
           </Link>

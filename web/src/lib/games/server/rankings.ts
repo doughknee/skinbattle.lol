@@ -1,7 +1,7 @@
 // Ranking slices (server-only): the sliced-rankings layer of the Insights
-// track — best skins per price tier, skin line, champion, or release year
+// track - best skins per price tier, skin line, champion, or release year
 // ("best 975 RP skins" is a purchasing guide nobody does well). Every slice
-// is a stable URL; thin data renders as "Early Rankings — still calibrating"
+// is a stable URL; thin data renders as "Early Rankings - still calibrating"
 // with battle counts visible, per the cold-start strategy.
 
 import type { DatabaseSync } from 'node:sqlite'
@@ -33,7 +33,7 @@ interface Slice {
   match: (skin: CatalogSkin) => boolean
 }
 
-// Skin lines keyed by their kebab slug ("k-da" → "K/DA"). Built per call —
+// Skin lines keyed by their kebab slug ("k-da" → "K/DA"). Built per call -
 // it's a few thousand string ops over the in-memory facts table.
 function lineBySlug(db: DatabaseSync): Map<string, string> {
   const map = new Map<string, string>()
@@ -59,7 +59,7 @@ function resolveSlice(db: DatabaseSync, slice: string): Slice | null {
     if (!(PRICE_TIERS as readonly number[]).includes(tier)) return null
     return {
       title: `Best ${tier.toLocaleString()} RP skins`,
-      subtitle: `Every ${tier.toLocaleString()} RP skin, ranked — the purchasing guide.`,
+      subtitle: `Every ${tier.toLocaleString()} RP skin, ranked. The purchasing guide.`,
       match: (s) => factsFor(s.id)?.cost === tier,
     }
   }

@@ -1,7 +1,7 @@
 // Shared machinery for the guess-the-skin dailies (Splashdle, Chroma
 // Vision): the autocomplete combobox, the fixed Wordle-style board, the
 // guess squares, the image viewport, and the result panel. Both games keep
-// their own engines and copy — this is the presentation they have in common.
+// their own engines and copy - this is the presentation they have in common.
 
 import { Link } from '@tanstack/react-router'
 import { useEffect, useMemo, useRef, useState } from 'react'
@@ -37,7 +37,7 @@ function LoadedSplash({
   anim: string
   alt: string
 }) {
-  // Data-URL images are already in memory — render immediately (this also
+  // Data-URL images are already in memory - render immediately (this also
   // keeps the server-rendered first paint visible before hydration). Only
   // network images (the final reveal) wait for decode.
   const [loaded, setLoaded] = useState(() => src.startsWith('data:'))
@@ -55,7 +55,7 @@ function LoadedSplash({
 }
 
 // The previous image stays mounted beneath the incoming one, so each level
-// step is a crossfade — never a blink through the dark figure background.
+// step is a crossfade - never a blink through the dark figure background.
 export function GuessViewport({
   image,
   levelKey,
@@ -238,7 +238,7 @@ function HighlightedName({ name, query }: { name: string; query: string }) {
   )
 }
 
-// Versionless Data Dragon loading portrait — small, cacheable, and gives the
+// Versionless Data Dragon loading portrait - small, cacheable, and gives the
 // suggestion list faces instead of a wall of text.
 const championPortrait = (championId: string) =>
   `https://ddragon.leagueoflegends.com/cdn/img/champion/loading/${championId}_0.jpg`
@@ -271,13 +271,13 @@ export function GuessInput({
     [searchable, query, open],
   )
   // The options list loads in the background after first paint; until it
-  // arrives, typing shows a loading row — never a false "no skins match".
+  // arrives, typing shows a loading row - never a false "no skins match".
   const listLoading = options.length === 0
   const typed = open && !selected && norm(query).length >= 2
   const noMatch = typed && !listLoading && matches.length === 0
 
   // Keep the keyboard flow unbroken: focus on mount and re-focus the moment
-  // a submission settles (mouse-only on touch devices — popping the soft
+  // a submission settles (mouse-only on touch devices - popping the soft
   // keyboard over the splash would hide the new image).
   useEffect(() => {
     if (finePointer()) inputRef.current?.focus()
@@ -416,7 +416,7 @@ export function GuessInput({
         )}
         {noMatch && (
           <div className="animate-pop absolute z-20 mt-1 w-full bg-hextech-black/95 px-4 py-3 text-sm text-grey1 outline outline-icon/30 -outline-offset-1 backdrop-blur-xl">
-            No skins match "{query.trim()}" — try the champion's name.
+            No skins match "{query.trim()}". Try the champion's name.
           </div>
         )}
       </div>
@@ -449,7 +449,7 @@ export function GuessBoard({
   guesses: SplashdleGuess[]
   pending?: GuessOption | null
   maxGuesses: number
-  // Slots below this index were already filled when the page loaded — they
+  // Slots below this index were already filled when the page loaded - they
   // replace a skeleton, so they render settled instead of replaying their
   // entrance over the loading state.
   animateFrom?: number
@@ -552,7 +552,7 @@ export function ResultPanel({
   // False when the page loaded already-finished: the panel replaces a
   // skeleton, so the celebratory cascade only plays for a live win.
   animate: boolean
-  gameName: string // "Splashdle" | "Chroma Vision" — used in the countdown
+  gameName: string // "Splashdle" | "Chroma Vision" - used in the countdown
 }) {
   const [countdown, setCountdown] = useState(nextPuzzleCountdown)
 
@@ -565,7 +565,7 @@ export function ResultPanel({
     if (!shareText) return
     try {
       await navigator.clipboard.writeText(shareText)
-      toast('Result copied — go flex it!')
+      toast('Result copied. Go flex it!')
     } catch {
       toast("Couldn't copy to clipboard.", 'error')
     }
@@ -615,7 +615,7 @@ export function ResultPanel({
           Back to the battle
         </Link>
         {/* Time-derived, so the server-rendered text can lag the client's
-            by a minute — not worth a hydration warning. */}
+            by a minute - not worth a hydration warning. */}
         <span className="text-sm text-grey1" suppressHydrationWarning>
           Next {gameName} in {countdown}
         </span>

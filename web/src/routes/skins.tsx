@@ -32,7 +32,7 @@ export const Route = createFileRoute('/skins')({
     return { awards }
   },
   head: () => ({
-    meta: [{ title: 'Skins — Skin Battle' }],
+    meta: [{ title: 'Skins · Skin Battle' }],
   }),
   pendingComponent: () => <RouteSkeleton quip="Checking the loot tab..." />,
   errorComponent: ({ error }) => (
@@ -107,7 +107,7 @@ function SkinsPage() {
     setCurrentPage(1)
   }, [sortBy, query])
 
-  // Paging happens from buttons at the bottom of a long grid — bring the
+  // Paging happens from buttons at the bottom of a long grid - bring the
   // start of the grid back into view so the new page is actually visible.
   const goToPage = (page: number) => {
     setCurrentPage(page)
@@ -176,7 +176,7 @@ function SkinsPage() {
           <EmptyState
             icon={faShirt}
             title="No skins found"
-            message="The collection hasn't loaded yet — check back in a moment."
+            message="The collection hasn't loaded yet. Check back in a moment."
             compact
           />
         )

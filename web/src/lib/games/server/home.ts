@@ -1,7 +1,7 @@
 // Home page state (server-only): the daily hero slide set plus the live
 // numbers the landing sections run on.
 //
-// The hero set is deterministic from the UTC date — everyone sees the same
+// The hero set is deterministic from the UTC date - everyone sees the same
 // six skins, same as the dailies (see ./daily). A couple of slots go to
 // current Elo headliners so the slideshow opens strong; the rest are seeded
 // picks from the whole catalog, deduped by champion so one wardrobe never
@@ -46,7 +46,7 @@ function topRatedSkins(db: DatabaseSync, catalog: CatalogSkin[]): CatalogSkin[] 
 
 function pickSlides(db: DatabaseSync, date: string): CatalogSkin[] {
   const catalog = allCatalogSkins(db)
-  // Only skins with a known RP price — the overlay's price line should
+  // Only skins with a known RP price - the overlay's price line should
   // never read "unknown" on the front page.
   const field = catalog.filter((s) => factsFor(s.id)?.cost != null)
   if (field.length === 0) return []

@@ -1,5 +1,5 @@
 // Static skin facts (server-only): RP cost, rarity, availability, skin
-// lines, release dates — snapshotted from the League Wiki's SkinData module
+// lines, release dates - snapshotted from the League Wiki's SkinData module
 // (rarity from CommunityDragon) into the committed dataset at
 // ../data/skin-facts.json (see scripts/snapshot-facts.mjs).
 // Never fetched at runtime: a community-source outage must not take a game down.
@@ -31,7 +31,7 @@ const SKINS: Record<string, SkinFacts> = Object.fromEntries(
 )
 
 // The RP tiers Price Check offers as answers. Rarer price points (390 RP
-// relics, one-off 2775/5000, gacha 150000) are excluded — a button that is
+// relics, one-off 2775/5000, gacha 150000) are excluded - a button that is
 // almost never the answer is a wasted button.
 export const PRICE_TIERS = [520, 750, 975, 1350, 1820, 3250] as const
 
@@ -48,7 +48,7 @@ export function priceCheckIds(): string[] {
 
 // skinId → skin lines, for the Mirror's taste profile ("you over-index on
 // Coven"). Most skins carry exactly one set. The wiki also files ~80 vaulted
-// skins under a "Legacy" set — that's an availability bucket, not a theme,
+// skins under a "Legacy" set - that's an availability bucket, not a theme,
 // so it's excluded here (availability already carries it).
 export function skinSets(skinId: string): string[] {
   return (SKINS[skinId]?.sets ?? []).filter((s) => s !== 'Legacy')

@@ -1,8 +1,8 @@
 // Auth wrapper around @logto/react that makes token failures recoverable.
 //
 // - getApiToken talks to the Logto client directly (the useLogto() proxy
-//   swallows errors and returns undefined), so a dead session — expired or
-//   revoked refresh token — can be told apart from a transient network blip.
+//   swallows errors and returns undefined), so a dead session - expired or
+//   revoked refresh token - can be told apart from a transient network blip.
 // - A dead session clears the local tokens and flips the UI to signed-out,
 //   instead of leaving a zombie "header says signed in but every call fails"
 //   state that only a manual sign-out could escape.
@@ -37,7 +37,7 @@ export const sessionExpiredStore = {
   },
 }
 
-// The refresh token is missing, expired, or revoked — only a fresh sign-in
+// The refresh token is missing, expired, or revoked - only a fresh sign-in
 // can recover. (The token endpoint reports this as an OIDC `invalid_grant`
 // error, which the SDK wraps in LogtoError as an unexpected response shape.)
 function isSessionDead(err: unknown): boolean {
@@ -116,7 +116,7 @@ export function useAuth() {
   // wrapped signIn/signOut: the wrappers flip the SDK-wide isLoading flag
   // (and signIn never resets it, assuming the page is about to unload), which
   // blanks every page that gates rendering on isLoading until the redirect
-  // lands — or forever, if it fails. The wrappers also swallow errors; here a
+  // lands - or forever, if it fails. The wrappers also swallow errors; here a
   // failed redirect keeps the page intact and tells the user.
   const login = useCallback(() => {
     sessionExpiredStore.set(false)
