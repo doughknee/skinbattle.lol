@@ -119,9 +119,12 @@ Coolify command).
 
 Password change, forgot password, and passkeys are **Logto sign-in-experience features**,
 not app code — the app's Account tab links to Logto's hosted Account Center at
-**`{LOGTO_ENDPOINT}/account`** ("Manage sign-in & security"). Identity stays in Logto.
+**`{LOGTO_ENDPOINT}/account/security`** ("Manage sign-in & security"). Identity stays in
+Logto. Note the path: the bare `/account` base renders Logto's deliberate not-found page
+(as of v1.40 the security page is the Account Center's only released page; the profile
+page is still behind Logto's dev-features flag), so links must target `/account/security`.
 
-Version requirements (the compose files use `svhd/logto:latest`; if you pin, pin ≥ these):
+Version requirements (the compose files pin `svhd/logto`; if you bump, stay ≥ these):
 - **≥ v1.38** — passkey sign-in (first-class WebAuthn login).
 - **≥ v1.39** — Account Center security page (MFA management, social linking, account deletion entry).
 
