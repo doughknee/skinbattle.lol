@@ -24,6 +24,15 @@ export default defineConfig({
       },
     },
   },
+  // The OG-card renderer (server-only, reached via dynamic import from
+  // server-route handlers) pulls in a native .node binding — esbuild's dev
+  // dependency optimizer can't pre-bundle it and must leave both to Node.
+  optimizeDeps: {
+    exclude: ['@resvg/resvg-js', 'satori'],
+  },
+  ssr: {
+    external: ['@resvg/resvg-js', 'satori'],
+  },
   css: {
     // We use the @tailwindcss/vite plugin, not PostCSS. Setting an explicit
     // (empty) postcss config stops Vite from walking up to the parent repo's

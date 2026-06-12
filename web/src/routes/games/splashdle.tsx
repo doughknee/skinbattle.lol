@@ -25,6 +25,7 @@ import {
 } from '~/lib/games/serverFns'
 import { guestRestoreToken, rememberGuestToken } from '~/lib/games/client'
 import { ogMeta } from '~/lib/games/ogMeta'
+import { skinSlug } from '~/lib/games/slug'
 import type {
   GuessOption,
   SplashdleGuess,
@@ -601,7 +602,14 @@ function ResultPanel({
             : 'Out of guesses'}
         </p>
         <h2 className="font-serif text-3xl md:text-4xl font-bold text-gold1">
-          {answer.name}
+          <Link
+            to="/skins/$slug"
+            params={{ slug: skinSlug(answer.name, answer.skinId) }}
+            className="transition duration-150 hover:text-gold2"
+            title="View this skin's page"
+          >
+            {answer.name}
+          </Link>
         </h2>
         <p className="text-grey1">{answer.championName}</p>
       </div>

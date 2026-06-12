@@ -63,13 +63,20 @@ function DroughtRowItem({ row, maxDays }: { row: DroughtRow; maxDays: number }) 
       <span className="w-9 shrink-0 text-right font-serif text-sm font-bold text-grey1">
         #{row.rank}
       </span>
-      <img
-        src={row.lastSkinSplashUrl}
-        alt={row.lastSkinName}
-        loading="lazy"
-        decoding="async"
-        className="aspect-video w-20 shrink-0 object-cover outline outline-icon/20 -outline-offset-1"
-      />
+      <Link
+        to="/skins/$slug"
+        params={{ slug: row.lastSkinSlug }}
+        className="shrink-0 outline outline-icon/20 -outline-offset-1 transition duration-150 hover:outline-gold2"
+        title={row.lastSkinName}
+      >
+        <img
+          src={row.lastSkinSplashUrl}
+          alt={row.lastSkinName}
+          loading="lazy"
+          decoding="async"
+          className="aspect-video w-20 object-cover"
+        />
+      </Link>
       <div className="min-w-0 flex-1">
         <p className="truncate font-serif font-bold text-gold1">
           {row.championName}

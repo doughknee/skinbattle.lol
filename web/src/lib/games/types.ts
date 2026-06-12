@@ -183,6 +183,39 @@ export interface PriceCheckState {
   guestToken: string
 }
 
+// ─── Skin pages (stable URLs) ───────────────────────────────────────────────
+
+export interface SkinPageState {
+  skinId: string
+  slug: string // canonical — loaders redirect non-canonical spellings here
+  name: string
+  championId: string
+  championName: string
+  splashUrl: string
+  facts: {
+    cost: number | null
+    rarity: string | null
+    availability: string | null
+    sets: string[]
+    release: string | null
+  } | null
+  community: {
+    rating: number
+    uncertainty: number
+    battles: number
+    wins: number
+    rank: number
+    calibrated: boolean // false = "Early ranking — needs more votes"
+  } | null // null = never battled
+  ratedTotal: number
+  personal: {
+    rating: number
+    battles: number
+    gap: number | null // vs community; null when the skin is unranked
+  } | null
+  guestToken: string
+}
+
 // ─── Insights: the Skin Drought Index ───────────────────────────────────────
 
 export interface DroughtRow {
@@ -191,6 +224,7 @@ export interface DroughtRow {
   championName: string
   days: number
   lastSkinId: string
+  lastSkinSlug: string
   lastSkinName: string
   lastSkinSplashUrl: string
   lastSkinDate: string // YYYY-MM-DD
@@ -217,6 +251,7 @@ export type TierName = 'S' | 'A' | 'B' | 'C' | 'D'
 
 export interface MirrorSkin {
   skinId: string
+  slug: string // stable URL: /skins/<slug>
   name: string
   championName: string
   splashUrl: string
@@ -233,6 +268,7 @@ export interface MirrorTier {
 // live in server/mirror.ts) — otherwise "contrarian" is just noise.
 export interface ContrarianTake {
   skinId: string
+  slug: string
   name: string
   championName: string
   splashUrl: string

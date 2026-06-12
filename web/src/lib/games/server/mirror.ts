@@ -24,6 +24,7 @@ import { peekUser } from './guests'
 import { globalRank } from './ratings'
 import { userBattleCounts } from './quickbattle'
 import { skinSets } from './facts'
+import { skinSlug } from '../slug'
 
 // ─── tuning ─────────────────────────────────────────────────────────────────
 
@@ -92,6 +93,7 @@ function loadRatedRows(db: DatabaseSync, userId: string): RatedRow[] {
 function toMirrorSkin(r: RatedRow): MirrorSkin {
   return {
     skinId: r.skinId,
+    slug: skinSlug(r.name, r.skinId),
     name: r.name,
     championName: r.championName,
     splashUrl: r.splashUrl,
@@ -131,6 +133,7 @@ function buildContrarian(db: DatabaseSync, rows: RatedRow[]): ContrarianTake[] {
     .slice(0, CONTRARIAN_LIMIT)
     .map((r) => ({
       skinId: r.skinId,
+      slug: skinSlug(r.name, r.skinId),
       name: r.name,
       championName: r.championName,
       splashUrl: r.splashUrl,

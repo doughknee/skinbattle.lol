@@ -100,15 +100,17 @@ function SkinTile({ skin, tier }: { skin: MirrorSkin; tier: TierName }) {
   return (
     <li
       title={`${skin.name} — ${skin.rating} · ${skin.battles} ${skin.battles === 1 ? 'battle' : 'battles'}`}
-      className={`relative w-24 shrink-0 overflow-hidden bg-hextech-black/60 outline -outline-offset-1 ${TIER_STYLE[tier].tile}`}
+      className={`relative w-24 shrink-0 overflow-hidden bg-hextech-black/60 outline -outline-offset-1 transition duration-150 hover:outline-gold2 ${TIER_STYLE[tier].tile}`}
     >
-      <img
-        src={skin.splashUrl}
-        alt={skin.name}
-        loading="lazy"
-        decoding="async"
-        className="aspect-video w-full object-cover"
-      />
+      <Link to="/skins/$slug" params={{ slug: skin.slug }}>
+        <img
+          src={skin.splashUrl}
+          alt={skin.name}
+          loading="lazy"
+          decoding="async"
+          className="aspect-video w-full object-cover"
+        />
+      </Link>
     </li>
   )
 }
@@ -149,7 +151,15 @@ function TakeRow({ take }: { take: ContrarianTake }) {
         className="aspect-video w-28 shrink-0 object-cover outline outline-icon/20 -outline-offset-1"
       />
       <div className="min-w-0 flex-1">
-        <p className="truncate font-serif font-bold text-gold1">{take.name}</p>
+        <p className="truncate font-serif font-bold text-gold1">
+          <Link
+            to="/skins/$slug"
+            params={{ slug: take.slug }}
+            className="transition duration-150 hover:text-gold2"
+          >
+            {take.name}
+          </Link>
+        </p>
         <p className="truncate text-sm text-grey1">
           {take.championName} · You{' '}
           <b className="text-gold1">{take.personal}</b> · the room{' '}

@@ -434,6 +434,79 @@ async function renderCard(card: OgCard): Promise<Buffer> {
   return png
 }
 
+// Per-skin OG card: splash + rating ± confidence + rank + battle count
+// (the roadmap's skin-page card spec). Cached per skin per UTC day.
+export async function skinOgResponse(skinId: string): Promise<Response> {
+  const db = getDb()
+  await ensureCatalog(db)
+  const { getCatalogSkin } = await import('./catalog')
+  const skin = getCatalogSkin(db, skinId)
+  if (!skin || !/^\d+$/.test(skinId)) {
+    return new Response('Not found', { status: 404 })
+  }
+
+  try {
+    const dir = join(DATA_DIR, 'cache')
+    mkdirSync(dir, { recursive: true })
+    const path = join(dir, `og-skin-${skinId}-${utcToday()}.png`)
+    let png: Buffer
+    if (existsSync(path)) {
+      png = readFileSync(path)
+    } else {
+      const rating = db
+        .prepare(
+          'SELECT rating, uncertainty, battles FROM skin_ratings WHERE skin_id = ? AND battles > 0',
+        )
+        .get(skinId) as
+        | { rating: number; uncertainty: number; battles: number }
+        | undefined
+      const { globalRank } = await import('./ratings')
+      const ratedTotal = (
+        db
+          .prepare('SELECT COUNT(*) AS c FROM skin_ratings WHERE battles > 0')
+          .get() as { c: number }
+      ).c
+      const statLine = rating
+        ? `${Math.round(rating.rating)} ± ${Math.round(rating.uncertainty)} · #${globalRank(db, rating.rating)} of ${ratedTotal} rated · ${rating.battles} battles`
+        : 'Unranked — no battles fought yet'
+
+      const bg = await fetchAsDataUri(skin.splashUrl)
+      const node = frame(bg ? splashBg(bg) : null, [
+        el(
+          'div',
+          { flexDirection: 'column', gap: 16, justifyContent: 'flex-end', flexGrow: 1 },
+          eyebrow(skin.championName),
+          title(skin.name, 66),
+          text(statLine, {
+            fontFamily: 'Inter',
+            fontWeight: 600,
+            fontSize: 30,
+            color: C.gold1,
+          }),
+        ),
+      ])
+      const svg = await satori(node as never, {
+        width: W,
+        height: H,
+        fonts: fonts() as never,
+      })
+      png = Buffer.from(
+        new Resvg(svg, { fitTo: { mode: 'width', value: W } }).render().asPng(),
+      )
+      writeFileSync(path, png)
+    }
+    return new Response(new Uint8Array(png), {
+      headers: {
+        'content-type': 'image/png',
+        'cache-control': 'public, max-age=3600',
+      },
+    })
+  } catch (err) {
+    console.error(`og skin card render failed (${skinId}):`, err)
+    return new Response('Card unavailable', { status: 500 })
+  }
+}
+
 export async function ogCardResponse(card: string): Promise<Response> {
   if (!(OG_CARDS as readonly string[]).includes(card)) {
     return new Response('Not found', { status: 404 })
