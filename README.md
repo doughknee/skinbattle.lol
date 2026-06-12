@@ -15,8 +15,9 @@ The API contract both halves implement is [`CONTRACT.md`](CONTRACT.md). The migr
 rationale and phasing is [`MIGRATION.md`](MIGRATION.md). Deployment (Coolify + Logto +
 user migration) is [`DEPLOY.md`](DEPLOY.md).
 
-> The original Next.js app still lives at the repo root (`src/`, root `package.json`)
-> and is kept as an instant rollback until the new stack is cut over.
+> The original Next.js monolith has been removed now that the new stack is the
+> only deployed app. It is preserved at the `legacy-nextjs-rollback` git tag if a
+> rollback is ever needed.
 
 ## Quick start (local, Docker)
 
