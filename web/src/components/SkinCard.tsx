@@ -26,6 +26,9 @@ interface SkinCardProps {
   showChampion?: boolean
   // Leaderboard position badge overlaid on the splash (#1, #2, ...).
   rank?: number
+  // What the rank badge means here, e.g. "by battle rating in this wardrobe"
+  // — shown as the badge tooltip. Rank meaning is contextual per page.
+  rankContext?: string
 }
 
 const chipBase =
@@ -44,6 +47,7 @@ export default function SkinCard({
   initialX,
   showChampion = false,
   rank,
+  rankContext,
 }: SkinCardProps) {
   const { isAuthenticated, withApiToken, login } = useAuth()
 
@@ -190,6 +194,7 @@ export default function SkinCard({
         {rank != null && (
           <span
             aria-label={`Ranked #${rank}`}
+            title={rankContext ? `#${rank} ${rankContext}` : undefined}
             className={`absolute left-2 top-2 bg-hextech-black/85 px-2 py-0.5 font-serif text-sm font-bold outline -outline-offset-1 ${
               rank === 1
                 ? 'text-gold2 outline-gold2'

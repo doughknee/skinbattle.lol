@@ -3,12 +3,15 @@ import { useEffect } from 'react'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import {
   faArrowLeft,
+  faBan,
   faChartLine,
   faCircleInfo,
   faRankingStar,
   faShuffle,
+  faStar,
 } from '@fortawesome/free-solid-svg-icons'
 import ErrorState from '~/components/ErrorState'
+import { api } from '~/lib/api'
 import { btnPrimarySm, btnSecondarySm } from '~/lib/ui'
 import { fetchSkinPage } from '~/lib/games/serverFns'
 import { guestRestoreToken, rememberGuestToken } from '~/lib/games/client'
@@ -30,7 +33,25 @@ export const Route = createFileRoute('/skins_/$slug')({
         statusCode: 301,
       })
     }
-    return state
+    // Star/ban/net-vote totals come from the Go API. Display rule: these are
+    // the SUPERLATIVE currency (badges), never a competing rank — Elo above
+    // is the rank. Non-fatal: the dossier must not break when the API is
+    // unreachable; the badges just hide.
+    let votes: { net: number; stars: number; bans: number } | null = null
+    try {
+      const champ = await api.champion(state.championId)
+      const s = champ.skins.find((sk) => sk.id === state.skinId)
+      if (s) {
+        votes = {
+          net: s.total_votes || 0,
+          stars: s.total_stars || 0,
+          bans: s.total_x || 0,
+        }
+      }
+    } catch {
+      /* badges hide */
+    }
+    return { ...state, votes }
   },
   head: ({ loaderData }) => ({
     meta: loaderData
@@ -158,6 +179,29 @@ function SkinPage() {
               </p>
             </>
           )}
+          {state.votes &&
+            (state.votes.stars > 0 ||
+              state.votes.bans > 0 ||
+              state.votes.net !== 0) && (
+              <p className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm">
+                {state.votes.stars > 0 && (
+                  <span className="font-bold text-gold2">
+                    <FontAwesomeIcon icon={faStar} className="mr-1 h-3" />
+                    {state.votes.stars.toLocaleString()}
+                  </span>
+                )}
+                {state.votes.bans > 0 && (
+                  <span className="font-bold text-red-300">
+                    <FontAwesomeIcon icon={faBan} className="mr-1 h-3" />
+                    {state.votes.bans.toLocaleString()}
+                  </span>
+                )}
+                <span className="text-grey1">
+                  {state.votes.net >= 0 ? '+' : ''}
+                  {state.votes.net.toLocaleString()} net votes
+                </span>
+              </p>
+            )}
         </div>
 
         <div className={card}>

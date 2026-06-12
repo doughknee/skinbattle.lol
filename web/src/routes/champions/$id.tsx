@@ -4,6 +4,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faArrowLeft } from '@fortawesome/free-solid-svg-icons'
 import { api } from '~/lib/api'
 import { useAuth } from '~/lib/useAuth'
+import { fetchRankings } from '~/lib/games/serverFns'
 import SkinCard from '~/components/SkinCard'
 import Dropdown from '~/components/Dropdown'
 import ErrorState from '~/components/ErrorState'
@@ -16,7 +17,23 @@ export const Route = createFileRoute('/champions/$id')({
     // Base (public) champion data. User-vote columns are layered in
     // client-side once we have a Logto access token.
     const champion = await api.champion(params.id)
-    return { champion }
+    // Battle-Elo ranks for the wardrobe — display rule: Elo is THE rank;
+    // star/ban/vote counts are badges and sorts, never a competing rank.
+    // Non-fatal: the page works without the games layer; badges just hide.
+    let elo: Record<string, { rank: number; rating: number }> = {}
+    try {
+      const r = await fetchRankings({
+        data: { slice: `champion-${params.id.toLowerCase()}` },
+      })
+      if (r) {
+        elo = Object.fromEntries(
+          r.rows.map((row) => [row.skinId, { rank: row.rank, rating: row.rating }]),
+        )
+      }
+    } catch {
+      /* unrated wardrobe — no badges */
+    }
+    return { champion, elo }
   },
   head: ({ loaderData }) => ({
     meta: [
@@ -43,7 +60,7 @@ export const Route = createFileRoute('/champions/$id')({
 
 function ChampionPage() {
   const { id } = Route.useParams()
-  const { champion: baseChampion } = Route.useLoaderData()
+  const { champion: baseChampion, elo } = Route.useLoaderData()
   const { isAuthenticated, getApiToken } = useAuth()
   const [champion, setChampion] = useState<Champion>(baseChampion)
   const [loreExpanded, setLoreExpanded] = useState(false)
@@ -51,30 +68,33 @@ function ChampionPage() {
 
   const skinSortOptions = [
     { value: 'release', label: 'Release Order' },
+    { value: 'rating', label: 'Battle Rating' },
     { value: 'votes', label: 'Most Votes' },
     { value: 'stars', label: 'Most Starred' },
     { value: 'x', label: 'Most Banned' },
   ]
 
-  // Community rank per skin (by net votes, stars as tiebreaker). Only shown
-  // once this champion has any votes at all — ranking zeroes reads as broken.
-  const ranks = useMemo(() => {
-    const hasVotes = champion.skins.some(
-      (s) => (s.total_votes || 0) !== 0 || (s.total_stars || 0) > 0,
-    )
-    if (!hasVotes) return new Map<string, number>()
-    const byVotes = [...champion.skins].sort(
-      (a, b) =>
-        (b.total_votes || 0) - (a.total_votes || 0) ||
-        (b.total_stars || 0) - (a.total_stars || 0) ||
-        (a.total_x || 0) - (b.total_x || 0),
-    )
-    return new Map(byVotes.map((s, i) => [s.id, i + 1]))
-  }, [champion.skins])
+  // The rank badge is the battle-Elo rank within this wardrobe (from the
+  // champion ranking slice). Skins nobody has battled yet get no badge —
+  // ranking zeroes reads as broken.
+  const ranks = useMemo(
+    () =>
+      new Map<string, number>(
+        Object.entries(elo).map(([skinId, e]) => [skinId, e.rank]),
+      ),
+    [elo],
+  )
 
   const sortedSkins = useMemo(() => {
     const skins = [...champion.skins]
     switch (sortBy) {
+      case 'rating':
+        skins.sort(
+          (a, b) =>
+            (elo[b.id]?.rating ?? -Infinity) - (elo[a.id]?.rating ?? -Infinity) ||
+            a.num - b.num,
+        )
+        break
       case 'votes':
         skins.sort((a, b) => (b.total_votes || 0) - (a.total_votes || 0))
         break
@@ -88,7 +108,7 @@ function ChampionPage() {
         skins.sort((a, b) => a.num - b.num)
     }
     return skins
-  }, [champion.skins, sortBy])
+  }, [champion.skins, sortBy, elo])
 
   // Re-fetch with the access token so the user's own votes are reflected.
   useEffect(() => {
@@ -202,6 +222,7 @@ function ChampionPage() {
               initialStar={skin.user_star ?? false}
               initialX={skin.user_x ?? false}
               rank={ranks.get(skin.id)}
+              rankContext="in this wardrobe by battle rating"
             />
           ))}
         </div>
