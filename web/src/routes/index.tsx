@@ -5,9 +5,6 @@ import {
   faArrowDown,
   faStar,
   faBan,
-  faGamepad,
-  faTrophy,
-  faComments,
   faArrowRight,
 } from '@fortawesome/free-solid-svg-icons'
 import type { IconDefinition } from '@fortawesome/fontawesome-svg-core'
@@ -15,6 +12,7 @@ import SkinCard from '~/components/SkinCard'
 import EmptyState from '~/components/EmptyState'
 import { HomeSkeleton } from '~/components/Skeletons'
 import { api } from '~/lib/api'
+import { SITE_SECTIONS } from '~/lib/siteMap'
 import { btnPrimary, btnSecondary } from '~/lib/ui'
 import type { Skin } from '~/lib/types'
 
@@ -64,26 +62,9 @@ const steps: { icon: IconDefinition; title: string; blurb: string }[] = [
   },
 ]
 
-const upcoming: { icon: IconDefinition; title: string; blurb: string }[] = [
-  {
-    icon: faGamepad,
-    title: 'Skin-Based Games',
-    blurb:
-      'Compete in challenges that test your skin knowledge, with rewards driven by community votes.',
-  },
-  {
-    icon: faTrophy,
-    title: 'Leaderboards & Achievements',
-    blurb:
-      'Track your votes, climb the rankings, and unlock achievements for your contributions.',
-  },
-  {
-    icon: faComments,
-    title: 'Polls & Discussions',
-    blurb:
-      'Join skin-specific debates, vote on upcoming features, and help shape the platform.',
-  },
-]
+// The games hub pages (5 games + leaderboards), straight from the site map so
+// the home page never drifts from what's actually live.
+const gamePages = SITE_SECTIONS.find((s) => s.to === '/games')?.children ?? []
 
 function formatCount(n: number): string {
   return n.toLocaleString('en-US')
@@ -224,25 +205,35 @@ function HomePage() {
         )}
       </section>
 
-      {/* ── What's coming next ───────────────────────────────── */}
+      {/* ── Games & leaderboards (live) ──────────────────────── */}
       <section className="container mx-auto px-6 py-24">
         <SectionHeading
-          title="What's Coming Next"
-          subtitle="SkinBattle is just getting started. Here's what's on the way."
+          title="Daily Games & Leaderboards"
+          subtitle="Rankings are just the start. Prove your skin knowledge in daily challenges, then climb the leaderboards."
         />
-        <div className="stagger grid grid-cols-1 md:grid-cols-3 gap-6">
-          {upcoming.map((f) => (
-            <div
-              key={f.title}
-              className="bg-hextech-black/30 outline outline-icon/20 -outline-offset-2 p-8 transition duration-150 hover:outline-icon"
+        <div className="stagger grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          {gamePages.map((g) => (
+            <Link
+              key={g.to}
+              to={g.to}
+              className="group bg-hextech-black/30 outline outline-icon/20 -outline-offset-2 p-8 transition duration-150 hover:outline-icon"
             >
-              <FontAwesomeIcon icon={f.icon} className="h-9 w-9 text-gold2 mb-4" />
-              <h3 className="font-serif text-xl font-bold text-gold1 mb-2">
-                {f.title}
+              <FontAwesomeIcon icon={g.icon} className="h-9 w-9 text-gold2 mb-4" />
+              <h3 className="font-serif text-xl font-bold text-gold1 mb-2 transition duration-150 group-hover:text-gold2">
+                {g.label}
               </h3>
-              <p className="text-grey1">{f.blurb}</p>
-            </div>
+              <p className="text-grey1">{g.blurb}</p>
+            </Link>
           ))}
+        </div>
+        <div className="mt-10 text-center">
+          <Link to="/games" className={`group ${btnSecondary}`}>
+            Browse all games
+            <FontAwesomeIcon
+              icon={faArrowRight}
+              className="h-4 transition-transform duration-150 group-hover:translate-x-1"
+            />
+          </Link>
         </div>
       </section>
 
