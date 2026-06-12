@@ -147,8 +147,11 @@ const LIVE_NOW: { label: string; to: string; params?: object }[] = [
   { label: 'Chroma Vision', to: '/battle/chroma-vision' },
   { label: 'Leaderboards', to: '/battle/leaderboards' },
   { label: 'Your Mirror', to: '/profile' },
-  { label: 'The full ranking', to: '/rankings/$slice', params: { slice: 'all' } },
-  { label: 'Rankings by price, line, champion, year', to: '/rankings' },
+  {
+    label: 'The full ranking — sliceable by price, line, champion, year',
+    to: '/rankings/$slice',
+    params: { slice: 'all' },
+  },
   { label: 'Awards', to: '/rankings/awards' },
   { label: 'The Drought Index', to: '/rankings/drought' },
 ]

@@ -29,7 +29,9 @@ const groupShade =
 
 function sectionIsActive(section: SiteSection, pathname: string): boolean {
   if (section.to === '/') return pathname === '/'
-  const own = pathname.startsWith(section.to)
+  // `match` widens ownership when the landing page lives deeper than the
+  // section's subtree (Rankings lands on /rankings/all, owns /rankings/*).
+  const own = pathname.startsWith(section.match ?? section.to)
   const child = (section.children ?? []).some((c) => pathname.startsWith(c.to))
   return own || child
 }

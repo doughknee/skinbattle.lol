@@ -37,7 +37,8 @@ Route count is not a smell; door count is.
 /champions               The catalog's "By Champion" lens (keeps its URL;
                          lives under the Skins door in every nav surface)
   /champions/$id         Leaf: champion dossier — wardrobe, lore, voting.
-/rankings                Every verdict surface
+/rankings                Every verdict surface (redirects to /rankings/all;
+                         slice discovery is the slice bar on the page itself)
   /rankings/$slice       Leaf: all | price-* | line-* | champion-* | year-*
   /rankings/drought      Days since each champion's last skin
   /rankings/awards       Community Awards — the star & ban superlatives
@@ -109,7 +110,7 @@ the "By champion" lens (two views, one door — not a redesign).
 **Battle · Skins · Rankings** (+ Champions until PR 2 lands) + search (Ctrl+K)
 + quota + account. Battle styled as the accent item — it's the brand verb.
 Dropdowns stay registry-driven: Battle ▾ (dailies, leaderboards), Rankings ▾
-(full ranking, slices, drought, awards). Account menu owns the profile/Mirror.
+(full ranking, drought, awards). Account menu owns the profile/Mirror.
 
 ## Home page funnel
 
