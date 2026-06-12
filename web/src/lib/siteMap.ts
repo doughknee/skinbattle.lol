@@ -11,6 +11,7 @@
 
 import {
   faChartLine,
+  faCheckToSlot,
   faCoins,
   faCrown,
   faHourglassHalf,
@@ -25,12 +26,15 @@ import {
   faShirt,
   faShuffle,
   faTrophy,
+  faUser,
   faUsers,
 } from '@fortawesome/free-solid-svg-icons'
 import type { IconDefinition } from '@fortawesome/fontawesome-svg-core'
 
 export interface SitePage {
   to: string
+  // Search params for links that target a tab of a page (/profile?tab=votes).
+  linkSearch?: Record<string, string>
   label: string
   // One-line description - shown in nav dropdowns and the command palette.
   blurb: string
@@ -65,6 +69,26 @@ export const PROFILE: SitePage = {
   icon: faScaleUnbalanced,
   search: 'profile account settings my votes mirror tier list taste sign in',
 }
+
+// The profile's tabs, for surfaces that link straight into them (the
+// footer's You column). Not part of allSitePages - they share /profile.
+export const PROFILE_PAGES: SitePage[] = [
+  PROFILE,
+  {
+    to: '/profile',
+    linkSearch: { tab: 'votes' },
+    label: 'My Votes',
+    blurb: 'Your stars and bans, in one place.',
+    icon: faCheckToSlot,
+  },
+  {
+    to: '/profile',
+    linkSearch: { tab: 'account' },
+    label: 'Account',
+    blurb: 'Username, avatar, and sign-in settings.',
+    icon: faUser,
+  },
+]
 
 export const SITE_SECTIONS: SiteSection[] = [
   {
@@ -120,11 +144,13 @@ export const SITE_SECTIONS: SiteSection[] = [
     ],
   },
   {
-    to: '/rankings',
+    // The section lands on the full ranking - the list IS the product; the
+    // slice hub stays one click away as a child ("Browse the Slices").
+    to: '/rankings/all',
     label: 'Rankings',
     blurb: 'The community verdict, sliced every way an argument needs.',
     icon: faRankingStar,
-    search: 'best worst top tier list insights',
+    search: 'best worst top tier list insights skins overall',
     children: [
       {
         to: '/rankings/all',

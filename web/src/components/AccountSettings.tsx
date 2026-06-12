@@ -332,8 +332,10 @@ function AvatarSection({
 // ─── sign-in & security ─────────────────────────────────────────────────────
 
 // Password, passkeys, and MFA live in Logto, not in app code - link out to
-// its hosted Account Center ({endpoint}/account, Logto ≥1.39; see DEPLOY.md
-// for the console toggles that enable each section).
+// its hosted Account Center security page ({endpoint}/account/security,
+// Logto ≥1.39; see DEPLOY.md for the console toggles that enable each
+// section). The bare /account base path deliberately renders Logto's
+// not-found page, so the link must target the security page itself.
 function SecuritySection() {
   const endpoint = getPublicConfig().logtoEndpoint
   if (!endpoint) return null
@@ -346,7 +348,7 @@ function SecuritySection() {
         sign-in service.
       </p>
       <a
-        href={`${endpoint.replace(/\/$/, '')}/account`}
+        href={`${endpoint.replace(/\/$/, '')}/account/security`}
         target="_blank"
         rel="noopener noreferrer"
         className={`${btnChip} inline-flex items-center gap-2`}

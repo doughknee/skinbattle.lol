@@ -1,7 +1,7 @@
 import { Link } from '@tanstack/react-router'
 import { CrownMark, Wordmark } from './Brand'
 import {
-  PROFILE,
+  PROFILE_PAGES,
   SECONDARY_PAGES,
   SITE_SECTIONS,
   type SitePage,
@@ -18,9 +18,11 @@ function Column({ title, pages }: { title: string; pages: SitePage[] }) {
       </p>
       <ul className="space-y-2 text-sm">
         {pages.map((p) => (
-          <li key={p.to}>
+          // Tab links share a pathname (/profile), so the key needs the label.
+          <li key={`${p.to}-${p.label}`}>
             <Link
               to={p.to}
+              search={p.linkSearch}
               className="text-grey1 hover:text-gold1 transition duration-150"
             >
               {p.label}
@@ -34,8 +36,11 @@ function Column({ title, pages }: { title: string; pages: SitePage[] }) {
 
 export default function Footer() {
   // Each section with children gets its own column; anything childless plus
-  // the profile link groups into a final "You" column.
-  const you = [...SITE_SECTIONS.filter((s) => !s.children?.length), PROFILE]
+  // the profile pages (mirror, votes, account) group into a "You" column.
+  const you = [
+    ...SITE_SECTIONS.filter((s) => !s.children?.length),
+    ...PROFILE_PAGES,
+  ]
   const grouped = SITE_SECTIONS.filter((s) => (s.children?.length ?? 0) > 0)
 
   return (
