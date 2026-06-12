@@ -29,7 +29,7 @@ export default function DeleteAccountButton() {
       <button onClick={handleDelete} className={`${btnDanger} w-full`}>
         Delete Account
       </button>
-      {errorMsg && <p className="mt-3 text-sm text-red-300">{errorMsg}</p>}
+      {errorMsg && <p className="mt-3 text-sm text-danger">{errorMsg}</p>}
     </div>
   )
 }

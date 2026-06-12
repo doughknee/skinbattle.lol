@@ -17,6 +17,7 @@ import Lightbox from '~/components/Lightbox'
 import GuestAttachment from '~/components/GuestAttachment'
 import Footer from '~/components/Footer'
 import { readServerConfig, type PublicConfig } from '~/lib/config'
+import { PALETTE } from '~/lib/brand'
 
 const SITE_URL = 'https://skinbattle.lol'
 const SITE_TITLE = 'SKINBATTLE.LOL · League of Legends Skin Rankings'
@@ -36,7 +37,7 @@ export const Route = createRootRoute({
       { name: 'viewport', content: 'width=device-width, initial-scale=1' },
       { title: SITE_TITLE },
       { name: 'description', content: SITE_DESCRIPTION },
-      { name: 'theme-color', content: '#0A1428' },
+      { name: 'theme-color', content: PALETTE.blue7 },
       // Open Graph / Twitter cards - what Reddit and Discord shares render.
       { property: 'og:type', content: 'website' },
       { property: 'og:site_name', content: 'SKINBATTLE.LOL' },
@@ -103,7 +104,7 @@ function RootDocument({
   return (
     <html
       lang="en"
-      className="bg-linear-220 from-gradientTop via-[#0A1428] to-gradientBottom bg-fixed"
+      className="bg-linear-220 from-gradientTop via-blue7 to-gradientBottom bg-fixed"
     >
       <head>
         <HeadContent />

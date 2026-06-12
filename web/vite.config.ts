@@ -34,9 +34,8 @@ export default defineConfig({
     external: ['@resvg/resvg-js', 'satori'],
   },
   css: {
-    // We use the @tailwindcss/vite plugin, not PostCSS. Setting an explicit
-    // (empty) postcss config stops Vite from walking up to the parent repo's
-    // postcss.config.mjs (which references the Next.js app's deps).
+    // We use the @tailwindcss/vite plugin, not PostCSS. An explicit (empty)
+    // postcss config stops Vite from searching the filesystem for one.
     postcss: {},
   },
   plugins: [

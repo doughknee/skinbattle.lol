@@ -44,7 +44,7 @@ const TIER_STYLE: Record<TierName, { label: string; tile: string }> = {
   A: { label: 'text-gold2', tile: 'outline-gold5/60' },
   B: { label: 'text-blue2', tile: 'outline-blue3/60' },
   C: { label: 'text-grey1', tile: 'outline-icon/30' },
-  D: { label: 'text-red-300', tile: 'outline-red-400/40' },
+  D: { label: 'text-danger', tile: 'outline-danger-border/40' },
 }
 
 function SectionHeading({
@@ -446,7 +446,7 @@ function TakeRow({ take }: { take: ContrarianTake }) {
       </div>
       <div className="shrink-0 text-right">
         <p
-          className={`font-serif text-xl font-bold ${hotter ? 'text-blue2' : 'text-red-300'}`}
+          className={`font-serif text-xl font-bold ${hotter ? 'text-blue2' : 'text-danger'}`}
         >
           {hotter ? '+' : '−'}
           {Math.abs(take.gap)}
@@ -486,7 +486,7 @@ function TasteList({
                 {e.kind === 'line' ? 'skin line' : 'champion'}
               </span>
               <span
-                className={`font-serif font-bold ${positive ? 'text-blue2' : 'text-red-300'}`}
+                className={`font-serif font-bold ${positive ? 'text-blue2' : 'text-danger'}`}
               >
                 {positive ? '+' : '−'}
                 {Math.abs(e.delta)}

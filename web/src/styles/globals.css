@@ -45,6 +45,23 @@
   --color-grey-cool: #1e282d;
   --color-hextech-black: #010a13;
 
+  /* Semantic state colors — the hextech palette has no red/green, so danger
+     and success are the one sanctioned off-palette family. Kept in lockstep
+     with lib/brand.ts (SEMANTIC) by brand.test.ts. */
+  --color-danger: #fca5a5;
+  --color-danger-border: #f87171;
+  --color-danger-surface: #450a0a;
+  --color-success: #047857;
+  --color-success-border: #34d399;
+
+  /* Signature gold glow — gold2 at varying intensity, the one bloom the brand
+     uses. `glow` is the card hover bloom; `glow-sm` is the tight dot/diamond
+     glow. Both are sourced from --color-gold2 so the color never drifts. */
+  --shadow-glow: 0 0 28px -6px
+    color-mix(in srgb, var(--color-gold2) 35%, transparent);
+  --shadow-glow-sm: 0 0 10px
+    color-mix(in srgb, var(--color-gold2) 60%, transparent);
+
   /* Motion tokens — entrance animations used across pages. */
   --animate-fade-up: fade-up 0.6s cubic-bezier(0.22, 1, 0.36, 1) both;
   --animate-fade-in: fade-in 0.5s ease-out both;
@@ -287,7 +304,7 @@
 
 /* The badge's resting glow — static, so no animation ever repaints it. */
 .vs-glow {
-  box-shadow: 0 0 16px rgba(200, 170, 110, 0.25);
+  box-shadow: 0 0 16px color-mix(in srgb, var(--color-gold2) 25%, transparent);
 }
 
 /* The beat of acknowledgment between pick and next pair: the chosen card
@@ -296,17 +313,17 @@
 @keyframes battle-win {
   0% {
     transform: scale(1);
-    box-shadow: 0 0 0 rgba(200, 170, 110, 0);
+    box-shadow: 0 0 0 transparent;
     filter: brightness(1);
   }
   40% {
     transform: scale(1.04);
-    box-shadow: 0 0 56px 4px rgba(200, 170, 110, 0.6);
+    box-shadow: 0 0 56px 4px color-mix(in srgb, var(--color-gold2) 60%, transparent);
     filter: brightness(1.18) saturate(1.12);
   }
   100% {
     transform: scale(1.02);
-    box-shadow: 0 0 30px rgba(200, 170, 110, 0.4);
+    box-shadow: 0 0 30px color-mix(in srgb, var(--color-gold2) 40%, transparent);
     filter: brightness(1.06) saturate(1.04);
   }
 }
@@ -461,7 +478,7 @@
   background: linear-gradient(
     90deg,
     transparent,
-    rgba(200, 170, 110, 0.09),
+    color-mix(in srgb, var(--color-gold2) 9%, transparent),
     transparent
   );
   animation: shimmer 1.6s infinite;
@@ -562,6 +579,17 @@ html {
 :where(a, button, input, select, textarea, [tabindex]):focus-visible {
   outline: 2px solid var(--color-gold2) !important;
   outline-offset: 2px !important;
+}
+
+/* Marcellus (--font-sans) ships only weight 400, so `font-bold` /
+   `font-semibold` on body/UI text renders as muddy synthetic bold. Carry that
+   emphasis in Cinzel instead — the brand's display face, which has real
+   500–800 weights (and is already what the buttons use). The rule across the
+   UI is then simply: Marcellus is always regular; anything bolder is Cinzel.
+   Headings and buttons already opt in via `font-serif`, so :not() leaves them
+   untouched; this only upgrades the elements that were faux-bolding. */
+:where(.font-bold, .font-semibold):not(.font-serif, .font-sans) {
+  font-family: var(--font-serif);
 }
 
 /* Legibility for text laid over splash art. */

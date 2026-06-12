@@ -56,8 +56,8 @@ export default function AccountSettings({
 
       <LogoutButton />
 
-      <div className="mt-8 border-t border-red-400/20 pt-6">
-        <p className="mb-1 text-xs font-semibold uppercase tracking-widest text-red-300/80">
+      <div className="mt-8 border-t border-danger-border/20 pt-6">
+        <p className="mb-1 text-xs font-semibold uppercase tracking-widest text-danger/80">
           Danger zone
         </p>
         <p className="mb-4 text-sm text-grey1">
@@ -147,7 +147,7 @@ function UsernameSection({
             </button>
           </div>
           <p
-            className={`mt-2 text-xs ${showHint ? 'text-red-300' : 'text-grey1'}`}
+            className={`mt-2 text-xs ${showHint ? 'text-danger' : 'text-grey1'}`}
           >
             {USERNAME_HINT}
           </p>
@@ -278,7 +278,7 @@ function AvatarSection({
             className="mb-3 h-10 w-full bg-hextech-black/60 px-3 text-sm text-gold1 outline outline-icon/40 -outline-offset-1 placeholder:text-grey1/60 focus:outline-gold2/60"
           />
           {loadError ? (
-            <p className="py-4 text-sm text-red-300">
+            <p className="py-4 text-sm text-danger">
               Couldn't load the champion list. Try again in a moment.
             </p>
           ) : !champions || !ddVersion ? (

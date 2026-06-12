@@ -30,7 +30,7 @@ const chipBase =
 const chipIdle =
   'bg-hextech-black/40 text-grey1 outline-icon/30 hover:text-gold1 hover:outline-icon'
 const chipGoldActive = 'bg-gold5/30 text-gold1 outline-gold2'
-const chipRedActive = 'bg-red-950/50 text-red-300 outline-red-400/70'
+const chipRedActive = 'bg-danger-surface/50 text-danger outline-danger-border/70'
 
 export default function SkinCard({
   skin,
@@ -133,7 +133,7 @@ export default function SkinCard({
   }
 
   return (
-    <div className="group relative flex h-full flex-col bg-hextech-black/30 transition duration-300 hover:shadow-[0_0_28px_-6px_rgba(200,170,110,0.35)]">
+    <div className="group relative flex h-full flex-col bg-hextech-black/30 transition duration-300 hover:shadow-glow">
       {/* Border drawn on an overlay so it stays visible over the splash art -
           the image's hover transform otherwise paints above an inset outline.
           Offset -1 keeps it flush with the edge so the image sits inside it. */}

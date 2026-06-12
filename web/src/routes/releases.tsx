@@ -44,7 +44,7 @@ function Entry({ entry }: { entry: ReleaseEntry }) {
       />
       <span
         aria-hidden
-        className="absolute left-0 top-1.5 h-[11px] w-[11px] rotate-45 bg-gold2 shadow-[0_0_10px_rgba(200,170,110,0.6)]"
+        className="absolute left-0 top-1.5 h-[11px] w-[11px] rotate-45 bg-gold2 shadow-glow-sm"
       />
 
       <p className="text-xs font-semibold uppercase tracking-[0.25em] text-gold2">

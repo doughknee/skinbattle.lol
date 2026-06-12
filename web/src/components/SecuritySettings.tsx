@@ -351,7 +351,7 @@ function VerifyIdentityPanel({
         </div>
       )}
 
-      {error && <p className="mt-2 text-sm text-red-300">{error}</p>}
+      {error && <p className="mt-2 text-sm text-danger">{error}</p>}
     </div>
   )
 }
@@ -548,7 +548,7 @@ function EmailEditor({
           </div>
         </div>
       )}
-      {error && <p className="mt-2 text-sm text-red-300">{error}</p>}
+      {error && <p className="mt-2 text-sm text-danger">{error}</p>}
     </div>
   )
 }
@@ -673,11 +673,11 @@ function PasswordEditor({
             {busy ? <Spinner className="h-4 w-4" /> : 'Save password'}
           </button>
           {mismatch && (
-            <span className="text-sm text-red-300">Passwords don't match.</span>
+            <span className="text-sm text-danger">Passwords don't match.</span>
           )}
         </div>
       </div>
-      {error && <p className="mt-2 text-sm text-red-300">{error}</p>}
+      {error && <p className="mt-2 text-sm text-danger">{error}</p>}
     </div>
   )
 }
@@ -791,7 +791,7 @@ function SocialRow({
           {(proofId) => <StartOnProof run={() => start(proofId)} />}
         </ProofGate>
       )}
-      {error && <p className="mt-1 text-sm text-red-300">{error}</p>}
+      {error && <p className="mt-1 text-sm text-danger">{error}</p>}
     </div>
   )
 }

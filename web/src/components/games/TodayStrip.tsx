@@ -69,7 +69,7 @@ function statusChip(game: HubGame) {
       )
     case 'lost':
       return (
-        <span className="bg-red-950/40 px-2.5 py-1 text-xs font-bold text-red-300 outline outline-red-400/40 -outline-offset-1">
+        <span className="bg-danger-surface/40 px-2.5 py-1 text-xs font-bold text-danger outline outline-danger-border/40 -outline-offset-1">
           {card.lostLabel}
         </span>
       )

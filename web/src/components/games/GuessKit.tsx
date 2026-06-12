@@ -125,9 +125,9 @@ export function GuessViewport({
 // ─── guess squares ──────────────────────────────────────────────────────────
 
 function guessTone(g: SplashdleGuess): string {
-  if (g.correct) return 'bg-emerald-700/80 outline-emerald-400/70'
+  if (g.correct) return 'bg-success/80 outline-success-border/70'
   if (g.championMatch) return 'bg-gold4/70 outline-gold2/80'
-  return 'bg-red-900/70 outline-red-400/50'
+  return 'bg-danger-surface/70 outline-danger-border/50'
 }
 
 export function GuessSlots({
