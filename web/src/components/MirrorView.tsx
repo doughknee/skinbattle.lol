@@ -275,7 +275,11 @@ function TierListSection({ state }: { state: MirrorState }) {
   // Read the persisted preference in an effect so SSR and the first client
   // render agree (same pattern as the champions grid density).
   useEffect(() => {
-    if (localStorage.getItem(NAMES_KEY) === '1') setShowNames(true)
+    try {
+      if (localStorage.getItem(NAMES_KEY) === '1') setShowNames(true)
+    } catch {
+      // Private mode / storage disabled: default stays off.
+    }
   }, [])
 
   const toggleNames = () => {

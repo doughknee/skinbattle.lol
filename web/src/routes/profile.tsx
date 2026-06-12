@@ -313,7 +313,9 @@ function ProfilePage() {
 
       {active === 'mirror' && <MirrorView state={mirror} />}
       {active === 'votes' && <VotesTab skins={votes} error={votesError} />}
-      {active === 'account' && <AccountTab me={me} settled={meSettled} />}
+      {active === 'account' && (
+        <AccountTab me={me} settled={meSettled} onChange={setMe} />
+      )}
     </div>
   )
 }
