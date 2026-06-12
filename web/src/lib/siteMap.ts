@@ -22,7 +22,6 @@ import {
   faShirt,
   faShuffle,
   faTrophy,
-  faUser,
   faUsers,
 } from '@fortawesome/free-solid-svg-icons'
 import type { IconDefinition } from '@fortawesome/fontawesome-svg-core'
@@ -54,10 +53,10 @@ export const HOME: SitePage = {
 
 export const PROFILE: SitePage = {
   to: '/profile',
-  label: 'My Profile',
-  blurb: 'Your votes, stats, and account settings.',
-  icon: faUser,
-  search: 'account settings my votes sign in',
+  label: 'Your Mirror',
+  blurb: 'The tier list your battles build — plus your votes and account.',
+  icon: faScaleUnbalanced,
+  search: 'profile account settings my votes mirror tier list taste sign in',
 }
 
 export const SITE_SECTIONS: SiteSection[] = [
@@ -96,13 +95,6 @@ export const SITE_SECTIONS: SiteSection[] = [
         blurb: 'Streaks, fastest solves, and battle volume.',
         icon: faTrophy,
         search: 'top players streaks ranks community',
-      },
-      {
-        to: '/battle/mirror',
-        label: 'The Mirror',
-        blurb: 'The tier list your battles build.',
-        icon: faScaleUnbalanced,
-        search: 'my taste tier list hot takes wardrobe',
       },
     ],
   },

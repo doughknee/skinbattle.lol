@@ -92,7 +92,8 @@ canonical rank everywhere; votes remain engagement + superlative currency.
 | /games/price-check    | /battle/price-check    |
 | /games/chroma-vision  | /battle/chroma-vision  |
 | /games/leaderboards   | /battle/leaderboards   |
-| /games/mirror         | /battle/mirror, then /profile after PR 4 |
+| /games/mirror         | /profile (the profile IS the Mirror) |
+| /battle/mirror        | /profile (brief interim home during the move) |
 | /leaderboards         | /battle/leaderboards (retargeted stub) |
 | /awards               | /rankings/awards       |
 | /insights/drought     | /rankings/drought (existing stub) |
