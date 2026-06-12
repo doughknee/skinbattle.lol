@@ -68,7 +68,11 @@ describe('logto-signin-custom.css matches brand.ts', () => {
     })
   }
 
-  // The gold glow, expressed as rgba(GLOW_RGB / alpha).
+  // The gold glow is deduped behind the file's own --sb-glow custom property,
+  // which must hold GLOW_RGB; the overlay vars then reference it.
+  it('--sb-glow holds GLOW_RGB', () => {
+    expect(logtoCss).toContain(`--sb-glow: ${GLOW_RGB};`)
+  })
   const GLOW: Record<string, string> = {
     'line-divider': '0.18',
     'overlay-brand-hover': '0.12',
@@ -78,7 +82,7 @@ describe('logto-signin-custom.css matches brand.ts', () => {
   for (const [name, alpha] of Object.entries(GLOW)) {
     it(`--color-${name} = rgba glow @ ${alpha}`, () => {
       expect(logtoCss).toContain(
-        `--color-${name}: rgba(${GLOW_RGB}, ${alpha}) !important;`,
+        `--color-${name}: rgba(var(--sb-glow), ${alpha}) !important;`,
       )
     })
   }

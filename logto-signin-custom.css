@@ -25,6 +25,10 @@
 
 :root, body {
   color-scheme: dark;
+  /* gold2 (#c8aa6e) as an rgb triplet — the signature glow. Defined once so
+     the rgbas below don't repeat the literal. Keep in sync with GLOW_RGB in
+     web/src/lib/brand.ts (asserted by brand.test.ts). */
+  --sb-glow: 200, 170, 110;
   --color-bg-body: #030912 !important;
   --color-bg-body-base: #030912 !important;
   --color-bg-body-overlay: #0a1428 !important;
@@ -50,10 +54,10 @@
   --color-type-disabled: #5b5a56 !important;
   --color-type-link: #c8aa6e !important;
   --color-line-border: #463714 !important;
-  --color-line-divider: rgba(200, 170, 110, 0.18) !important;
-  --color-overlay-brand-hover: rgba(200, 170, 110, 0.12) !important;
-  --color-overlay-brand-focused: rgba(200, 170, 110, 0.16) !important;
-  --color-overlay-brand-pressed: rgba(200, 170, 110, 0.20) !important;
+  --color-line-divider: rgba(var(--sb-glow), 0.18) !important;
+  --color-overlay-brand-hover: rgba(var(--sb-glow), 0.12) !important;
+  --color-overlay-brand-focused: rgba(var(--sb-glow), 0.16) !important;
+  --color-overlay-brand-pressed: rgba(var(--sb-glow), 0.20) !important;
 }
 
 body {
@@ -89,7 +93,7 @@ body {
   color: #c8aa6e;
   text-align: center;
   white-space: nowrap;
-  text-shadow: 0 2px 18px rgba(200, 170, 110, 0.25);
+  text-shadow: 0 2px 18px rgba(var(--sb-glow), 0.25);
 }
 .logto_branding-header::after {
   content: '';
@@ -97,7 +101,7 @@ body {
   width: 130px;
   height: 1px;
   margin: 14px auto 0;
-  background: linear-gradient(90deg, transparent, rgba(200, 170, 110, 0.6), transparent);
+  background: linear-gradient(90deg, transparent, rgba(var(--sb-glow), 0.6), transparent);
 }
 [class*=headline] {
   font-family: 'Cinzel', Georgia, serif !important;
@@ -119,7 +123,7 @@ button[type=submit] {
   text-transform: uppercase;
   font-size: 13px !important;
   border: 1px solid #785a28 !important;
-  box-shadow: 0 4px 18px rgba(200, 170, 110, 0.25);
+  box-shadow: 0 4px 18px rgba(var(--sb-glow), 0.25);
 }
 button[type=submit]:hover { filter: brightness(1.07); }
 
@@ -133,7 +137,7 @@ input { color: #f0e6d2 !important; caret-color: #c8aa6e; }
     background: rgba(7, 16, 32, 0.80) !important;
     -webkit-backdrop-filter: blur(14px) saturate(1.1);
     backdrop-filter: blur(14px) saturate(1.1);
-    border: 1px solid rgba(200, 170, 110, 0.35) !important;
+    border: 1px solid rgba(var(--sb-glow), 0.35) !important;
     border-radius: 16px !important;
     box-shadow: 0 24px 80px rgba(0, 0, 0, 0.6) !important;
     overflow: hidden;
