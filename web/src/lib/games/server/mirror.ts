@@ -15,7 +15,7 @@ import type {
   MirrorSkin,
   MirrorState,
   MirrorTier,
-  TasteChampion,
+  TasteEntry,
   TierName,
 } from '../types'
 import { getDb } from './db'
@@ -23,6 +23,7 @@ import { ensureCatalog } from './catalog'
 import { peekUser } from './guests'
 import { globalRank } from './ratings'
 import { userBattleCounts } from './quickbattle'
+import { skinSets } from './facts'
 
 // ─── tuning ─────────────────────────────────────────────────────────────────
 
@@ -47,9 +48,9 @@ const CONTRARIAN_MIN_COMMUNITY = 8
 const CONTRARIAN_MIN_GAP = 50
 const CONTRARIAN_LIMIT = 8
 
-// Taste profile: a champion only counts once multiple of their skins are
-// rated (one skin says nothing about the champion), and only deltas clear of
-// Elo jitter make the list.
+// Taste profile: a group (skin line or champion) only counts once multiple
+// of its skins are rated (one skin says nothing about the group), and only
+// deltas clear of Elo jitter make the list.
 const TASTE_MIN_SKINS = 2
 const TASTE_MIN_DELTA = 20
 const TASTE_LIMIT = 3
@@ -142,33 +143,41 @@ function buildContrarian(db: DatabaseSync, rows: RatedRow[]): ContrarianTake[] {
     }))
 }
 
-// Champion-level over/under-indexing relative to the user's own average.
-// v1 profiles by champion only — the catalog has no skin-line tags (Data
-// Dragon doesn't provide them); skin-line taste needs the Meraki facts
-// dataset, a later session.
+// Over/under-indexing relative to the user's own average, grouped by skin
+// line (the Meraki facts dataset's `set` tags — "you over-index on Coven")
+// and by champion. Both pools compete on |delta|; entries carry their kind.
 function buildTaste(rows: RatedRow[]): {
-  over: TasteChampion[]
-  under: TasteChampion[]
+  over: TasteEntry[]
+  under: TasteEntry[]
 } {
   if (rows.length === 0) return { over: [], under: [] }
   const overallAvg = rows.reduce((s, r) => s + r.personal, 0) / rows.length
 
-  const byChampion = new Map<string, { name: string; ratings: number[] }>()
+  const groups = new Map<
+    string,
+    { kind: TasteEntry['kind']; name: string; ratings: number[] }
+  >()
+  const add = (kind: TasteEntry['kind'], name: string, rating: number) => {
+    const key = `${kind}:${name}`
+    const g = groups.get(key) ?? { kind, name, ratings: [] }
+    g.ratings.push(rating)
+    groups.set(key, g)
+  }
   for (const r of rows) {
-    const c = byChampion.get(r.championId) ?? { name: r.championName, ratings: [] }
-    c.ratings.push(r.personal)
-    byChampion.set(r.championId, c)
+    add('champion', r.championName, r.personal)
+    for (const set of skinSets(r.skinId)) add('line', set, r.personal)
   }
 
-  const entries: TasteChampion[] = [...byChampion.entries()]
-    .filter(([, c]) => c.ratings.length >= TASTE_MIN_SKINS)
-    .map(([championId, c]) => ({
-      championId,
-      championName: c.name,
+  const entries: TasteEntry[] = [...groups.entries()]
+    .filter(([, g]) => g.ratings.length >= TASTE_MIN_SKINS)
+    .map(([key, g]) => ({
+      kind: g.kind,
+      id: key,
+      name: g.name,
       delta: Math.round(
-        c.ratings.reduce((s, v) => s + v, 0) / c.ratings.length - overallAvg,
+        g.ratings.reduce((s, v) => s + v, 0) / g.ratings.length - overallAvg,
       ),
-      skinsRated: c.ratings.length,
+      skinsRated: g.ratings.length,
     }))
 
   return {

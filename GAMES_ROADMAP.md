@@ -71,9 +71,21 @@ expire, and (3) a persistent identity worth investing in. Games are sequenced by
   `og:`/`twitter:` meta pointing at their card. Per-entity stable URLs
   (`/skins/<slug>`, `/u/<name>`, ranking slices) still pending — they need
   their pages to exist first.
+- ✅ **Static facts dataset + Price Check + skin-line taste** (2026-06-12) —
+  `scripts/snapshot-facts.mjs` snapshots Meraki (cost/rarity/availability/
+  sets/release) into committed `data/skin-facts.json` (1,797 skins; never
+  fetched at runtime; re-run on patch cadence). **Price Check** live at
+  `/games/price-check`: five seeded skins a day on distinct champions,
+  guess each RP tier (520–3250 buttons), win = 3+ exact, 🟩/🟨(one tier
+  off)/🟥 share grid, legacy fun-facts, streaks, hub checklist slot, OG
+  card. The Mirror's taste profile now mixes **skin lines** ("you
+  over-index on Coven") with champions, competing on |delta|; Meraki's
+  catch-all "Legacy" set is excluded. 📌 Correction to the note below:
+  Meraki `release` was populated on all 1,797 skins in this snapshot —
+  **the Drought Index is unblocked**.
 - ◻ Leaderboards, feedback surface beyond Quick Battle (rank deltas on skin
   pages), patch ingestion pipeline (beyond 12-hourly catalog re-sync),
-  static facts dataset, per-entity stable URLs — **not started**.
+  per-entity stable URLs, Drought Index — **not started**.
 
 **Architecture note**: game state currently lives in the TanStack Start SSR
 layer (server functions + SQLite at `web/.data/games.db` — persisted via the
@@ -88,9 +100,9 @@ that happen after first paint; one-shot animations cleared by timer, not
 animationend; every interaction answers back before the round-trip
 completes (pending states).
 
-**Next session**: the Meraki static facts dataset (snapshot script →
-committed data) + Price Check — it also unlocks skin-line tags, which
-upgrade the Mirror's taste profile from by-champion to by-skin-line.
+**Next session**: the Skin Drought Index (`/insights/drought`) — per-skin
+release dates are in the committed facts dataset now, so "days since last
+skin" per champion is pure derived data. Citable from day one.
 
 ## Landscape & differentiation
 

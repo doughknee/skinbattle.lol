@@ -48,19 +48,53 @@ export const Route = createFileRoute('/games/')({
 const cardShell =
   'bg-hextech-black/30 outline outline-icon/20 -outline-offset-2 p-6'
 
+// Per-game hub-card copy. Win/loss chip labels differ: Splashdle is
+// guess-counted, Price Check is score-counted.
+const GAME_CARDS: Record<
+  HubGame['id'],
+  {
+    to: string
+    name: string
+    blurb: string
+    icon: IconDefinition
+    wonLabel: (g: HubGame) => string
+    lostLabel: string
+  }
+> = {
+  splashdle: {
+    to: '/games/splashdle',
+    name: 'Splashdle',
+    blurb:
+      'Name the skin from a sliver of its splash. It zooms out with every miss — six guesses.',
+    icon: faImage,
+    wonLabel: (g) => `Solved ${g.guessesUsed}/${g.maxGuesses}`,
+    lostLabel: 'Out of guesses',
+  },
+  'price-check': {
+    to: '/games/price-check',
+    name: 'Price Check',
+    blurb:
+      'Five skins — guess what each one cost in RP. Legacy relics included.',
+    icon: faCoins,
+    wonLabel: (g) => `Scored ${g.score ?? 0}/${g.maxGuesses}`,
+    lostLabel: 'Better luck tomorrow',
+  },
+}
+
 function statusChip(game: HubGame) {
+  const card = GAME_CARDS[game.id]
   switch (game.status) {
     case 'won':
       return (
         <span className="flex items-center gap-1.5 bg-gold5/30 px-3 py-1 text-sm font-bold text-gold1 outline outline-gold2/60 -outline-offset-1">
           <FontAwesomeIcon icon={faCheck} className="h-3.5" />
-          Solved {game.guessesUsed}/{game.maxGuesses}
+          {card.wonLabel(game)}
         </span>
       )
     case 'lost':
       return (
         <span className="bg-red-950/40 px-3 py-1 text-sm font-bold text-red-300 outline outline-red-400/40 -outline-offset-1">
-          Out of guesses
+          {card.lostLabel}
         </span>
       )
     case 'in_progress':
@@ -78,25 +112,23 @@ function statusChip(game: HubGame) {
   }
 }
 
-function SplashdleCard({ game }: { game: HubGame }) {
+function DailyGameCard({ game }: { game: HubGame }) {
+  const card = GAME_CARDS[game.id]
   return (
     <Link
-      to="/games/splashdle"
+      to={card.to}
       className={`${cardShell} group flex flex-col gap-4 transition duration-200 hover:-translate-y-0.5 hover:bg-hextech-black/50 hover:outline-gold2/60`}
     >
       <div className="flex items-start justify-between gap-3">
         <div className="flex items-center gap-4">
           <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-hextech-black/60 outline outline-gold5/60 -outline-offset-2">
-            <FontAwesomeIcon icon={faImage} className="h-6 text-gold2" />
+            <FontAwesomeIcon icon={card.icon} className="h-6 text-gold2" />
           </div>
           <div>
             <h3 className="font-serif text-2xl font-bold text-gold1 group-hover:text-gold2 transition duration-150">
-              Splashdle
+              {card.name}
             </h3>
-            <p className="text-sm text-grey1">
-              Name the skin from a sliver of its splash. It zooms out with
-              every miss — six guesses.
-            </p>
+            <p className="text-sm text-grey1">{card.blurb}</p>
           </div>
         </div>
       </div>
@@ -194,11 +226,6 @@ function MirrorCard({ mirror }: { mirror: { skinsRated: number } }) {
 
 const upcoming: { name: string; blurb: string; icon: IconDefinition }[] = [
   {
-    name: 'Price Check',
-    blurb: 'Guess the RP tier. Legacy relics included.',
-    icon: faCoins,
-  },
-  {
     name: 'Chroma Vision',
     blurb: 'Name the skin from its colors alone. Hard mode.',
     icon: faPalette,
@@ -241,7 +268,7 @@ function GamesHubPage() {
 
         <div className="stagger flex flex-col gap-4">
           {hub.games.map((g) => (
-            <SplashdleCard key={g.id} game={g} />
+            <DailyGameCard key={g.id} game={g} />
           ))}
         </div>
       </section>

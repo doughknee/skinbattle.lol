@@ -18,7 +18,13 @@ import { utcToday } from './daily'
 import { communityBattleCount } from './quickbattle'
 import { splashdleOgInfo } from './splashdle'
 
-export const OG_CARDS = ['games', 'splashdle', 'quick-battle', 'mirror'] as const
+export const OG_CARDS = [
+  'games',
+  'splashdle',
+  'quick-battle',
+  'mirror',
+  'price-check',
+] as const
 export type OgCard = (typeof OG_CARDS)[number]
 
 const W = 1200
@@ -309,6 +315,43 @@ async function buildCard(card: OgCard): Promise<Node> {
                   fontWeight: 700,
                   fontSize: 48,
                   color: tierColors[i],
+                }),
+              ),
+            ),
+          ),
+        ),
+      ])
+    }
+    case 'price-check': {
+      const { priceCheckPuzzleNumber } = await import('./pricecheck')
+      const { PRICE_TIERS } = await import('./facts')
+      return frame(null, [
+        el(
+          'div',
+          { flexDirection: 'column', gap: 18, justifyContent: 'center', flexGrow: 1 },
+          eyebrow('Daily · what did it cost?'),
+          title(`Price Check #${priceCheckPuzzleNumber(utcToday())}`, 76),
+          body('Five skins. Guess what each cost in RP — legacy relics included.'),
+          el(
+            'div',
+            { gap: 12, marginTop: 10 },
+            ...PRICE_TIERS.map((t) =>
+              el(
+                'div',
+                {
+                  height: 56,
+                  paddingLeft: 22,
+                  paddingRight: 22,
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  border: `2px solid ${C.gold5}`,
+                  backgroundColor: 'rgba(1,10,19,0.6)',
+                },
+                text(t.toLocaleString('en-US'), {
+                  fontFamily: 'Cinzel',
+                  fontWeight: 700,
+                  fontSize: 26,
+                  color: C.gold1,
                 }),
               ),
             ),
