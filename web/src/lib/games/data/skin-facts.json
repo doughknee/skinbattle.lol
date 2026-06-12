@@ -1,10 +1,10 @@
 {
- "snapshotAt": "2026-06-12T00:27:00.529Z",
+ "snapshotAt": "2026-06-12T05:48:42.800Z",
  "patch": "16.12.1",
  "skins": {
   "1001": {
    "cost": null,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Rare",
    "sets": [
     "Goth"
@@ -13,7 +13,7 @@
   },
   "1002": {
    "cost": 520,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Legacy",
    "sets": [
     "Storybook"
@@ -31,7 +31,7 @@
   },
   "1004": {
    "cost": 520,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Legacy",
    "sets": [
     "Day Job"
@@ -40,7 +40,7 @@
   },
   "1005": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Winter Wonder"
@@ -49,7 +49,7 @@
   },
   "1006": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Legacy"
@@ -58,7 +58,7 @@
   },
   "1007": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Legacy",
    "sets": [
     "Trick-or-Treat"
@@ -67,7 +67,7 @@
   },
   "1008": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Lunar Revel: Firecracker"
@@ -76,7 +76,7 @@
   },
   "1009": {
    "cost": 750,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Legacy",
    "sets": [
     "Heartbreakers"
@@ -155,9 +155,18 @@
    ],
    "release": "2024-08-28"
   },
+  "1059": {
+   "cost": 1350,
+   "rarity": "Epic",
+   "availability": "Available",
+   "sets": [
+    "Pandemonium"
+   ],
+   "release": "2026-04-29"
+  },
   "2001": {
    "cost": 520,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Legacy",
    "sets": [
     "Legacy"
@@ -166,7 +175,7 @@
   },
   "2002": {
    "cost": 520,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Legacy",
    "sets": [
     "Glacial"
@@ -184,7 +193,7 @@
   },
   "2004": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Pentakill"
@@ -193,7 +202,7 @@
   },
   "2005": {
    "cost": 750,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Marauder"
@@ -202,7 +211,7 @@
   },
   "2006": {
    "cost": 750,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Culinary Masters"
@@ -256,7 +265,7 @@
   },
   "3001": {
    "cost": 520,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Legacy"
@@ -265,7 +274,7 @@
   },
   "3002": {
    "cost": 520,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Legacy",
    "sets": [
     "Hextech"
@@ -274,7 +283,7 @@
   },
   "3003": {
    "cost": 520,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Commando"
@@ -292,7 +301,7 @@
   },
   "3005": {
    "cost": 750,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Debonair"
@@ -301,7 +310,7 @@
   },
   "3006": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Culinary Masters"
@@ -335,9 +344,18 @@
    ],
    "release": "2023-01-12"
   },
+  "3040": {
+   "cost": 1820,
+   "rarity": "Legendary",
+   "availability": "Available",
+   "sets": [
+    "Aegis Frame"
+   ],
+   "release": "2026-01-22"
+  },
   "4001": {
    "cost": null,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Limited",
    "sets": [
     "PAX"
@@ -346,7 +364,7 @@
   },
   "4002": {
    "cost": 520,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Highstakes"
@@ -364,7 +382,7 @@
   },
   "4004": {
    "cost": 520,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "High Society"
@@ -373,7 +391,7 @@
   },
   "4005": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "High Noon"
@@ -382,7 +400,7 @@
   },
   "4006": {
    "cost": 750,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Fables"
@@ -391,7 +409,7 @@
   },
   "4007": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Legacy",
    "sets": [
     "Trick-or-Treat"
@@ -400,7 +418,7 @@
   },
   "4008": {
    "cost": 750,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Legacy",
    "sets": [
     "Soccer Cup"
@@ -409,7 +427,7 @@
   },
   "4009": {
    "cost": 750,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Bilgewater: Burning Tides"
@@ -472,16 +490,16 @@
   },
   "4045": {
    "cost": null,
-   "rarity": "NoRarity",
-   "availability": "Upcoming",
+   "rarity": null,
+   "availability": "Limited",
    "sets": [
     "Victorious"
    ],
    "release": "2025-04-30"
   },
   "5001": {
-   "cost": 520,
-   "rarity": "NoRarity",
+   "cost": 750,
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Commando"
@@ -489,8 +507,8 @@
    "release": "2010-07-13"
   },
   "5002": {
-   "cost": 520,
-   "rarity": "NoRarity",
+   "cost": 750,
+   "rarity": null,
    "availability": "Legacy",
    "sets": [
     "Legacy"
@@ -499,16 +517,16 @@
   },
   "5003": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Legacy",
    "sets": [
-    "Grand Reckoning"
+    "Chronicle"
    ],
    "release": "2010-11-22"
   },
   "5004": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Legacy",
    "sets": [
     "Wonders of the World"
@@ -526,7 +544,7 @@
   },
   "5006": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Cops and Robbers"
@@ -569,9 +587,18 @@
    ],
    "release": "2022-01-26"
   },
+  "5047": {
+   "cost": 1350,
+   "rarity": "Epic",
+   "availability": "Available",
+   "sets": [
+    "Chronicle"
+   ],
+   "release": "2025-10-08"
+  },
   "6001": {
    "cost": 520,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Kaiju"
@@ -580,7 +607,7 @@
   },
   "6002": {
    "cost": 520,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Legacy",
    "sets": [
     "Trick-or-Treat"
@@ -634,7 +661,7 @@
   },
   "7001": {
    "cost": 750,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Legacy"
@@ -643,7 +670,7 @@
   },
   "7002": {
    "cost": 750,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Day Job"
@@ -652,7 +679,7 @@
   },
   "7003": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Legacy",
    "sets": [
     "Snowdown Showdown"
@@ -661,7 +688,7 @@
   },
   "7004": {
    "cost": 1350,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Legacy",
    "sets": [
     "Trick-or-Treat"
@@ -749,9 +776,18 @@
    ],
    "release": "2024-06-12"
   },
+  "7059": {
+   "cost": null,
+   "rarity": "Mythic",
+   "availability": "Rare",
+   "sets": [
+    "Sinful Shores"
+   ],
+   "release": "2026-06-10"
+  },
   "8001": {
    "cost": 520,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Legacy",
    "sets": [
     "Storybook"
@@ -760,7 +796,7 @@
   },
   "8002": {
    "cost": 520,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "High Society"
@@ -769,7 +805,7 @@
   },
   "8003": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Legacy",
    "sets": [
     "Trick-or-Treat"
@@ -778,7 +814,7 @@
   },
   "8004": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Legacy",
    "sets": [
     "Vandal"
@@ -805,7 +841,7 @@
   },
   "8007": {
    "cost": 750,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Academy"
@@ -859,16 +895,25 @@
   },
   "8048": {
    "cost": null,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Rare",
    "sets": [
     "Masque of the Black Rose"
    ],
    "release": "2025-01-09"
   },
+  "8049": {
+   "cost": 1350,
+   "rarity": "Epic",
+   "availability": "Available",
+   "sets": [
+    "PsyOps"
+   ],
+   "release": "2026-04-15"
+  },
   "9001": {
    "cost": 520,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Omen of the Dark"
@@ -877,7 +922,7 @@
   },
   "9002": {
    "cost": 520,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Legacy",
    "sets": [
     "Winter Sports"
@@ -886,7 +931,7 @@
   },
   "9003": {
    "cost": 520,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "High Noon"
@@ -895,7 +940,7 @@
   },
   "9004": {
    "cost": 520,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Legacy",
    "sets": [
     "Trick-or-Treat"
@@ -904,7 +949,7 @@
   },
   "9005": {
    "cost": 750,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Legacy",
    "sets": [
     "Bilgewater: Burning Tides"
@@ -922,7 +967,7 @@
   },
   "9007": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Legacy",
    "sets": [
     "Sugar Rush"
@@ -965,9 +1010,18 @@
    ],
    "release": "2024-04-18"
   },
+  "9046": {
+   "cost": 1350,
+   "rarity": "Epic",
+   "availability": "Available",
+   "sets": [
+    "Flora Fatalis"
+   ],
+   "release": "2025-10-08"
+  },
   "10001": {
    "cost": null,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Limited",
    "sets": [
     "Collector's Edition"
@@ -976,7 +1030,7 @@
   },
   "10002": {
    "cost": 520,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Albion"
@@ -985,7 +1039,7 @@
   },
   "10003": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Legacy",
    "sets": [
     "Otherroads"
@@ -994,7 +1048,7 @@
   },
   "10004": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Woad"
@@ -1003,7 +1057,7 @@
   },
   "10005": {
    "cost": null,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Limited",
    "sets": [
     "Legacy"
@@ -1021,7 +1075,7 @@
   },
   "10007": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Legacy",
    "sets": [
     "Riot"
@@ -1030,7 +1084,7 @@
   },
   "10008": {
    "cost": 750,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Omen of the Dark"
@@ -1109,9 +1163,18 @@
    ],
    "release": "2024-05-01"
   },
+  "10078": {
+   "cost": 1350,
+   "rarity": "Epic",
+   "availability": "Available",
+   "sets": [
+    "Spirit Blossom"
+   ],
+   "release": "2025-06-25"
+  },
   "11001": {
    "cost": 390,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Legacy"
@@ -1120,7 +1183,7 @@
   },
   "11002": {
    "cost": 520,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Legacy"
@@ -1129,7 +1192,7 @@
   },
   "11003": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Legacy"
@@ -1138,7 +1201,7 @@
   },
   "11004": {
    "cost": 520,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Legacy"
@@ -1147,7 +1210,7 @@
   },
   "11005": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Headhunter"
@@ -1255,16 +1318,25 @@
   },
   "11106": {
    "cost": null,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Limited",
    "sets": [
     "Victorious"
    ],
    "release": "2025-01-09"
   },
+  "11116": {
+   "cost": null,
+   "rarity": "Mythic",
+   "availability": "Rare",
+   "sets": [
+    "PROJECT"
+   ],
+   "release": "2026-04-15"
+  },
   "12001": {
    "cost": null,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Limited",
    "sets": [
     "Collector's Edition"
@@ -1273,7 +1345,7 @@
   },
   "12002": {
    "cost": 390,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Legacy"
@@ -1282,7 +1354,7 @@
   },
   "12003": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Legacy",
    "sets": [
     "Day Job"
@@ -1291,7 +1363,7 @@
   },
   "12004": {
    "cost": 520,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Legacy",
    "sets": [
     "High Noon"
@@ -1300,7 +1372,7 @@
   },
   "12005": {
    "cost": null,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Limited",
    "sets": [
     "Chronicle"
@@ -1309,7 +1381,7 @@
   },
   "12006": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Infernal"
@@ -1318,7 +1390,7 @@
   },
   "12007": {
    "cost": 750,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Legacy",
    "sets": [
     "Soccer Cup"
@@ -1327,7 +1399,7 @@
   },
   "12008": {
    "cost": 750,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Marauder"
@@ -1336,7 +1408,7 @@
   },
   "12009": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Legacy",
    "sets": [
     "World Champions: 2015"
@@ -1345,7 +1417,7 @@
   },
   "12010": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Toy Box"
@@ -1388,9 +1460,18 @@
    ],
    "release": "2021-02-04"
   },
+  "12040": {
+   "cost": 1350,
+   "rarity": "Epic",
+   "availability": "Available",
+   "sets": [
+    "Elderwood"
+   ],
+   "release": "2025-08-27"
+  },
   "13001": {
    "cost": null,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Limited",
    "sets": [
     "Collector's Edition"
@@ -1399,7 +1480,7 @@
   },
   "13002": {
    "cost": 520,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Legacy",
    "sets": [
     "Prehistoric Hunters"
@@ -1408,7 +1489,7 @@
   },
   "13003": {
    "cost": 520,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Wonders of the World"
@@ -1417,7 +1498,7 @@
   },
   "13004": {
    "cost": null,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Rare",
    "sets": [
     "Triumphant"
@@ -1426,7 +1507,7 @@
   },
   "13005": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Legacy",
    "sets": [
     "Academy"
@@ -1435,7 +1516,7 @@
   },
   "13006": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Legacy",
    "sets": [
     "Zombies VS Slayers"
@@ -1444,7 +1525,7 @@
   },
   "13007": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Bloodstone"
@@ -1453,7 +1534,7 @@
   },
   "13008": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Legacy",
    "sets": [
     "Bilgewater: Burning Tides"
@@ -1462,7 +1543,7 @@
   },
   "13009": {
    "cost": 750,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Rift Quest"
@@ -1471,7 +1552,7 @@
   },
   "13010": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Legacy",
    "sets": [
     "World Champions: 2015"
@@ -1508,15 +1589,15 @@
   "13029": {
    "cost": 1350,
    "rarity": "Epic",
-   "availability": "Upcoming",
+   "availability": "Available",
    "sets": [
     "Blood Moon"
    ],
-   "release": "0000-00-00"
+   "release": "2025-05-14"
   },
   "14001": {
    "cost": 520,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Legacy",
    "sets": [
     "Hextech"
@@ -1525,7 +1606,7 @@
   },
   "14002": {
    "cost": 750,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Rift Quest"
@@ -1534,7 +1615,7 @@
   },
   "14003": {
    "cost": 520,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Day Job"
@@ -1543,7 +1624,7 @@
   },
   "14004": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Legacy"
@@ -1597,16 +1678,25 @@
   },
   "14049": {
    "cost": null,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Rare",
    "sets": [
     "Grand Reckoning"
    ],
    "release": "2025-03-05"
   },
+  "14050": {
+   "cost": 1350,
+   "rarity": "Epic",
+   "availability": "Available",
+   "sets": [
+    "Day Job"
+   ],
+   "release": "2026-05-28"
+  },
   "15001": {
    "cost": 520,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Legacy"
@@ -1615,7 +1705,7 @@
   },
   "15002": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Legacy",
    "sets": [
     "Legacy"
@@ -1624,7 +1714,7 @@
   },
   "15003": {
    "cost": null,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Rare",
    "sets": [
     "Prehistoric Hunters"
@@ -1633,7 +1723,7 @@
   },
   "15004": {
    "cost": 750,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Legacy"
@@ -1642,7 +1732,7 @@
   },
   "15005": {
    "cost": null,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Limited",
    "sets": [
     "PAX"
@@ -1651,7 +1741,7 @@
   },
   "15006": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Legacy",
    "sets": [
     "Winter Wonder"
@@ -1660,7 +1750,7 @@
   },
   "15007": {
    "cost": 750,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Warden"
@@ -1669,7 +1759,7 @@
   },
   "15008": {
    "cost": null,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Limited",
    "sets": [
     "Victorious"
@@ -1766,9 +1856,18 @@
    ],
    "release": "2024-10-17"
   },
+  "15072": {
+   "cost": 1350,
+   "rarity": "Epic",
+   "availability": "Available",
+   "sets": [
+    "PROJECT"
+   ],
+   "release": "2026-04-15"
+  },
   "16001": {
    "cost": 520,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Elderwood"
@@ -1777,7 +1876,7 @@
   },
   "16002": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Otherroads"
@@ -1786,7 +1885,7 @@
   },
   "16003": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Rift Quest"
@@ -1804,7 +1903,7 @@
   },
   "16005": {
    "cost": 750,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "High Society"
@@ -1910,9 +2009,18 @@
    ],
    "release": "2024-05-15"
   },
+  "16053": {
+   "cost": 1350,
+   "rarity": "Epic",
+   "availability": "Available",
+   "sets": [
+    "Flora Fatalis"
+   ],
+   "release": "2025-10-08"
+  },
   "17001": {
    "cost": 750,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Legacy",
    "sets": [
     "Snowdown Showdown"
@@ -1921,7 +2029,7 @@
   },
   "17002": {
    "cost": 750,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Legacy",
    "sets": [
     "Legacy"
@@ -1930,7 +2038,7 @@
   },
   "17003": {
    "cost": 750,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Legacy",
    "sets": [
     "Legacy"
@@ -1948,7 +2056,7 @@
   },
   "17005": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Cottontail"
@@ -1957,7 +2065,7 @@
   },
   "17006": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Silver Age"
@@ -1966,7 +2074,7 @@
   },
   "17007": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Wonders of the World"
@@ -2036,9 +2144,18 @@
    ],
    "release": "2022-11-17"
   },
+  "17054": {
+   "cost": 1350,
+   "rarity": "Epic",
+   "availability": "Available",
+   "sets": [
+    "Spirit Blossom Springs"
+   ],
+   "release": "2025-07-30"
+  },
   "18001": {
    "cost": null,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Limited",
    "sets": [
     "Riot"
@@ -2047,7 +2164,7 @@
   },
   "18002": {
    "cost": 520,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Legacy",
    "sets": [
     "Snowdown Showdown"
@@ -2065,7 +2182,7 @@
   },
   "18004": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Legacy",
    "sets": [
     "Commando"
@@ -2074,7 +2191,7 @@
   },
   "18005": {
    "cost": 520,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Bilgewater: Burning Tides"
@@ -2083,7 +2200,7 @@
   },
   "18006": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Silver Age"
@@ -2171,9 +2288,18 @@
    ],
    "release": "2024-05-15"
   },
+  "18070": {
+   "cost": 1350,
+   "rarity": "Epic",
+   "availability": "Available",
+   "sets": [
+    "Rain Shepherd"
+   ],
+   "release": "2025-11-19"
+  },
   "19001": {
    "cost": null,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Rare",
    "sets": [
     "Omen of the Dark"
@@ -2182,7 +2308,7 @@
   },
   "19002": {
    "cost": 5000,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Limited",
    "sets": [
     "Urf the Manatee"
@@ -2191,7 +2317,7 @@
   },
   "19003": {
    "cost": 520,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Legacy",
    "sets": [
     "Storybook"
@@ -2200,7 +2326,7 @@
   },
   "19004": {
    "cost": 520,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Freljord"
@@ -2209,7 +2335,7 @@
   },
   "19005": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Legacy",
    "sets": [
     "Silver Age"
@@ -2218,7 +2344,7 @@
   },
   "19006": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Infernal"
@@ -2227,7 +2353,7 @@
   },
   "19007": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Road Warrior"
@@ -2236,7 +2362,7 @@
   },
   "19008": {
    "cost": 750,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Marauder"
@@ -2245,7 +2371,7 @@
   },
   "19009": {
    "cost": 150000,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Rare",
    "sets": [
     "Urf the Manatee"
@@ -2307,9 +2433,18 @@
    ],
    "release": "2024-12-11"
   },
+  "19058": {
+   "cost": 1350,
+   "rarity": "Epic",
+   "availability": "Available",
+   "sets": [
+    "Warhounds"
+   ],
+   "release": "2026-03-19"
+  },
   "20001": {
    "cost": 520,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Legacy",
    "sets": [
     "Fables"
@@ -2318,7 +2453,7 @@
   },
   "20002": {
    "cost": 520,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Legacy",
    "sets": [
     "Snowdown Showdown"
@@ -2327,7 +2462,7 @@
   },
   "20003": {
    "cost": 750,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Toy Box"
@@ -2345,7 +2480,7 @@
   },
   "20005": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Rift Quest"
@@ -2354,7 +2489,7 @@
   },
   "20006": {
    "cost": 750,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Legacy",
    "sets": [
     "World Champions: 2012"
@@ -2417,7 +2552,7 @@
   },
   "21001": {
    "cost": 750,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "High Noon"
@@ -2426,7 +2561,7 @@
   },
   "21002": {
    "cost": 520,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Legacy"
@@ -2435,7 +2570,7 @@
   },
   "21003": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Legacy",
    "sets": [
     "Cops and Robbers"
@@ -2444,7 +2579,7 @@
   },
   "21004": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Legacy",
    "sets": [
     "Snowdown Showdown"
@@ -2453,7 +2588,7 @@
   },
   "21005": {
    "cost": 520,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Legacy",
    "sets": [
     "Road Warrior"
@@ -2462,7 +2597,7 @@
   },
   "21006": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Crime City"
@@ -2480,7 +2615,7 @@
   },
   "21008": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Bilgewater: Burning Tides"
@@ -2615,7 +2750,7 @@
   },
   "22001": {
    "cost": 520,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Legacy",
    "sets": [
     "Freljord"
@@ -2624,7 +2759,7 @@
   },
   "22002": {
    "cost": 520,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Albion"
@@ -2633,7 +2768,7 @@
   },
   "22003": {
    "cost": 520,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Woad"
@@ -2642,7 +2777,7 @@
   },
   "22004": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Legacy",
    "sets": [
     "Medieval"
@@ -2651,7 +2786,7 @@
   },
   "22005": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Legacy"
@@ -2660,7 +2795,7 @@
   },
   "22006": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Legacy",
    "sets": [
     "Heartbreakers"
@@ -2669,7 +2804,7 @@
   },
   "22007": {
    "cost": 750,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Marauder"
@@ -2778,15 +2913,24 @@
   "22076": {
    "cost": 1820,
    "rarity": "Legendary",
-   "availability": "Upcoming",
+   "availability": "Available",
    "sets": [
     "Spirit Blossom"
    ],
    "release": "2025-04-30"
   },
+  "22084": {
+   "cost": 1350,
+   "rarity": "Epic",
+   "availability": "Available",
+   "sets": [
+    "Lunar Revel: Firecracker"
+   ],
+   "release": "2026-02-04"
+  },
   "23001": {
    "cost": 520,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Legacy",
    "sets": [
     "Legacy"
@@ -2795,7 +2939,7 @@
   },
   "23002": {
    "cost": 520,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Medieval"
@@ -2804,7 +2948,7 @@
   },
   "23003": {
    "cost": 750,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Legacy",
    "sets": [
     "Wonders of the World"
@@ -2822,7 +2966,7 @@
   },
   "23005": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Wonders of the World"
@@ -2831,7 +2975,7 @@
   },
   "23006": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Legacy",
    "sets": [
     "Lunar Revel: Warring Kingdoms"
@@ -2840,7 +2984,7 @@
   },
   "23007": {
    "cost": 750,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Trick-or-Treat"
@@ -2849,7 +2993,7 @@
   },
   "23008": {
    "cost": 750,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Prehistoric Hunters"
@@ -2858,7 +3002,7 @@
   },
   "23009": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Silver Age"
@@ -2885,16 +3029,25 @@
   },
   "23027": {
    "cost": null,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Limited",
    "sets": [
     "Victorious"
    ],
    "release": "2024-03-20"
   },
+  "23037": {
+   "cost": 1350,
+   "rarity": "Epic",
+   "availability": "Available",
+   "sets": [
+    "Visions of the Fallen"
+   ],
+   "release": "2025-08-27"
+  },
   "24001": {
    "cost": 520,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Legacy",
    "sets": [
     "Winter Sports"
@@ -2903,7 +3056,7 @@
   },
   "24002": {
    "cost": 520,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Legacy",
    "sets": [
     "Vandal"
@@ -2912,7 +3065,7 @@
   },
   "24003": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Legacy",
    "sets": [
     "Day Job"
@@ -2921,7 +3074,7 @@
   },
   "24004": {
    "cost": null,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Limited",
    "sets": [
     "PAX"
@@ -2930,7 +3083,7 @@
   },
   "24005": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Legacy"
@@ -2939,7 +3092,7 @@
   },
   "24006": {
    "cost": 750,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Legacy"
@@ -2948,7 +3101,7 @@
   },
   "24007": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Legacy"
@@ -2957,7 +3110,7 @@
   },
   "24008": {
    "cost": 750,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Legacy",
    "sets": [
     "World Champions: 2013"
@@ -2966,7 +3119,7 @@
   },
   "24012": {
    "cost": 750,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Warden"
@@ -3038,7 +3191,7 @@
   },
   "25001": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Legacy",
    "sets": [
     "Woad"
@@ -3047,7 +3200,7 @@
   },
   "25002": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Legacy",
    "sets": [
     "Culinary Masters"
@@ -3056,7 +3209,7 @@
   },
   "25003": {
    "cost": 750,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Steel Valkyries"
@@ -3074,7 +3227,7 @@
   },
   "25005": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Fables"
@@ -3083,7 +3236,7 @@
   },
   "25006": {
    "cost": null,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Limited",
    "sets": [
     "Victorious"
@@ -3092,7 +3245,7 @@
   },
   "25010": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Legacy",
    "sets": [
     "Lunar Revel"
@@ -3101,7 +3254,7 @@
   },
   "25011": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Legacy",
    "sets": [
     "Bewitching"
@@ -3171,9 +3324,27 @@
    ],
    "release": "2024-02-22"
   },
+  "25080": {
+   "cost": null,
+   "rarity": "Exalted",
+   "availability": "Available",
+   "sets": [
+    "Spirit Blossom"
+   ],
+   "release": "2025-06-25"
+  },
+  "25081": {
+   "cost": null,
+   "rarity": "Mythic",
+   "availability": "Rare",
+   "sets": [
+    "Chronicle"
+   ],
+   "release": "2026-01-08"
+  },
   "26001": {
    "cost": 520,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Legacy",
    "sets": [
     "Snowdown Showdown"
@@ -3182,7 +3353,7 @@
   },
   "26002": {
    "cost": 520,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Day Job"
@@ -3191,7 +3362,7 @@
   },
   "26003": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Chronicle"
@@ -3200,7 +3371,7 @@
   },
   "26004": {
    "cost": 520,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Legacy",
    "sets": [
     "Mad Scientists"
@@ -3209,7 +3380,7 @@
   },
   "26005": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Blood Moon"
@@ -3234,9 +3405,18 @@
    ],
    "release": "2022-12-08"
   },
+  "26024": {
+   "cost": 1350,
+   "rarity": "Epic",
+   "availability": "Available",
+   "sets": [
+    "Arcana"
+   ],
+   "release": "2025-09-24"
+  },
   "27001": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Limited",
    "sets": [
     "Riot"
@@ -3245,7 +3425,7 @@
   },
   "27002": {
    "cost": 520,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Legacy",
    "sets": [
     "Hextech"
@@ -3254,7 +3434,7 @@
   },
   "27003": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Pool Party"
@@ -3263,7 +3443,7 @@
   },
   "27004": {
    "cost": 750,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Legacy",
    "sets": [
     "Mad Scientists"
@@ -3272,7 +3452,7 @@
   },
   "27005": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Silver Age"
@@ -3281,7 +3461,7 @@
   },
   "27006": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Legacy",
    "sets": [
     "Snow Day"
@@ -3290,7 +3470,7 @@
   },
   "27007": {
    "cost": 750,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Legacy",
    "sets": [
     "World Champions: 2014"
@@ -3299,7 +3479,7 @@
   },
   "27008": {
    "cost": 750,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Omen of the Dark"
@@ -3335,7 +3515,7 @@
   },
   "27028": {
    "cost": null,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Limited",
    "sets": [
     "Arcane"
@@ -3344,7 +3524,7 @@
   },
   "28001": {
    "cost": 520,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Death Sworn"
@@ -3353,7 +3533,7 @@
   },
   "28002": {
    "cost": 520,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Legacy",
    "sets": [
     "Legacy"
@@ -3362,7 +3542,7 @@
   },
   "28003": {
    "cost": 520,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "High Society"
@@ -3371,7 +3551,7 @@
   },
   "28004": {
    "cost": 750,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Cops and Robbers"
@@ -3380,7 +3560,7 @@
   },
   "28005": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Blood Moon"
@@ -3477,9 +3657,18 @@
    ],
    "release": "2024-03-20"
   },
+  "28064": {
+   "cost": null,
+   "rarity": "Epic",
+   "availability": "Rare",
+   "sets": [
+    "Nightbringer and Dawnbringer"
+   ],
+   "release": "2025-06-25"
+  },
   "29001": {
    "cost": 520,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Legacy",
    "sets": [
     "Bilgewater: Burning Tides"
@@ -3488,7 +3677,7 @@
   },
   "29002": {
    "cost": 520,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Legacy",
    "sets": [
     "Winter Sports"
@@ -3497,7 +3686,7 @@
   },
   "29003": {
    "cost": null,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Rare",
    "sets": [
     "Medieval"
@@ -3506,7 +3695,7 @@
   },
   "29004": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Crime City"
@@ -3515,7 +3704,7 @@
   },
   "29005": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Legacy",
    "sets": [
     "Vandal"
@@ -3524,7 +3713,7 @@
   },
   "29006": {
    "cost": 750,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Cops and Robbers"
@@ -3533,7 +3722,7 @@
   },
   "29007": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Legacy",
    "sets": [
     "World Champions: 2014"
@@ -3596,8 +3785,8 @@
   },
   "29064": {
    "cost": null,
-   "rarity": "NoRarity",
-   "availability": "Upcoming",
+   "rarity": null,
+   "availability": "Rare",
    "sets": [
     "Pool Party"
    ],
@@ -3605,7 +3794,7 @@
   },
   "30001": {
    "cost": 460,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Legacy",
    "sets": [
     "Legacy"
@@ -3614,7 +3803,7 @@
   },
   "30002": {
    "cost": 520,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Wonders of the World"
@@ -3623,7 +3812,7 @@
   },
   "30003": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Trick-or-Treat"
@@ -3632,7 +3821,7 @@
   },
   "30004": {
    "cost": 750,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Pentakill"
@@ -3641,7 +3830,7 @@
   },
   "30005": {
    "cost": 750,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Legacy",
    "sets": [
     "World Champions: 2011"
@@ -3650,7 +3839,7 @@
   },
   "30009": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Rift Quest"
@@ -3684,9 +3873,18 @@
    ],
    "release": "2023-06-28"
   },
+  "30035": {
+   "cost": 1350,
+   "rarity": "Epic",
+   "availability": "Available",
+   "sets": [
+    "Arcana"
+   ],
+   "release": "2025-09-24"
+  },
   "31001": {
    "cost": 520,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Legacy",
    "sets": [
     "Legacy"
@@ -3704,7 +3902,7 @@
   },
   "31003": {
    "cost": 520,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Legacy",
    "sets": [
     "Fables"
@@ -3713,7 +3911,7 @@
   },
   "31004": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Day Job"
@@ -3731,7 +3929,7 @@
   },
   "31006": {
    "cost": 750,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Prehistoric Hunters"
@@ -3774,9 +3972,18 @@
    ],
    "release": "2024-04-03"
   },
+  "31041": {
+   "cost": null,
+   "rarity": "Epic",
+   "availability": "Rare",
+   "sets": [
+    "The Laws of Stone"
+   ],
+   "release": "2026-01-08"
+  },
   "32001": {
    "cost": 520,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Legacy",
    "sets": [
     "Pharaoh"
@@ -3785,7 +3992,7 @@
   },
   "32002": {
    "cost": 520,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Legacy",
    "sets": [
     "Winter Sports"
@@ -3794,7 +4001,7 @@
   },
   "32003": {
    "cost": 520,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Goth"
@@ -3803,7 +4010,7 @@
   },
   "32004": {
    "cost": 520,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Legacy",
    "sets": [
     "Snowdown Showdown"
@@ -3812,7 +4019,7 @@
   },
   "32005": {
    "cost": 520,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Legacy",
    "sets": [
     "Day Job"
@@ -3821,7 +4028,7 @@
   },
   "32006": {
    "cost": 750,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Medieval"
@@ -3902,7 +4109,7 @@
   },
   "33001": {
    "cost": null,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Limited",
    "sets": [
     "Beta"
@@ -3911,7 +4118,7 @@
   },
   "33002": {
    "cost": 750,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Legacy"
@@ -3920,7 +4127,7 @@
   },
   "33003": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Legacy",
    "sets": [
     "Infernal"
@@ -3929,7 +4136,7 @@
   },
   "33004": {
    "cost": 520,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Freljord"
@@ -3938,7 +4145,7 @@
   },
   "33005": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Legacy",
    "sets": [
     "Legacy"
@@ -3947,7 +4154,7 @@
   },
   "33006": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Heavy Metal"
@@ -3956,7 +4163,7 @@
   },
   "33007": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Guardian of the Sands"
@@ -3965,7 +4172,7 @@
   },
   "33008": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Legacy",
    "sets": [
     "Soccer Cup"
@@ -4001,7 +4208,7 @@
   },
   "34001": {
    "cost": 520,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Legacy",
    "sets": [
     "Winter Sports"
@@ -4010,7 +4217,7 @@
   },
   "34002": {
    "cost": 520,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Wonders of the World"
@@ -4019,7 +4226,7 @@
   },
   "34003": {
    "cost": 520,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Legacy",
    "sets": [
     "Legacy"
@@ -4028,7 +4235,7 @@
   },
   "34004": {
    "cost": 750,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Legacy",
    "sets": [
     "Hextech"
@@ -4046,7 +4253,7 @@
   },
   "34006": {
    "cost": 750,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Prehistoric Hunters"
@@ -4055,7 +4262,7 @@
   },
   "34007": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Wonders of the World"
@@ -4100,7 +4307,7 @@
   },
   "34046": {
    "cost": null,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Limited",
    "sets": [
     "Victorious"
@@ -4109,7 +4316,7 @@
   },
   "35001": {
    "cost": 520,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Storybook"
@@ -4118,7 +4325,7 @@
   },
   "35002": {
    "cost": 520,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Legacy"
@@ -4127,7 +4334,7 @@
   },
   "35003": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Legacy",
    "sets": [
     "Snowdown Showdown"
@@ -4136,7 +4343,7 @@
   },
   "35004": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Legacy",
    "sets": [
     "Legacy"
@@ -4145,7 +4352,7 @@
   },
   "35005": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Legacy"
@@ -4154,7 +4361,7 @@
   },
   "35006": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Wonders of the World"
@@ -4163,7 +4370,7 @@
   },
   "35007": {
    "cost": 750,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Highstakes"
@@ -4242,9 +4449,18 @@
    ],
    "release": "2025-04-02"
   },
+  "35071": {
+   "cost": null,
+   "rarity": "Mythic",
+   "availability": "Rare",
+   "sets": [
+    "Pandemonium"
+   ],
+   "release": "2026-04-29"
+  },
   "36001": {
    "cost": 520,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Legacy",
    "sets": [
     "Silver Age"
@@ -4253,7 +4469,7 @@
   },
   "36002": {
    "cost": 520,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Legacy",
    "sets": [
     "Legacy"
@@ -4271,7 +4487,7 @@
   },
   "36004": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Legacy",
    "sets": [
     "Trick-or-Treat"
@@ -4280,7 +4496,7 @@
   },
   "36005": {
    "cost": 520,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Legacy",
    "sets": [
     "Omen of the Dark"
@@ -4298,7 +4514,7 @@
   },
   "36007": {
    "cost": 750,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Legacy",
    "sets": [
     "World Champions: 2012"
@@ -4343,7 +4559,7 @@
   },
   "37001": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Legacy",
    "sets": [
     "Fables"
@@ -4352,7 +4568,7 @@
   },
   "37002": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Pentakill"
@@ -4361,7 +4577,7 @@
   },
   "37003": {
    "cost": 520,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Legacy",
    "sets": [
     "Snowdown Showdown"
@@ -4370,7 +4586,7 @@
   },
   "37004": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Lunar Revel"
@@ -4397,7 +4613,7 @@
   },
   "37007": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Legacy",
    "sets": [
     "Heartbreakers"
@@ -4460,16 +4676,34 @@
   },
   "37056": {
    "cost": null,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Limited",
    "sets": [
     "Victorious"
    ],
    "release": "2024-10-10"
   },
+  "37066": {
+   "cost": 1350,
+   "rarity": "Epic",
+   "availability": "Available",
+   "sets": [
+    "Spirit Blossom Springs"
+   ],
+   "release": "2025-07-30"
+  },
+  "37075": {
+   "cost": null,
+   "rarity": "Mythic",
+   "availability": "Rare",
+   "sets": [
+    "Chronicle"
+   ],
+   "release": "2026-03-04"
+  },
   "38001": {
    "cost": 520,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Legacy",
    "sets": [
     "Winter Sports"
@@ -4478,7 +4712,7 @@
   },
   "38002": {
    "cost": 520,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Legacy",
    "sets": [
     "Forgotten Depths"
@@ -4487,7 +4721,7 @@
   },
   "38003": {
    "cost": 520,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Curse of the Void"
@@ -4496,7 +4730,7 @@
   },
   "38004": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Legacy"
@@ -4550,7 +4784,7 @@
   },
   "39001": {
    "cost": 520,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Legacy"
@@ -4559,7 +4793,7 @@
   },
   "39002": {
    "cost": 520,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Day Job"
@@ -4568,7 +4802,7 @@
   },
   "39003": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Legacy",
    "sets": [
     "Silver Age"
@@ -4577,7 +4811,7 @@
   },
   "39004": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Winter Wonder"
@@ -4586,7 +4820,7 @@
   },
   "39005": {
    "cost": 750,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Order of the Lotus"
@@ -4677,15 +4911,24 @@
   "39055": {
    "cost": 1820,
    "rarity": "Legendary",
-   "availability": "Upcoming",
+   "availability": "Available",
    "sets": [
     "Spirit Blossom"
    ],
    "release": "2025-04-30"
   },
+  "39063": {
+   "cost": 1350,
+   "rarity": "Epic",
+   "availability": "Available",
+   "sets": [
+    "Day Job"
+   ],
+   "release": "2026-05-28"
+  },
   "40001": {
    "cost": 520,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Legacy",
    "sets": [
     "Legacy"
@@ -4694,7 +4937,7 @@
   },
   "40002": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Legacy",
    "sets": [
     "Hextech"
@@ -4703,7 +4946,7 @@
   },
   "40003": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Freljord"
@@ -4712,7 +4955,7 @@
   },
   "40004": {
    "cost": null,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Limited",
    "sets": [
     "Victorious"
@@ -4730,7 +4973,7 @@
   },
   "40006": {
    "cost": 750,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Legacy",
    "sets": [
     "World Champions: 2011"
@@ -4818,9 +5061,18 @@
    ],
    "release": "2024-02-07"
   },
+  "40066": {
+   "cost": null,
+   "rarity": "Epic",
+   "availability": "Rare",
+   "sets": [
+    "Nightbringer and Dawnbringer"
+   ],
+   "release": "2025-06-25"
+  },
   "41001": {
    "cost": 520,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Trick-or-Treat"
@@ -4829,7 +5081,7 @@
   },
   "41002": {
    "cost": 520,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Legacy"
@@ -4838,7 +5090,7 @@
   },
   "41003": {
    "cost": 750,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Legacy",
    "sets": [
     "Day Job"
@@ -4847,7 +5099,7 @@
   },
   "41004": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Legacy",
    "sets": [
     "Toy Box"
@@ -4856,7 +5108,7 @@
   },
   "41005": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Commando"
@@ -4865,7 +5117,7 @@
   },
   "41006": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Wonders of the World"
@@ -4874,7 +5126,7 @@
   },
   "41007": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Bilgewater: Burning Tides"
@@ -4928,7 +5180,7 @@
   },
   "42001": {
    "cost": null,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Limited",
    "sets": [
     "Invaders"
@@ -4955,7 +5207,7 @@
   },
   "42004": {
    "cost": 520,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Legacy",
    "sets": [
     "Piltover Customs"
@@ -4964,7 +5216,7 @@
   },
   "42005": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Urf the Manatee"
@@ -4973,7 +5225,7 @@
   },
   "42006": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Lunar Revel: Firecracker"
@@ -4982,7 +5234,7 @@
   },
   "42007": {
    "cost": 750,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Legacy",
    "sets": [
     "World Champions: 2011"
@@ -5016,9 +5268,18 @@
    ],
    "release": "2021-07-01"
   },
+  "42036": {
+   "cost": 1350,
+   "rarity": "Epic",
+   "availability": "Available",
+   "sets": [
+    "Toy Box"
+   ],
+   "release": "2025-08-13"
+  },
   "43001": {
    "cost": 750,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Legacy",
    "sets": [
     "Worldbreaker"
@@ -5027,7 +5288,7 @@
   },
   "43002": {
    "cost": 520,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Legacy"
@@ -5036,7 +5297,7 @@
   },
   "43003": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Legacy",
    "sets": [
     "Traditional"
@@ -5045,7 +5306,7 @@
   },
   "43004": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Order of the Lotus"
@@ -5054,7 +5315,7 @@
   },
   "43005": {
    "cost": 750,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Warden"
@@ -5072,7 +5333,7 @@
   },
   "43007": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Legacy",
    "sets": [
     "Conqueror"
@@ -5142,9 +5403,18 @@
    ],
    "release": "2024-05-30"
   },
+  "43070": {
+   "cost": 1820,
+   "rarity": "Legendary",
+   "availability": "Available",
+   "sets": [
+    "Spirit Blossom"
+   ],
+   "release": "2025-06-25"
+  },
   "44001": {
    "cost": 520,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Legacy",
    "sets": [
     "Elderwood"
@@ -5153,7 +5423,7 @@
   },
   "44002": {
    "cost": 750,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Demacia Vice"
@@ -5162,7 +5432,7 @@
   },
   "44003": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Bloodstone"
@@ -5207,7 +5477,7 @@
   },
   "45001": {
    "cost": 390,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Medieval"
@@ -5216,7 +5486,7 @@
   },
   "45002": {
    "cost": 520,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Legacy",
    "sets": [
     "Winter Sports"
@@ -5225,7 +5495,7 @@
   },
   "45003": {
    "cost": 750,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Rift Quest"
@@ -5234,7 +5504,7 @@
   },
   "45004": {
    "cost": 520,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Fables"
@@ -5243,7 +5513,7 @@
   },
   "45005": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Legacy",
    "sets": [
     "Road Warrior"
@@ -5252,7 +5522,7 @@
   },
   "45006": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Silver Age"
@@ -5261,7 +5531,7 @@
   },
   "45007": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Legacy",
    "sets": [
     "Snowdown Showdown"
@@ -5342,7 +5612,7 @@
   },
   "48001": {
    "cost": 520,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Day Job"
@@ -5351,7 +5621,7 @@
   },
   "48002": {
    "cost": 750,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Road Warrior"
@@ -5360,7 +5630,7 @@
   },
   "48003": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Legacy",
    "sets": [
     "Traditional"
@@ -5369,7 +5639,7 @@
   },
   "48004": {
    "cost": 750,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Cops and Robbers"
@@ -5378,7 +5648,7 @@
   },
   "48005": {
    "cost": 750,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Worldbreaker"
@@ -5414,7 +5684,7 @@
   },
   "50001": {
    "cost": 750,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Arctic Ops"
@@ -5423,7 +5693,7 @@
   },
   "50002": {
    "cost": 520,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Bilgewater: Burning Tides"
@@ -5493,9 +5763,18 @@
    ],
    "release": "2024-11-06"
   },
+  "50042": {
+   "cost": 1350,
+   "rarity": "Epic",
+   "availability": "Available",
+   "sets": [
+    "Day Job"
+   ],
+   "release": "2026-04-01"
+  },
   "51001": {
    "cost": 520,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Battlecast"
@@ -5504,7 +5783,7 @@
   },
   "51002": {
    "cost": 520,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Legacy",
    "sets": [
     "High Noon"
@@ -5513,7 +5792,7 @@
   },
   "51003": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Legacy",
    "sets": [
     "Legacy"
@@ -5522,7 +5801,7 @@
   },
   "51004": {
    "cost": 750,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Arctic Ops"
@@ -5531,7 +5810,7 @@
   },
   "51005": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Cops and Robbers"
@@ -5540,7 +5819,7 @@
   },
   "51006": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Headhunter"
@@ -5664,9 +5943,18 @@
    ],
    "release": "2024-11-20"
   },
+  "51054": {
+   "cost": 1350,
+   "rarity": "Epic",
+   "availability": "Available",
+   "sets": [
+    "Lunar Revel: Firecracker"
+   ],
+   "release": "2026-02-04"
+  },
   "53001": {
    "cost": 520,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Limited",
    "sets": [
     "Legacy"
@@ -5675,7 +5963,7 @@
   },
   "53002": {
    "cost": 520,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Legacy",
    "sets": [
     "Soccer Cup"
@@ -5684,7 +5972,7 @@
   },
   "53003": {
    "cost": 520,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Day Job"
@@ -5702,7 +5990,7 @@
   },
   "53005": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Legacy",
    "sets": [
     "Definitely Not"
@@ -5720,7 +6008,7 @@
   },
   "53007": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Legacy",
    "sets": [
     "Riot"
@@ -5774,7 +6062,7 @@
   },
   "53036": {
    "cost": null,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Limited",
    "sets": [
     "Victorious"
@@ -5799,9 +6087,18 @@
    ],
    "release": "2023-11-22"
   },
+  "53066": {
+   "cost": 1350,
+   "rarity": "Epic",
+   "availability": "Available",
+   "sets": [
+    "Toy Box"
+   ],
+   "release": "2026-04-01"
+  },
   "54001": {
    "cost": 520,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Legacy",
    "sets": [
     "Wonders of the World"
@@ -5810,7 +6107,7 @@
   },
   "54002": {
    "cost": 750,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Legacy",
    "sets": [
     "Forgotten Depths"
@@ -5819,7 +6116,7 @@
   },
   "54003": {
    "cost": 520,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Legacy",
    "sets": [
     "Legacy"
@@ -5828,7 +6125,7 @@
   },
   "54004": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Legacy",
    "sets": [
     "Infernal"
@@ -5855,7 +6152,7 @@
   },
   "54007": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Bilgewater: Burning Tides"
@@ -5928,7 +6225,7 @@
   },
   "55001": {
    "cost": 520,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Legacy"
@@ -5937,7 +6234,7 @@
   },
   "55002": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Legacy",
    "sets": [
     "Soccer Cup"
@@ -5946,7 +6243,7 @@
   },
   "55003": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Legacy",
    "sets": [
     "Bilgewater: Burning Tides"
@@ -5955,7 +6252,7 @@
   },
   "55004": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Legacy",
    "sets": [
     "Trick-or-Treat"
@@ -5964,7 +6261,7 @@
   },
   "55005": {
    "cost": 750,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Bilgewater: Mercs"
@@ -5973,7 +6270,7 @@
   },
   "55006": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Guardian of the Sands"
@@ -5982,7 +6279,7 @@
   },
   "55007": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Legacy",
    "sets": [
     "Snowdown Showdown"
@@ -5991,7 +6288,7 @@
   },
   "55008": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Lunar Revel: Warring Kingdoms"
@@ -6088,9 +6385,18 @@
    ],
    "release": "2025-01-09"
   },
+  "55070": {
+   "cost": 1350,
+   "rarity": "Epic",
+   "availability": "Legacy",
+   "sets": [
+    "Petals of Spring"
+   ],
+   "release": "2026-02-19"
+  },
   "56001": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Glacial"
@@ -6099,7 +6405,7 @@
   },
   "56002": {
    "cost": 520,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Legacy",
    "sets": [
     "Curse of the Void"
@@ -6108,7 +6414,7 @@
   },
   "56003": {
    "cost": 520,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Silver Age"
@@ -6117,7 +6423,7 @@
   },
   "56004": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Legacy",
    "sets": [
     "Trick-or-Treat"
@@ -6135,7 +6441,7 @@
   },
   "56006": {
    "cost": 750,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Omen of the Dark"
@@ -6181,7 +6487,7 @@
   },
   "57001": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Infernal"
@@ -6190,7 +6496,7 @@
   },
   "57002": {
    "cost": 520,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Legacy"
@@ -6199,7 +6505,7 @@
   },
   "57003": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Legacy",
    "sets": [
     "Snowdown Showdown"
@@ -6208,7 +6514,7 @@
   },
   "57004": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Legacy",
    "sets": [
     "Trick-or-Treat"
@@ -6217,7 +6523,7 @@
   },
   "57005": {
    "cost": 750,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Legacy",
    "sets": [
     "Soccer Cup"
@@ -6235,7 +6541,7 @@
   },
   "57007": {
    "cost": null,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Limited",
    "sets": [
     "Victorious"
@@ -6269,9 +6575,18 @@
    ],
    "release": "2023-06-01"
   },
+  "57035": {
+   "cost": null,
+   "rarity": "Epic",
+   "availability": "Rare",
+   "sets": [
+    "The Laws of Stone"
+   ],
+   "release": "2026-03-04"
+  },
   "58001": {
    "cost": 520,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Legacy",
    "sets": [
     "Galactic"
@@ -6280,7 +6595,7 @@
   },
   "58002": {
    "cost": 520,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Legacy",
    "sets": [
     "Wonders of the World"
@@ -6289,7 +6604,7 @@
   },
   "58003": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Bloodstone"
@@ -6298,7 +6613,7 @@
   },
   "58004": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Legacy",
    "sets": [
     "Otherroads"
@@ -6307,7 +6622,7 @@
   },
   "58005": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Infernal"
@@ -6316,7 +6631,7 @@
   },
   "58006": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Pool Party"
@@ -6325,7 +6640,7 @@
   },
   "58007": {
    "cost": 750,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Prehistoric Hunters"
@@ -6334,7 +6649,7 @@
   },
   "58008": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Legacy",
    "sets": [
     "World Champions: 2015"
@@ -6343,7 +6658,7 @@
   },
   "58009": {
    "cost": 750,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Toy Box"
@@ -6395,9 +6710,18 @@
    ],
    "release": "2023-10-11"
   },
+  "58048": {
+   "cost": 1350,
+   "rarity": "Epic",
+   "availability": "Available",
+   "sets": [
+    "Inkshadow"
+   ],
+   "release": "2025-06-11"
+  },
   "59001": {
    "cost": 520,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Commando"
@@ -6406,7 +6730,7 @@
   },
   "59002": {
    "cost": 750,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Dragon World"
@@ -6415,7 +6739,7 @@
   },
   "59003": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Legacy"
@@ -6424,7 +6748,7 @@
   },
   "59004": {
    "cost": null,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Limited",
    "sets": [
     "Victorious"
@@ -6442,7 +6766,7 @@
   },
   "59006": {
    "cost": 750,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Legacy",
    "sets": [
     "World Champions: 2011"
@@ -6521,9 +6845,18 @@
    ],
    "release": "2025-01-23"
   },
+  "59054": {
+   "cost": null,
+   "rarity": "Mythic",
+   "availability": "Rare",
+   "sets": [
+    "Visions of the Fallen"
+   ],
+   "release": "2025-08-27"
+  },
   "60001": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Death Blossom"
@@ -6532,7 +6865,7 @@
   },
   "60002": {
    "cost": null,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Limited",
    "sets": [
     "Victorious"
@@ -6541,7 +6874,7 @@
   },
   "60003": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Blood Moon"
@@ -6550,7 +6883,7 @@
   },
   "60004": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Legacy",
    "sets": [
     "World Champions: 2015"
@@ -6595,7 +6928,7 @@
   },
   "60034": {
    "cost": null,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Rare",
    "sets": [
     "Masque of the Black Rose"
@@ -6604,7 +6937,7 @@
   },
   "61001": {
    "cost": 520,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Goth"
@@ -6613,7 +6946,7 @@
   },
   "61002": {
    "cost": 520,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Toy Box"
@@ -6622,7 +6955,7 @@
   },
   "61003": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Legacy"
@@ -6631,7 +6964,7 @@
   },
   "61004": {
    "cost": 750,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Legacy",
    "sets": [
     "World Champions: 2012"
@@ -6640,7 +6973,7 @@
   },
   "61005": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Legacy",
    "sets": [
     "Winter Wonder"
@@ -6667,7 +7000,7 @@
   },
   "61008": {
    "cost": null,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Limited",
    "sets": [
     "Victorious"
@@ -6712,7 +7045,7 @@
   },
   "62001": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Infernal"
@@ -6721,7 +7054,7 @@
   },
   "62002": {
    "cost": 750,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Legacy"
@@ -6730,7 +7063,7 @@
   },
   "62003": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Lunar Revel"
@@ -6782,9 +7115,18 @@
    ],
    "release": "2023-06-28"
   },
+  "62026": {
+   "cost": 1350,
+   "rarity": "Epic",
+   "availability": "Available",
+   "sets": [
+    "Mecha Kingdoms"
+   ],
+   "release": "2025-11-05"
+  },
   "63001": {
    "cost": 750,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Road Warrior"
@@ -6793,7 +7135,7 @@
   },
   "63002": {
    "cost": 520,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Legacy",
    "sets": [
     "Vandal"
@@ -6802,7 +7144,7 @@
   },
   "63003": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Silver Age"
@@ -6890,9 +7232,18 @@
    ],
    "release": "2024-05-01"
   },
+  "63053": {
+   "cost": 1350,
+   "rarity": "Epic",
+   "availability": "Available",
+   "sets": [
+    "Sinful Shores"
+   ],
+   "release": "2026-06-10"
+  },
   "64001": {
    "cost": 750,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Traditional"
@@ -6901,7 +7252,7 @@
   },
   "64002": {
    "cost": 750,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Otherroads"
@@ -6919,7 +7270,7 @@
   },
   "64004": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Wonders of the World"
@@ -6928,7 +7279,7 @@
   },
   "64005": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Pool Party"
@@ -6937,7 +7288,7 @@
   },
   "64006": {
    "cost": 750,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Legacy",
    "sets": [
     "World Champions: 2013"
@@ -6964,7 +7315,7 @@
   },
   "64012": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Legacy",
    "sets": [
     "Soccer Cup"
@@ -7052,9 +7403,18 @@
    ],
    "release": "2024-08-14"
   },
+  "64072": {
+   "cost": 1350,
+   "rarity": "Epic",
+   "availability": "Available",
+   "sets": [
+    "Inkshadow"
+   ],
+   "release": "2025-06-11"
+  },
   "67001": {
    "cost": 520,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Legacy",
    "sets": [
     "Trick-or-Treat"
@@ -7063,7 +7423,7 @@
   },
   "67002": {
    "cost": 520,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "High Society"
@@ -7072,7 +7432,7 @@
   },
   "67003": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Dragon World"
@@ -7081,7 +7441,7 @@
   },
   "67004": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Legacy",
    "sets": [
     "Heartbreakers"
@@ -7090,7 +7450,7 @@
   },
   "67005": {
    "cost": 750,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Legacy",
    "sets": [
     "World Champions: 2013"
@@ -7099,7 +7459,7 @@
   },
   "67006": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Arclight"
@@ -7205,9 +7565,27 @@
    ],
    "release": "2024-01-09"
   },
+  "67064": {
+   "cost": null,
+   "rarity": "Mythic",
+   "availability": "Limited",
+   "sets": [
+    "Risen Legends"
+   ],
+   "release": "2025-06-11"
+  },
+  "67067": {
+   "cost": 1820,
+   "rarity": "Legendary",
+   "availability": "Available",
+   "sets": [
+    "Pandemonium"
+   ],
+   "release": "2026-04-29"
+  },
   "68001": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Legacy"
@@ -7216,7 +7594,7 @@
   },
   "68002": {
    "cost": 520,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Legacy",
    "sets": [
     "Bilgewater: Burning Tides"
@@ -7261,7 +7639,7 @@
   },
   "69001": {
    "cost": 520,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "High Noon"
@@ -7270,7 +7648,7 @@
   },
   "69002": {
    "cost": 520,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Fables"
@@ -7279,7 +7657,7 @@
   },
   "69003": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Fables"
@@ -7288,7 +7666,7 @@
   },
   "69004": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Lunar Revel"
@@ -7342,7 +7720,7 @@
   },
   "72001": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "High Noon"
@@ -7350,8 +7728,8 @@
    "release": "2011-08-09"
   },
   "72002": {
-   "cost": 520,
-   "rarity": "NoRarity",
+   "cost": 750,
+   "rarity": null,
    "availability": "Available",
    "sets": [],
    "release": "2011-08-09"
@@ -7383,6 +7761,15 @@
    ],
    "release": "2020-11-24"
   },
+  "72014": {
+   "cost": null,
+   "rarity": "Epic",
+   "availability": "Rare",
+   "sets": [
+    "Mecha Kingdoms"
+   ],
+   "release": "2025-10-22"
+  },
   "74001": {
    "cost": 1820,
    "rarity": "Legendary",
@@ -7394,7 +7781,7 @@
   },
   "74002": {
    "cost": 520,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Road Warrior"
@@ -7403,7 +7790,7 @@
   },
   "74003": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Piltover Customs"
@@ -7412,7 +7799,7 @@
   },
   "74004": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Legacy",
    "sets": [
     "Snowdown Showdown"
@@ -7421,7 +7808,7 @@
   },
   "74005": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Day Job"
@@ -7466,7 +7853,7 @@
   },
   "75001": {
    "cost": 520,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Galactic"
@@ -7475,7 +7862,7 @@
   },
   "75002": {
    "cost": 520,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Pharaoh"
@@ -7484,7 +7871,7 @@
   },
   "75003": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Dreadknights"
@@ -7493,7 +7880,7 @@
   },
   "75004": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Legacy",
    "sets": [
     "Riot"
@@ -7511,7 +7898,7 @@
   },
   "75006": {
    "cost": 750,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "High Society"
@@ -7520,7 +7907,7 @@
   },
   "75010": {
    "cost": 750,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Worldbreaker"
@@ -7583,7 +7970,7 @@
   },
   "76001": {
    "cost": 520,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Legacy",
    "sets": [
     "Snowdown Showdown"
@@ -7592,7 +7979,7 @@
   },
   "76002": {
    "cost": 520,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Legacy",
    "sets": [
     "Legacy"
@@ -7601,7 +7988,7 @@
   },
   "76003": {
    "cost": 520,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Day Job"
@@ -7610,7 +7997,7 @@
   },
   "76004": {
    "cost": 520,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Pharaoh"
@@ -7619,7 +8006,7 @@
   },
   "76005": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Legacy",
    "sets": [
     "Bewitching"
@@ -7628,7 +8015,7 @@
   },
   "76006": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Headhunter"
@@ -7637,7 +8024,7 @@
   },
   "76007": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Lunar Revel: Warring Kingdoms"
@@ -7646,7 +8033,7 @@
   },
   "76008": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Legacy",
    "sets": [
     "Challenger"
@@ -7716,9 +8103,18 @@
    ],
    "release": "2023-09-27"
   },
+  "76058": {
+   "cost": 1350,
+   "rarity": "Epic",
+   "availability": "Available",
+   "sets": [
+    "Spirit Blossom"
+   ],
+   "release": "2025-06-25"
+  },
   "77001": {
    "cost": 520,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Day Job"
@@ -7727,7 +8123,7 @@
   },
   "77002": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Legacy",
    "sets": [
     "Prehistoric Hunters"
@@ -7745,7 +8141,7 @@
   },
   "77004": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Definitely Not"
@@ -7772,7 +8168,7 @@
   },
   "78001": {
    "cost": 520,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Legacy",
    "sets": [
     "Otherroads"
@@ -7781,7 +8177,7 @@
   },
   "78002": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Legacy",
    "sets": [
     "Sugar Rush"
@@ -7790,7 +8186,7 @@
   },
   "78003": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Legacy",
    "sets": [
     "Medieval"
@@ -7799,7 +8195,7 @@
   },
   "78004": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Legacy",
    "sets": [
     "Toy Box"
@@ -7808,7 +8204,7 @@
   },
   "78005": {
    "cost": 520,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Legacy"
@@ -7817,7 +8213,7 @@
   },
   "78006": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Dragon World"
@@ -7878,9 +8274,18 @@
    ],
    "release": "2023-10-25"
   },
+  "78042": {
+   "cost": 1350,
+   "rarity": "Epic",
+   "availability": "Available",
+   "sets": [
+    "Lunar Revel: Firecracker"
+   ],
+   "release": "2026-02-04"
+  },
   "79001": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Legacy",
    "sets": [
     "Day Job"
@@ -7889,7 +8294,7 @@
   },
   "79002": {
    "cost": 520,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Legacy"
@@ -7898,7 +8303,7 @@
   },
   "79003": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Legacy",
    "sets": [
     "Snowdown Showdown"
@@ -7907,7 +8312,7 @@
   },
   "79004": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Crime City"
@@ -7916,7 +8321,7 @@
   },
   "79005": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Legacy",
    "sets": [
     "Vandal"
@@ -7925,7 +8330,7 @@
   },
   "79006": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Wonders of the World"
@@ -7934,7 +8339,7 @@
   },
   "79007": {
    "cost": 750,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Legacy",
    "sets": [
     "Soccer Cup"
@@ -7943,7 +8348,7 @@
   },
   "79008": {
    "cost": 750,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Legacy",
    "sets": [
     "World Champions: 2011"
@@ -7952,7 +8357,7 @@
   },
   "79009": {
    "cost": 750,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Rift Quest"
@@ -8006,7 +8411,7 @@
   },
   "80001": {
    "cost": 520,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Wonders of the World"
@@ -8015,7 +8420,7 @@
   },
   "80002": {
    "cost": 520,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Legacy",
    "sets": [
     "Road Warrior"
@@ -8024,7 +8429,7 @@
   },
   "80003": {
    "cost": 750,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Legacy",
    "sets": [
     "Fables"
@@ -8033,7 +8438,7 @@
   },
   "80004": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Heavy Metal"
@@ -8042,7 +8447,7 @@
   },
   "80005": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Legacy",
    "sets": [
     "Wonders of the World"
@@ -8060,7 +8465,7 @@
   },
   "80007": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Legacy",
    "sets": [
     "Zombies VS Slayers"
@@ -8069,7 +8474,7 @@
   },
   "80008": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Culinary Masters"
@@ -8123,7 +8528,7 @@
   },
   "81001": {
    "cost": 520,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Legacy",
    "sets": [
     "Albion"
@@ -8132,7 +8537,7 @@
   },
   "81002": {
    "cost": 520,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Legacy",
    "sets": [
     "Soccer Cup"
@@ -8141,7 +8546,7 @@
   },
   "81003": {
    "cost": 520,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Freljord"
@@ -8150,7 +8555,7 @@
   },
   "81004": {
    "cost": 750,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Legacy",
    "sets": [
     "Legacy"
@@ -8168,7 +8573,7 @@
   },
   "81006": {
    "cost": 750,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Legacy",
    "sets": [
     "World Champions: 2012"
@@ -8177,7 +8582,7 @@
   },
   "81007": {
    "cost": 750,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Debonair"
@@ -8186,7 +8591,7 @@
   },
   "81008": {
    "cost": 750,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Highstakes"
@@ -8312,7 +8717,7 @@
   },
   "82001": {
    "cost": 520,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Legacy",
    "sets": [
     "Dragon World"
@@ -8321,7 +8726,7 @@
   },
   "82002": {
    "cost": 520,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Infernal"
@@ -8330,7 +8735,7 @@
   },
   "82003": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Pentakill"
@@ -8339,7 +8744,7 @@
   },
   "82004": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Rift Quest"
@@ -8348,7 +8753,7 @@
   },
   "82005": {
    "cost": 750,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Highstakes"
@@ -8412,15 +8817,22 @@
   "82054": {
    "cost": null,
    "rarity": "Exalted",
+   "availability": "Limited",
+   "sets": [],
+   "release": "2025-04-16"
+  },
+  "82055": {
+   "cost": null,
+   "rarity": "Mythic",
    "availability": "Rare",
    "sets": [
-    "Grand Reckoning"
+    "Day Job"
    ],
-   "release": "2025-04-16"
+   "release": "2026-04-01"
   },
   "83001": {
    "cost": 520,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Omen of the Dark"
@@ -8429,7 +8841,7 @@
   },
   "83002": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Pentakill"
@@ -8493,22 +8905,22 @@
   "83050": {
    "cost": 1350,
    "rarity": "Epic",
-   "availability": "Upcoming",
+   "availability": "Available",
    "sets": [
     "High Noon"
    ],
-   "release": "0000-00-00"
+   "release": "2025-05-14"
   },
   "84001": {
    "cost": 520,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Legacy",
    "sets": [],
    "release": "2010-05-11"
   },
   "84002": {
    "cost": 520,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Legacy",
    "sets": [
     "Infernal"
@@ -8517,7 +8929,7 @@
   },
   "84003": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Legacy",
    "sets": [
     "Soccer Cup"
@@ -8526,7 +8938,7 @@
   },
   "84004": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Rift Hospital"
@@ -8535,7 +8947,7 @@
   },
   "84005": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Blood Moon"
@@ -8544,7 +8956,7 @@
   },
   "84006": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Legacy"
@@ -8562,7 +8974,7 @@
   },
   "84008": {
    "cost": 750,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Culinary Masters"
@@ -8677,9 +9089,18 @@
    ],
    "release": "2024-05-01"
   },
+  "84092": {
+   "cost": 1350,
+   "rarity": "Epic",
+   "availability": "Available",
+   "sets": [
+    "Spirit Blossom"
+   ],
+   "release": "2025-06-25"
+  },
   "85001": {
    "cost": 520,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Legacy",
    "sets": [
     "Silver Age"
@@ -8688,7 +9109,7 @@
   },
   "85002": {
    "cost": 520,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Legacy",
    "sets": [
     "Legacy"
@@ -8697,7 +9118,7 @@
   },
   "85003": {
    "cost": 520,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Legacy"
@@ -8706,7 +9127,7 @@
   },
   "85004": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Rift Hospital"
@@ -8715,7 +9136,7 @@
   },
   "85005": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Arctic Ops"
@@ -8724,7 +9145,7 @@
   },
   "85006": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Blood Moon"
@@ -8733,7 +9154,7 @@
   },
   "85007": {
    "cost": 750,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Silver Age"
@@ -8769,7 +9190,7 @@
   },
   "86001": {
    "cost": 520,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Legacy",
    "sets": [
     "Legacy"
@@ -8778,7 +9199,7 @@
   },
   "86002": {
    "cost": 520,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Legacy",
    "sets": [
     "Legacy"
@@ -8787,7 +9208,7 @@
   },
   "86003": {
    "cost": 520,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Commando"
@@ -8796,7 +9217,7 @@
   },
   "86004": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Dreadknights"
@@ -8805,7 +9226,7 @@
   },
   "86005": {
    "cost": 750,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Rift Quest"
@@ -8823,7 +9244,7 @@
   },
   "86010": {
    "cost": 750,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Bilgewater: Burning Tides"
@@ -8895,8 +9316,8 @@
   },
   "86043": {
    "cost": null,
-   "rarity": "NoRarity",
-   "availability": "Limit",
+   "rarity": null,
+   "availability": "Limited",
    "sets": [],
    "release": "2025-04-02"
   },
@@ -8909,9 +9330,18 @@
    ],
    "release": "2024-08-28"
   },
+  "86046": {
+   "cost": 1350,
+   "rarity": "Epic",
+   "availability": "Available",
+   "sets": [
+    "Visions of the Fallen"
+   ],
+   "release": "2025-08-27"
+  },
   "89001": {
    "cost": 520,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Fables"
@@ -8920,7 +9350,7 @@
   },
   "89002": {
    "cost": 750,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Legacy",
    "sets": [
     "Legacy"
@@ -8929,7 +9359,7 @@
   },
   "89003": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Legacy"
@@ -8938,7 +9368,7 @@
   },
   "89004": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Pool Party"
@@ -8956,7 +9386,7 @@
   },
   "89009": {
    "cost": 750,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Culinary Masters"
@@ -9062,9 +9492,18 @@
    ],
    "release": "2024-07-31"
   },
+  "89064": {
+   "cost": 1820,
+   "rarity": "Legendary",
+   "availability": "Available",
+   "sets": [
+    "The Eternal Aspects"
+   ],
+   "release": "2026-05-28"
+  },
   "90001": {
    "cost": 520,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Legacy",
    "sets": [
     "Wonders of the World"
@@ -9073,7 +9512,7 @@
   },
   "90002": {
    "cost": 520,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Legacy"
@@ -9082,7 +9521,7 @@
   },
   "90003": {
    "cost": 520,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Fables"
@@ -9091,7 +9530,7 @@
   },
   "90004": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Definitely Not"
@@ -9100,7 +9539,7 @@
   },
   "90005": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Legacy",
    "sets": [
     "Snow Day"
@@ -9154,7 +9593,7 @@
   },
   "90038": {
    "cost": null,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Rare",
    "sets": [
     "Three Honors"
@@ -9181,7 +9620,7 @@
   },
   "91001": {
    "cost": 520,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Legacy"
@@ -9190,7 +9629,7 @@
   },
   "91002": {
    "cost": 750,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Crimson Elite"
@@ -9199,7 +9638,7 @@
   },
   "91003": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Lunar Revel: Warring Kingdoms"
@@ -9208,7 +9647,7 @@
   },
   "91004": {
    "cost": 750,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Legacy",
    "sets": [
     "World Champions: 2014"
@@ -9280,7 +9719,7 @@
   },
   "91059": {
    "cost": null,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Rare",
    "sets": [
     "Grand Reckoning"
@@ -9289,7 +9728,7 @@
   },
   "92001": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Otherroads"
@@ -9298,7 +9737,7 @@
   },
   "92002": {
    "cost": 520,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Crimson Elite"
@@ -9307,7 +9746,7 @@
   },
   "92003": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Day Job"
@@ -9316,7 +9755,7 @@
   },
   "92004": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Limited",
    "sets": [
     "World Championship"
@@ -9343,7 +9782,7 @@
   },
   "92007": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Legacy",
    "sets": [
     "World Championship"
@@ -9442,7 +9881,7 @@
   },
   "96001": {
    "cost": 520,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Legacy",
    "sets": [
     "Storybook"
@@ -9451,7 +9890,7 @@
   },
   "96002": {
    "cost": 520,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Legacy",
    "sets": [
     "High Noon"
@@ -9460,7 +9899,7 @@
   },
   "96003": {
    "cost": 520,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Legacy"
@@ -9469,7 +9908,7 @@
   },
   "96004": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Legacy",
    "sets": [
     "Snowdown Showdown"
@@ -9487,7 +9926,7 @@
   },
   "96006": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Legacy",
    "sets": [
     "Forgotten Depths"
@@ -9496,7 +9935,7 @@
   },
   "96007": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Day Job"
@@ -9514,7 +9953,7 @@
   },
   "96009": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Toy Box"
@@ -9568,7 +10007,7 @@
   },
   "96055": {
    "cost": null,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Limited",
    "sets": [
     "Victorious"
@@ -9577,7 +10016,7 @@
   },
   "98001": {
    "cost": 520,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Legacy",
    "sets": [
     "Glacial"
@@ -9586,7 +10025,7 @@
   },
   "98002": {
    "cost": 520,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Legacy",
    "sets": [
     "Legacy"
@@ -9595,7 +10034,7 @@
   },
   "98003": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Rift Hospital"
@@ -9604,7 +10043,7 @@
   },
   "98004": {
    "cost": 750,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Blood Moon"
@@ -9613,7 +10052,7 @@
   },
   "98005": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Legacy"
@@ -9622,7 +10061,7 @@
   },
   "98006": {
    "cost": 750,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Legacy",
    "sets": [
     "World Champions: 2012"
@@ -9676,16 +10115,25 @@
   },
   "98051": {
    "cost": null,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Rare",
    "sets": [
     "Three Honors"
    ],
    "release": "2025-01-23"
   },
+  "98054": {
+   "cost": 1350,
+   "rarity": null,
+   "availability": "Upcoming",
+   "sets": [
+    "Broken Covenant"
+   ],
+   "release": "2026-06-24"
+  },
   "99001": {
    "cost": 520,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Medieval"
@@ -9694,7 +10142,7 @@
   },
   "99002": {
    "cost": 750,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Arcanists"
@@ -9703,7 +10151,7 @@
   },
   "99003": {
    "cost": 520,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Commando"
@@ -9712,7 +10160,7 @@
   },
   "99004": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Legacy",
    "sets": [
     "Legacy"
@@ -9721,7 +10169,7 @@
   },
   "99005": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Steel Legion"
@@ -9866,15 +10314,22 @@
   "99070": {
    "cost": null,
    "rarity": "Mythic",
-   "availability": "Upcoming",
+   "availability": "Rare",
    "sets": [
     "Spirit Blossom"
    ],
    "release": "2025-04-30"
   },
+  "99072": {
+   "cost": 1350,
+   "rarity": "Epic",
+   "availability": "Available",
+   "sets": [],
+   "release": "2025-11-05"
+  },
   "101001": {
    "cost": 750,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Legacy"
@@ -9883,7 +10338,7 @@
   },
   "101002": {
    "cost": 520,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Battlecast"
@@ -9944,18 +10399,27 @@
    ],
    "release": "2024-06-12"
   },
+  "101032": {
+   "cost": null,
+   "rarity": "Epic",
+   "availability": "Rare",
+   "sets": [
+    "The Laws of Stone"
+   ],
+   "release": "2026-03-04"
+  },
   "102001": {
    "cost": 750,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
-    "Legacy"
+    "Rift Quest"
    ],
    "release": "2011-11-01"
   },
   "102002": {
    "cost": 520,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Prehistoric Hunters"
@@ -9964,7 +10428,7 @@
   },
   "102003": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Legacy"
@@ -9973,7 +10437,7 @@
   },
   "102004": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Blackfrost"
@@ -9982,7 +10446,7 @@
   },
   "102005": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Legacy",
    "sets": [
     "World Championship"
@@ -10018,7 +10482,7 @@
   },
   "103001": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Wonders of the World"
@@ -10027,7 +10491,7 @@
   },
   "103002": {
    "cost": 750,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Legacy"
@@ -10036,7 +10500,7 @@
   },
   "103003": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Infernal"
@@ -10045,7 +10509,7 @@
   },
   "103004": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Popstar"
@@ -10054,7 +10518,7 @@
   },
   "103005": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Legacy",
    "sets": [
     "Challenger"
@@ -10063,7 +10527,7 @@
   },
   "103006": {
    "cost": 750,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Academy"
@@ -10178,9 +10642,36 @@
    ],
    "release": "2024-06-12"
   },
+  "103086": {
+   "cost": null,
+   "rarity": null,
+   "availability": "Limited",
+   "sets": [
+    "Risen Legends"
+   ],
+   "release": "2024-06-12"
+  },
+  "103088": {
+   "cost": 1820,
+   "rarity": "Legendary",
+   "availability": "Available",
+   "sets": [
+    "Spirit Blossom Springs"
+   ],
+   "release": "2025-07-30"
+  },
+  "103089": {
+   "cost": null,
+   "rarity": "Mythic",
+   "availability": "Rare",
+   "sets": [
+    "Spirit Blossom Springs"
+   ],
+   "release": "2025-07-30"
+  },
   "104001": {
    "cost": 520,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Vandal"
@@ -10189,7 +10680,7 @@
   },
   "104002": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Legacy",
    "sets": [
     "Legacy"
@@ -10198,7 +10689,7 @@
   },
   "104003": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Crime City"
@@ -10207,7 +10698,7 @@
   },
   "104004": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Legacy",
    "sets": [
     "Riot"
@@ -10225,7 +10716,7 @@
   },
   "104006": {
    "cost": 750,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Bilgewater: Burning Tides"
@@ -10243,7 +10734,7 @@
   },
   "104014": {
    "cost": null,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Limited",
    "sets": [
     "Victorious"
@@ -10297,7 +10788,7 @@
   },
   "105001": {
    "cost": 520,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Forgotten Depths"
@@ -10306,7 +10797,7 @@
   },
   "105002": {
    "cost": 750,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Legacy"
@@ -10315,7 +10806,7 @@
   },
   "105003": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Day Job"
@@ -10333,7 +10824,7 @@
   },
   "105008": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Cottontail"
@@ -10414,7 +10905,7 @@
   },
   "106001": {
    "cost": 520,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Thunder Lord"
@@ -10423,7 +10914,7 @@
   },
   "106002": {
    "cost": 750,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Legacy",
    "sets": [
     "Arctic Ops"
@@ -10432,7 +10923,7 @@
   },
   "106003": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Otherroads"
@@ -10441,7 +10932,7 @@
   },
   "106004": {
    "cost": 750,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Cops and Robbers"
@@ -10450,7 +10941,7 @@
   },
   "106005": {
    "cost": 750,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Luchador"
@@ -10459,7 +10950,7 @@
   },
   "106006": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Coven"
@@ -10493,9 +10984,18 @@
    ],
    "release": "2023-05-03"
   },
+  "106029": {
+   "cost": 1350,
+   "rarity": "Epic",
+   "availability": "Available",
+   "sets": [
+    "Spirit Blossom Springs"
+   ],
+   "release": "2025-07-30"
+  },
   "107001": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Headhunter"
@@ -10504,7 +11004,7 @@
   },
   "107002": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Legacy"
@@ -10513,7 +11013,7 @@
   },
   "107003": {
    "cost": 750,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Legacy",
    "sets": [
     "World Champions: 2014"
@@ -10567,7 +11067,7 @@
   },
   "110001": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Legacy"
@@ -10576,7 +11076,7 @@
   },
   "110002": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Arclight"
@@ -10603,7 +11103,7 @@
   },
   "110005": {
    "cost": 750,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Rift Quest"
@@ -10621,7 +11121,7 @@
   },
   "110007": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Legacy",
    "sets": [
     "Conqueror"
@@ -10685,15 +11185,24 @@
   "110060": {
    "cost": 1350,
    "rarity": "Epic",
-   "availability": "Upcoming",
+   "availability": "Available",
    "sets": [
     "Spirit Blossom"
    ],
    "release": "2025-04-30"
   },
+  "110069": {
+   "cost": 1350,
+   "rarity": "Epic",
+   "availability": "Legacy",
+   "sets": [
+    "World Champions: 2024"
+   ],
+   "release": "2025-09-10"
+  },
   "111001": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Forgotten Depths"
@@ -10702,7 +11211,7 @@
   },
   "111002": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Legacy"
@@ -10720,7 +11229,7 @@
   },
   "111004": {
    "cost": 750,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Warden"
@@ -10729,7 +11238,7 @@
   },
   "111005": {
    "cost": 750,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Worldbreaker"
@@ -10781,9 +11290,18 @@
    ],
    "release": "2024-09-11"
   },
+  "111039": {
+   "cost": 1350,
+   "rarity": "Epic",
+   "availability": "Available",
+   "sets": [
+    "The Laws of Stone"
+   ],
+   "release": "2026-01-08"
+  },
   "112001": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Heavy Metal"
@@ -10792,7 +11310,7 @@
   },
   "112002": {
    "cost": 750,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Legacy",
    "sets": [
     "Mad Scientists"
@@ -10844,9 +11362,18 @@
    ],
    "release": "2024-12-11"
   },
+  "112025": {
+   "cost": 1350,
+   "rarity": "Epic",
+   "availability": "Available",
+   "sets": [
+    "Traditional"
+   ],
+   "release": "2025-11-05"
+  },
   "113001": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Legacy",
    "sets": [
     "Prehistoric Hunters"
@@ -10855,7 +11382,7 @@
   },
   "113002": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Death Sworn"
@@ -10864,7 +11391,7 @@
   },
   "113003": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Legacy",
    "sets": [
     "Traditional"
@@ -10882,7 +11409,7 @@
   },
   "113005": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Legacy",
    "sets": [
     "Winter Wonder"
@@ -10891,7 +11418,7 @@
   },
   "113006": {
    "cost": 750,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Prehistoric Hunters"
@@ -10900,7 +11427,7 @@
   },
   "113007": {
    "cost": 750,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Rift Quest"
@@ -10945,16 +11472,25 @@
   },
   "113036": {
    "cost": null,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Limited",
    "sets": [
     "Victorious"
    ],
    "release": "2022-11-15"
   },
+  "113048": {
+   "cost": 1350,
+   "rarity": "Epic",
+   "availability": "Available",
+   "sets": [
+    "Cats Versus Dogs"
+   ],
+   "release": "2026-04-01"
+  },
   "114001": {
    "cost": 520,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Fables"
@@ -10963,7 +11499,7 @@
   },
   "114002": {
    "cost": 750,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Bloodstone"
@@ -10972,7 +11508,7 @@
   },
   "114003": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Legacy",
    "sets": [
     "Academy"
@@ -11087,9 +11623,18 @@
    ],
    "release": "2024-08-28"
   },
+  "114098": {
+   "cost": null,
+   "rarity": null,
+   "availability": "Limited",
+   "sets": [
+    "Victorious"
+   ],
+   "release": "2025-08-13"
+  },
   "115001": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Mad Scientists"
@@ -11098,7 +11643,7 @@
   },
   "115002": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Legacy",
    "sets": [
     "Legacy"
@@ -11116,7 +11661,7 @@
   },
   "115004": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Legacy",
    "sets": [
     "Snow Day"
@@ -11186,9 +11731,18 @@
    ],
    "release": "2023-09-27"
   },
+  "115043": {
+   "cost": 1350,
+   "rarity": "Epic",
+   "availability": "Available",
+   "sets": [
+    "Lunar Revel: Firecracker"
+   ],
+   "release": "2026-02-04"
+  },
   "117001": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Legacy",
    "sets": [
     "Sugar Rush"
@@ -11197,7 +11751,7 @@
   },
   "117002": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Trick-or-Treat"
@@ -11294,6 +11848,15 @@
    ],
    "release": "2023-10-25"
   },
+  "117055": {
+   "cost": null,
+   "rarity": "Epic",
+   "availability": "Rare",
+   "sets": [
+    "Arcana"
+   ],
+   "release": "2025-08-27"
+  },
   "119001": {
    "cost": 1350,
    "rarity": "Epic",
@@ -11305,7 +11868,7 @@
   },
   "119002": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Legacy"
@@ -11323,7 +11886,7 @@
   },
   "119004": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Pool Party"
@@ -11332,7 +11895,7 @@
   },
   "119005": {
    "cost": 750,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Prehistoric Hunters"
@@ -11340,8 +11903,8 @@
    "release": "2016-02-04"
   },
   "119006": {
-   "cost": 500,
-   "rarity": "NoRarity",
+   "cost": 520,
+   "rarity": null,
    "availability": "Legacy",
    "sets": [
     "Definitely Not"
@@ -11411,9 +11974,18 @@
    ],
    "release": "2025-03-05"
   },
+  "119068": {
+   "cost": null,
+   "rarity": null,
+   "availability": "Limited",
+   "sets": [
+    "Victorious"
+   ],
+   "release": "2026-01-08"
+  },
   "120001": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Legacy",
    "sets": [
     "Bloodstone"
@@ -11422,7 +11994,7 @@
   },
   "120002": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Death Sworn"
@@ -11431,7 +12003,7 @@
   },
   "120003": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Legacy",
    "sets": [
     "Trick-or-Treat"
@@ -11458,7 +12030,7 @@
   },
   "120006": {
    "cost": 750,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Worldbreaker"
@@ -11510,6 +12082,15 @@
    ],
    "release": "2023-12-06"
   },
+  "120041": {
+   "cost": 1350,
+   "rarity": "Epic",
+   "availability": "Available",
+   "sets": [
+    "Nightbringer and Dawnbringer"
+   ],
+   "release": "2025-07-16"
+  },
   "121001": {
    "cost": 1350,
    "rarity": "Epic",
@@ -11521,7 +12102,7 @@
   },
   "121002": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Guardian of the Sands"
@@ -11530,7 +12111,7 @@
   },
   "121003": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Death Blossom"
@@ -11584,7 +12165,7 @@
   },
   "122001": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Rift Quest"
@@ -11593,7 +12174,7 @@
   },
   "122002": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Silver Age"
@@ -11602,7 +12183,7 @@
   },
   "122003": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Woad"
@@ -11620,7 +12201,7 @@
   },
   "122008": {
    "cost": 750,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Academy"
@@ -11708,6 +12289,15 @@
    ],
    "release": "2025-03-05"
   },
+  "122067": {
+   "cost": 1820,
+   "rarity": "Legendary",
+   "availability": "Available",
+   "sets": [
+    "Mecha Kingdoms"
+   ],
+   "release": "2025-11-05"
+  },
   "126001": {
    "cost": 1350,
    "rarity": "Epic",
@@ -11719,7 +12309,7 @@
   },
   "126002": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Debonair"
@@ -11737,7 +12327,7 @@
   },
   "126004": {
    "cost": 750,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Rift Quest"
@@ -11807,9 +12397,18 @@
    ],
    "release": "2024-08-14"
   },
+  "126038": {
+   "cost": 1350,
+   "rarity": "Epic",
+   "availability": "Legacy",
+   "sets": [
+    "Petals of Spring"
+   ],
+   "release": "2026-02-19"
+  },
   "127001": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Bloodstone"
@@ -11879,9 +12478,18 @@
    ],
    "release": "2022-11-17"
   },
+  "127043": {
+   "cost": 1350,
+   "rarity": "Epic",
+   "availability": "Available",
+   "sets": [
+    "Flora Fatalis"
+   ],
+   "release": "2025-10-08"
+  },
   "131001": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Fables"
@@ -11890,7 +12498,7 @@
   },
   "131002": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Lunar Revel"
@@ -12005,9 +12613,27 @@
    ],
    "release": "2024-10-23"
   },
+  "131076": {
+   "cost": 1820,
+   "rarity": "Legendary",
+   "availability": "Available",
+   "sets": [
+    "The Eternal Aspects"
+   ],
+   "release": "2026-05-28"
+  },
+  "131077": {
+   "cost": null,
+   "rarity": "Mythic",
+   "availability": "Rare",
+   "sets": [
+    "The Eternal Aspects"
+   ],
+   "release": "2026-05-28"
+  },
   "133001": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Silver Age"
@@ -12016,7 +12642,7 @@
   },
   "133002": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Woad"
@@ -12025,7 +12651,7 @@
   },
   "133003": {
    "cost": 750,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Bilgewater: Burning Tides"
@@ -12034,7 +12660,7 @@
   },
   "133004": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Legacy",
    "sets": [
     "Heartbreakers"
@@ -12059,9 +12685,18 @@
    ],
    "release": "2022-07-28"
   },
+  "133024": {
+   "cost": 1350,
+   "rarity": "Epic",
+   "availability": "Available",
+   "sets": [
+    "PROJECT"
+   ],
+   "release": "2026-05-13"
+  },
   "134001": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Justicar"
@@ -12070,7 +12705,7 @@
   },
   "134002": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Forgotten Depths"
@@ -12079,7 +12714,7 @@
   },
   "134003": {
    "cost": 750,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Highstakes"
@@ -12221,6 +12856,15 @@
    ],
    "release": "2024-02-22"
   },
+  "136038": {
+   "cost": null,
+   "rarity": "Mythic",
+   "availability": "Rare",
+   "sets": [
+    "Porcelain"
+   ],
+   "release": "2026-02-19"
+  },
   "141001": {
    "cost": 1350,
    "rarity": "Epic",
@@ -12356,9 +13000,18 @@
    ],
    "release": "2024-10-23"
   },
+  "142043": {
+   "cost": null,
+   "rarity": "Mythic",
+   "availability": "Rare",
+   "sets": [
+    "The Eternal Aspects"
+   ],
+   "release": "2025-10-22"
+  },
   "143001": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Infernal"
@@ -12376,7 +13029,7 @@
   },
   "143003": {
    "cost": 750,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Legacy",
    "sets": [
     "World Champions: 2013"
@@ -12458,7 +13111,7 @@
   "143064": {
    "cost": 1350,
    "rarity": "Epic",
-   "availability": "Upcoming",
+   "availability": "Available",
    "sets": [
     "Spirit Blossom"
    ],
@@ -12581,9 +13234,45 @@
    ],
    "release": "2024-10-23"
   },
+  "145070": {
+   "cost": null,
+   "rarity": "Transcendent",
+   "availability": "Limited",
+   "sets": [
+    "Risen Legends"
+   ],
+   "release": "2025-06-11"
+  },
+  "145071": {
+   "cost": null,
+   "rarity": null,
+   "availability": "Limited",
+   "sets": [
+    "Risen Legends"
+   ],
+   "release": "2025-06-11"
+  },
   "147001": {
    "cost": 3250,
    "rarity": "Ultimate",
+   "availability": "Available",
+   "sets": [
+    "K/DA"
+   ],
+   "release": "2020-10-29"
+  },
+  "147002": {
+   "cost": null,
+   "rarity": null,
+   "availability": "Available",
+   "sets": [
+    "K/DA"
+   ],
+   "release": "2020-10-29"
+  },
+  "147003": {
+   "cost": null,
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "K/DA"
@@ -12653,9 +13342,18 @@
    ],
    "release": "2025-03-05"
   },
+  "147059": {
+   "cost": 1350,
+   "rarity": "Epic",
+   "availability": "Available",
+   "sets": [
+    "Lunar Revel: Firecracker"
+   ],
+   "release": "2026-02-04"
+  },
   "150001": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Toy Box"
@@ -12664,7 +13362,7 @@
   },
   "150002": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "High Society"
@@ -12673,7 +13371,7 @@
   },
   "150003": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Legacy",
    "sets": [
     "Snow Day"
@@ -12682,7 +13380,7 @@
   },
   "150004": {
    "cost": 750,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Luchador"
@@ -12734,9 +13432,18 @@
    ],
    "release": "2023-09-27"
   },
+  "150041": {
+   "cost": 1350,
+   "rarity": "Epic",
+   "availability": "Legacy",
+   "sets": [
+    "World Champions: 2024"
+   ],
+   "release": "2025-09-10"
+  },
   "154001": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Legacy"
@@ -12788,9 +13495,18 @@
    ],
    "release": "2024-04-03"
   },
+  "154033": {
+   "cost": 1350,
+   "rarity": "Epic",
+   "availability": "Available",
+   "sets": [
+    "Space Groove"
+   ],
+   "release": "2026-04-15"
+  },
   "157001": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "High Noon"
@@ -12808,7 +13524,7 @@
   },
   "157003": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Blood Moon"
@@ -12941,6 +13657,15 @@
    ],
    "release": "2024-10-09"
   },
+  "157088": {
+   "cost": 1350,
+   "rarity": "Epic",
+   "availability": "Legacy",
+   "sets": [
+    "Petals of Spring"
+   ],
+   "release": "2026-02-19"
+  },
   "161001": {
    "cost": 1350,
    "rarity": "Epic",
@@ -12961,7 +13686,7 @@
   },
   "161003": {
    "cost": 750,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Definitely Not"
@@ -12994,6 +13719,15 @@
     "Bees!"
    ],
    "release": "2023-11-22"
+  },
+  "161029": {
+   "cost": 1820,
+   "rarity": "Legendary",
+   "availability": "Available",
+   "sets": [
+    "Food Fight"
+   ],
+   "release": "2026-05-28"
   },
   "163001": {
    "cost": 1350,
@@ -13039,6 +13773,15 @@
     "Crystalis Motus"
    ],
    "release": "2023-09-13"
+  },
+  "163024": {
+   "cost": null,
+   "rarity": "Epic",
+   "availability": "Rare",
+   "sets": [
+    "The Laws of Stone"
+   ],
+   "release": "2026-01-08"
   },
   "164001": {
    "cost": 1350,
@@ -13103,6 +13846,15 @@
    ],
    "release": "2023-12-06"
   },
+  "164044": {
+   "cost": 1350,
+   "rarity": "Epic",
+   "availability": "Legacy",
+   "sets": [
+    "Petals of Spring"
+   ],
+   "release": "2026-02-19"
+  },
   "166001": {
    "cost": 1350,
    "rarity": "Epic",
@@ -13123,12 +13875,21 @@
   },
   "166020": {
    "cost": null,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Rare",
    "sets": [
     "Three Honors"
    ],
    "release": "2024-01-24"
+  },
+  "166021": {
+   "cost": 1350,
+   "rarity": null,
+   "availability": "Upcoming",
+   "sets": [
+    "High Noon"
+   ],
+   "release": "2026-06-24"
   },
   "200001": {
    "cost": 1350,
@@ -13159,7 +13920,7 @@
   },
   "201001": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Dragon World"
@@ -13177,7 +13938,7 @@
   },
   "201003": {
    "cost": 750,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Rift Quest"
@@ -13228,6 +13989,15 @@
     "Day Job"
    ],
    "release": "2025-04-02"
+  },
+  "201051": {
+   "cost": null,
+   "rarity": null,
+   "availability": "Limited",
+   "sets": [
+    "Victorious"
+   ],
+   "release": "2026-04-30"
   },
   "202001": {
    "cost": 1350,
@@ -13328,6 +14098,24 @@
    ],
    "release": "2025-01-23"
   },
+  "202055": {
+   "cost": null,
+   "rarity": "Epic",
+   "availability": "Rare",
+   "sets": [
+    "Arcana"
+   ],
+   "release": "2025-08-27"
+  },
+  "202064": {
+   "cost": 1350,
+   "rarity": null,
+   "availability": "Upcoming",
+   "sets": [
+    "Broken Covenant"
+   ],
+   "release": "2026-06-24"
+  },
   "203001": {
    "cost": 1350,
    "rarity": "Epic",
@@ -13400,6 +14188,15 @@
    ],
    "release": "2024-11-06"
   },
+  "203045": {
+   "cost": 1350,
+   "rarity": "Epic",
+   "availability": "Available",
+   "sets": [
+    "Pandemonium"
+   ],
+   "release": "2026-04-29"
+  },
   "221001": {
    "cost": 1350,
    "rarity": "Epic",
@@ -13445,9 +14242,18 @@
    ],
    "release": "2024-09-25"
   },
+  "221040": {
+   "cost": 1820,
+   "rarity": "Legendary",
+   "availability": "Available",
+   "sets": [
+    "Winter Wonder"
+   ],
+   "release": "2025-12-03"
+  },
   "222001": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Crime City"
@@ -13556,7 +14362,7 @@
   "222060": {
    "cost": null,
    "rarity": "Exalted",
-   "availability": "Rare",
+   "availability": "Limited",
    "sets": [
     "Arcane"
    ],
@@ -13573,7 +14379,7 @@
   },
   "223001": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Culinary Masters"
@@ -13582,7 +14388,7 @@
   },
   "223002": {
    "cost": 750,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Urf the Manatee"
@@ -13625,6 +14431,15 @@
    ],
    "release": "2023-06-14"
   },
+  "223039": {
+   "cost": 1350,
+   "rarity": "Epic",
+   "availability": "Available",
+   "sets": [
+    "Superfans"
+   ],
+   "release": "2026-04-01"
+  },
   "233001": {
    "cost": 1350,
    "rarity": "Epic",
@@ -13642,6 +14457,15 @@
     "Anima Squad"
    ],
    "release": "2024-07-31"
+  },
+  "233020": {
+   "cost": 1350,
+   "rarity": "Epic",
+   "availability": "Available",
+   "sets": [
+    "Battle Academia"
+   ],
+   "release": "2026-01-22"
   },
   "234001": {
    "cost": 1350,
@@ -13696,6 +14520,15 @@
     "World Championship"
    ],
    "release": "2024-09-25"
+  },
+  "234043": {
+   "cost": null,
+   "rarity": "Exalted",
+   "availability": "Limited",
+   "sets": [
+    "Revenant Reign"
+   ],
+   "release": "2026-01-22"
   },
   "235001": {
    "cost": 1350,
@@ -13787,9 +14620,18 @@
    ],
    "release": "2025-02-20"
   },
+  "235072": {
+   "cost": 1350,
+   "rarity": "Epic",
+   "availability": "Available",
+   "sets": [
+    "Warhounds"
+   ],
+   "release": "2026-03-19"
+  },
   "236001": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Legacy"
@@ -13798,7 +14640,7 @@
   },
   "236002": {
    "cost": 750,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Legacy",
    "sets": [
     "Soccer Cup"
@@ -13861,7 +14703,7 @@
   },
   "236025": {
    "cost": null,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Limited",
    "sets": [
     "Victorious"
@@ -13904,9 +14746,18 @@
    ],
    "release": "2025-02-20"
   },
+  "236072": {
+   "cost": null,
+   "rarity": "Mythic",
+   "availability": "Rare",
+   "sets": [
+    "Sunken Shadows"
+   ],
+   "release": "2025-12-03"
+  },
   "238001": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Shockblade"
@@ -13915,7 +14766,7 @@
   },
   "238002": {
    "cost": 750,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Legacy",
    "sets": [
     "World Champions: 2013"
@@ -13933,7 +14784,7 @@
   },
   "238010": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Legacy",
    "sets": [
     "World Championship"
@@ -14015,15 +14866,24 @@
   "238068": {
    "cost": null,
    "rarity": "Mythic",
-   "availability": "Rare",
+   "availability": "Limited",
    "sets": [
     "Odyssey"
    ],
    "release": "2025-02-20"
   },
+  "238069": {
+   "cost": null,
+   "rarity": "Mythic",
+   "availability": "Rare",
+   "sets": [
+    "Spirit Blossom"
+   ],
+   "release": "2025-06-25"
+  },
   "240001": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Medieval"
@@ -14059,7 +14919,7 @@
   },
   "245001": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Guardian of the Sands"
@@ -14068,7 +14928,7 @@
   },
   "245002": {
    "cost": 750,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Academy"
@@ -14123,7 +14983,7 @@
   "245036": {
    "cost": 1350,
    "rarity": "Epic",
-   "availability": "Available",
+   "availability": "Legacy",
    "sets": [
     "Arcane"
    ],
@@ -14248,7 +15108,7 @@
   },
   "254001": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Demacia Vice"
@@ -14257,7 +15117,7 @@
   },
   "254002": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Cops and Robbers"
@@ -14266,7 +15126,7 @@
   },
   "254003": {
    "cost": 750,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Debonair"
@@ -14354,9 +15214,18 @@
    ],
    "release": "2024-11-20"
   },
+  "254049": {
+   "cost": 1350,
+   "rarity": "Epic",
+   "availability": "Legacy",
+   "sets": [
+    "World Champions: 2024"
+   ],
+   "release": "2025-09-10"
+  },
   "266001": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Justicar"
@@ -14374,7 +15243,7 @@
   },
   "266003": {
    "cost": 750,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Bilgewater: Burning Tides"
@@ -14401,7 +15270,7 @@
   },
   "266009": {
    "cost": null,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Limited",
    "sets": [
     "Victorious"
@@ -14464,7 +15333,7 @@
   },
   "267001": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Legacy"
@@ -14473,7 +15342,7 @@
   },
   "267002": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Fables"
@@ -14482,7 +15351,7 @@
   },
   "267003": {
    "cost": 750,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Urf the Manatee"
@@ -14579,9 +15448,18 @@
    ],
    "release": "2025-01-23"
   },
+  "267068": {
+   "cost": null,
+   "rarity": "Mythic",
+   "availability": "Rare",
+   "sets": [
+    "Sunken Shadows"
+   ],
+   "release": "2025-12-03"
+  },
   "268001": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Galactic"
@@ -14599,7 +15477,7 @@
   },
   "268003": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Legacy",
    "sets": [
     "World Champions: 2015"
@@ -14714,6 +15592,24 @@
    ],
    "release": "2024-07-17"
   },
+  "350061": {
+   "cost": 1350,
+   "rarity": "Epic",
+   "availability": "Available",
+   "sets": [
+    "Nightbringer and Dawnbringer"
+   ],
+   "release": "2025-07-16"
+  },
+  "350070": {
+   "cost": 1350,
+   "rarity": "Epic",
+   "availability": "Available",
+   "sets": [
+    "Lunar Revel: Firecracker"
+   ],
+   "release": "2026-02-04"
+  },
   "360001": {
    "cost": 1350,
    "rarity": "Epic",
@@ -14752,16 +15648,25 @@
   },
   "360033": {
    "cost": null,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Rare",
    "sets": [
     "Masque of the Black Rose"
    ],
    "release": "2025-01-09"
   },
+  "360035": {
+   "cost": 1350,
+   "rarity": "Epic",
+   "availability": "Available",
+   "sets": [
+    "Battle Academia"
+   ],
+   "release": "2026-01-22"
+  },
   "412001": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Forgotten Depths"
@@ -14770,7 +15675,7 @@
   },
   "412002": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Legacy",
    "sets": [
     "World Championship"
@@ -14779,7 +15684,7 @@
   },
   "412003": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Blood Moon"
@@ -14788,7 +15693,7 @@
   },
   "412004": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Legacy",
    "sets": [
     "World Champions: 2014"
@@ -14851,7 +15756,7 @@
   },
   "412027": {
    "cost": 750,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Ruined"
@@ -14948,6 +15853,15 @@
    ],
    "release": "2024-07-31"
   },
+  "420037": {
+   "cost": 1350,
+   "rarity": "Epic",
+   "availability": "Available",
+   "sets": [
+    "Day Job"
+   ],
+   "release": "2026-05-28"
+  },
   "421001": {
    "cost": 1350,
    "rarity": "Epic",
@@ -15032,16 +15946,25 @@
   },
   "427030": {
    "cost": null,
-   "rarity": "NoRarity",
-   "availability": "Upcoming",
+   "rarity": null,
+   "availability": "Rare",
    "sets": [
     "Spirit Blossom"
    ],
    "release": "2025-04-30"
   },
+  "427031": {
+   "cost": 1350,
+   "rarity": "Epic",
+   "availability": "Available",
+   "sets": [
+    "Rain Shepherd"
+   ],
+   "release": "2026-05-13"
+  },
   "429001": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Blood Moon"
@@ -15050,7 +15973,7 @@
   },
   "429002": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Legacy",
    "sets": [
     "World Championship"
@@ -15059,7 +15982,7 @@
   },
   "429003": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Legacy",
    "sets": [
     "World Champions: 2015"
@@ -15084,9 +16007,18 @@
    ],
    "release": "2023-03-23"
   },
+  "429024": {
+   "cost": 1350,
+   "rarity": "Epic",
+   "availability": "Available",
+   "sets": [
+    "Nightbringer and Dawnbringer"
+   ],
+   "release": "2025-07-16"
+  },
   "432001": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Elderwood"
@@ -15104,7 +16036,7 @@
   },
   "432006": {
    "cost": 750,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Rift Quest"
@@ -15150,7 +16082,7 @@
   "432037": {
    "cost": 1350,
    "rarity": "Epic",
-   "availability": "Upcoming",
+   "availability": "Available",
    "sets": [
     "Spirit Blossom"
    ],
@@ -15231,7 +16163,7 @@
   "497036": {
    "cost": 1820,
    "rarity": "Legendary",
-   "availability": "Available",
+   "availability": "Legacy",
    "sets": [
     "Star Guardian Season 4"
    ],
@@ -15348,7 +16280,7 @@
   "498038": {
    "cost": 1820,
    "rarity": "Legendary",
-   "availability": "Available",
+   "availability": "Legacy",
    "sets": [
     "Star Guardian Season 4"
    ],
@@ -15407,6 +16339,15 @@
     "Toy Box"
    ],
    "release": "2024-04-03"
+  },
+  "516029": {
+   "cost": 1350,
+   "rarity": "Epic",
+   "availability": "Available",
+   "sets": [
+    "Aegis Frame"
+   ],
+   "release": "2026-01-22"
   },
   "517001": {
    "cost": 1350,
@@ -15480,6 +16421,15 @@
    ],
    "release": "2024-10-23"
   },
+  "517053": {
+   "cost": null,
+   "rarity": "Mythic",
+   "availability": "Rare",
+   "sets": [
+    "World Champions: 2024"
+   ],
+   "release": "2025-09-10"
+  },
   "518001": {
    "cost": 1350,
    "rarity": "Epic",
@@ -15552,6 +16502,15 @@
    ],
    "release": "2024-10-09"
   },
+  "518049": {
+   "cost": null,
+   "rarity": "Epic",
+   "availability": "Rare",
+   "sets": [
+    "Bees!"
+   ],
+   "release": "2025-10-22"
+  },
   "523001": {
    "cost": 1350,
    "rarity": "Epic",
@@ -15597,6 +16556,15 @@
    ],
    "release": "2023-11-08"
   },
+  "523040": {
+   "cost": null,
+   "rarity": "Mythic",
+   "availability": "Rare",
+   "sets": [
+    "Spirit Blossom Springs"
+   ],
+   "release": "2025-07-30"
+  },
   "526001": {
    "cost": 1350,
    "rarity": "Epic",
@@ -15626,7 +16594,7 @@
   },
   "526030": {
    "cost": 975,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Available",
    "sets": [
     "Grand Reckoning"
@@ -15723,6 +16691,24 @@
    ],
    "release": "2024-09-25"
   },
+  "555074": {
+   "cost": 1350,
+   "rarity": "Epic",
+   "availability": "Available",
+   "sets": [
+    "Inkshadow"
+   ],
+   "release": "2025-06-11"
+  },
+  "555075": {
+   "cost": 1350,
+   "rarity": "Epic",
+   "availability": "Legacy",
+   "sets": [
+    "World Champions: 2024"
+   ],
+   "release": "2025-09-10"
+  },
   "711001": {
    "cost": 1350,
    "rarity": "Epic",
@@ -15743,12 +16729,21 @@
   },
   "711020": {
    "cost": 1350,
-   "rarity": "NoRarity",
-   "availability": "Upcoming",
+   "rarity": "Epic",
+   "availability": "Available",
    "sets": [
     "Stargazer"
    ],
-   "release": "0000-00-00"
+   "release": "2025-05-14"
+  },
+  "711029": {
+   "cost": 1350,
+   "rarity": "Epic",
+   "availability": "Available",
+   "sets": [
+    "Surprise Party"
+   ],
+   "release": "2026-04-01"
   },
   "777001": {
    "cost": 1350,
@@ -15840,6 +16835,15 @@
    ],
    "release": "2025-02-20"
   },
+  "777074": {
+   "cost": 1350,
+   "rarity": "Epic",
+   "availability": "Legacy",
+   "sets": [
+    "World Champions: 2024"
+   ],
+   "release": "2025-09-10"
+  },
   "799001": {
    "cost": 1820,
    "rarity": "Legendary",
@@ -15857,6 +16861,33 @@
     "Arcane"
    ],
    "release": "2025-01-23"
+  },
+  "800010": {
+   "cost": null,
+   "rarity": "Mythic",
+   "availability": "Rare",
+   "sets": [
+    "Winterblessed"
+   ],
+   "release": "2025-12-03"
+  },
+  "804001": {
+   "cost": 1350,
+   "rarity": "Epic",
+   "availability": "Available",
+   "sets": [
+    "Spirit Blossom Springs"
+   ],
+   "release": "2025-07-16"
+  },
+  "805001": {
+   "cost": 1350,
+   "rarity": null,
+   "availability": "Upcoming",
+   "sets": [
+    "High Noon"
+   ],
+   "release": "2026-06-24"
   },
   "875001": {
    "cost": 1350,
@@ -15933,11 +16964,20 @@
   "875066": {
    "cost": null,
    "rarity": "Exalted",
-   "availability": "Rare",
+   "availability": "Limited",
    "sets": [
     "Modern Mythos"
    ],
    "release": "2025-01-09"
+  },
+  "875067": {
+   "cost": 1350,
+   "rarity": "Epic",
+   "availability": "Available",
+   "sets": [
+    "Spirit Blossom Springs"
+   ],
+   "release": "2025-07-30"
   },
   "876001": {
    "cost": 1350,
@@ -15975,6 +17015,24 @@
    ],
    "release": "2024-05-15"
   },
+  "876037": {
+   "cost": 1350,
+   "rarity": "Epic",
+   "availability": "Available",
+   "sets": [
+    "Day Job"
+   ],
+   "release": "2025-08-13"
+  },
+  "876046": {
+   "cost": 1820,
+   "rarity": "Legendary",
+   "availability": "Available",
+   "sets": [
+    "Petals of Spring"
+   ],
+   "release": "2026-02-19"
+  },
   "887001": {
    "cost": 1350,
    "rarity": "Epic",
@@ -16010,6 +17068,15 @@
     "Battle Queens"
    ],
    "release": "2024-08-28"
+  },
+  "887039": {
+   "cost": 1350,
+   "rarity": "Epic",
+   "availability": "Available",
+   "sets": [
+    "Rain Shepherd"
+   ],
+   "release": "2025-11-19"
   },
   "888001": {
    "cost": 1350,
@@ -16049,7 +17116,7 @@
   },
   "888031": {
    "cost": null,
-   "rarity": "NoRarity",
+   "rarity": null,
    "availability": "Rare",
    "sets": [
     "Masque of the Black Rose"
@@ -16064,6 +17131,24 @@
     "Anima Squad"
    ],
    "release": "2024-07-17"
+  },
+  "893011": {
+   "cost": 1350,
+   "rarity": "Epic",
+   "availability": "Available",
+   "sets": [
+    "Arcana"
+   ],
+   "release": "2025-09-24"
+  },
+  "893020": {
+   "cost": 1350,
+   "rarity": null,
+   "availability": "Upcoming",
+   "sets": [
+    "Broken Covenant"
+   ],
+   "release": "2026-06-24"
   },
   "895001": {
    "cost": 1350,
@@ -16082,6 +17167,15 @@
     "Coven"
    ],
    "release": "2023-10-11"
+  },
+  "895021": {
+   "cost": 1350,
+   "rarity": "Epic",
+   "availability": "Available",
+   "sets": [
+    "Inkshadow"
+   ],
+   "release": "2025-06-11"
   },
   "897001": {
    "cost": 1350,
@@ -16119,6 +17213,15 @@
    ],
    "release": "2024-01-31"
   },
+  "901011": {
+   "cost": 1350,
+   "rarity": "Epic",
+   "availability": "Available",
+   "sets": [
+    "Snowdown Showdown"
+   ],
+   "release": "2025-12-03"
+  },
   "902001": {
    "cost": 1350,
    "rarity": "Epic",
@@ -16137,6 +17240,24 @@
    ],
    "release": "2024-06-26"
   },
+  "902020": {
+   "cost": 1350,
+   "rarity": "Epic",
+   "availability": "Available",
+   "sets": [
+    "Winter Wonder"
+   ],
+   "release": "2025-12-03"
+  },
+  "904001": {
+   "cost": 1350,
+   "rarity": "Epic",
+   "availability": "Available",
+   "sets": [
+    "Immortal Journey"
+   ],
+   "release": "2025-11-19"
+  },
   "910001": {
    "cost": 1350,
    "rarity": "Epic",
@@ -16145,6 +17266,24 @@
     "Winterblessed"
    ],
    "release": "2023-12-06"
+  },
+  "910011": {
+   "cost": 1350,
+   "rarity": "Epic",
+   "availability": "Available",
+   "sets": [
+    "Spirit Blossom"
+   ],
+   "release": "2025-06-25"
+  },
+  "910021": {
+   "cost": 1350,
+   "rarity": "Epic",
+   "availability": "Available",
+   "sets": [
+    "Sinful Shores"
+   ],
+   "release": "2026-06-10"
   },
   "950001": {
    "cost": 1350,
@@ -16172,6 +17311,15 @@
     "Food Fight"
    ],
    "release": "2025-04-02"
+  },
+  "950029": {
+   "cost": 1350,
+   "rarity": "Epic",
+   "availability": "Available",
+   "sets": [
+    "Warhounds"
+   ],
+   "release": "2026-03-19"
   }
  }
 }

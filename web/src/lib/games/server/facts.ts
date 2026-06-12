@@ -1,7 +1,8 @@
 // Static skin facts (server-only): RP cost, rarity, availability, skin
-// lines, release dates — snapshotted from Meraki Analytics into the
-// committed dataset at ../data/skin-facts.json (see scripts/snapshot-facts.mjs).
-// Never fetched at runtime: a community CDN outage must not take a game down.
+// lines, release dates — snapshotted from the League Wiki's SkinData module
+// (rarity from CommunityDragon) into the committed dataset at
+// ../data/skin-facts.json (see scripts/snapshot-facts.mjs).
+// Never fetched at runtime: a community-source outage must not take a game down.
 
 import dataset from '../data/skin-facts.json'
 
@@ -13,9 +14,9 @@ export interface SkinFacts {
   release: string | null
 }
 
-// Meraki stamps not-yet-released skins with release "0000-00-00" (and
-// availability "Upcoming") — normalize that to null so date math never sees
-// an unparseable string.
+// The snapshot script only emits ISO release dates, but keep the guard:
+// date math must never see an unparseable string, whatever the upstream
+// dataset does next.
 const SKINS: Record<string, SkinFacts> = Object.fromEntries(
   Object.entries(dataset.skins as Record<string, SkinFacts>).map(([id, f]) => [
     id,
@@ -46,7 +47,7 @@ export function priceCheckIds(): string[] {
 }
 
 // skinId → skin lines, for the Mirror's taste profile ("you over-index on
-// Coven"). Most skins carry exactly one set. Meraki also files 81 vaulted
+// Coven"). Most skins carry exactly one set. The wiki also files ~80 vaulted
 // skins under a "Legacy" set — that's an availability bucket, not a theme,
 // so it's excluded here (availability already carries it).
 export function skinSets(skinId: string): string[] {

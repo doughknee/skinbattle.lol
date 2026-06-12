@@ -139,48 +139,103 @@ function replaceCatalog(
 
 // championFull.json has a second class of phantom entries beyond the
 // parenthesized chromas filtered at sync: chroma variants with plain names
-// ("Zac Sweet Orange", "Worlds 2017 Ashe Chroma" — 64 in patch 16.12) whose
+// ("Zac Sweet Orange", "Worlds 2017 Ashe Chroma" — 61 in patch 16.12) whose
 // splash URLs 403. No name pattern catches them reliably, so after each
 // patch sync a background sweep HEAD-checks every splash once and clears
 // splash_ok on the dead ones. Until the sweep lands (~30 s), the client's
 // broken-image fallback covers the gap.
 const SWEEP_CONCURRENCY = 32
+// Bump to force a one-time re-sweep on deploy (e.g. after a sweep bugfix);
+// a version bump alone only re-sweeps on the next League patch.
+const SWEEP_REV = 2
 let sweepRunning = false
 
+// Data Dragon's data calls the champion "Fiddlesticks", but the splash CDN
+// serves some of its skins only under the legacy casing "FiddleSticks" —
+// three real skins (Star Nemesis, Blood Moon, Flora Fatalis) 403 on the
+// constructed URL and got benched as phantoms. Before benching, retry known
+// alias spellings and repoint splash_url at whichever actually serves.
+const CHAMPION_ASSET_ALIASES: Record<string, string[]> = {
+  Fiddlesticks: ['FiddleSticks'],
+}
+
+async function splashDead(url: string): Promise<boolean | null> {
+  try {
+    const res = await fetch(url, {
+      method: 'HEAD',
+      signal: AbortSignal.timeout(10_000),
+    })
+    return res.status === 403 || res.status === 404
+  } catch {
+    // Network blip / 5xx: transient — can't tell, don't bench on it.
+    return null
+  }
+}
+
 function maybeSweepSplashes(db: DatabaseSync, version: string): void {
-  if (sweepRunning || getMeta(db, 'splash_sweep_version') === version) return
+  const stamp = `${version}#${SWEEP_REV}`
+  if (sweepRunning || getMeta(db, 'splash_sweep_version') === stamp) return
   sweepRunning = true
   setImmediate(async () => {
     try {
       const skins = db
-        .prepare('SELECT id, splash_url AS url FROM catalog_skins')
-        .all() as unknown as { id: string; url: string }[]
+        .prepare(
+          'SELECT id, champion_id AS championId, num, splash_url AS url FROM catalog_skins',
+        )
+        .all() as unknown as {
+        id: string
+        championId: string
+        num: number
+        url: string
+      }[]
       const broken: string[] = []
+      const alive: string[] = []
+      const repointed: { id: string; url: string }[] = []
       const queue = [...skins]
       await Promise.all(
         Array.from({ length: SWEEP_CONCURRENCY }, async () => {
           for (let s = queue.pop(); s; s = queue.pop()) {
-            try {
-              const res = await fetch(s.url, {
-                method: 'HEAD',
-                signal: AbortSignal.timeout(10_000),
-              })
-              if (res.status === 403 || res.status === 404) broken.push(s.id)
-              // Other failures (5xx, timeouts) are transient — leave the
-              // skin in play rather than benching it on a CDN hiccup.
-            } catch {
-              /* network blip: same call — keep the skin */
+            const dead = await splashDead(s.url)
+            if (dead === null) continue
+            if (!dead) {
+              alive.push(s.id)
+              continue
             }
+            let rescued = false
+            for (const alias of CHAMPION_ASSET_ALIASES[s.championId] ?? []) {
+              const aliasUrl = `${DD}/cdn/img/champion/splash/${alias}_${s.num}.jpg`
+              if ((await splashDead(aliasUrl)) === false) {
+                repointed.push({ id: s.id, url: aliasUrl })
+                rescued = true
+                break
+              }
+            }
+            if (!rescued) broken.push(s.id)
           }
         }),
       )
-      const clear = db.prepare(
-        'UPDATE catalog_skins SET splash_ok = 0 WHERE id = ?',
+      // The sweep is authoritative both ways: a previously-benched skin
+      // whose splash now serves (CDN fixed, or rescued via alias) returns
+      // to play instead of staying benched forever.
+      const setOk = db.prepare(
+        'UPDATE catalog_skins SET splash_ok = ? WHERE id = ?',
       )
-      for (const id of broken) clear.run(id)
-      setMeta(db, 'splash_sweep_version', version)
+      const setUrl = db.prepare(
+        'UPDATE catalog_skins SET splash_url = ?, splash_ok = 1 WHERE id = ?',
+      )
+      db.exec('BEGIN')
+      try {
+        for (const id of alive) setOk.run(1, id)
+        for (const r of repointed) setUrl.run(r.url, r.id)
+        for (const id of broken) setOk.run(0, id)
+        db.exec('COMMIT')
+      } catch (err) {
+        db.exec('ROLLBACK')
+        throw err
+      }
+      setMeta(db, 'splash_sweep_version', stamp)
       console.log(
-        `splash sweep (${version}): ${skins.length} checked, ${broken.length} benched`,
+        `splash sweep (${stamp}): ${skins.length} checked, ${broken.length} benched, ${repointed.length} repointed to alias assets`,
       )
     } catch (err) {
       console.error('splash sweep failed:', err)

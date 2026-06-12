@@ -147,7 +147,7 @@ function buildContrarian(db: DatabaseSync, rows: RatedRow[]): ContrarianTake[] {
 }
 
 // Over/under-indexing relative to the user's own average, grouped by skin
-// line (the Meraki facts dataset's `set` tags — "you over-index on Coven")
+// line (the facts dataset's `set` tags — "you over-index on Coven")
 // and by champion. Both pools compete on |delta|; entries carry their kind.
 function buildTaste(rows: RatedRow[]): {
   over: TasteEntry[]
