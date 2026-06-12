@@ -1,17 +1,15 @@
-import { createFileRoute, Link } from '@tanstack/react-router'
+import { createFileRoute } from '@tanstack/react-router'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import {
   faArrowTrendUp,
   faFire,
-  faRankingStar,
   faShuffle,
   faUsers,
 } from '@fortawesome/free-solid-svg-icons'
 import ErrorState from '~/components/ErrorState'
 import { toast } from '~/components/Toaster'
 import TodayStrip from '~/components/games/TodayStrip'
-import { btnSecondarySm } from '~/lib/ui'
 import {
   fetchDailyHub,
   fetchQuickBattle,
@@ -252,14 +250,7 @@ function SessionHistory({ entries }: { entries: HistoryEntry[] }) {
         ))}
       </ol>
       <p className="mt-3 text-sm text-grey1">
-        Every verdict sharpens{' '}
-        <Link
-          to="/profile"
-          className="font-bold text-gold2 transition duration-150 hover:text-gold1"
-        >
-          your Mirror
-        </Link>{' '}
-        — the tier list your picks are building.
+        Every verdict sharpens the tier list your picks are building.
       </p>
     </section>
   )
@@ -443,7 +434,7 @@ function BattlePage() {
         </p>
         <div className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-1">
           <h1 className="font-serif text-4xl md:text-5xl font-bold text-gold1">
-            Quick B<span className="italic">attle</span>
+            Head-to-Head
           </h1>
           <p className="flex items-center gap-4 text-sm text-grey1">
             {session > 0 && (
@@ -509,19 +500,13 @@ function BattlePage() {
         </p>
       </div>
 
-      <div className="mt-10 flex flex-wrap items-center gap-x-6 gap-y-3">
-        <Link to="/profile" className={btnSecondarySm}>
-          <FontAwesomeIcon icon={faRankingStar} className="h-4" />
-          Your Mirror
-        </Link>
-        {stats.tier === 'guest' && (
-          <p className="text-sm text-grey1">
-            <FontAwesomeIcon icon={faShuffle} className="mr-1.5 h-3 text-gold2" />
-            Playing as a guest — your picks count at reduced weight. Sign in to
-            vote at full strength.
-          </p>
-        )}
-      </div>
+      {stats.tier === 'guest' && (
+        <p className="mt-10 text-sm text-grey1">
+          <FontAwesomeIcon icon={faShuffle} className="mr-1.5 h-3 text-gold2" />
+          Playing as a guest — your picks count at reduced weight. Sign in to
+          vote at full strength.
+        </p>
+      )}
 
       <SessionHistory entries={history} />
 

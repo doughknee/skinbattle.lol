@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from '@tanstack/react-router'
+import { useEffect, useState } from 'react'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import {
   faArrowUp,
@@ -12,6 +13,7 @@ import SkinCard from '~/components/SkinCard'
 import EmptyState from '~/components/EmptyState'
 import { HomeSkeleton } from '~/components/Skeletons'
 import { api } from '~/lib/api'
+import { useAuth } from '~/lib/useAuth'
 import { SITE_SECTIONS } from '~/lib/siteMap'
 import { btnPrimary, btnSecondary } from '~/lib/ui'
 import type { Skin } from '~/lib/types'
@@ -71,7 +73,41 @@ function formatCount(n: number): string {
 }
 
 function HomePage() {
-  const { championCount, skinCount, featured, trending } = Route.useLoaderData()
+  const {
+    championCount,
+    skinCount,
+    featured,
+    trending: baseTrending,
+  } = Route.useLoaderData()
+  const { isAuthenticated, getApiToken } = useAuth()
+
+  // The loader runs without an auth token, so its cards carry no user vote
+  // state. Once auth resolves, re-fetch with the token so the trending cards
+  // reflect the signed-in user's own stars/bans.
+  const [trending, setTrending] = useState(baseTrending)
+  useEffect(() => {
+    let cancelled = false
+    async function enrich() {
+      if (!isAuthenticated) {
+        setTrending(baseTrending)
+        return
+      }
+      const token = await getApiToken()
+      if (!token) return
+      try {
+        const awards = await api.awards(token)
+        const starred = awards.topStarred.filter((s) => (s.total_stars ?? 0) > 0)
+        if (!cancelled) setTrending(starred.slice(0, 4))
+      } catch {
+        /* keep base data */
+      }
+    }
+    enrich()
+    return () => {
+      cancelled = true
+    }
+  }, [isAuthenticated, getApiToken, baseTrending])
+
   const heroSplash = featured?.splash_url ?? FALLBACK_SPLASH
   const heroName = featured?.name ?? 'Jhin'
 

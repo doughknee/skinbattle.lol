@@ -157,11 +157,7 @@ function AwardsPage() {
     <div className="container mx-auto px-6 pt-28 pb-12">
       <PageHeader
         eyebrow="The community has spoken"
-        title={
-          <>
-            A<span className="italic">wards</span>
-          </>
-        }
+        title="Awards"
         subtitle={
           <span className="italic">
             These a(wards) aren’t for vision—they’re for the best (and worst)

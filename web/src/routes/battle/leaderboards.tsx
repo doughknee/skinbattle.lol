@@ -87,11 +87,7 @@ function LeaderboardsPage() {
     <div className="container mx-auto max-w-4xl px-6 pt-28 pb-16">
       <PageHeader
         eyebrow="Community · named players only"
-        title={
-          <>
-            Leaderbo<span className="italic">ards</span>
-          </>
-        }
+        title="Leaderboards"
         subtitle="Streaks, fastest solves, and battle volume. Guests can look — only signed-in players hold a spot."
         className="mb-8"
       />

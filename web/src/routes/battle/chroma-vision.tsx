@@ -138,7 +138,7 @@ function ChromaVisionPage() {
         </p>
         <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1">
           <h1 className="font-serif text-4xl md:text-5xl font-bold text-gold1">
-            Chroma Vis<span className="italic">ion</span>{' '}
+            Chroma Vision{' '}
             <span className="text-gold2">#{state.puzzleNumber}</span>
           </h1>
           {playing && (

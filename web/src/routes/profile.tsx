@@ -337,7 +337,7 @@ function ProfilePage() {
           Your taste, reflected
         </p>
         <h1 className="font-serif text-4xl font-bold text-gold1 md:text-5xl">
-          The M<span className="italic">irror</span>
+          The Mirror
         </h1>
       </header>
 

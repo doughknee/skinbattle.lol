@@ -78,11 +78,7 @@ function RankingsIndexPage() {
     <div className="container mx-auto max-w-4xl px-6 pt-28 pb-16">
       <PageHeader
         eyebrow="Every slice is a link"
-        title={
-          <>
-            Rank<span className="italic">ings</span>
-          </>
-        }
+        title="Rankings"
         subtitle="The community ranking, sliced every way an argument needs: price tier, skin line, champion, year."
         className="mb-6"
       />
