@@ -329,6 +329,23 @@ function GamesHubPage() {
         </p>
         <div className="stagger flex flex-col gap-4">
           <Link
+            to="/rankings"
+            className={`${cardShell} group flex items-center gap-4 transition duration-200 hover:-translate-y-0.5 hover:bg-hextech-black/50 hover:outline-gold2/60`}
+          >
+            <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-hextech-black/60 outline outline-gold5/60 -outline-offset-2">
+              <FontAwesomeIcon icon={faRankingStar} className="h-6 text-gold2" />
+            </div>
+            <div>
+              <h3 className="font-serif text-2xl font-bold text-gold1 group-hover:text-gold2 transition duration-150">
+                Rankings
+              </h3>
+              <p className="text-sm text-grey1">
+                The community ranking, sliced by price tier, skin line,
+                champion, and year.
+              </p>
+            </div>
+          </Link>
+          <Link
             to="/insights/drought"
             className={`${cardShell} group flex items-center gap-4 transition duration-200 hover:-translate-y-0.5 hover:bg-hextech-black/50 hover:outline-gold2/60`}
           >

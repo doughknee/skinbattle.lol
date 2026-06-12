@@ -3,12 +3,16 @@
 // is cosmetic and the trailing ID is what resolves. Any slug whose ID
 // matches redirects to the canonical spelling; links never die.
 
-export function skinSlug(name: string, skinId: string): string {
-  const base = name
+export function kebab(s: string): string {
+  return s
     .toLowerCase()
     .normalize('NFKD')
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-+|-+$/g, '')
+}
+
+export function skinSlug(name: string, skinId: string): string {
+  const base = kebab(name)
   return base ? `${base}-${skinId}` : skinId
 }
 

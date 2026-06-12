@@ -108,7 +108,16 @@ expire, and (3) a persistent identity worth investing in. Games are sequenced by
   `release: "0000-00-00"` on Upcoming skins is normalized to null at load.
   Still deferred: asset-version epoch bump on splash changes (needs
   hashing), Discord announce (Phase 2).
-- ◻ Leaderboards, per-champion/per-line ranking slices — **not started**.
+- ✅ **Ranking slices** (2026-06-12) — `/rankings` index + `/rankings/<slice>`
+  for `all`, `price-<tier>`, `line-<kebab>`, `champion-<id>`, `year-<yyyy>`:
+  rated skins ranked with rating ± uncertainty and battle counts, the
+  "Early Rankings — still calibrating" banner while median battles < 10
+  (thin data as a call to action), unrated counts shown honestly, per-slice
+  OG cards (`/og/rankings/<slice>`: top-3 podium over the #1 splash).
+  Cross-linked: skin pages link their price tier / skin line / champion
+  slices; hub Insights section links the index.
+- ◻ Leaderboards (need named users — Logto attachment first) — **not
+  started**.
 
 **Architecture note**: game state currently lives in the TanStack Start SSR
 layer (server functions + SQLite at `web/.data/games.db` — persisted via the
@@ -123,9 +132,11 @@ that happen after first paint; one-shot animations cleared by timer, not
 animationend; every interaction answers back before the round-trip
 completes (pending states).
 
-**Next session**: ranking slices (`/rankings/<slice>` — best per champion,
-per skin line, per price tier; the purchasing-guide citability layer), or
-Chroma Vision. Logto attachment wiring remains blocked on test credentials.
+**Next session**: Chroma Vision (the fourth daily — name the skin from its
+color palette, derived from splashes with jimp), which completes the
+Phase 1 daily lineup. After that, the solo-buildable roadmap is essentially
+done: leaderboards need named users (Logto attachment — blocked on test
+credentials), and Phase 2+ is gated on real community data/DAU by design.
 
 ## Landscape & differentiation
 
