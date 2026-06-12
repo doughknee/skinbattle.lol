@@ -401,3 +401,15 @@ export interface MirrorState {
   completion: ChampionCompletion[] // champions touched, most-rated first
   completionMore: number // touched champions beyond the list cap
 }
+
+// Live community totals for the public roadmap's milestone meters. The star
+// and ban totals come from the Go API and are null when it is unreachable
+// (the page renders without them rather than failing).
+export interface RoadmapState {
+  battles: number
+  ratedSkins: number // skins with at least one battle
+  totalSkins: number // full catalog size
+  medianBattles: number // median battles among rated skins
+  starsGiven: number | null
+  bansCast: number | null
+}

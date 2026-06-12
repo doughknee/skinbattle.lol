@@ -503,7 +503,13 @@ function RankingSlicePage() {
             {state.totalCount.toLocaleString()} skins here have fought, with a
             median of {state.medianBattles}{' '}
             {state.medianBattles === 1 ? 'battle' : 'battles'} each. Every
-            Quick Battle pick sharpens this list.
+            Quick Battle pick sharpens this list.{' '}
+            <Link
+              to="/rankings/elo"
+              className="font-semibold underline underline-offset-2 transition duration-150 hover:text-gold1"
+            >
+              How the rankings work
+            </Link>
           </p>
           <div
             className="mt-3 h-1 w-full max-w-sm bg-hextech-black/60"
