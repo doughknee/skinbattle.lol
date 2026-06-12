@@ -222,10 +222,11 @@ func (h *handlers) getAwards(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-// voteRequest is the JSON body for POST /api/votes.
+// voteRequest is the JSON body for POST /api/votes. Stale clients may still
+// send a legacy `vote` field — the decoder drops unknown fields, so it is
+// silently ignored rather than rejected.
 type voteRequest struct {
 	SkinID string `json:"skinId"`
-	Vote   *int   `json:"vote"`
 	Star   *bool  `json:"star"`
 	X      *bool  `json:"x"`
 }
@@ -246,10 +247,6 @@ func (h *handlers) postVote(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusBadRequest, "skinId is required")
 		return
 	}
-	if req.Vote == nil {
-		writeError(w, http.StatusBadRequest, "vote is required")
-		return
-	}
 	if req.Star == nil {
 		writeError(w, http.StatusBadRequest, "star is required")
 		return
@@ -259,17 +256,9 @@ func (h *handlers) postVote(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Validate vote value.
-	voteVal := *req.Vote
-	if voteVal != -1 && voteVal != 0 && voteVal != 1 {
-		writeError(w, http.StatusBadRequest, "vote must be -1, 0, or 1")
-		return
-	}
-
 	inp := store.VoteInput{
 		SkinID: req.SkinID,
 		UserID: user.LocalID,
-		Vote:   voteVal,
 		Star:   *req.Star,
 		X:      *req.X,
 	}

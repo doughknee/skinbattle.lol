@@ -11,19 +11,19 @@ import (
 )
 
 // Skin mirrors the Skin type from the API contract.
+// The legacy vote/total_votes columns still exist in Postgres but are no
+// longer served — stars and bans are the only catalog-voting currency.
 type Skin struct {
-	ID          string  `json:"id"`
-	ChampionID  string  `json:"champion_id"`
-	Num         int     `json:"num"`
-	Name        string  `json:"name"`
-	Chromas     bool    `json:"chromas"`
-	SplashURL   string  `json:"splash_url"`
-	TotalVotes  int     `json:"total_votes"`
-	TotalStars  int     `json:"total_stars"`
-	TotalX      int     `json:"total_x"`
-	UserVote    *int    `json:"user_vote,omitempty"`
-	UserStar    *bool   `json:"user_star,omitempty"`
-	UserX       *bool   `json:"user_x,omitempty"`
+	ID         string `json:"id"`
+	ChampionID string `json:"champion_id"`
+	Num        int    `json:"num"`
+	Name       string `json:"name"`
+	Chromas    bool   `json:"chromas"`
+	SplashURL  string `json:"splash_url"`
+	TotalStars int    `json:"total_stars"`
+	TotalX     int    `json:"total_x"`
+	UserStar   *bool  `json:"user_star,omitempty"`
+	UserX      *bool  `json:"user_x,omitempty"`
 }
 
 // Champion mirrors the Champion type from the API contract.
@@ -38,7 +38,6 @@ type Champion struct {
 
 // VoteTotals holds the recomputed totals after a vote write.
 type VoteTotals struct {
-	TotalVotes int `json:"total_votes"`
 	TotalStars int `json:"total_stars"`
 	TotalX     int `json:"total_x"`
 }
@@ -49,11 +48,17 @@ type UserStats struct {
 	UsedX     int `json:"usedX"`
 }
 
-// ErrStarLimit is returned when a user would exceed 3 stars.
-var ErrStarLimit = errors.New("star limit exceeded: max 3 stars allowed")
+// Per-user budgets: stars and bans are scarce on purpose.
+const (
+	StarBudget = 10
+	XBudget    = 10
+)
 
-// ErrXLimit is returned when a user would exceed 3 x marks.
-var ErrXLimit = errors.New("x limit exceeded: max 3 x marks allowed")
+// ErrStarLimit is returned when a user would exceed the star budget.
+var ErrStarLimit = fmt.Errorf("star limit exceeded: max %d stars allowed", StarBudget)
+
+// ErrXLimit is returned when a user would exceed the x budget.
+var ErrXLimit = fmt.Errorf("x limit exceeded: max %d x marks allowed", XBudget)
 
 // ErrUsernameTaken is returned when a profile update collides with another
 // user's username (unique constraint on users.username).
@@ -74,30 +79,28 @@ func New(pool *pgxpool.Pool) *Store {
 }
 
 // scanSkin scans a single Skin row. The query must select columns in this order:
-// id, champion_id, num, name, chromas, splash_url, total_votes, total_stars, total_x
-// Optionally (when userID > 0): usv.vote, usv.star, usv.x
+// id, champion_id, num, name, chromas, splash_url, total_stars, total_x
+// Optionally (when userID > 0): usv.star, usv.x
 func scanSkinBase(rows pgx.Rows) (Skin, error) {
 	var s Skin
 	err := rows.Scan(
 		&s.ID, &s.ChampionID, &s.Num, &s.Name, &s.Chromas,
-		&s.SplashURL, &s.TotalVotes, &s.TotalStars, &s.TotalX,
+		&s.SplashURL, &s.TotalStars, &s.TotalX,
 	)
 	return s, err
 }
 
 func scanSkinWithVotes(rows pgx.Rows) (Skin, error) {
 	var s Skin
-	var vote *int
 	var star, x *bool
 	err := rows.Scan(
 		&s.ID, &s.ChampionID, &s.Num, &s.Name, &s.Chromas,
-		&s.SplashURL, &s.TotalVotes, &s.TotalStars, &s.TotalX,
-		&vote, &star, &x,
+		&s.SplashURL, &s.TotalStars, &s.TotalX,
+		&star, &x,
 	)
 	if err != nil {
 		return s, err
 	}
-	s.UserVote = vote
 	s.UserStar = star
 	s.UserX = x
 	return s, nil
@@ -132,7 +135,7 @@ func (s *Store) Champions(ctx context.Context) ([]Champion, error) {
 	// Load all skins. splash_ok filters phantom chroma entries whose splash
 	// art 403s on the CDN (hidden by the post-sync sweep, never deleted).
 	skinRows, err := s.pool.Query(ctx,
-		`SELECT id, champion_id, num, name, chromas, splash_url, total_votes, total_stars, total_x
+		`SELECT id, champion_id, num, name, chromas, splash_url, total_stars, total_x
 		 FROM skins WHERE splash_ok ORDER BY champion_id, num`,
 	)
 	if err != nil {
@@ -175,8 +178,8 @@ func (s *Store) Champion(ctx context.Context, id string, userID int64) (*Champio
 	if userID > 0 {
 		rows, err := s.pool.Query(ctx, `
 			SELECT sk.id, sk.champion_id, sk.num, sk.name, sk.chromas, sk.splash_url,
-			       sk.total_votes, sk.total_stars, sk.total_x,
-			       usv.vote, usv.star, usv.x
+			       sk.total_stars, sk.total_x,
+			       usv.star, usv.x
 			FROM skins sk
 			LEFT JOIN user_skin_votes usv ON usv.skin_id = sk.id AND usv.user_id = $2
 			WHERE sk.champion_id = $1 AND sk.splash_ok
@@ -201,7 +204,7 @@ func (s *Store) Champion(ctx context.Context, id string, userID int64) (*Champio
 	} else {
 		rows, err := s.pool.Query(ctx, `
 			SELECT id, champion_id, num, name, chromas, splash_url,
-			       total_votes, total_stars, total_x
+			       total_stars, total_x
 			FROM skins
 			WHERE champion_id = $1 AND splash_ok
 			ORDER BY num`,
@@ -231,7 +234,7 @@ func (s *Store) Champion(ctx context.Context, id string, userID int64) (*Champio
 func (s *Store) Skins(ctx context.Context) ([]Skin, error) {
 	rows, err := s.pool.Query(ctx,
 		`SELECT id, champion_id, num, name, chromas, splash_url,
-		        total_votes, total_stars, total_x
+		        total_stars, total_x
 		 FROM skins WHERE splash_ok ORDER BY champion_id, num`,
 	)
 	if err != nil {
@@ -268,8 +271,8 @@ func (s *Store) TopSkinsBy(ctx context.Context, column string, limit int, userID
 	if userID > 0 {
 		q := fmt.Sprintf(`
 			SELECT sk.id, sk.champion_id, sk.num, sk.name, sk.chromas, sk.splash_url,
-			       sk.total_votes, sk.total_stars, sk.total_x,
-			       usv.vote, usv.star, usv.x
+			       sk.total_stars, sk.total_x,
+			       usv.star, usv.x
 			FROM skins sk
 			LEFT JOIN user_skin_votes usv ON usv.skin_id = sk.id AND usv.user_id = $2
 			WHERE sk.splash_ok
@@ -279,7 +282,7 @@ func (s *Store) TopSkinsBy(ctx context.Context, column string, limit int, userID
 	} else {
 		q := fmt.Sprintf(`
 			SELECT id, champion_id, num, name, chromas, splash_url,
-			       total_votes, total_stars, total_x
+			       total_stars, total_x
 			FROM skins
 			WHERE splash_ok
 			ORDER BY %s DESC
@@ -327,8 +330,8 @@ func (s *Store) SkinsByIDs(ctx context.Context, ids []string, userID int64) ([]S
 	if userID > 0 {
 		rows, err = s.pool.Query(ctx, `
 			SELECT sk.id, sk.champion_id, sk.num, sk.name, sk.chromas, sk.splash_url,
-			       sk.total_votes, sk.total_stars, sk.total_x,
-			       usv.vote, usv.star, usv.x
+			       sk.total_stars, sk.total_x,
+			       usv.star, usv.x
 			FROM skins sk
 			LEFT JOIN user_skin_votes usv ON usv.skin_id = sk.id AND usv.user_id = $2
 			WHERE sk.id = ANY($1) AND sk.splash_ok`,
@@ -337,7 +340,7 @@ func (s *Store) SkinsByIDs(ctx context.Context, ids []string, userID int64) ([]S
 	} else {
 		rows, err = s.pool.Query(ctx, `
 			SELECT id, champion_id, num, name, chromas, splash_url,
-			       total_votes, total_stars, total_x
+			       total_stars, total_x
 			FROM skins
 			WHERE id = ANY($1) AND splash_ok`,
 			ids,
@@ -380,12 +383,13 @@ func (s *Store) SkinsByIDs(ctx context.Context, ids []string, userID int64) ([]S
 type VoteInput struct {
 	SkinID string
 	UserID int64
-	Vote   int
 	Star   bool
 	X      bool
 }
 
-// Vote upserts a vote in a transaction, enforces limits, and recomputes totals.
+// Vote upserts a star/ban vote in a transaction, enforces budgets, and
+// recomputes totals. The legacy vote column is left untouched on existing
+// rows (and zero on new ones) — up/down voting is retired but the data stays.
 // Returns the new totals and the champion_id (for cache invalidation).
 func (s *Store) Vote(ctx context.Context, inp VoteInput) (VoteTotals, string, error) {
 	tx, err := s.pool.Begin(ctx)
@@ -400,18 +404,6 @@ func (s *Store) Vote(ctx context.Context, inp VoteInput) (VoteTotals, string, er
 
 	// If setting star or x, check current counts for this user across all skins.
 	if inp.Star || inp.X {
-		// Fetch existing vote for this skin so we know whether this is a change.
-		var existingStar, existingX bool
-		scanErr := tx.QueryRow(ctx,
-			`SELECT COALESCE(star, false), COALESCE(x, false)
-			 FROM user_skin_votes WHERE skin_id = $1 AND user_id = $2`,
-			inp.SkinID, inp.UserID,
-		).Scan(&existingStar, &existingX)
-
-		if scanErr != nil && !errors.Is(scanErr, pgx.ErrNoRows) {
-			return VoteTotals{}, "", fmt.Errorf("read existing vote: %w", scanErr)
-		}
-
 		// Count totals across all skins, excluding this skin (we'll recount it).
 		var totalStars, totalX int
 		err = tx.QueryRow(ctx,
@@ -426,13 +418,13 @@ func (s *Store) Vote(ctx context.Context, inp VoteInput) (VoteTotals, string, er
 			return VoteTotals{}, "", fmt.Errorf("count user votes: %w", err)
 		}
 
-		// Adding star: current stars elsewhere + new star must not exceed 3.
-		if inp.Star && totalStars+1 > 3 {
+		// Adding star: current stars elsewhere + new star must stay in budget.
+		if inp.Star && totalStars+1 > StarBudget {
 			err = ErrStarLimit
 			return VoteTotals{}, "", err
 		}
-		// Adding x: current x elsewhere + new x must not exceed 3.
-		if inp.X && totalX+1 > 3 {
+		// Adding x: current x elsewhere + new x must stay in budget.
+		if inp.X && totalX+1 > XBudget {
 			err = ErrXLimit
 			return VoteTotals{}, "", err
 		}
@@ -441,29 +433,28 @@ func (s *Store) Vote(ctx context.Context, inp VoteInput) (VoteTotals, string, er
 	// Upsert the vote.
 	_, err = tx.Exec(ctx, `
 		INSERT INTO user_skin_votes (skin_id, user_id, vote, star, x, voted_at)
-		VALUES ($1, $2, $3, $4, $5, now())
+		VALUES ($1, $2, 0, $3, $4, now())
 		ON CONFLICT (skin_id, user_id) DO UPDATE
-		SET vote = EXCLUDED.vote,
-		    star = EXCLUDED.star,
+		SET star = EXCLUDED.star,
 		    x    = EXCLUDED.x,
 		    voted_at = now()`,
-		inp.SkinID, inp.UserID, inp.Vote, inp.Star, inp.X,
+		inp.SkinID, inp.UserID, inp.Star, inp.X,
 	)
 	if err != nil {
 		return VoteTotals{}, "", fmt.Errorf("upsert vote: %w", err)
 	}
 
-	// Recompute and persist totals for this skin.
+	// Recompute and persist totals for this skin. total_votes is frozen at
+	// its legacy value — nothing writes it anymore.
 	var totals VoteTotals
 	err = tx.QueryRow(ctx, `
 		UPDATE skins SET
-			total_votes = (SELECT COALESCE(SUM(vote), 0)   FROM user_skin_votes WHERE skin_id = $1),
-			total_stars = (SELECT COUNT(*)                 FROM user_skin_votes WHERE skin_id = $1 AND star = true),
-			total_x     = (SELECT COUNT(*)                 FROM user_skin_votes WHERE skin_id = $1 AND x = true)
+			total_stars = (SELECT COUNT(*) FROM user_skin_votes WHERE skin_id = $1 AND star = true),
+			total_x     = (SELECT COUNT(*) FROM user_skin_votes WHERE skin_id = $1 AND x = true)
 		WHERE id = $1
-		RETURNING total_votes, total_stars, total_x`,
+		RETURNING total_stars, total_x`,
 		inp.SkinID,
-	).Scan(&totals.TotalVotes, &totals.TotalStars, &totals.TotalX)
+	).Scan(&totals.TotalStars, &totals.TotalX)
 	if err != nil {
 		return VoteTotals{}, "", fmt.Errorf("recompute totals: %w", err)
 	}
@@ -501,19 +492,19 @@ func (s *Store) UserStats(ctx context.Context, userID int64) (UserStats, error) 
 	return stats, nil
 }
 
-// UserVotes returns skins where the user has a non-zero vote or star or x.
+// UserVotes returns skins the user has starred or banned.
 // Deliberately NOT filtered on splash_ok: a star or X held on a since-hidden
-// phantom skin still counts against the 3-star/3-X quota, so the user must
+// phantom skin still counts against the star/X budget, so the user must
 // be able to see it (in My Picks) to release it.
 func (s *Store) UserVotes(ctx context.Context, userID int64) ([]Skin, error) {
 	rows, err := s.pool.Query(ctx, `
 		SELECT sk.id, sk.champion_id, sk.num, sk.name, sk.chromas, sk.splash_url,
-		       sk.total_votes, sk.total_stars, sk.total_x,
-		       usv.vote, usv.star, usv.x
+		       sk.total_stars, sk.total_x,
+		       usv.star, usv.x
 		FROM user_skin_votes usv
 		JOIN skins sk ON sk.id = usv.skin_id
 		WHERE usv.user_id = $1
-		  AND (usv.vote != 0 OR usv.star = true OR usv.x = true)
+		  AND (usv.star = true OR usv.x = true)
 		ORDER BY sk.champion_id, sk.num`,
 		userID,
 	)

@@ -42,7 +42,7 @@ export default function Footer() {
             <Wordmark className="text-lg" />
           </p>
           <p className="mt-3 max-w-xs text-sm text-grey1">
-            Community-built rankings for every League of Legends skin. Upvote,
+            Community-built rankings for every League of Legends skin. Battle,
             star, and ban your way to the definitive list.
           </p>
         </div>

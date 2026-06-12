@@ -14,11 +14,15 @@ The Go service serves all routes; in deployment the frontend reverse-proxies `/a
 Champion { id: string, key: string, title: string, blurb: string, lore: string, skins: Skin[] }
 Skin {
   id: string, champion_id: string, num: int, name: string, chromas: bool, splash_url: string,
-  total_votes: int, total_stars: int, total_x: int,
+  total_stars: int, total_x: int,
   // present only when request is authenticated:
-  user_vote?: int (-1|0|1), user_star?: bool, user_x?: bool
+  user_star?: bool, user_x?: bool
 }
 ```
+Up/down voting is retired: the legacy `vote`/`total_votes` columns still exist
+in Postgres (data preserved, frozen) but are never written or served anymore.
+Stars and bans are the only catalog-voting currency; battle Elo is the rank
+(see ROUTES.md "Display rules").
 
 ## Endpoints
 | Method | Path | Auth | Request | Response |
@@ -28,11 +32,16 @@ Skin {
 | GET | `/api/champions/{id}` | optional | id case-insensitive | `Champion` with `skins` (skins ordered by `num`, include user vote cols if auth) |
 | GET | `/api/skins` | none | — | `Skin[]` |
 | GET | `/api/awards` | optional | — | `{ topStarred: Skin[10], topXed: Skin[10], allSkins: Skin[] }` |
-| POST | `/api/votes` | required | `{ skinId: string, vote: -1\|0\|1, star: bool, x: bool }` | `{ message, totals: {total_votes,total_stars,total_x} }` |
+| POST | `/api/votes` | required | `{ skinId: string, star: bool, x: bool }` (legacy `vote` field is ignored if sent) | `{ message, totals: {total_stars,total_x} }` |
 | GET | `/api/user/stats` | required | — | `{ usedStars: int, usedX: int }` |
+<<<<<<< HEAD
 | GET | `/api/user/votes` | required | — | `{ skins: Skin[] }` (only skins where vote!=0 or star or x) |
 | GET | `/api/me` | required | — | `{ id, email, username, avatar_champion_id }` (`avatar_champion_id` nullable) |
 | PATCH | `/api/me` | required | `{ username?: string, avatarChampionId?: string }` (partial; `avatarChampionId: ""` clears the avatar) | updated `{ id, email, username, avatar_champion_id }` |
+=======
+| GET | `/api/user/votes` | required | — | `{ skins: Skin[] }` (only skins where star or x) |
+| GET | `/api/me` | required | — | `{ id, email, username }` |
+>>>>>>> origin/claude/stars-bans-only-voting
 | DELETE | `/api/user` | required | — | `{ message }` (deletes local rows; deletes Logto user via Management API if configured) |
 
 ### PATCH /api/me rules
@@ -40,9 +49,9 @@ Skin {
 - `avatarChampionId`: must be a `champions.id` from the catalog → else 400. Stored locally only (`users.avatar_champion_id`); the frontend renders it as the Data Dragon champion square icon.
 
 ## Business rules (must preserve exactly)
-- `vote` must be one of `-1, 0, 1`; `star`/`x` must be booleans → else 400.
-- Per user: **max 3 `star`** and **max 3 `x`** across all skins. Exceeding → 400, transaction rolled back.
-- A vote write upserts the row in `user_skin_votes`, then recomputes and persists `skins.total_votes` (SUM of vote), `skins.total_stars` (COUNT star=true), `skins.total_x` (COUNT x=true) for that skin, all in one transaction.
+- `star`/`x` must be booleans → else 400. A legacy `vote` field in the body is silently ignored (stale clients must not 500).
+- Per user: **max 10 `star`** and **max 10 `x`** across all skins. Exceeding → 400, transaction rolled back.
+- A vote write upserts the row in `user_skin_votes` (the legacy `vote` column is left untouched; zero on new rows), then recomputes and persists `skins.total_stars` (COUNT star=true) and `skins.total_x` (COUNT x=true) for that skin, all in one transaction. `skins.total_votes` is frozen at its legacy value.
 
 ## Caching (Redis)
 - Cache base champion list and per-champion base data (no user votes) with a short TTL; invalidate the affected champion + lists on vote write.

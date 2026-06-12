@@ -36,7 +36,6 @@ function RankedShowcase({ skins }: { skins: Skin[] }) {
             key={skin.id}
             skin={skin}
             championId={skin.champion_id}
-            initialVote={skin.user_vote ?? 0}
             initialStar={skin.user_star ?? false}
             initialX={skin.user_x ?? false}
             showChampion
@@ -61,7 +60,6 @@ function RankedShowcase({ skins }: { skins: Skin[] }) {
             <SkinCard
               skin={skin}
               championId={skin.champion_id}
-              initialVote={skin.user_vote ?? 0}
               initialStar={skin.user_star ?? false}
               initialX={skin.user_x ?? false}
               showChampion
@@ -77,7 +75,6 @@ function RankedShowcase({ skins }: { skins: Skin[] }) {
               key={skin.id}
               skin={skin}
               championId={skin.champion_id}
-              initialVote={skin.user_vote ?? 0}
               initialStar={skin.user_star ?? false}
               initialX={skin.user_x ?? false}
               showChampion
@@ -177,7 +174,7 @@ function AwardsPage() {
           <EmptyState
             icon={faStar}
             title="No stars awarded yet"
-            message="Be the first to crown a favorite — every player gets 3 stars to spend on the skins they love most."
+            message="Be the first to crown a favorite — every player gets 10 stars to spend on the skins they love most."
             cta={{ to: '/champions', label: 'Start Voting' }}
           />
         ) : (
@@ -195,7 +192,7 @@ function AwardsPage() {
           <EmptyState
             icon={faBan}
             title="No bans cast yet"
-            message="No skin has earned the community's scorn so far. Spend your 3 bans on the ones that missed the mark."
+            message="No skin has earned the community's scorn so far. Spend your 10 bans on the ones that missed the mark."
             cta={{ to: '/champions', label: 'Start Voting' }}
           />
         ) : (
@@ -216,7 +213,6 @@ function AwardsPage() {
                 key={skin.id}
                 skin={skin}
                 championId={skin.champion_id}
-                initialVote={skin.user_vote ?? 0}
                 initialStar={skin.user_star ?? false}
                 initialX={skin.user_x ?? false}
                 showChampion

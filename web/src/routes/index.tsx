@@ -1,13 +1,7 @@
 import { createFileRoute, Link } from '@tanstack/react-router'
 import { useEffect, useState } from 'react'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import {
-  faArrowUp,
-  faArrowDown,
-  faStar,
-  faBan,
-  faArrowRight,
-} from '@fortawesome/free-solid-svg-icons'
+import { faStar, faBan, faArrowRight } from '@fortawesome/free-solid-svg-icons'
 import type { IconDefinition } from '@fortawesome/fontawesome-svg-core'
 import SkinCard from '~/components/SkinCard'
 import EmptyState from '~/components/EmptyState'
@@ -50,17 +44,15 @@ export const Route = createFileRoute('/')({
 })
 
 const steps: { icon: IconDefinition; title: string; blurb: string }[] = [
-  { icon: faArrowUp, title: 'Upvote', blurb: 'Push the skins you love up the rankings.' },
-  { icon: faArrowDown, title: 'Downvote', blurb: 'Send the misses to the bottom.' },
   {
     icon: faStar,
-    title: 'Star (×3)',
-    blurb: 'Crown your all-time favorites. You only get three.',
+    title: 'Star (×10)',
+    blurb: 'Crown your all-time favorites. You only get ten.',
   },
   {
     icon: faBan,
-    title: 'Ban (×3)',
-    blurb: 'Mark the ones that missed the mark. Three bans, choose wisely.',
+    title: 'Ban (×10)',
+    blurb: 'Mark the ones that missed the mark. Ten bans, choose wisely.',
   },
 ]
 
@@ -140,8 +132,8 @@ function HomePage() {
               className="animate-fade-up text-shadow-hero mt-6 max-w-xl text-lg md:text-xl text-grey1"
               style={{ animationDelay: '200ms' }}
             >
-              Stop scrolling endless Reddit threads. Vote, star, and ban your way
-              to a definitive, community-built ranking of every League skin.
+              Stop scrolling endless Reddit threads. Battle, star, and ban your
+              way to a definitive, community-built ranking of every League skin.
             </p>
 
             <div
@@ -169,7 +161,7 @@ function HomePage() {
               {skinCount > 0 && (
                 <Stat value={formatCount(skinCount)} label="Skins to rank" />
               )}
-              <Stat value="Upvote · Star · Ban" label="Cast your verdict" />
+              <Stat value="Battle · Star · Ban" label="Cast your verdict" />
             </div>
           </div>
         </div>
@@ -179,7 +171,7 @@ function HomePage() {
       <section className="container mx-auto px-6 py-24">
         <SectionHeading
           title="How It Works"
-          subtitle="Four ways to weigh in. The community average decides the rankings."
+          subtitle="Two ways to weigh in. Battles decide the rankings; stars and bans crown the superlatives."
         />
         <div className="stagger grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
           {steps.map((s) => (
@@ -220,7 +212,7 @@ function HomePage() {
           <EmptyState
             icon={faStar}
             title="No stars awarded yet"
-            message="The throne is empty — be the first to crown a favorite. Every player gets 3 stars to spend."
+            message="The throne is empty — be the first to crown a favorite. Every player gets 10 stars to spend."
             cta={{ to: '/champions', label: 'Start Voting' }}
             compact
           />
@@ -231,7 +223,6 @@ function HomePage() {
                 key={skin.id}
                 skin={skin}
                 championId={skin.champion_id}
-                initialVote={skin.user_vote ?? 0}
                 initialStar={skin.user_star ?? false}
                 initialX={skin.user_x ?? false}
                 showChampion

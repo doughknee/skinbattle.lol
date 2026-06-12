@@ -7,11 +7,9 @@ export interface Skin {
   name: string
   chromas: boolean
   splash_url: string
-  total_votes: number
   total_stars: number
   total_x: number
   // present only when the request is authenticated:
-  user_vote?: number // -1 | 0 | 1
   user_star?: boolean
   user_x?: boolean
 }
@@ -33,13 +31,11 @@ export interface AwardsResponse {
 
 export interface VoteRequest {
   skinId: string
-  vote: -1 | 0 | 1
   star: boolean
   x: boolean
 }
 
 export interface VoteTotals {
-  total_votes: number
   total_stars: number
   total_x: number
 }

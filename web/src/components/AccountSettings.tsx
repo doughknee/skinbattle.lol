@@ -71,8 +71,7 @@ export default function AccountSettings({
           Danger zone
         </p>
         <p className="mb-4 text-sm text-grey1">
-          Deleting your account permanently removes your votes, stars, and
-          bans.
+          Deleting your account permanently removes your stars and bans.
         </p>
         <DeleteAccountButton />
       </div>
