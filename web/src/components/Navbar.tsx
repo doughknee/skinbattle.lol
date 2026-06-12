@@ -5,12 +5,13 @@ import AccountButton from './AccountButton'
 import QuotaChip from './QuotaChip'
 import { CrownMark, Wordmark } from './Brand'
 import { openCommandPalette } from './CommandPalette'
-import { HOME, SITE_SECTIONS, type SiteSection } from '~/lib/siteMap'
+import { SITE_SECTIONS, type SiteSection } from '~/lib/siteMap'
 
 // Primary nav renders from the site-map registry (~/lib/siteMap). Sections
 // with children get a hover/focus dropdown on desktop; on mobile the panel is
 // hidden and tapping the section lands on its hub page, which lists the same
-// children. Profile lives behind the account button in the right cluster.
+// children. Home lives on the logo; profile behind the account button. The
+// `accent` section (Battle — the brand verb) renders highlighted.
 
 const itemShade =
   'bg-linear-to-b from-40% from-transparent via-60% via-gold2/10 to-99% to-gold2/20'
@@ -37,15 +38,17 @@ function NavItem({ section }: { section: SiteSection }) {
       title={section.label}
       className={`flex h-full items-center gap-2 px-2.5 transition duration-350 md:px-3.5 ${itemHover} ${
         active ? itemShade : ''
-      }`}
+      } ${section.accent ? 'bg-gold5/15' : ''}`}
     >
       <FontAwesomeIcon
         icon={section.icon}
-        className={`h-5 ${active ? 'text-gold1' : 'text-icon'}`}
+        className={`h-5 ${
+          active || section.accent ? 'text-gold1' : 'text-icon'
+        }`}
       />
       <span
         className={`hidden font-serif text-sm font-bold md:inline ${
-          active ? 'text-gold1' : 'text-grey1'
+          active || section.accent ? 'text-gold1' : 'text-grey1'
         }`}
       >
         {section.label}
@@ -106,9 +109,8 @@ export default function NavBar() {
           <Wordmark className="hidden text-lg md:inline" />
         </Link>
 
-        {/* Primary nav */}
+        {/* Primary nav — Home lives on the logo */}
         <div className="flex h-full min-w-0 items-center">
-          <NavItem section={HOME} />
           {SITE_SECTIONS.map((s) => (
             <NavItem key={s.to} section={s} />
           ))}

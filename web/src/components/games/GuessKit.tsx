@@ -610,9 +610,9 @@ export function ResultPanel({
           <FontAwesomeIcon icon={faShareNodes} className="h-4" />
           Share result
         </button>
-        <Link to="/games" className={btnSecondarySm}>
+        <Link to="/battle" className={btnSecondarySm}>
           <FontAwesomeIcon icon={faArrowLeft} className="h-4" />
-          Daily Hub
+          Back to the battle
         </Link>
         {/* Time-derived, so the server-rendered text can lag the client's
             by a minute — not worth a hydration warning. */}

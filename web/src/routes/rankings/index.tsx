@@ -151,7 +151,7 @@ function RankingsIndexPage() {
         </p>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <Link
-            to="/awards"
+            to="/rankings/awards"
             className="group flex items-center gap-4 bg-hextech-black/30 p-5 outline outline-icon/20 -outline-offset-2 transition duration-200 hover:-translate-y-0.5 hover:bg-hextech-black/50 hover:outline-gold2/60"
           >
             <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-hextech-black/60 outline outline-gold5/60 -outline-offset-2">

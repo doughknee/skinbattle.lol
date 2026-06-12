@@ -1,0 +1,221 @@
+import { createFileRoute } from '@tanstack/react-router'
+import { useCallback, useEffect, useRef, useState } from 'react'
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { faFire, faPalette } from '@fortawesome/free-solid-svg-icons'
+import ErrorState from '~/components/ErrorState'
+import { toast } from '~/components/Toaster'
+import {
+  GuessBoard,
+  GuessInput,
+  GuessViewport,
+  ResultPanel,
+} from '~/components/games/GuessKit'
+import {
+  fetchChromaVision,
+  fetchSplashdleOptions,
+  submitChromaGuess,
+} from '~/lib/games/serverFns'
+import { guestRestoreToken, rememberGuestToken } from '~/lib/games/client'
+import { ogMeta } from '~/lib/games/ogMeta'
+import type { ChromaVisionState, GuessOption } from '~/lib/games/types'
+
+export const Route = createFileRoute('/battle/chroma-vision')({
+  // Data loads BEFORE the route renders (SSR on first visit, prefetched on
+  // navigation), and the mosaic ships inside the payload as a data URL —
+  // the page arrives complete in one paint, no loading states.
+  loader: () =>
+    fetchChromaVision({ data: { restoreToken: guestRestoreToken() } }),
+  head: () => ({
+    meta: [
+      { title: 'Chroma Vision — Skin Battle' },
+      {
+        name: 'description',
+        content:
+          'Name the League skin from its colors alone. The mosaic sharpens with every miss — six guesses, hard mode.',
+      },
+      ...ogMeta({
+        title: 'Chroma Vision — Skin Battle',
+        description:
+          'Name the League skin from its colors alone. The mosaic sharpens with every miss — six guesses, hard mode.',
+        card: 'chroma-vision',
+        path: '/battle/chroma-vision',
+      }),
+    ],
+  }),
+  errorComponent: ({ error }) => (
+    <ErrorState
+      title="Couldn't load today's Chroma Vision"
+      message={error.message}
+      back={{ to: '/battle', label: 'Back to the battle' }}
+    />
+  ),
+  component: ChromaVisionPage,
+})
+
+function ChromaVisionPage() {
+  const initial = Route.useLoaderData()
+  const [state, setState] = useState<ChromaVisionState>(initial)
+  const [options, setOptions] = useState<GuessOption[]>([])
+  const [submitting, setSubmitting] = useState(false)
+  const [pending, setPending] = useState<GuessOption | null>(null)
+  const [shake, setShake] = useState(false)
+  const shakeTimer = useRef<number | undefined>(undefined)
+  useEffect(() => () => window.clearTimeout(shakeTimer.current), [])
+
+  // What the board looked like on the page's first paint — that content
+  // renders settled; only post-load guesses play game animations.
+  const loadedWith = useRef({
+    guessCount: initial.guesses.length,
+    finished: initial.status !== 'in_progress',
+  })
+
+  // Resync if the route loader refreshes while mounted.
+  useEffect(() => {
+    setState(initial)
+  }, [initial])
+
+  // Mirror the guest token to localStorage as a cookie backup.
+  useEffect(() => {
+    rememberGuestToken(state.guestToken)
+  }, [state.guestToken])
+
+  // The autocomplete list (the full skin catalog, shared with Splashdle)
+  // loads in the background; it's only needed once the player types.
+  useEffect(() => {
+    let cancelled = false
+    fetchSplashdleOptions()
+      .then((o) => {
+        if (!cancelled) setOptions(o)
+      })
+      .catch(() => {
+        /* the dropdown shows a loading row until it arrives */
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [])
+
+  const guess = useCallback(async (opt: GuessOption) => {
+    setSubmitting(true)
+    setPending(opt)
+    try {
+      const next = await submitChromaGuess({
+        data: { skinId: opt.skinId, restoreToken: guestRestoreToken() },
+      })
+      rememberGuestToken(next.guestToken)
+      const last = next.guesses[next.guesses.length - 1]
+      // Full miss jolts the mosaic; a right-champion near-miss doesn't.
+      // Cleared on a timer, never animationend (backgrounded tabs).
+      if (last && !last.correct && !last.championMatch) {
+        setShake(true)
+        window.clearTimeout(shakeTimer.current)
+        shakeTimer.current = window.setTimeout(() => setShake(false), 600)
+      }
+      setState(next)
+    } catch (err) {
+      toast(
+        err instanceof Error ? err.message : 'Something went wrong.',
+        'error',
+      )
+    } finally {
+      setPending(null)
+      setSubmitting(false)
+    }
+  }, [])
+
+  const playing = state.status === 'in_progress'
+  const guessedIds = new Set(state.guesses.map((g) => g.skinId))
+  const atLoadState =
+    state.guesses.length === loadedWith.current.guessCount &&
+    !playing === loadedWith.current.finished
+  const animateFrom = loadedWith.current.guessCount
+
+  return (
+    <div className="container mx-auto max-w-3xl px-6 pt-28 pb-16">
+      <header className="animate-fade-up mb-8">
+        <p className="mb-2 text-sm font-semibold uppercase tracking-[0.3em] text-gold2">
+          Daily · hard mode · colors only
+        </p>
+        <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1">
+          <h1 className="font-serif text-4xl md:text-5xl font-bold text-gold1">
+            Chroma Vis<span className="italic">ion</span>{' '}
+            <span className="text-gold2">#{state.puzzleNumber}</span>
+          </h1>
+          {playing && (
+            <span className="text-grey1">
+              Guess {state.guesses.length + 1} of {state.maxGuesses}
+            </span>
+          )}
+        </div>
+      </header>
+
+      <div className="flex flex-col gap-6">
+        {/* The mosaic: pure color composition at first, the silhouette
+            emerging block by block with each miss; the full reveal at the
+            end. */}
+        <GuessViewport
+          image={state.image}
+          levelKey={`${state.status}-${state.zoomLevel}`}
+          playing={playing}
+          shake={shake}
+          soft={atLoadState}
+          caption={`Mosaic ${state.zoomLevel + 1}/${state.totalLevels}`}
+          playingAlt="A color mosaic of a mystery skin splash"
+          answerName={state.answer?.name}
+        />
+
+        {playing ? (
+          <>
+            <GuessInput
+              options={options}
+              disabled={submitting}
+              submitting={submitting}
+              guessed={guessedIds}
+              onSubmit={guess}
+            />
+            <p className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-grey1">
+              <span>
+                <FontAwesomeIcon
+                  icon={faPalette}
+                  className="mr-1.5 h-3 text-gold2"
+                />
+                It's all in the palette. Wrong guesses sharpen the mosaic — a
+                gold square means right champion, wrong skin.
+              </span>
+              {state.streak.current > 0 && (
+                <span className="flex items-center gap-1.5 font-bold text-gold2">
+                  <FontAwesomeIcon icon={faFire} className="h-3.5" />
+                  {state.streak.current}-day streak on the line
+                </span>
+              )}
+            </p>
+            <GuessBoard
+              guesses={state.guesses}
+              pending={pending}
+              maxGuesses={state.maxGuesses}
+              animateFrom={animateFrom}
+            />
+          </>
+        ) : (
+          <>
+            <ResultPanel
+              status={state.status as 'won' | 'lost'}
+              guesses={state.guesses}
+              maxGuesses={state.maxGuesses}
+              streak={state.streak}
+              answer={state.answer!}
+              shareText={state.shareText}
+              animate={!loadedWith.current.finished}
+              gameName="Chroma Vision"
+            />
+            <GuessBoard
+              guesses={state.guesses}
+              maxGuesses={state.maxGuesses}
+              animateFrom={animateFrom}
+            />
+          </>
+        )}
+      </div>
+    </div>
+  )
+}
