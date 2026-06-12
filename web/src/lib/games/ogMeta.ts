@@ -13,16 +13,18 @@ const ORIGIN =
 export function ogMeta(opts: {
   title: string
   description: string
-  card:
+  card?:
     | 'games'
     | 'splashdle'
     | 'quick-battle'
     | 'mirror'
     | 'price-check'
     | 'drought'
+  // Overrides the card-derived image path (e.g. `/og/skin/<id>`).
+  imagePath?: string
   path: string
 }): Record<string, string>[] {
-  const image = `${ORIGIN}/og/${opts.card}`
+  const image = `${ORIGIN}${opts.imagePath ?? `/og/${opts.card}`}`
   return [
     { property: 'og:type', content: 'website' },
     { property: 'og:site_name', content: 'Skin Battle' },

@@ -14,6 +14,7 @@ import type {
   MirrorState,
   PriceCheckState,
   QuickBattleState,
+  SkinPageState,
   SplashdleState,
 } from './types'
 
@@ -63,6 +64,15 @@ export const submitPriceGuess = createServerFn({ method: 'POST' })
   .handler(async ({ data }): Promise<PriceCheckState> => {
     const { submitPriceGuess: submit } = await import('./server/pricecheck')
     return submit(data.tier, data.restoreToken)
+  })
+
+// Skin pages are read-only (peekUser — viewing never mints a user). Returns
+// null for unknown slugs/ids; the route turns that into a 404.
+export const fetchSkinPage = createServerFn({ method: 'POST' })
+  .inputValidator((d: GuestInput & { slug: string }) => d)
+  .handler(async ({ data }): Promise<SkinPageState | null> => {
+    const { skinPageState } = await import('./server/skinpage')
+    return skinPageState(data.slug, data.restoreToken)
   })
 
 // The Drought Index is fully anonymous — no guest token, nothing

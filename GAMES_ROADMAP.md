@@ -89,9 +89,17 @@ expire, and (3) a persistent identity worth investing in. Games are sequenced by
   strip (longest / 2+ years waiting / average), champion filter, undated
   champions listed honestly, OG card featuring the drought leader's last
   splash. Linked from the hub's new Insights section.
-- ◻ Leaderboards, feedback surface beyond Quick Battle (rank deltas on skin
-  pages), patch ingestion pipeline (beyond 12-hourly catalog re-sync),
-  per-entity stable URLs — **not started**.
+- ✅ **Skin pages — stable URLs** (2026-06-12) — `/skins/<slug>` for every
+  skin: community rating ± uncertainty with rank and "Early ranking — needs
+  more votes" below 10 battles (uncertainty as a feature), the viewer's own
+  rating with gap-vs-the-room, price/release/skin-line facts, per-skin OG
+  card (`/og/skin/<id>`: splash + rating ± confidence + rank + battles).
+  Slugs are name-derived with the skin ID as the immutable key — any slug
+  whose trailing ID resolves 301s to the canonical spelling, so links
+  survive renames. Linked from the Mirror (every tier tile + contrarian
+  take), the Drought Index thumbnails, and the Splashdle answer.
+- ◻ Leaderboards, per-champion/per-line ranking slices, patch ingestion
+  pipeline (beyond 12-hourly catalog re-sync) — **not started**.
 
 **Architecture note**: game state currently lives in the TanStack Start SSR
 layer (server functions + SQLite at `web/.data/games.db` — persisted via the
@@ -107,9 +115,8 @@ animationend; every interaction answers back before the round-trip
 completes (pending states).
 
 **Next session**: patch-pipeline hardening (unattended catalog + facts
-re-snapshot with failure alerting — staleness is how fan sites die), or
-per-entity stable URLs (skin pages with rating data, the next citability
-layer). Logto attachment wiring remains blocked on test credentials.
+re-snapshot with failure alerting — staleness is how fan sites die).
+Logto attachment wiring remains blocked on test credentials.
 
 ## Landscape & differentiation
 

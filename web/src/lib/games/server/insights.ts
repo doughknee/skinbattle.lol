@@ -10,6 +10,7 @@ import { getDb } from './db'
 import { allCatalogSkins, ensureCatalog } from './catalog'
 import { factsFor } from './facts'
 import { utcToday } from './daily'
+import { skinSlug } from '../slug'
 
 const DAY_MS = 86_400_000
 
@@ -63,6 +64,7 @@ export async function droughtIndex(): Promise<DroughtState> {
         Math.floor((todayMs - Date.parse(`${acc.last.release}T00:00:00Z`)) / DAY_MS),
       ),
       lastSkinId: acc.last.id,
+      lastSkinSlug: skinSlug(acc.last.name, acc.last.id),
       lastSkinName: acc.last.name,
       lastSkinSplashUrl: acc.last.splashUrl,
       lastSkinDate: acc.last.release,
