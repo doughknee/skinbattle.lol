@@ -77,3 +77,9 @@ function refreshCookie(token: string): void {
     secure: process.env.NODE_ENV === 'production',
   })
 }
+
+// Point this device at a different record's credential — used by account
+// merges, where the surviving row's token replaces the absorbed guest's.
+export function issueCookie(token: string): void {
+  refreshCookie(token)
+}

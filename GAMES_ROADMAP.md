@@ -126,8 +126,20 @@ expire, and (3) a persistent identity worth investing in. Games are sequenced by
   Shared guess machinery extracted to `components/games/GuessKit.tsx`
   (combobox, board, viewport, result panel) — Splashdle now uses it too.
   The hub's "On the way" section is retired: every announced game shipped.
-- ◻ Leaderboards (need named users — Logto attachment first) — **not
-  started**.
+- ✅ **Guest → account attachment** (2026-06-12) — sign-up is now truly
+  "attachment, not migration": once signed in, the device's Logto access
+  token (validated server-side: jose + Logto JWKS, iss/aud strict) binds
+  the guest record to the account via `POST /games-attach` (fired
+  automatically by an invisible root component, once per session). Fresh
+  sub → plain attachment (tier flips to member; next refit re-weights all
+  history at member strength). Sub already claimed → lossless merge: events
+  reattributed, daily results unioned, streaks keep the better values,
+  personal ratings replayed from the unioned battle log, device cookie
+  switched to the account's credential. Verified e2e against a mock JWKS
+  with self-signed tokens (`scripts/mock-logto.mjs`) — the production code
+  path, no bypass. The Mirror's "keep your tier list" promise is real now.
+- ◻ Leaderboards (now unblocked — named users exist once people sign in) —
+  **not started**.
 
 **Architecture note**: game state currently lives in the TanStack Start SSR
 layer (server functions + SQLite at `web/.data/games.db` — persisted via the
@@ -142,9 +154,9 @@ that happen after first paint; one-shot animations cleared by timer, not
 animationend; every interaction answers back before the round-trip
 completes (pending states).
 
-**Phase 1 is complete.** The solo-buildable roadmap is done: leaderboards
-need named users (Logto attachment — blocked on test credentials), and
-Phase 2+ is gated on real community data/DAU by design.
+**Phase 1 is complete, including conversion.** Remaining: leaderboards
+(buildable now that accounts attach), and Phase 2+ — gated on real
+community data/DAU by design.
 
 ## Landscape & differentiation
 
