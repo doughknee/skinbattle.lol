@@ -78,6 +78,18 @@ export interface DailyHubState {
   mirror: {
     skinsRated: number
   }
+  // "New this patch" strip — skins released in the last ~3 weeks plus
+  // Upcoming ones already in the live catalog. Empty outside drop windows;
+  // the section hides itself.
+  newSkins: {
+    skinId: string
+    slug: string
+    name: string
+    championName: string
+    splashUrl: string
+    release: string | null // null = Upcoming
+    upcoming: boolean
+  }[]
   guestToken: string
 }
 

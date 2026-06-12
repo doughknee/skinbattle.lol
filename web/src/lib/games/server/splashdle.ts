@@ -22,6 +22,7 @@ import { ensureUser, peekUser, type GameUser } from './guests'
 import { getStreak, recordCompletion } from './streaks'
 import { communityBattleCount, userBattleCounts } from './quickbattle'
 import { priceCheckHubInfo, ROUNDS as PRICE_ROUNDS } from './pricecheck'
+import { newThisPatch } from './insights'
 
 const GAME = 'splashdle'
 // Recorded on every event so themed variants can be added later without
@@ -436,6 +437,7 @@ export async function dailyHub(
           ).c
         : 0,
     },
+    newSkins: newThisPatch(db, date),
     games: [
       {
         id: GAME,

@@ -98,8 +98,17 @@ expire, and (3) a persistent identity worth investing in. Games are sequenced by
   whose trailing ID resolves 301s to the canonical spelling, so links
   survive renames. Linked from the Mirror (every tier tile + contrarian
   take), the Drought Index thumbnails, and the Splashdle answer.
-- ◻ Leaderboards, per-champion/per-line ranking slices, patch ingestion
-  pipeline (beyond 12-hourly catalog re-sync) — **not started**.
+- ✅ **Patch-pipeline hardening** (2026-06-12) — the unattended loop: a
+  GitHub Action (`facts-snapshot.yml`, Mon+Thu) re-snapshots Meraki and
+  opens a PR only on real data diffs (the script is idempotent; failures
+  email — alerting for free). `/games-status` is the freshness JSON for an
+  external uptime monitor (200 healthy / 503 stale: catalog age, facts age,
+  refit lag — NOT a container healthcheck). "New this patch" strip on the
+  hub + New/Upcoming badges on skin pages (announce surface). Meraki's
+  `release: "0000-00-00"` on Upcoming skins is normalized to null at load.
+  Still deferred: asset-version epoch bump on splash changes (needs
+  hashing), Discord announce (Phase 2).
+- ◻ Leaderboards, per-champion/per-line ranking slices — **not started**.
 
 **Architecture note**: game state currently lives in the TanStack Start SSR
 layer (server functions + SQLite at `web/.data/games.db` — persisted via the
@@ -114,9 +123,9 @@ that happen after first paint; one-shot animations cleared by timer, not
 animationend; every interaction answers back before the round-trip
 completes (pending states).
 
-**Next session**: patch-pipeline hardening (unattended catalog + facts
-re-snapshot with failure alerting — staleness is how fan sites die).
-Logto attachment wiring remains blocked on test credentials.
+**Next session**: ranking slices (`/rankings/<slice>` — best per champion,
+per skin line, per price tier; the purchasing-guide citability layer), or
+Chroma Vision. Logto attachment wiring remains blocked on test credentials.
 
 ## Landscape & differentiation
 
