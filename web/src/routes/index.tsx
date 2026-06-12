@@ -181,31 +181,36 @@ function Hero({
   const current = slides[index] ?? null
 
   return (
-    <section className="relative min-h-[100dvh] w-full overflow-hidden">
-      {/* Splash backdrop, crossfading (sits behind the blurred navbar) */}
-      {count === 0 ? (
-        <img
-          src={FALLBACK_SPLASH}
-          alt="Jhin splash art"
-          className="absolute inset-0 h-full w-full object-cover object-top"
-        />
-      ) : (
-        slides.map((s, i) => (
+    <section className="relative min-h-[100dvh] w-full overflow-hidden pb-40">
+      {/* Backdrop bleeds 10rem past the first viewport (the section's pb-40)
+          and the mask dissolves it into the page gradient across that bleed,
+          so the fade into the next section only appears once you scroll. */}
+      <div className="pointer-events-none absolute inset-0 mask-b-from-[calc(100%-10rem)]">
+        {/* Splash backdrop, crossfading (sits behind the blurred navbar) */}
+        {count === 0 ? (
           <img
-            key={s.skinId}
-            src={s.splashUrl}
-            alt={i === index ? `${s.name} splash art` : ''}
-            aria-hidden={i !== index}
-            fetchPriority={i === 0 ? 'high' : undefined}
-            className={`absolute inset-0 h-full w-full object-cover object-top transition-opacity duration-1000 ${
-              i === index ? 'opacity-100' : 'opacity-0'
-            }`}
+            src={FALLBACK_SPLASH}
+            alt="Jhin splash art"
+            className="absolute inset-0 h-full w-full object-cover object-top"
           />
-        ))
-      )}
-      {/* Legibility + blend overlays */}
-      <div className="absolute inset-0 bg-gradient-to-r from-hextech-black/95 via-hextech-black/65 to-transparent" />
-      <div className="absolute inset-0 bg-gradient-to-t from-gradientTop via-transparent to-hextech-black/40" />
+        ) : (
+          slides.map((s, i) => (
+            <img
+              key={s.skinId}
+              src={s.splashUrl}
+              alt={i === index ? `${s.name} splash art` : ''}
+              aria-hidden={i !== index}
+              fetchPriority={i === 0 ? 'high' : undefined}
+              className={`absolute inset-0 h-full w-full object-cover object-top transition-opacity duration-1000 ${
+                i === index ? 'opacity-100' : 'opacity-0'
+              }`}
+            />
+          ))
+        )}
+        {/* Legibility + blend overlays */}
+        <div className="absolute inset-0 bg-gradient-to-r from-hextech-black/95 via-hextech-black/65 to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-t from-gradientTop via-transparent to-hextech-black/40" />
+      </div>
 
       <div className="container relative z-10 mx-auto flex min-h-[100dvh] flex-col px-6 pt-28 pb-8">
         <div className="my-auto max-w-2xl">
