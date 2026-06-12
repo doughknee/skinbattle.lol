@@ -23,6 +23,7 @@ import { ogMeta } from '~/lib/games/ogMeta'
 import { guestRestoreToken, rememberGuestToken } from '~/lib/games/client'
 import { api } from '~/lib/api'
 import { useAuth } from '~/lib/useAuth'
+import { countBattleAndMaybeOffer, SUPPORT_URL } from '~/lib/support'
 import { userStatsStore, MAX_STARS, MAX_X } from '~/lib/userStatsStore'
 import type {
   BattleFeedback,
@@ -592,6 +593,15 @@ function BattlePage() {
             ...h,
           ].slice(0, HISTORY_CAP),
         )
+        // The one-time honeyfruit moment: fires on the 50th lifetime battle
+        // vote, then never again (see ~/lib/support).
+        if (countBattleAndMaybeOffer()) {
+          toast(
+            '50 battles in! Enjoying it? Toss the dev a honeyfruit',
+            'info',
+            { href: SUPPORT_URL, durationMs: 9000 },
+          )
+        }
       } catch (err) {
         setSession((s) => s - 1)
         toast(
@@ -656,49 +666,63 @@ function BattlePage() {
         ? 'reveal'
         : 'round'
 
-  const vsAnim =
-    entrance === 'gate'
-      ? 'opacity-0'
-      : entrance === 'reveal'
-        ? 'animate-vs-slam'
-        : entrance === 'round'
-          ? 'animate-vs-pop'
-          : ''
-
   // One arena, two stages: the same cards render into the normal page flow
-  // or into the theater overlay. Keyed per pair so each matchup remounts
-  // and plays its entrance.
+  // or into the theater overlay. The card grid is keyed per pair so each
+  // matchup remounts and plays its entrance; the VS badge lives OUTSIDE the
+  // keyed grid so it persists across rounds instead of being torn down and
+  // rebuilt every pick - it slams once at the reveal, then only pulses
+  // (inner span, keyed per pair) as each new matchup lands. Both moves are
+  // transform/opacity-only; the glow is static (.vs-glow), never keyframed.
   const arena = (
-    <div
-      key={current.token}
-      className={`relative grid w-full grid-cols-1 md:grid-cols-2 ${
-        theater ? 'gap-2 md:gap-3' : 'gap-3 md:gap-4'
-      }`}
-    >
-      <BattleCard
-        skin={current.a}
-        side="a"
-        verdict={pickedSide ? (pickedSide === 'a' ? 'winner' : 'loser') : null}
-        onPick={pick}
-        onBroken={broken}
-        entrance={entrance}
-        marks={marks.get(current.a.skinId) ?? NO_MARKS}
-        onMark={castMark}
-      />
-      <BattleCard
-        skin={current.b}
-        side="b"
-        verdict={pickedSide ? (pickedSide === 'b' ? 'winner' : 'loser') : null}
-        onPick={pick}
-        onBroken={broken}
-        entrance={entrance}
-        marks={marks.get(current.b.skinId) ?? NO_MARKS}
-        onMark={castMark}
-      />
-      <span
-        className={`pointer-events-none absolute left-1/2 top-1/2 z-10 flex h-12 w-12 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-hextech-black/90 font-serif text-sm font-bold text-gold2 outline outline-gold5 -outline-offset-2 ${vsAnim}`}
+    <div className="relative w-full">
+      <div
+        key={current.token}
+        className={`grid w-full grid-cols-1 md:grid-cols-2 ${
+          theater ? 'gap-2 md:gap-3' : 'gap-3 md:gap-4'
+        }`}
       >
-        VS
+        <BattleCard
+          skin={current.a}
+          side="a"
+          verdict={
+            pickedSide ? (pickedSide === 'a' ? 'winner' : 'loser') : null
+          }
+          onPick={pick}
+          onBroken={broken}
+          entrance={entrance}
+          marks={marks.get(current.a.skinId) ?? NO_MARKS}
+          onMark={castMark}
+        />
+        <BattleCard
+          skin={current.b}
+          side="b"
+          verdict={
+            pickedSide ? (pickedSide === 'b' ? 'winner' : 'loser') : null
+          }
+          onPick={pick}
+          onBroken={broken}
+          entrance={entrance}
+          marks={marks.get(current.b.skinId) ?? NO_MARKS}
+          onMark={castMark}
+        />
+      </div>
+      <span
+        className={`pointer-events-none absolute left-1/2 top-1/2 z-10 block -translate-x-1/2 -translate-y-1/2 ${
+          entrance === 'gate'
+            ? 'opacity-0'
+            : entrance === 'reveal'
+              ? 'animate-vs-slam'
+              : ''
+        }`}
+      >
+        <span
+          key={current.token}
+          className={`vs-glow flex h-12 w-12 items-center justify-center rounded-full bg-hextech-black/90 font-serif text-sm font-bold text-gold2 outline outline-gold5 -outline-offset-2 ${
+            entrance === 'round' ? 'animate-vs-round' : ''
+          }`}
+        >
+          VS
+        </span>
       </span>
       {!theater && (
         <button
