@@ -15,7 +15,9 @@ import { createServer } from 'node:http'
 import { exportJWK, generateKeyPair, SignJWT } from 'jose'
 
 const sub = process.argv[2] ?? 'mock-sub-1'
+const username = process.argv[3] ?? 'MockSummoner'
 const resource = process.env.LOGTO_RESOURCE ?? 'https://api.skinbattle.lol'
+const appId = process.env.LOGTO_APP_ID ?? 'mock-app-id'
 const issuer = 'http://localhost:3210/oidc'
 
 const { publicKey, privateKey } = await generateKeyPair('RS256')
@@ -31,7 +33,19 @@ const token = await new SignJWT({})
   .setExpirationTime('1h')
   .sign(privateKey)
 
+// ID token: audience = the SPA app id, carries the username claim (what
+// /games-attach captures for leaderboard display names).
+const idToken = await new SignJWT({ username })
+  .setProtectedHeader({ alg: 'RS256', kid: 'mock' })
+  .setIssuer(issuer)
+  .setAudience(appId)
+  .setSubject(sub)
+  .setIssuedAt()
+  .setExpirationTime('1h')
+  .sign(privateKey)
+
 console.log(`TOKEN ${token}`)
+console.log(`IDTOKEN ${idToken}`)
 
 createServer((req, res) => {
   res.setHeader('content-type', 'application/json')

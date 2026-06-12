@@ -54,6 +54,33 @@ export async function verifyLogtoToken(token: string): Promise<string | null> {
   }
 }
 
+// The ID token (audience = the SPA's app id, same issuer/keys) carries the
+// username claim the access token doesn't. Optional — attachment works
+// without it; the username just feeds leaderboard display names. The sub
+// must match the access token's: a mismatched pair is treated as no
+// username, never as a different identity.
+export async function verifyLogtoIdToken(
+  idToken: string,
+  expectedSub: string,
+): Promise<string | null> {
+  const endpoint = process.env.LOGTO_ENDPOINT
+  const appId = process.env.LOGTO_APP_ID
+  if (!endpoint || !appId) return null
+  try {
+    const { payload } = await jwtVerify(idToken, jwksFor(endpoint), {
+      issuer: `${endpoint.replace(/\/$/, '')}/oidc`,
+      audience: appId,
+      algorithms: ['RS256'],
+    })
+    if (payload.sub !== expectedSub) return null
+    const name = payload.username ?? payload.name
+    return typeof name === 'string' && name.trim() ? name.trim() : null
+  } catch (err) {
+    console.warn('attach: id token rejected:', (err as Error).message)
+    return null
+  }
+}
+
 // ─── attachment & merge ─────────────────────────────────────────────────────
 
 export interface AttachResult {
@@ -167,19 +194,35 @@ function mergeInto(db: DatabaseSync, guestId: string, accountId: string): void {
 }
 
 // Attach the verified Logto subject to this device's record. Called from a
-// request context (reads/sets the guest cookie via ensureUser).
-export function attachSub(sub: string, restoreToken?: string | null): AttachResult {
+// request context (reads/sets the guest cookie via ensureUser). `username`
+// (from the verified ID token) refreshes on every call — Logto lets users
+// rename, and the leaderboard should follow.
+export function attachSub(
+  sub: string,
+  restoreToken?: string | null,
+  username?: string | null,
+): AttachResult {
   const db = getDb()
   // ensureUser (not peek): a signed-in visitor with no guest record yet
   // still deserves a row — their plays from here on are attributed to the
   // account. This is a write endpoint by definition.
   const { user, token } = ensureUser(db, restoreToken)
 
+  const setName = (id: string) => {
+    if (username) {
+      db.prepare('UPDATE game_users SET username = ? WHERE id = ?').run(
+        username,
+        id,
+      )
+    }
+  }
+
   const existing = db
     .prepare('SELECT id FROM game_users WHERE logto_sub = ? AND merged_into IS NULL')
     .get(sub) as { id: string } | undefined
 
   if (existing && existing.id === user.id) {
+    setName(existing.id)
     return { outcome: 'already', guestToken: token }
   }
 
@@ -188,6 +231,7 @@ export function attachSub(sub: string, restoreToken?: string | null): AttachResu
     db.prepare(
       'UPDATE game_users SET logto_sub = ?, last_seen_at = ? WHERE id = ?',
     ).run(sub, new Date().toISOString(), user.id)
+    setName(user.id)
     return { outcome: 'attached', guestToken: token }
   }
 
@@ -195,6 +239,7 @@ export function attachSub(sub: string, restoreToken?: string | null): AttachResu
   // re-minted a guest after clearing storage): fold this guest into it, then
   // hand the device the ACCOUNT's credential so future plays land there.
   mergeInto(db, user.id, existing.id)
+  setName(existing.id)
   let accountToken = (
     db.prepare('SELECT guest_token FROM game_users WHERE id = ?').get(existing.id) as {
       guest_token: string | null

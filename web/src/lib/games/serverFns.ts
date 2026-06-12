@@ -12,6 +12,7 @@ import type {
   DailyHubState,
   DroughtState,
   GuessOption,
+  LeaderboardsState,
   MirrorState,
   PriceCheckState,
   QuickBattleState,
@@ -84,6 +85,15 @@ export const submitPriceGuess = createServerFn({ method: 'POST' })
     const { submitPriceGuess: submit } = await import('./server/pricecheck')
     return submit(data.tier, data.restoreToken)
   })
+
+// Leaderboards are anonymous reads — guests can see the boards (they just
+// can't occupy them).
+export const fetchLeaderboards = createServerFn({ method: 'GET' }).handler(
+  async (): Promise<LeaderboardsState> => {
+    const { leaderboardsState } = await import('./server/leaderboards')
+    return leaderboardsState()
+  },
+)
 
 // Ranking slices are fully anonymous derived data, like the Drought Index.
 export const fetchRankings = createServerFn({ method: 'POST' })
