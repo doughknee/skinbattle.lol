@@ -207,3 +207,21 @@ export async function rankingsIndex(): Promise<RankingsIndex> {
       })),
   }
 }
+
+// ─── catalog Elo index ──────────────────────────────────────────────────────
+
+// The whole catalog's Elo standing in one list, for catalog-wide sorts (the
+// skins page's "Battle Rating" sort). Rank is sitewide among rated skins.
+export function catalogEloIndex(): {
+  skinId: string
+  rating: number
+  rank: number
+}[] {
+  const db = getDb()
+  const rows = db
+    .prepare(
+      'SELECT skin_id, rating FROM skin_ratings WHERE battles > 0 ORDER BY rating DESC',
+    )
+    .all() as unknown as { skin_id: string; rating: number }[]
+  return rows.map((r, i) => ({ skinId: r.skin_id, rating: r.rating, rank: i + 1 }))
+}

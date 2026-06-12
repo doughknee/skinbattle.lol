@@ -10,12 +10,14 @@ import ErrorState from '~/components/ErrorState'
 import PageHeader from '~/components/PageHeader'
 import { RouteSkeleton } from '~/components/Skeletons'
 import { api } from '~/lib/api'
+import { fetchCatalogElo } from '~/lib/games/serverFns'
 import { useAuth } from '~/lib/useAuth'
 import { btnChip } from '~/lib/ui'
 import { championDisplayName, displaySkinName } from '~/lib/skinName'
 import type { AwardsResponse } from '~/lib/types'
 
 const sortOptions = [
+  { value: 'rating', label: 'Battle Rating' },
   { value: 'total_stars_desc', label: 'Most Stars' },
   { value: 'total_stars_asc', label: 'Least Stars' },
   { value: 'total_x_desc', label: 'Most Bans' },
@@ -27,9 +29,17 @@ const ITEMS_PER_PAGE = 24
 export const Route = createFileRoute('/skins')({
   // The awards endpoint is the one bulk read that includes the caller's own
   // votes, so the browse page shares it (plain /skins has no user columns).
+  // The Elo index drives the default sort; per the display rules, anywhere
+  // skins are ordered it's battle-driven. It degrades to an empty list (the
+  // sort then falls back to star totals) rather than failing the page.
   loader: async () => {
-    const awards = await api.awards()
-    return { awards }
+    const [awards, elo] = await Promise.all([
+      api.awards(),
+      fetchCatalogElo().catch(
+        () => [] as { skinId: string; rating: number; rank: number }[],
+      ),
+    ])
+    return { awards, elo }
   },
   head: () => ({
     meta: [{ title: 'Skins · Skin Battle' }],
@@ -42,14 +52,19 @@ export const Route = createFileRoute('/skins')({
 })
 
 function SkinsPage() {
-  const { awards: baseAwards } = Route.useLoaderData()
+  const { awards: baseAwards, elo } = Route.useLoaderData()
   const { isAuthenticated, getApiToken } = useAuth()
 
   const [awards, setAwards] = useState<AwardsResponse>(baseAwards)
   const [query, setQuery] = useState('')
-  const [sortBy, setSortBy] = useState('total_stars_desc')
+  const [sortBy, setSortBy] = useState('rating')
   const [currentPage, setCurrentPage] = useState(1)
   const gridRef = useRef<HTMLDivElement>(null)
+
+  const eloIndex = useMemo(
+    () => new Map(elo.map((e) => [e.skinId, e])),
+    [elo],
+  )
 
   // Enrich with the user's own votes when authenticated.
   useEffect(() => {
@@ -84,6 +99,17 @@ function SkinsPage() {
         )
       : [...awards.allSkins]
     switch (sortBy) {
+      case 'rating':
+        // Sorted by sitewide rank so the badges count up in display order;
+        // unrated skins keep a stable tail ordered by stars so a cold
+        // catalog still reads sensibly.
+        filtered.sort(
+          (a, b) =>
+            (eloIndex.get(a.id)?.rank ?? Infinity) -
+              (eloIndex.get(b.id)?.rank ?? Infinity) ||
+            (b.total_stars || 0) - (a.total_stars || 0),
+        )
+        break
       case 'total_stars_desc':
         filtered.sort((a, b) => (b.total_stars || 0) - (a.total_stars || 0))
         break
@@ -100,7 +126,7 @@ function SkinsPage() {
         break
     }
     return filtered
-  }, [awards.allSkins, query, sortBy])
+  }, [awards.allSkins, query, sortBy, eloIndex])
 
   // New filter or sort → the old page number no longer points anywhere useful.
   useEffect(() => {
@@ -193,6 +219,8 @@ function SkinsPage() {
                 championId={skin.champion_id}
                 initialStar={skin.user_star ?? false}
                 initialX={skin.user_x ?? false}
+                rank={eloIndex.get(skin.id)?.rank}
+                rankContext="sitewide by battle rating"
                 showChampion
               />
             ))}
