@@ -54,6 +54,10 @@ export interface SiteSection extends SitePage {
   children?: SitePage[]
   // The navbar renders this section as the highlighted brand action.
   accent?: boolean
+  // Pathname prefix that marks the section active, when its landing page
+  // lives deeper than the subtree it owns (Rankings lands on /rankings/all
+  // but owns every /rankings/* leaf).
+  match?: string
 }
 
 export const HOME: SitePage = {
@@ -146,29 +150,24 @@ export const SITE_SECTIONS: SiteSection[] = [
     ],
   },
   {
-    // The section lands on the full ranking - the list IS the product; the
-    // slice hub stays one click away as a child ("Browse the Slices").
+    // The section lands on the full ranking - the list IS the product, and
+    // its slice bar handles price/line/champion/year discovery in-page
+    // (the old slice hub redirects here).
     to: '/rankings/all',
+    match: '/rankings',
     label: 'Rankings',
     blurb: 'The community verdict, sliced every way an argument needs.',
     icon: faRankingStar,
-    search: 'best worst top tier list insights skins overall',
+    search:
+      'best worst top tier list insights skins overall price tier skin line year champion slice',
     children: [
       {
         to: '/rankings/all',
         label: 'The Full Ranking',
-        blurb: 'Every skin, one list, settled by battle.',
+        blurb: 'Every skin, one list - slice it by price, line, champion, year.',
         icon: faListOl,
         search: 'best skins overall top list',
         hero: true,
-      },
-      {
-        to: '/rankings',
-        label: 'Browse the Slices',
-        blurb: 'By price tier, skin line, champion, and year.',
-        icon: faRankingStar,
-        search: 'price tier skin line year champion slice',
-        group: 'More ways to settle it',
       },
       {
         to: '/rankings/awards',
