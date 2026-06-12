@@ -13,6 +13,7 @@ import ErrorState from '~/components/ErrorState'
 import { toast } from '~/components/Toaster'
 import { btnSecondarySm } from '~/lib/ui'
 import { fetchQuickBattle, submitBattleVote } from '~/lib/games/serverFns'
+import { ogMeta } from '~/lib/games/ogMeta'
 import { guestRestoreToken, rememberGuestToken } from '~/lib/games/client'
 import type {
   BattleFeedback,
@@ -42,6 +43,13 @@ export const Route = createFileRoute('/games/quick-battle')({
         content:
           'Two League skins. Pick the one you like more. Every vote builds the community ranking.',
       },
+      ...ogMeta({
+        title: 'Quick Battle — Skin Battle',
+        description:
+          'Two League skins. Pick the one you like more. Every vote builds the community ranking — and your personal tier list.',
+        card: 'quick-battle',
+        path: '/games/quick-battle',
+      }),
     ],
     // Start the splash downloads from the <head>, before the body parses or
     // React hydrates: the visible pair at high priority, the on-deck pair at

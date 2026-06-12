@@ -15,6 +15,7 @@ import {
 import PageHeader from '~/components/PageHeader'
 import ErrorState from '~/components/ErrorState'
 import { fetchDailyHub } from '~/lib/games/serverFns'
+import { ogMeta } from '~/lib/games/ogMeta'
 import { guestRestoreToken, rememberGuestToken } from '~/lib/games/client'
 import type { HubGame } from '~/lib/games/types'
 
@@ -23,7 +24,16 @@ export const Route = createFileRoute('/games/')({
   // navigation) — the page arrives complete, no loading states to decorate.
   loader: () => fetchDailyHub({ data: { restoreToken: guestRestoreToken() } }),
   head: () => ({
-    meta: [{ title: 'Games — Skin Battle' }],
+    meta: [
+      { title: 'Games — Skin Battle' },
+      ...ogMeta({
+        title: 'Daily Skin Games — Skin Battle',
+        description:
+          'Splashdle, Quick Battle, and the Mirror — daily challenges for League skin connoisseurs. Free, no account needed.',
+        card: 'games',
+        path: '/games',
+      }),
+    ],
   }),
   errorComponent: ({ error }) => (
     <ErrorState title="Couldn't load today's games" message={error.message} />

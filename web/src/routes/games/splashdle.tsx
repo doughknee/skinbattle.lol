@@ -24,6 +24,7 @@ import {
   submitSplashdleGuess,
 } from '~/lib/games/serverFns'
 import { guestRestoreToken, rememberGuestToken } from '~/lib/games/client'
+import { ogMeta } from '~/lib/games/ogMeta'
 import type {
   GuessOption,
   SplashdleGuess,
@@ -44,6 +45,13 @@ export const Route = createFileRoute('/games/splashdle')({
         content:
           'Name the League skin from a sliver of its splash art. A new puzzle every day.',
       },
+      ...ogMeta({
+        title: 'Splashdle — Skin Battle',
+        description:
+          'Name the League skin from a sliver of its splash art. It zooms out with every miss — six guesses, new puzzle daily.',
+        card: 'splashdle',
+        path: '/games/splashdle',
+      }),
     ],
   }),
   errorComponent: ({ error }) => (

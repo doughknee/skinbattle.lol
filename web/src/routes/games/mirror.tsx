@@ -14,6 +14,7 @@ import ErrorState from '~/components/ErrorState'
 import { btnPrimarySm, btnSecondarySm } from '~/lib/ui'
 import { useAuth } from '~/lib/useAuth'
 import { fetchMirror } from '~/lib/games/serverFns'
+import { ogMeta } from '~/lib/games/ogMeta'
 import { guestRestoreToken, rememberGuestToken } from '~/lib/games/client'
 import type {
   ChampionCompletion,
@@ -39,6 +40,13 @@ export const Route = createFileRoute('/games/mirror')({
         content:
           'Your personal League skin tier list, auto-built from your Quick Battle picks — plus your most contrarian takes and your taste profile.',
       },
+      ...ogMeta({
+        title: 'The Mirror — Skin Battle',
+        description:
+          'The personal tier list your battles build — plus your most contrarian takes.',
+        card: 'mirror',
+        path: '/games/mirror',
+      }),
     ],
   }),
   errorComponent: ({ error }) => (

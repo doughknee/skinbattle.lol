@@ -63,9 +63,17 @@ expire, and (3) a persistent identity worth investing in. Games are sequenced by
   user; empty state previews what the mirror becomes with a first-battle
   CTA; guests with ≥ 20 battles get the passive "keep your tier list"
   sign-in nudge (principle 9). Hub card + Quick Battle links close the loop.
+- ✅ **OG share cards, games surfaces** (2026-06-11) — `/og/<card>` serves
+  server-rendered 1200×630 PNGs (satori + resvg, committed OFL fonts, daily
+  disk cache) for `/games`, Splashdle (today's level-0 crop — spoiler-free
+  by definition), Quick Battle (live #1 skin splash + community battle
+  count), and the Mirror (tier-letter strip). All four pages carry
+  `og:`/`twitter:` meta pointing at their card. Per-entity stable URLs
+  (`/skins/<slug>`, `/u/<name>`, ranking slices) still pending — they need
+  their pages to exist first.
 - ◻ Leaderboards, feedback surface beyond Quick Battle (rank deltas on skin
   pages), patch ingestion pipeline (beyond 12-hourly catalog re-sync),
-  static facts dataset, OG cards/stable URLs — **not started**.
+  static facts dataset, per-entity stable URLs — **not started**.
 
 **Architecture note**: game state currently lives in the TanStack Start SSR
 layer (server functions + SQLite at `web/.data/games.db` — persisted via the
@@ -80,9 +88,9 @@ that happen after first paint; one-shot animations cleared by timer, not
 animationend; every interaction answers back before the round-trip
 completes (pending states).
 
-**Next session**: OG share cards + stable URLs (Phase 0 infra) — the mirror
-is designed so a share card can be derived from it (`/u/<name>` in the
-stable-URL table); citability needs permanent link targets.
+**Next session**: the Meraki static facts dataset (snapshot script →
+committed data) + Price Check — it also unlocks skin-line tags, which
+upgrade the Mirror's taste profile from by-champion to by-skin-line.
 
 ## Landscape & differentiation
 
