@@ -17,7 +17,7 @@ import ErrorState from '~/components/ErrorState'
 import LogoutButton from '~/components/LogoutButton'
 import DeleteAccountButton from '~/components/DeleteAccountButton'
 import MirrorView from '~/components/MirrorView'
-import { Spinner } from '~/components/Skeletons'
+import { AccountTabSkeleton, VotesTabSkeleton } from '~/components/Skeletons'
 import { api } from '~/lib/api'
 import { useAuth } from '~/lib/useAuth'
 import { btnPrimarySm } from '~/lib/ui'
@@ -40,7 +40,8 @@ export const Route = createFileRoute('/profile')({
   validateSearch: (s: Record<string, unknown>): { tab?: Tab } =>
     s.tab === 'votes' || s.tab === 'account' ? { tab: s.tab } : {},
   // The Mirror loads before render (SSR-complete, read-only — viewing mints
-  // nothing). Votes/account are auth-only and load client-side per tab.
+  // nothing). Votes/account are auth-only; the page prefetches both payloads
+  // in the background once auth resolves, so tab switches are instant.
   loader: () => fetchMirror({ data: { restoreToken: guestRestoreToken() } }),
   head: () => ({
     meta: [
@@ -84,15 +85,6 @@ function SignInGate({ message }: { message: string }) {
       <button onClick={login} className={btnPrimarySm}>
         Sign In
       </button>
-    </div>
-  )
-}
-
-function TabLoading() {
-  return (
-    <div className="flex items-center gap-3 py-10 text-sm text-grey1">
-      <Spinner className="h-4 w-4" />
-      Loading…
     </div>
   )
 }
@@ -151,44 +143,24 @@ function VoteSection({ title, skins }: { title: string; skins: Skin[] }) {
   )
 }
 
-function VotesTab() {
-  const { isAuthenticated, isLoading, withApiToken } = useAuth()
-  const [skins, setSkins] = useState<Skin[]>([])
-  const [loading, setLoading] = useState(true)
-  const [errorMsg, setErrorMsg] = useState<string | null>(null)
+// Renders the prefetched voting record (fetched by ProfilePage the moment
+// auth resolves); `skins` is null while the background fetch is in flight.
+function VotesTab({
+  skins,
+  error,
+}: {
+  skins: Skin[] | null
+  error: string | null
+}) {
+  const { isAuthenticated, isLoading } = useAuth()
 
-  useEffect(() => {
-    let cancelled = false
-    async function load() {
-      if (isLoading) return
-      try {
-        setLoading(true)
-        setErrorMsg(null)
-        if (!isAuthenticated) return
-        const votes = await withApiToken((token) => api.userVotes(token))
-        if (!cancelled) setSkins(votes.skins || [])
-      } catch (err) {
-        if (!cancelled)
-          setErrorMsg(
-            err instanceof Error ? err.message : 'Failed to load your votes',
-          )
-      } finally {
-        if (!cancelled) setLoading(false)
-      }
-    }
-    load()
-    return () => {
-      cancelled = true
-    }
-  }, [isAuthenticated, isLoading, withApiToken])
-
-  if (isLoading || (isAuthenticated && loading)) return <TabLoading />
-  if (!isAuthenticated)
+  if (!isLoading && !isAuthenticated)
     return (
       <SignInGate message="Stars, bans, and up/down votes belong to your account — sign in to see your voting record." />
     )
-  if (errorMsg)
-    return <ErrorState title="Couldn't load your votes" message={errorMsg} />
+  if (error)
+    return <ErrorState title="Couldn't load your votes" message={error} />
+  if (isLoading || !skins) return <VotesTabSkeleton />
 
   const upvoted = skins.filter((skin) => skin.user_vote === 1)
   const downvoted = skins.filter((skin) => skin.user_vote === -1)
@@ -245,37 +217,16 @@ function VotesTab() {
 
 // ─── account tab ────────────────────────────────────────────────────────────
 
-function AccountTab() {
-  const { isAuthenticated, isLoading, withApiToken } = useAuth()
-  const [me, setMe] = useState<Me | null>(null)
-  const [loading, setLoading] = useState(true)
+// Renders the prefetched account payload; `settled` flips once the background
+// fetch finished (even on failure — the settings card just shows less).
+function AccountTab({ me, settled }: { me: Me | null; settled: boolean }) {
+  const { isAuthenticated, isLoading } = useAuth()
 
-  useEffect(() => {
-    let cancelled = false
-    async function load() {
-      if (isLoading) return
-      try {
-        setLoading(true)
-        if (!isAuthenticated) return
-        const meData = await withApiToken((token) => api.me(token))
-        if (!cancelled) setMe(meData)
-      } catch {
-        /* the settings card just shows less */
-      } finally {
-        if (!cancelled) setLoading(false)
-      }
-    }
-    load()
-    return () => {
-      cancelled = true
-    }
-  }, [isAuthenticated, isLoading, withApiToken])
-
-  if (isLoading || (isAuthenticated && loading)) return <TabLoading />
-  if (!isAuthenticated)
+  if (!isLoading && !isAuthenticated)
     return (
       <SignInGate message="Sign in to manage your account — and to attach your guest battles and streaks to a name that holds leaderboard spots." />
     )
+  if (isLoading || !settled) return <AccountTabSkeleton />
 
   return (
     <div className="animate-fade-up w-full max-w-md bg-hextech-black/30 outline outline-icon/20 -outline-offset-2 p-8">
@@ -324,11 +275,49 @@ function ProfilePage() {
   const mirror = Route.useLoaderData()
   const { tab } = Route.useSearch()
   const active: Tab = tab ?? 'mirror'
+  const { isAuthenticated, isLoading, withApiToken } = useAuth()
 
   // Mirror the guest token to localStorage as a cookie backup.
   useEffect(() => {
     rememberGuestToken(mirror.guestToken)
   }, [mirror.guestToken])
+
+  // Prefetch both auth-only tabs' payloads as soon as auth resolves, so
+  // switching to Votes or Account renders cached data instead of refetching.
+  const [votes, setVotes] = useState<Skin[] | null>(null)
+  const [votesError, setVotesError] = useState<string | null>(null)
+  const [me, setMe] = useState<Me | null>(null)
+  const [meSettled, setMeSettled] = useState(false)
+
+  useEffect(() => {
+    if (isLoading || !isAuthenticated) return
+    let cancelled = false
+    withApiToken((token) => api.userVotes(token))
+      .then((votesData) => {
+        if (cancelled) return
+        setVotes(votesData.skins || [])
+        setVotesError(null)
+      })
+      .catch((err) => {
+        if (cancelled) return
+        setVotesError(
+          err instanceof Error ? err.message : 'Failed to load your votes',
+        )
+      })
+    withApiToken((token) => api.me(token))
+      .then((meData) => {
+        if (!cancelled) setMe(meData)
+      })
+      .catch(() => {
+        /* the settings card just shows less */
+      })
+      .finally(() => {
+        if (!cancelled) setMeSettled(true)
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [isAuthenticated, isLoading, withApiToken])
 
   return (
     <div className="container mx-auto max-w-5xl px-6 pt-28 pb-16">
@@ -361,8 +350,8 @@ function ProfilePage() {
       </div>
 
       {active === 'mirror' && <MirrorView state={mirror} />}
-      {active === 'votes' && <VotesTab />}
-      {active === 'account' && <AccountTab />}
+      {active === 'votes' && <VotesTab skins={votes} error={votesError} />}
+      {active === 'account' && <AccountTab me={me} settled={meSettled} />}
     </div>
   )
 }

@@ -170,6 +170,51 @@ export function ChampionDetailSkeleton({ quip }: { quip: string }) {
   )
 }
 
+// Votes tab pending state: stat strip + section heading + skin grid, shaped
+// like the real voting record.
+export function VotesTabSkeleton() {
+  return (
+    <div className="animate-fade-in" aria-hidden>
+      <div className="mb-20 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        {Array.from({ length: 4 }, (_, i) => (
+          <div
+            key={i}
+            className="flex items-center gap-4 bg-hextech-black/30 p-5 outline outline-icon/20 -outline-offset-2"
+          >
+            <div className="skeleton h-12 w-12 shrink-0 rounded-full" />
+            <div className="space-y-2">
+              <div className="skeleton h-7 w-16" />
+              <div className="skeleton h-3 w-24" />
+            </div>
+          </div>
+        ))}
+      </div>
+      <div className="skeleton mb-8 h-9 w-64" />
+      <SkinGridSkeleton />
+    </div>
+  )
+}
+
+// Account tab pending state: settings-card-shaped slab.
+export function AccountTabSkeleton() {
+  return (
+    <div
+      className="animate-fade-in w-full max-w-md bg-hextech-black/30 p-8 outline outline-icon/20 -outline-offset-2"
+      aria-hidden
+    >
+      <div className="mb-5 space-y-2">
+        <div className="skeleton h-3 w-20" />
+        <div className="skeleton h-6 w-40" />
+      </div>
+      <div className="mb-8 space-y-2">
+        <div className="skeleton h-3 w-12" />
+        <div className="skeleton h-6 w-56" />
+      </div>
+      <div className="skeleton h-12 w-32" />
+    </div>
+  )
+}
+
 // Home pending state: hero-shaped skeleton so the landing page doesn't flash
 // empty space during navigation.
 export function HomeSkeleton() {
