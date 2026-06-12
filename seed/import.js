@@ -195,6 +195,10 @@ async function main() {
   }
 
   await setMeta('ddragon_version', version);
+  // The upsert above may have overwritten splash URLs the API's splash
+  // sweep had repointed (legacy asset casings like FiddleSticks_<num>.jpg).
+  // Clearing the sweep stamp makes the API re-sweep on its next boot.
+  await pool.query(`DELETE FROM seed_meta WHERE key = 'splash_sweep'`);
   console.log(`Recorded patch ${version}.`);
 }
 
