@@ -341,6 +341,7 @@ export interface MirrorSkin {
   skinId: string
   slug: string // stable URL: /skins/<slug>
   name: string
+  championId: string
   championName: string
   splashUrl: string
   rating: number // personal rating, rounded

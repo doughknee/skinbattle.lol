@@ -95,6 +95,7 @@ function toMirrorSkin(r: RatedRow): MirrorSkin {
     skinId: r.skinId,
     slug: skinSlug(r.name, r.skinId),
     name: r.name,
+    championId: r.championId,
     championName: r.championName,
     splashUrl: r.splashUrl,
     rating: Math.round(r.personal),
