@@ -68,9 +68,6 @@
   --animate-feedback-pop: feedback-pop 0.18s ease-out both;
   --animate-delta-pop: delta-pop 0.3s cubic-bezier(0.22, 1, 0.36, 1) both;
   --animate-history-in: history-in 0.18s ease-out both;
-  /* The navbar's Battle tab — a slow gold ember so the brand verb reads as
-     alive, not merely hovered. Infinite and subtle by design. */
-  --animate-battle-beacon: battle-beacon 2.8s ease-in-out infinite;
 }
 
 /* ── Motion ─────────────────────────────────────────────────── */
@@ -261,15 +258,56 @@
 }
 
 /* Shimmer sweep for skeleton loaders. */
-@keyframes battle-beacon {
-  0%,
-  100% {
-    box-shadow: inset 0 -10px 16px -10px
-      color-mix(in srgb, var(--color-gold2) 30%, transparent);
+/* ── Battle tab embers ──────────────────────────────────────────
+   The navbar's accent tab burns: a static ember bed at the base plus a few
+   tiny gold sparks drifting up. Flavor, not fireworks — particles are 2-3px,
+   six of them, transform/opacity only. */
+.battle-accent {
+  box-shadow: inset 0 -12px 18px -10px
+    color-mix(in srgb, var(--color-gold2) 35%, transparent);
+}
+.battle-embers {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+.battle-embers i {
+  position: absolute;
+  bottom: -3px;
+  left: var(--ember-x, 50%);
+  width: 3px;
+  height: 3px;
+  border-radius: 9999px;
+  background: var(--color-gold2);
+  box-shadow: 0 0 6px 1px color-mix(in srgb, var(--color-gold2) 60%, transparent);
+  opacity: 0;
+  animation: ember-rise var(--ember-dur, 3s) linear infinite;
+  animation-delay: var(--ember-delay, 0s);
+}
+/* Each spark gets its own lane, tempo, and drift so the loop never reads
+   as a pattern. */
+.battle-embers i:nth-child(1) { --ember-x: 12%; --ember-dur: 2.6s; --ember-delay: 0s;    --ember-drift: 4px; }
+.battle-embers i:nth-child(2) { --ember-x: 30%; --ember-dur: 3.4s; --ember-delay: 0.9s;  --ember-drift: -5px; width: 2px; height: 2px; }
+.battle-embers i:nth-child(3) { --ember-x: 48%; --ember-dur: 2.9s; --ember-delay: 1.7s;  --ember-drift: 3px; }
+.battle-embers i:nth-child(4) { --ember-x: 64%; --ember-dur: 3.8s; --ember-delay: 0.4s;  --ember-drift: -3px; width: 2px; height: 2px; }
+.battle-embers i:nth-child(5) { --ember-x: 80%; --ember-dur: 3.1s; --ember-delay: 2.2s;  --ember-drift: 5px; }
+.battle-embers i:nth-child(6) { --ember-x: 91%; --ember-dur: 2.7s; --ember-delay: 1.3s;  --ember-drift: -4px; width: 2px; height: 2px; }
+
+@keyframes ember-rise {
+  0% {
+    transform: translate(0, 0) scale(1);
+    opacity: 0;
   }
-  50% {
-    box-shadow: inset 0 -18px 24px -8px
-      color-mix(in srgb, var(--color-gold2) 70%, transparent);
+  12% {
+    opacity: 0.9;
+  }
+  60% {
+    opacity: 0.5;
+  }
+  100% {
+    transform: translate(var(--ember-drift, 0px), -52px) scale(0.4);
+    opacity: 0;
   }
 }
 
@@ -373,12 +411,10 @@
   .route-progress-bar {
     animation: none !important;
   }
-  /* Static ember instead of the pulse — the accent stays distinguishable
-     from hover without motion. */
-  .animate-battle-beacon {
-    animation: none !important;
-    box-shadow: inset 0 -14px 20px -9px
-      color-mix(in srgb, var(--color-gold2) 50%, transparent);
+  /* No sparks without motion — the static ember bed (.battle-accent)
+     keeps the tab distinguishable from hover. */
+  .battle-embers {
+    display: none;
   }
   .skeleton::after {
     animation: none;
