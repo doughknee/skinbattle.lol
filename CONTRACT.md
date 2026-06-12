@@ -85,8 +85,19 @@ to informative.
 **Guest sessions:** first call mints a `game_users` row + 128-bit token in an
 httpOnly `sb_guest` cookie (1 year). The token is echoed in responses and
 mirrored to localStorage by the client; `restoreToken` re-establishes a
-cleared cookie. Sign-up later attaches `logto_sub` to the same row
-(attachment, not migration); `merged_into` supports lossless account merges.
+cleared cookie. Sign-up attaches `logto_sub` to the same row (attachment,
+not migration) via `POST /games-attach` (`web/src/lib/games/server/attach.ts`):
+the client's Logto API access token is verified server-side (jose against
+`{LOGTO_ENDPOINT}/oidc/jwks`, issuer/audience strict, RS256) and the sub is
+bound to the device's record — fired automatically by `<GuestAttachment>` in
+the root layout once per browser session. If the sub already owns another
+record, the guest merges into it losslessly: `game_events` reattributed (so
+the next Bradley-Terry refit upgrades them to member weight), `daily_results`
+unioned, streaks keep the better values, `user_skin_ratings` replayed from
+the unioned battle log, `merged_into` set, and the device cookie switched to
+the account's credential. Dev testing without real credentials:
+`web/scripts/mock-logto.mjs` serves a mock JWKS and prints a self-signed
+token (point `LOGTO_ENDPOINT` at it).
 
 **Tables** (`game_users`, `game_events`, `daily_puzzles`, `daily_results`,
 `streaks`, `skin_ratings`, `user_skin_ratings`, `battle_nonces`,

@@ -14,6 +14,7 @@ import CommandPalette from '~/components/CommandPalette'
 import RouteProgress from '~/components/RouteProgress'
 import Toaster from '~/components/Toaster'
 import Lightbox from '~/components/Lightbox'
+import GuestAttachment from '~/components/GuestAttachment'
 import Footer from '~/components/Footer'
 import { readServerConfig, type PublicConfig } from '~/lib/config'
 
@@ -86,6 +87,7 @@ function RootComponent() {
         <CommandPalette />
         <Lightbox />
         <Toaster />
+        <GuestAttachment />
       </ClientProviders>
     </RootDocument>
   )
