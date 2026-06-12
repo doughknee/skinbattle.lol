@@ -11,7 +11,11 @@ export function makeLogtoConfig(c: PublicConfig): LogtoConfig {
     // Request the API resource so we can mint access tokens with the correct
     // audience for the Go API.
     resources: c.logtoResource ? [c.logtoResource] : [],
-    scopes: [UserScope.Email, UserScope.Profile],
+    // Identities unlocks the Account API's social-connector management
+    // (lib/accountApi.ts). Scopes are baked into the grant at sign-in, so
+    // sessions created before this scope was added must sign out and back
+    // in before the security settings work.
+    scopes: [UserScope.Email, UserScope.Profile, UserScope.Identities],
   }
 }
 

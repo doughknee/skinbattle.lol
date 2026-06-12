@@ -13,6 +13,7 @@ import { useCallback, useSyncExternalStore } from 'react'
 import { LogtoClientError, LogtoError, useLogto } from '@logto/react'
 import { getLogtoClient } from './logtoClient'
 import { getLogtoResource, redirectUri, postSignOutUri } from './logto'
+import { clearGuestIdentity } from './games/client'
 import { toast } from '~/components/Toaster'
 import type { ApiError } from './api'
 
@@ -90,6 +91,33 @@ export function useAuth() {
     [isAuthenticated],
   )
 
+  // Returns the OPAQUE access token (no resource) that Logto's Account API
+  // requires - a resource-bound JWT is rejected there. Same dead-session
+  // handling as getApiToken.
+  const getAccountToken = useCallback(async (): Promise<string | null> => {
+    if (!isAuthenticated) return null
+    const client = getLogtoClient()
+    if (!client) return null
+    try {
+      return (await client.getAccessToken()) ?? null
+    } catch (err) {
+      if (isSessionDead(err)) {
+        try {
+          await client.clearAllTokens()
+        } catch {
+          /* best effort */
+        }
+        sessionExpiredStore.set(true)
+        return null
+      }
+      try {
+        return (await client.getAccessToken()) ?? null
+      } catch {
+        return null
+      }
+    }
+  }, [isAuthenticated])
+
   // Runs an authenticated API call. If the server rejects the token (401),
   // forces a refresh and retries once before giving up.
   const withApiToken = useCallback(
@@ -132,11 +160,24 @@ export function useAuth() {
     sessionExpiredStore.set(false)
     const client = getLogtoClient()
     if (!client) return
-    client.signOut(postSignOutUri()).catch((err) => {
-      console.error('sign-out redirect failed:', err)
-      toast("Couldn't reach the sign-out service. Please try again.", 'error')
-    })
+    // Drop the games guest identity BEFORE the sign-out redirect unloads the
+    // page - otherwise the next account on this browser inherits this
+    // device's games record (tier list, history, streaks).
+    clearGuestIdentity()
+      .then(() => client.signOut(postSignOutUri()))
+      .catch((err) => {
+        console.error('sign-out redirect failed:', err)
+        toast("Couldn't reach the sign-out service. Please try again.", 'error')
+      })
   }, [])
 
-  return { isAuthenticated, isLoading, getApiToken, withApiToken, login, logout }
+  return {
+    isAuthenticated,
+    isLoading,
+    getApiToken,
+    getAccountToken,
+    withApiToken,
+    login,
+    logout,
+  }
 }

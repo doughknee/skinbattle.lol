@@ -57,15 +57,37 @@ export function ensureUser(
 ): { user: GameUser; token: string } {
   const existing = peekUser(db, restoreToken)
   if (existing) return existing
+  return mintUser(db)
+}
 
+// Mint a brand-new record and hand this device its credential. With a
+// logtoSub the row is born as an account record - attachSub uses this when
+// the device's existing record turns out to belong to a different account.
+export function mintUser(
+  db: DatabaseSync,
+  logtoSub?: string | null,
+): { user: GameUser; token: string } {
   const now = new Date().toISOString()
   const token = randomBytes(16).toString('hex')
   const id = randomUUID()
   db.prepare(
-    'INSERT INTO game_users (id, guest_token, created_at, last_seen_at) VALUES (?, ?, ?, ?)',
-  ).run(id, token, now, now)
+    'INSERT INTO game_users (id, guest_token, logto_sub, created_at, last_seen_at) VALUES (?, ?, ?, ?, ?)',
+  ).run(id, token, logtoSub ?? null, now, now)
   refreshCookie(token)
-  return { user: { id, trustTier: 'guest' }, token }
+  return { user: { id, trustTier: logtoSub ? 'member' : 'guest' }, token }
+}
+
+// Logout: drop this device's guest credential so whoever uses the browser
+// next - a fresh guest or a different account - starts from a clean
+// identity instead of inheriting this record.
+export function clearGuestCookie(): void {
+  setCookie(COOKIE_NAME, '', {
+    httpOnly: true,
+    sameSite: 'lax',
+    path: '/',
+    maxAge: 0,
+    secure: process.env.NODE_ENV === 'production',
+  })
 }
 
 function refreshCookie(token: string): void {
