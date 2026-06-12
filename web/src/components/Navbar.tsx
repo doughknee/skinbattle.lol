@@ -1,6 +1,11 @@
+import { Fragment } from 'react'
 import { Link, useRouterState } from '@tanstack/react-router'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faChevronDown, faMagnifyingGlass } from '@fortawesome/free-solid-svg-icons'
+import {
+  faArrowRight,
+  faChevronDown,
+  faMagnifyingGlass,
+} from '@fortawesome/free-solid-svg-icons'
 import AccountButton from './AccountButton'
 import QuotaChip from './QuotaChip'
 import { CrownMark, Wordmark } from './Brand'
@@ -36,10 +41,20 @@ function NavItem({ section }: { section: SiteSection }) {
       aria-label={section.label}
       aria-current={active ? 'page' : undefined}
       title={section.label}
-      className={`flex h-full items-center gap-2 px-2.5 transition duration-350 md:px-3.5 ${itemHover} ${
+      className={`relative flex h-full items-center gap-2 overflow-hidden px-2.5 transition duration-350 md:px-3.5 ${itemHover} ${
         active ? itemShade : ''
-      } ${section.accent ? 'bg-gold5/15 animate-battle-beacon' : ''}`}
+      } ${section.accent ? 'bg-gold5/15 battle-accent' : ''}`}
     >
+      {section.accent && (
+        <span className="battle-embers" aria-hidden>
+          <i />
+          <i />
+          <i />
+          <i />
+          <i />
+          <i />
+        </span>
+      )}
       <FontAwesomeIcon
         icon={section.icon}
         className={`h-5 ${
@@ -64,30 +79,59 @@ function NavItem({ section }: { section: SiteSection }) {
 
   if (!hasMenu) return trigger
 
+  const hero = section.children!.find((c) => c.hero)
+  const rest = section.children!.filter((c) => !c.hero)
+
   return (
     <div className="group relative h-full">
       {trigger}
       {/* Desktop dropdown. opacity (not visibility) keeps the links tabbable,
           so keyboard focus reveals the panel via group-focus-within. */}
-      <div className="pointer-events-none absolute left-0 top-full hidden w-80 -translate-y-1 opacity-0 transition-all duration-150 group-focus-within:pointer-events-auto group-focus-within:translate-y-0 group-focus-within:opacity-100 group-hover:pointer-events-auto group-hover:translate-y-0 group-hover:opacity-100 md:block">
-        <div className="border-t-2 border-t-gold5 bg-hextech-black/95 shadow-2xl outline outline-icon/30 -outline-offset-1 backdrop-blur-2xl">
-          {section.children!.map((c) => (
+      <div className="pointer-events-none absolute left-0 top-full hidden w-[22rem] -translate-y-1 opacity-0 transition-all duration-150 group-focus-within:pointer-events-auto group-focus-within:translate-y-0 group-focus-within:opacity-100 group-hover:pointer-events-auto group-hover:translate-y-0 group-hover:opacity-100 md:block">
+        <div className="border-t-2 border-t-gold5 bg-hextech-black/95 pb-2 shadow-2xl outline outline-icon/30 -outline-offset-1 backdrop-blur-2xl">
+          {/* The featured destination — the menu leads with what to do. */}
+          {hero && (
             <Link
-              key={c.to}
-              to={c.to}
-              className="flex items-start gap-3 px-4 py-3 transition duration-150 hover:bg-gold5/15"
+              to={hero.to}
+              className="group/hero flex items-center gap-3 border-b border-icon/20 bg-gold5/10 px-4 py-4 transition duration-150 hover:bg-gold5/20"
             >
-              <FontAwesomeIcon
-                icon={c.icon}
-                className="mt-1 h-4 w-4 shrink-0 text-gold2"
-              />
-              <span className="min-w-0">
-                <span className="block font-serif text-sm font-bold text-gold1">
-                  {c.label}
-                </span>
-                <span className="block text-xs text-grey1">{c.blurb}</span>
+              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-hextech-black/60 outline outline-gold2/60 -outline-offset-2">
+                <FontAwesomeIcon icon={hero.icon} className="h-4.5 text-gold1" />
               </span>
+              <span className="min-w-0 flex-1">
+                <span className="block font-serif text-base font-bold text-gold1">
+                  {hero.label}
+                </span>
+                <span className="block text-xs text-grey1">{hero.blurb}</span>
+              </span>
+              <FontAwesomeIcon
+                icon={faArrowRight}
+                className="h-3.5 shrink-0 text-gold2 transition duration-150 group-hover/hero:translate-x-0.5"
+              />
             </Link>
+          )}
+          {rest.map((c, i) => (
+            <Fragment key={c.to}>
+              {c.group && c.group !== rest[i - 1]?.group && (
+                <p className="px-4 pb-1.5 pt-3.5 text-[10px] font-semibold uppercase tracking-[0.2em] text-gold2/70">
+                  {c.group}
+                </p>
+              )}
+              <Link
+                to={c.to}
+                className="group/row flex items-center gap-3 px-4 py-2.5 transition duration-150 hover:bg-gold5/15"
+              >
+                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-hextech-black/60 outline outline-gold5/50 -outline-offset-2 transition duration-150 group-hover/row:outline-gold2/70">
+                  <FontAwesomeIcon icon={c.icon} className="h-3.5 text-gold2" />
+                </span>
+                <span className="min-w-0">
+                  <span className="block font-serif text-sm font-bold text-gold1">
+                    {c.label}
+                  </span>
+                  <span className="block text-xs text-grey1">{c.blurb}</span>
+                </span>
+              </Link>
+            </Fragment>
           ))}
         </div>
       </div>

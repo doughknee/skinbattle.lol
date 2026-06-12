@@ -34,6 +34,10 @@ export interface SitePage {
   icon: IconDefinition
   // Extra match terms for the command palette ("wordle" finds Splashdle).
   search?: string
+  // Dropdown presentation: the hero renders as the menu's featured tile;
+  // group labels render as eyebrow headings over consecutive runs.
+  hero?: boolean
+  group?: string
 }
 
 export interface SiteSection extends SitePage {
@@ -73,30 +77,34 @@ export const SITE_SECTIONS: SiteSection[] = [
       {
         to: '/battle',
         label: 'Head-to-Head',
-        blurb: 'Quick Battle — two skins, pick one. Endless.',
+        blurb: 'Two skins, pick one. Endless — jump straight in.',
         icon: faShuffle,
         search: 'versus quick battle head to head 1v1 swipe endless vs',
+        hero: true,
       },
       {
         to: '/battle/splashdle',
         label: 'Splashdle',
-        blurb: 'Daily: name the skin from a sliver of its splash.',
+        blurb: 'Name the skin from a sliver of its splash.',
         icon: faImage,
         search: 'wordle guess splash daily',
+        group: 'Daily challenges',
       },
       {
         to: '/battle/price-check',
         label: 'Price Check',
-        blurb: 'Daily: guess what each skin cost in RP.',
+        blurb: 'Guess what each skin cost in RP.',
         icon: faCoins,
         search: 'rp cost price guess daily',
+        group: 'Daily challenges',
       },
       {
         to: '/battle/chroma-vision',
         label: 'Chroma Vision',
-        blurb: 'Daily: name the skin from its colors alone.',
+        blurb: 'Name the skin from its colors alone.',
         icon: faPalette,
         search: 'colors mosaic hard mode daily',
+        group: 'Daily challenges',
       },
       {
         to: '/battle/leaderboards',
@@ -104,6 +112,7 @@ export const SITE_SECTIONS: SiteSection[] = [
         blurb: 'Streaks, fastest solves, and battle volume.',
         icon: faTrophy,
         search: 'top players streaks ranks community',
+        group: 'Community',
       },
     ],
   },
@@ -143,6 +152,7 @@ export const SITE_SECTIONS: SiteSection[] = [
         blurb: 'Every skin, one list, settled by battle.',
         icon: faListOl,
         search: 'best skins overall top list',
+        hero: true,
       },
       {
         to: '/rankings',
@@ -150,6 +160,7 @@ export const SITE_SECTIONS: SiteSection[] = [
         blurb: 'By price tier, skin line, champion, and year.',
         icon: faRankingStar,
         search: 'price tier skin line year champion slice',
+        group: 'More ways to settle it',
       },
       {
         to: '/rankings/awards',
@@ -157,6 +168,7 @@ export const SITE_SECTIONS: SiteSection[] = [
         blurb: 'Most starred, most banned — community superlatives.',
         icon: faCrown,
         search: 'best worst starred banned superlatives awards',
+        group: 'More ways to settle it',
       },
       {
         to: '/rankings/drought',
@@ -164,6 +176,7 @@ export const SITE_SECTIONS: SiteSection[] = [
         blurb: "Days since every champion's last skin, ranked.",
         icon: faHourglassHalf,
         search: 'insights days since last skin waiting forgotten',
+        group: 'More ways to settle it',
       },
     ],
   },
