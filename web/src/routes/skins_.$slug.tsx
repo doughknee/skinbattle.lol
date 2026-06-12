@@ -229,7 +229,7 @@ function SkinPage() {
                 )}
               </p>
               <Link
-                to="/battle/mirror"
+                to="/profile"
                 className="text-sm font-bold text-gold2 transition duration-150 hover:text-gold1"
               >
                 See your full Mirror →

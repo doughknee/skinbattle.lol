@@ -1,9 +1,9 @@
 import { createFileRoute, redirect } from '@tanstack/react-router'
 
-// The Mirror moved under /battle (interim home — it becomes the profile's
-// centerpiece in a later phase) — kept as a redirect so old links work.
+// The Mirror became the profile's centerpiece — direct redirect (no chains)
+// so old links keep working.
 export const Route = createFileRoute('/games/mirror')({
   beforeLoad: () => {
-    throw redirect({ to: '/battle/mirror' })
+    throw redirect({ to: '/profile' })
   },
 })

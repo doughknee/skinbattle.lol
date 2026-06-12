@@ -254,7 +254,7 @@ function SessionHistory({ entries }: { entries: HistoryEntry[] }) {
       <p className="mt-3 text-sm text-grey1">
         Every verdict sharpens{' '}
         <Link
-          to="/battle/mirror"
+          to="/profile"
           className="font-bold text-gold2 transition duration-150 hover:text-gold1"
         >
           your Mirror
@@ -510,7 +510,7 @@ function BattlePage() {
       </div>
 
       <div className="mt-10 flex flex-wrap items-center gap-x-6 gap-y-3">
-        <Link to="/battle/mirror" className={btnSecondarySm}>
+        <Link to="/profile" className={btnSecondarySm}>
           <FontAwesomeIcon icon={faRankingStar} className="h-4" />
           Your Mirror
         </Link>
