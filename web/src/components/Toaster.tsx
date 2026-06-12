@@ -5,7 +5,14 @@ import { useEffect, useState } from 'react'
 
 export type ToastType = 'info' | 'success' | 'error'
 
-interface Toast {
+// Optional extras: a toast can be a link (opens in a new tab) and can ask
+// for more reading time than the default.
+interface ToastOptions {
+  href?: string
+  durationMs?: number
+}
+
+interface Toast extends ToastOptions {
   id: number
   message: string
   type: ToastType
@@ -14,10 +21,14 @@ interface Toast {
 const TOAST_EVENT = 'sb:toast'
 const TOAST_DURATION_MS = 3000
 
-export function toast(message: string, type: ToastType = 'info') {
+export function toast(
+  message: string,
+  type: ToastType = 'info',
+  options: ToastOptions = {},
+) {
   if (typeof window === 'undefined') return
   window.dispatchEvent(
-    new CustomEvent(TOAST_EVENT, { detail: { message, type } }),
+    new CustomEvent(TOAST_EVENT, { detail: { message, type, ...options } }),
   )
 }
 
@@ -28,15 +39,12 @@ export default function Toaster() {
 
   useEffect(() => {
     const onToast = (e: Event) => {
-      const { message, type } = (e as CustomEvent).detail as {
-        message: string
-        type: ToastType
-      }
+      const detail = (e as CustomEvent).detail as Omit<Toast, 'id'>
       const id = nextId++
-      setToasts((prev) => [...prev.slice(-3), { id, message, type }])
+      setToasts((prev) => [...prev.slice(-3), { id, ...detail }])
       window.setTimeout(() => {
         setToasts((prev) => prev.filter((t) => t.id !== id))
-      }, TOAST_DURATION_MS)
+      }, detail.durationMs ?? TOAST_DURATION_MS)
     }
     window.addEventListener(TOAST_EVENT, onToast)
     return () => window.removeEventListener(TOAST_EVENT, onToast)
@@ -49,19 +57,29 @@ export default function Toaster() {
       aria-live="polite"
       className="fixed bottom-6 left-1/2 z-[100] flex w-full max-w-sm -translate-x-1/2 flex-col items-center gap-2 px-4"
     >
-      {toasts.map((t) => (
-        <div
-          key={t.id}
-          role="status"
-          className={`w-fit max-w-full bg-hextech-black/95 px-4 py-2.5 text-sm font-semibold shadow-lg outline -outline-offset-1 backdrop-blur ${
-            t.type === 'error'
-              ? 'text-danger outline-danger-border/60'
-              : 'text-gold1 outline-gold2/60'
-          }`}
-        >
-          {t.message}
-        </div>
-      ))}
+      {toasts.map((t) => {
+        const look = `w-fit max-w-full bg-hextech-black/95 px-4 py-2.5 text-sm font-semibold shadow-lg outline -outline-offset-1 backdrop-blur ${
+          t.type === 'error'
+            ? 'text-danger outline-danger-border/60'
+            : 'text-gold1 outline-gold2/60'
+        }`
+        return t.href ? (
+          <a
+            key={t.id}
+            role="status"
+            href={t.href}
+            target="_blank"
+            rel="noopener noreferrer"
+            className={`${look} pointer-events-auto cursor-pointer transition duration-150 hover:outline-gold2`}
+          >
+            {t.message} <span aria-hidden>→</span>
+          </a>
+        ) : (
+          <div key={t.id} role="status" className={look}>
+            {t.message}
+          </div>
+        )
+      })}
     </div>
   )
 }

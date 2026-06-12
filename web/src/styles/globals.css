@@ -83,7 +83,8 @@
   --animate-battle-in-a: battle-in-a 0.25s cubic-bezier(0.22, 1, 0.36, 1) both;
   --animate-battle-in-b: battle-in-b 0.25s cubic-bezier(0.22, 1, 0.36, 1) 0.06s
     both;
-  --animate-vs-pop: vs-pop 0.28s cubic-bezier(0.34, 1.56, 0.64, 1) 0.12s both;
+  --animate-vs-round: vs-round 0.32s cubic-bezier(0.34, 1.56, 0.64, 1) 0.1s
+    both;
   --animate-battle-win: battle-win 0.26s cubic-bezier(0.22, 1, 0.36, 1) both;
   --animate-battle-lose: battle-lose 0.24s ease-out both;
   --animate-feedback-pop: feedback-pop 0.18s ease-out both;
@@ -262,19 +263,20 @@
   }
 }
 
-/* The VS tile slams down between the contenders — oversized, then a gold
-   shockwave flash on impact. (Centering lives in the `translate` property
-   utilities, so scaling `transform` here doesn't knock it off center.) */
+/* The VS tile slams down between the contenders — oversized, settling with
+   an overshoot. Transform/opacity only: animating box-shadow makes the
+   compositor repaint every frame, which is where the old jitter came from;
+   the glow is the static .vs-glow below. (Centering lives in the `translate`
+   property utilities, so scaling `transform` here doesn't knock it off
+   center.) */
 @keyframes vs-slam {
   0% {
     opacity: 0;
     transform: scale(3);
-    box-shadow: 0 0 0 transparent;
   }
   55% {
     opacity: 1;
     transform: scale(0.88);
-    box-shadow: 0 0 52px 6px color-mix(in srgb, var(--color-gold2) 60%, transparent);
   }
   80% {
     transform: scale(1.1);
@@ -282,20 +284,27 @@
   100% {
     opacity: 1;
     transform: scale(1);
-    box-shadow: 0 0 16px color-mix(in srgb, var(--color-gold2) 25%, transparent);
   }
 }
 
-/* Per-round echo of the slam: the VS re-pops after the contenders land. */
-@keyframes vs-pop {
-  from {
-    opacity: 0;
-    transform: scale(0.4);
-  }
-  to {
-    opacity: 1;
+/* Per-round echo of the slam. The badge persists between rounds now, so
+   this starts and ends at rest — a punch, not a re-entrance — and can never
+   flash the badge out of existence mid-loop. */
+@keyframes vs-round {
+  0% {
     transform: scale(1);
   }
+  45% {
+    transform: scale(1.16);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+/* The badge's resting glow — static, so no animation ever repaints it. */
+.vs-glow {
+  box-shadow: 0 0 16px color-mix(in srgb, var(--color-gold2) 25%, transparent);
 }
 
 /* The beat of acknowledgment between pick and next pair: the chosen card
@@ -531,7 +540,7 @@
   .animate-battle-reveal-a,
   .animate-battle-reveal-b,
   .animate-vs-slam,
-  .animate-vs-pop,
+  .animate-vs-round,
   .animate-battle-win,
   .animate-battle-lose,
   .animate-feedback-pop,

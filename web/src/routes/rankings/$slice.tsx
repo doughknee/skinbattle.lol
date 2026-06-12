@@ -1,12 +1,11 @@
 import { createFileRoute, Link, notFound } from '@tanstack/react-router'
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import {
-  faArrowLeft,
   faChevronDown,
   faCrown,
   faFlaskVial,
-  faLayerGroup,
+  faHourglassHalf,
   faMagnifyingGlass,
   faRankingStar,
   faShuffle,
@@ -49,9 +48,9 @@ export const Route = createFileRoute('/rankings/$slice')({
   notFoundComponent: () => (
     <ErrorState
       title="No such slice"
-      message="That ranking slice doesn't exist. Browse the index for every price tier, line, champion, and year."
+      message="That ranking slice doesn't exist. The full ranking has a slice bar for every price tier, line, champion, and year."
       retry={false}
-      back={{ to: '/rankings', label: 'All rankings' }}
+      back={{ to: '/rankings/all', label: 'The full ranking' }}
     />
   ),
   errorComponent: ({ error }) => (
@@ -292,29 +291,53 @@ function PickChip({
   )
 }
 
-// In-page slice switching: one button, one panel, every slice reachable.
-// Champions and lines are long lists, so the panel leans on its filter
-// instead of rendering hundreds of chips up front.
-const GROUP_CAP = 18
+// The slice bar: slice discovery folded into the ranking itself (this
+// replaced the /rankings hub page - a filter ON the list beats a directory
+// of links TO it). One trigger per dimension, one tray at a time; the group
+// the current slice belongs to wears its label on the trigger.
 
-function SlicePicker({
+type GroupKey = 'prices' | 'lines' | 'champions' | 'years'
+
+const SLICE_GROUPS: { key: GroupKey; name: string; searchable: boolean }[] = [
+  { key: 'prices', name: 'Price tier', searchable: false },
+  { key: 'lines', name: 'Skin line', searchable: true },
+  { key: 'champions', name: 'Champion', searchable: true },
+  { key: 'years', name: 'Year', searchable: false },
+]
+
+// Long groups render a two-dozen teaser until the search narrows them.
+const TRAY_CAP = 24
+
+function SliceBar({
   index,
   current,
 }: {
   index: RankingsIndex
   current: string
 }) {
-  const [open, setOpen] = useState(false)
+  const [openKey, setOpenKey] = useState<GroupKey | null>(null)
   const [query, setQuery] = useState('')
   const ref = useRef<HTMLDivElement>(null)
 
+  const activeKey = useMemo<GroupKey | null>(
+    () =>
+      SLICE_GROUPS.find((g) => index[g.key].some((l) => l.slice === current))
+        ?.key ?? null,
+    [index, current],
+  )
+  const currentLabel = activeKey
+    ? index[activeKey].find((l) => l.slice === current)?.label
+    : undefined
+
   useEffect(() => {
-    if (!open) return
+    if (!openKey) return
     const onDown = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false)
+      if (ref.current && !ref.current.contains(e.target as Node)) {
+        setOpenKey(null)
+      }
     }
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') setOpen(false)
+      if (e.key === 'Escape') setOpenKey(null)
     }
     document.addEventListener('mousedown', onDown)
     document.addEventListener('keydown', onKey)
@@ -322,102 +345,112 @@ function SlicePicker({
       document.removeEventListener('mousedown', onDown)
       document.removeEventListener('keydown', onKey)
     }
-  }, [open])
+  }, [openKey])
 
   const close = () => {
-    setOpen(false)
+    setOpenKey(null)
     setQuery('')
   }
 
+  const open = SLICE_GROUPS.find((g) => g.key === openKey)
   const q = query.trim().toLowerCase()
-  const filtered = (links: SliceLink[]) =>
-    q ? links.filter((l) => l.label.toLowerCase().includes(q)) : links
-
-  const groups = [
-    { name: 'Price tiers', links: filtered(index.prices), capped: false },
-    { name: 'Years', links: filtered(index.years), capped: false },
-    { name: 'Skin lines', links: filtered(index.lines), capped: true },
-    { name: 'Champions', links: filtered(index.champions), capped: true },
-  ]
-  const empty = q && groups.every((g) => g.links.length === 0)
+  const links = open
+    ? q
+      ? index[open.key].filter((l) => l.label.toLowerCase().includes(q))
+      : index[open.key]
+    : []
+  const capped = open ? open.searchable && !q && links.length > TRAY_CAP : false
+  const shown = capped ? links.slice(0, TRAY_CAP) : links
 
   return (
-    <div ref={ref} className="relative w-full sm:w-auto">
-      <button
-        type="button"
-        onClick={() => setOpen((o) => !o)}
-        aria-haspopup="dialog"
-        aria-expanded={open}
-        className="flex h-10 w-full cursor-pointer items-center justify-between gap-2.5 bg-hextech-black/40 px-4 text-sm font-bold text-gold1 outline outline-icon/30 -outline-offset-1 transition duration-150 hover:outline-gold2 sm:w-auto"
-      >
-        <span className="flex items-center gap-2.5">
-          <FontAwesomeIcon icon={faLayerGroup} className="h-3.5 text-gold2" />
-          Switch list
-        </span>
-        <FontAwesomeIcon
-          icon={faChevronDown}
-          className={`h-3 text-gold2 transition-transform duration-200 ${open ? 'rotate-180' : ''}`}
-        />
-      </button>
+    <div ref={ref} className="relative">
+      <div className="flex flex-wrap items-center gap-2">
+        <Link
+          to="/rankings/$slice"
+          params={{ slice: 'all' }}
+          onClick={close}
+          aria-current={current === 'all' ? 'page' : undefined}
+          className={`flex h-10 items-center px-3.5 text-sm font-bold outline -outline-offset-1 transition duration-150 ${
+            current === 'all'
+              ? 'bg-gold5/40 text-gold1 outline-gold2'
+              : 'bg-hextech-black/40 text-gold1 outline-icon/30 hover:bg-gold5/25 hover:outline-gold2/70'
+          }`}
+        >
+          All skins
+        </Link>
+        {SLICE_GROUPS.map((g) => {
+          const isOpen = openKey === g.key
+          const isActive = activeKey === g.key
+          return (
+            <button
+              key={g.key}
+              type="button"
+              onClick={() => {
+                setQuery('')
+                setOpenKey(isOpen ? null : g.key)
+              }}
+              aria-expanded={isOpen}
+              className={`flex h-10 cursor-pointer items-center gap-2 px-3.5 text-sm font-bold outline -outline-offset-1 transition duration-150 ${
+                isActive
+                  ? 'bg-gold5/40 text-gold1 outline-gold2'
+                  : isOpen
+                    ? 'bg-hextech-black/60 text-gold1 outline-gold2/70'
+                    : 'bg-hextech-black/40 text-gold1 outline-icon/30 hover:bg-gold5/25 hover:outline-gold2/70'
+              }`}
+            >
+              {isActive && currentLabel ? (
+                <>
+                  <span className="font-normal text-grey1">{g.name}</span>
+                  <span className="max-w-36 truncate">{currentLabel}</span>
+                </>
+              ) : (
+                g.name
+              )}
+              <FontAwesomeIcon
+                icon={faChevronDown}
+                className={`h-3 text-gold2 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`}
+              />
+            </button>
+          )
+        })}
+      </div>
 
       {open && (
-        <div className="animate-pop absolute right-0 z-30 mt-2 max-h-[26rem] w-[min(calc(100vw-3rem),36rem)] overflow-y-auto bg-hextech-black/95 p-4 shadow-2xl outline outline-gold2/30 -outline-offset-1 backdrop-blur">
-          <div className="relative mb-3">
-            <FontAwesomeIcon
-              icon={faMagnifyingGlass}
-              className="pointer-events-none absolute left-3 top-1/2 h-3.5 -translate-y-1/2 text-grey1"
-            />
-            <input
-              autoFocus
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder="Find a champion, line, year, or tier"
-              className="h-10 w-full bg-hextech-black/60 pl-9 pr-3 text-sm text-gold1 outline outline-icon/30 -outline-offset-1 placeholder:text-grey1/60 focus:outline-gold2"
-            />
-          </div>
-
-          {!q && (
-            <div className="mb-3 flex flex-wrap gap-1.5">
-              <PickChip
-                link={{ slice: 'all', label: 'All skins', count: 0 }}
-                current={current}
-                onPick={close}
+        <div className="animate-pop absolute inset-x-0 top-full z-30 mt-2 max-h-96 overflow-y-auto bg-hextech-black/95 p-4 shadow-2xl outline outline-gold2/30 -outline-offset-1 backdrop-blur">
+          {open.searchable && (
+            <div className="relative mb-3">
+              <FontAwesomeIcon
+                icon={faMagnifyingGlass}
+                className="pointer-events-none absolute left-3 top-1/2 h-3.5 -translate-y-1/2 text-grey1"
+              />
+              <input
+                autoFocus
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder={`Find a ${open.name.toLowerCase()}…`}
+                className="h-10 w-full bg-hextech-black/60 pl-9 pr-3 text-sm text-gold1 outline outline-icon/30 -outline-offset-1 placeholder:text-grey1/60 focus:outline-gold2"
               />
             </div>
           )}
-
-          {groups.map(
-            (g) =>
-              g.links.length > 0 && (
-                <div key={g.name} className="mt-3 first:mt-0">
-                  <p className="mb-1.5 text-xs font-semibold uppercase tracking-wider text-gold2">
-                    {g.name}
-                  </p>
-                  <div className="flex flex-wrap gap-1.5">
-                    {(g.capped && !q ? g.links.slice(0, GROUP_CAP) : g.links).map(
-                      (l) => (
-                        <PickChip
-                          key={l.slice}
-                          link={l}
-                          current={current}
-                          onPick={close}
-                        />
-                      ),
-                    )}
-                    {g.capped && !q && g.links.length > GROUP_CAP && (
-                      <span className="flex h-8 items-center px-1.5 text-xs text-grey1">
-                        and {g.links.length - GROUP_CAP} more, type to find them
-                      </span>
-                    )}
-                  </div>
-                </div>
-              ),
-          )}
-
-          {empty && (
+          {shown.length > 0 ? (
+            <div className="flex flex-wrap gap-1.5">
+              {shown.map((l) => (
+                <PickChip
+                  key={l.slice}
+                  link={l}
+                  current={current}
+                  onPick={close}
+                />
+              ))}
+              {capped && (
+                <span className="flex h-8 items-center px-1.5 text-xs text-grey1">
+                  and {links.length - TRAY_CAP} more, type to find them
+                </span>
+              )}
+            </div>
+          ) : (
             <p className="py-2 text-sm text-grey1">
-              Nothing matches "{query.trim()}". Try a champion, skin line,
-              year, or RP price.
+              Nothing here matches "{query.trim()}".
             </p>
           )}
         </div>
@@ -478,26 +511,22 @@ function RankingSlicePage() {
 
   return (
     <div className="container mx-auto max-w-5xl px-6 pt-28 pb-16">
-      {/* relative z-20: the entrance animations below create their own
-          stacking contexts while running, and the picker panel must paint
-          above them even mid-animation. */}
-      <header className="animate-fade-up relative z-20 mb-8 flex flex-wrap items-end justify-between gap-x-8 gap-y-5">
-        <div className="min-w-0">
-          <p className="mb-2 text-sm font-semibold uppercase tracking-[0.3em] text-gold2">
-            <Link
-              to="/rankings"
-              className="transition duration-150 hover:text-gold1"
-            >
-              Rankings
-            </Link>
-          </p>
-          <h1 className="font-serif text-4xl font-bold text-gold1 md:text-5xl">
-            {state.title}
-          </h1>
-          <p className="mt-2 text-grey1">{state.subtitle}</p>
-        </div>
-        <SlicePicker index={index} current={state.slice} />
+      <header className="animate-fade-up mb-5">
+        <p className="mb-2 text-sm font-semibold uppercase tracking-[0.3em] text-gold2">
+          Rankings
+        </p>
+        <h1 className="font-serif text-4xl font-bold text-gold1 md:text-5xl">
+          {state.title}
+        </h1>
+        <p className="mt-2 text-grey1">{state.subtitle}</p>
       </header>
+
+      {/* relative z-20: the entrance animations below create their own
+          stacking contexts while running, and the slice tray must paint
+          above them even mid-animation. */}
+      <div className="animate-fade-up relative z-20 mb-8">
+        <SliceBar index={index} current={state.slice} />
+      </div>
 
       {/* With zero rated skins the empty state already tells the story. */}
       {state.calibrating && state.ratedCount > 0 && (
@@ -603,14 +632,19 @@ function RankingSlicePage() {
         />
       )}
 
+      {/* The hub's "More verdicts" cards live on here as quiet companions. */}
       <div className="mt-10 flex flex-wrap items-center gap-3">
         <Link to="/battle" className={btnPrimarySm}>
           <FontAwesomeIcon icon={faShuffle} className="h-4" />
           Battle to sharpen this list
         </Link>
-        <Link to="/rankings" className={btnSecondarySm}>
-          <FontAwesomeIcon icon={faArrowLeft} className="h-4" />
-          All rankings
+        <Link to="/rankings/awards" className={btnSecondarySm}>
+          <FontAwesomeIcon icon={faCrown} className="h-4" />
+          Awards
+        </Link>
+        <Link to="/rankings/drought" className={btnSecondarySm}>
+          <FontAwesomeIcon icon={faHourglassHalf} className="h-4" />
+          Drought Index
         </Link>
       </div>
     </div>

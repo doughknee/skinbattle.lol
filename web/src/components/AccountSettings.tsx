@@ -1,17 +1,13 @@
 import { useState } from 'react'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import {
-  faArrowUpRightFromSquare,
-  faPen,
-  faUser,
-} from '@fortawesome/free-solid-svg-icons'
+import { faPen, faUser } from '@fortawesome/free-solid-svg-icons'
 import LogoutButton from '~/components/LogoutButton'
 import DeleteAccountButton from '~/components/DeleteAccountButton'
+import SecuritySettings from '~/components/SecuritySettings'
 import { Spinner } from '~/components/Skeletons'
 import { toast } from '~/components/Toaster'
 import { api } from '~/lib/api'
 import { useAuth } from '~/lib/useAuth'
-import { getPublicConfig } from '~/lib/config'
 import { championIconUrl, useDDragonVersion } from '~/lib/ddragon'
 import { announceProfileUpdate } from '~/lib/profileCache'
 import { championDisplayName } from '~/lib/skinName'
@@ -26,9 +22,10 @@ const USERNAME_HINT =
 
 const sectionLabel = 'text-xs uppercase tracking-widest text-grey1 mb-1'
 
-// The whole Account card: avatar, username, email, sign-in & security link,
-// logout, and the danger zone. `me` is null when /me failed - the card then
-// just shows less, same as before.
+// The whole Account card: avatar, username, sign-in & security (email,
+// password, connected accounts - native via the Account API), logout, and
+// the danger zone. `me` is null when /me failed - the card then just shows
+// less, same as before.
 export default function AccountSettings({
   me,
   onChange,
@@ -55,14 +52,7 @@ export default function AccountSettings({
       {me && <AvatarSection me={me} save={saveProfile} />}
       {me?.username && <UsernameSection me={me} save={saveProfile} />}
 
-      <div className="mb-8">
-        <div className={sectionLabel}>Email</div>
-        <div className="text-lg text-gold1 font-serif break-all">
-          {me?.email}
-        </div>
-      </div>
-
-      <SecuritySection />
+      <SecuritySettings />
 
       <LogoutButton />
 
@@ -329,31 +319,3 @@ function AvatarSection({
   )
 }
 
-// ─── sign-in & security ─────────────────────────────────────────────────────
-
-// Password, passkeys, and MFA live in Logto, not in app code - link out to
-// its hosted Account Center ({endpoint}/account, Logto ≥1.39; see DEPLOY.md
-// for the console toggles that enable each section).
-function SecuritySection() {
-  const endpoint = getPublicConfig().logtoEndpoint
-  if (!endpoint) return null
-
-  return (
-    <div className="mb-8">
-      <div className={sectionLabel}>Sign-in & security</div>
-      <p className="mb-3 text-sm text-grey1">
-        Password, passkeys, and two-step verification are managed on our
-        sign-in service.
-      </p>
-      <a
-        href={`${endpoint.replace(/\/$/, '')}/account`}
-        target="_blank"
-        rel="noopener noreferrer"
-        className={`${btnChip} inline-flex items-center gap-2`}
-      >
-        Manage sign-in &amp; security
-        <FontAwesomeIcon icon={faArrowUpRightFromSquare} className="h-3" />
-      </a>
-    </div>
-  )
-}

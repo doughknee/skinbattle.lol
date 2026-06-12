@@ -13,7 +13,7 @@ import { randomBytes } from 'node:crypto'
 import { createRemoteJWKSet, jwtVerify, type JWTVerifyGetKey } from 'jose'
 import type { DatabaseSync } from 'node:sqlite'
 import { getDb } from './db'
-import { ensureUser, issueCookie } from './guests'
+import { ensureUser, issueCookie, mintUser } from './guests'
 import { START_RATING, expectedScore } from './ratings'
 
 // Personal-rating replay uses the same fixed K as the live path
@@ -87,7 +87,10 @@ export interface AttachResult {
   // 'attached'   - this device's record now carries the account
   // 'merged'     - this device's guest progress was folded into the account
   // 'already'    - nothing to do (record already carries this account)
-  outcome: 'attached' | 'merged' | 'already'
+  // 'switched'   - this device's record belongs to a DIFFERENT account, so
+  //                the device was pointed at this account's own record
+  //                (existing or freshly minted) instead. Nothing merged.
+  outcome: 'attached' | 'merged' | 'already' | 'switched'
   guestToken: string
 }
 
@@ -226,6 +229,27 @@ export function attachSub(
     return { outcome: 'already', guestToken: token }
   }
 
+  // The device's record may already belong to ANOTHER account - a previous
+  // user's guest token survives in the browser unless logout cleared it.
+  // That record is theirs: never rebind its logto_sub and never merge it.
+  // Point this device at the signing-in account's own record instead.
+  const deviceSub = (
+    db.prepare('SELECT logto_sub FROM game_users WHERE id = ?').get(user.id) as {
+      logto_sub: string | null
+    }
+  ).logto_sub
+  if (deviceSub && deviceSub !== sub) {
+    if (existing) {
+      const accountToken = credentialFor(db, existing.id)
+      setName(existing.id)
+      issueCookie(accountToken)
+      return { outcome: 'switched', guestToken: accountToken }
+    }
+    const fresh = mintUser(db, sub)
+    setName(fresh.user.id)
+    return { outcome: 'switched', guestToken: fresh.token }
+  }
+
   if (!existing) {
     // First sign-in for this account on this device: plain attachment.
     db.prepare(
@@ -240,18 +264,24 @@ export function attachSub(
   // hand the device the ACCOUNT's credential so future plays land there.
   mergeInto(db, user.id, existing.id)
   setName(existing.id)
-  let accountToken = (
-    db.prepare('SELECT guest_token FROM game_users WHERE id = ?').get(existing.id) as {
+  const accountToken = credentialFor(db, existing.id)
+  issueCookie(accountToken)
+  return { outcome: 'merged', guestToken: accountToken }
+}
+
+// The account row's own guest_token, minting one if it was cleared by a
+// past merge - whatever comes back is safe to hand to this device.
+function credentialFor(db: DatabaseSync, accountId: string): string {
+  const current = (
+    db.prepare('SELECT guest_token FROM game_users WHERE id = ?').get(accountId) as {
       guest_token: string | null
     }
   ).guest_token
-  if (!accountToken) {
-    accountToken = randomBytes(16).toString('hex')
-    db.prepare('UPDATE game_users SET guest_token = ? WHERE id = ?').run(
-      accountToken,
-      existing.id,
-    )
-  }
-  issueCookie(accountToken)
-  return { outcome: 'merged', guestToken: accountToken }
+  if (current) return current
+  const minted = randomBytes(16).toString('hex')
+  db.prepare('UPDATE game_users SET guest_token = ? WHERE id = ?').run(
+    minted,
+    accountId,
+  )
+  return minted
 }

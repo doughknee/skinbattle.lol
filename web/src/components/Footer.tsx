@@ -1,11 +1,24 @@
 import { Link } from '@tanstack/react-router'
 import { CrownMark, Wordmark } from './Brand'
 import {
-  PROFILE,
+  PROFILE_PAGES,
   SECONDARY_PAGES,
   SITE_SECTIONS,
   type SitePage,
 } from '~/lib/siteMap'
+import { SUPPORT_URL } from '~/lib/support'
+
+// The honeyfruit: League's healing fruit, standing in for "buy me a coffee"
+// - the site is free, so the support ask is one quiet line in the basement.
+function HoneyfruitIcon({ className = '' }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 16 16" className={className} aria-hidden="true">
+      <circle cx="8" cy="9.5" r="5.5" fill="#e87da0" />
+      <path d="M8 4.5C8 2.5 9.5 1.2 11.2 1.2 11.2 3.4 9.8 4.6 8 4.5Z" fill="#7ac74f" />
+      <circle cx="6.2" cy="8.2" r="1.1" fill="#f6b8cd" />
+    </svg>
+  )
+}
 
 // The footer is the full sitemap, rendered from the site-map registry - one
 // column per top-level section. New registry entries appear here for free.
@@ -18,9 +31,11 @@ function Column({ title, pages }: { title: string; pages: SitePage[] }) {
       </p>
       <ul className="space-y-2 text-sm">
         {pages.map((p) => (
-          <li key={p.to}>
+          // Tab links share a pathname (/profile), so the key needs the label.
+          <li key={`${p.to}-${p.label}`}>
             <Link
               to={p.to}
+              search={p.linkSearch}
               className="text-grey1 hover:text-gold1 transition duration-150"
             >
               {p.label}
@@ -34,8 +49,11 @@ function Column({ title, pages }: { title: string; pages: SitePage[] }) {
 
 export default function Footer() {
   // Each section with children gets its own column; anything childless plus
-  // the profile link groups into a final "You" column.
-  const you = [...SITE_SECTIONS.filter((s) => !s.children?.length), PROFILE]
+  // the profile pages (mirror, votes, account) group into a "You" column.
+  const you = [
+    ...SITE_SECTIONS.filter((s) => !s.children?.length),
+    ...PROFILE_PAGES,
+  ]
   const grouped = SITE_SECTIONS.filter((s) => (s.children?.length ?? 0) > 0)
 
   return (
@@ -72,7 +90,19 @@ export default function Footer() {
         </p>
       </div>
       <div className="border-t border-icon/10 py-4 text-center text-xs text-grey1/70">
-        © {new Date().getFullYear()} skinbattle.lol
+        <p className="flex flex-wrap items-center justify-center gap-x-2 gap-y-1 px-6">
+          <span>© {new Date().getFullYear()} skinbattle.lol</span>
+          <span aria-hidden>·</span>
+          <a
+            href={SUPPORT_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="group inline-flex items-center gap-1.5 transition duration-150 hover:text-gold1"
+          >
+            <HoneyfruitIcon className="h-3.5 w-3.5 transition duration-150 group-hover:scale-125" />
+            runs on honeyfruit — toss one
+          </a>
+        </p>
       </div>
     </footer>
   )
