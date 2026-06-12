@@ -102,10 +102,7 @@ function RootDocument({
   config: PublicConfig
 }) {
   return (
-    <html
-      lang="en"
-      className="bg-linear-220 from-gradientTop via-blue7 to-gradientBottom bg-fixed"
-    >
+    <html lang="en" className="bg-gradientTop">
       <head>
         <HeadContent />
         {/* Runtime public config - read by the browser before the app bundle.
@@ -120,6 +117,14 @@ function RootDocument({
       {/* Column flex so the footer sits at the viewport bottom even on short
           pages (account, games) instead of floating mid-screen. */}
       <body className="antialiased flex min-h-screen flex-col">
+        {/* Viewport-anchored page gradient. A fixed element composites on the
+            GPU, unlike background-attachment: fixed on <html>, which forces a
+            full gradient repaint on every scroll frame (the html bg-gradientTop
+            only shows during overscroll rubber-banding). */}
+        <div
+          aria-hidden
+          className="fixed inset-0 -z-10 bg-linear-220 from-gradientTop via-blue7 to-gradientBottom"
+        />
         {children}
         <Scripts />
       </body>
