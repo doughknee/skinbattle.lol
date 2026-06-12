@@ -16,7 +16,7 @@ import { userStatsStore, MAX_STARS, MAX_X } from '~/lib/userStatsStore'
 import { championDisplayName, displaySkinName } from '~/lib/skinName'
 import type { Skin } from '~/lib/types'
 
-// Navbar quota chip ("★ 1/3 · ⊘ 2/3") that opens a "My picks" tray listing
+// Navbar quota chip ("★ 1/10 · ⊘ 2/10") that opens a "My picks" tray listing
 // the skins the user has starred/banned, with one-click removal.
 export default function QuotaChip() {
   const { isAuthenticated, isLoading, withApiToken } = useAuth()
@@ -110,7 +110,6 @@ export default function QuotaChip() {
         api.vote(
           {
             skinId: skin.id,
-            vote: (skin.user_vote ?? 0) as -1 | 0 | 1,
             star: kind === 'star' ? false : !!skin.user_star,
             x: kind === 'x' ? false : !!skin.user_x,
           },

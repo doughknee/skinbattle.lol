@@ -33,17 +33,16 @@ export const Route = createFileRoute('/skins_/$slug')({
         statusCode: 301,
       })
     }
-    // Star/ban/net-vote totals come from the Go API. Display rule: these are
-    // the SUPERLATIVE currency (badges), never a competing rank — Elo above
+    // Star/ban totals come from the Go API. Display rule: these are the
+    // SUPERLATIVE currency (badges), never a competing rank — Elo above
     // is the rank. Non-fatal: the dossier must not break when the API is
     // unreachable; the badges just hide.
-    let votes: { net: number; stars: number; bans: number } | null = null
+    let votes: { stars: number; bans: number } | null = null
     try {
       const champ = await api.champion(state.championId)
       const s = champ.skins.find((sk) => sk.id === state.skinId)
       if (s) {
         votes = {
-          net: s.total_votes || 0,
           stars: s.total_stars || 0,
           bans: s.total_x || 0,
         }
@@ -180,9 +179,7 @@ function SkinPage() {
             </>
           )}
           {state.votes &&
-            (state.votes.stars > 0 ||
-              state.votes.bans > 0 ||
-              state.votes.net !== 0) && (
+            (state.votes.stars > 0 || state.votes.bans > 0) && (
               <p className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm">
                 {state.votes.stars > 0 && (
                   <span className="font-bold text-gold2">
@@ -196,10 +193,6 @@ function SkinPage() {
                     {state.votes.bans.toLocaleString()}
                   </span>
                 )}
-                <span className="text-grey1">
-                  {state.votes.net >= 0 ? '+' : ''}
-                  {state.votes.net.toLocaleString()} net votes
-                </span>
               </p>
             )}
         </div>

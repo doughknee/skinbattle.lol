@@ -2,8 +2,6 @@ import { createFileRoute, Link } from '@tanstack/react-router'
 import { useEffect, useState } from 'react'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import {
-  faArrowUp,
-  faArrowDown,
   faStar,
   faBan,
   faCheckToSlot,
@@ -26,9 +24,9 @@ import { guestRestoreToken, rememberGuestToken } from '~/lib/games/client'
 import { ogMeta } from '~/lib/games/ogMeta'
 import type { Me, Skin } from '~/lib/types'
 
-// Per-user quota, mirrored from CONTRACT.md (max 3 stars / 3 bans).
-const MAX_STARS = 3
-const MAX_X = 3
+// Per-user quota, mirrored from CONTRACT.md (max 10 stars / 10 bans).
+const MAX_STARS = 10
+const MAX_X = 10
 
 type Tab = 'mirror' | 'votes' | 'account'
 
@@ -140,7 +138,6 @@ function VoteSection({ title, skins }: { title: string; skins: Skin[] }) {
             key={skin.id}
             skin={skin}
             championId={skin.champion_id}
-            initialVote={skin.user_vote}
             initialStar={skin.user_star}
             initialX={skin.user_x}
             showChampion
@@ -185,28 +182,24 @@ function VotesTab() {
   if (isLoading || (isAuthenticated && loading)) return <TabLoading />
   if (!isAuthenticated)
     return (
-      <SignInGate message="Stars, bans, and up/down votes belong to your account — sign in to see your voting record." />
+      <SignInGate message="Stars and bans belong to your account — sign in to see your voting record." />
     )
   if (errorMsg)
     return <ErrorState title="Couldn't load your votes" message={errorMsg} />
 
-  const upvoted = skins.filter((skin) => skin.user_vote === 1)
-  const downvoted = skins.filter((skin) => skin.user_vote === -1)
   const starred = skins.filter((skin) => skin.user_star)
   const xed = skins.filter((skin) => skin.user_x)
 
   // Only sections with content render — the stat strip already accounts for
-  // all four buckets, so empty grids would just repeat "0".
+  // both buckets, so empty grids would just repeat "0".
   const voteSections = [
     { title: 'Starred Skins', skins: starred },
     { title: 'Banned Skins', skins: xed },
-    { title: 'Upvoted Skins', skins: upvoted },
-    { title: 'Downvoted Skins', skins: downvoted },
   ].filter((s) => s.skins.length > 0)
 
   return (
     <>
-      <div className="stagger mb-20 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="stagger mb-20 grid grid-cols-1 gap-4 sm:grid-cols-2">
         <StatTile
           icon={faStar}
           value={`${starred.length}/${MAX_STARS}`}
@@ -216,12 +209,6 @@ function VotesTab() {
           icon={faBan}
           value={`${xed.length}/${MAX_X}`}
           label="Bans used"
-        />
-        <StatTile icon={faArrowUp} value={`${upvoted.length}`} label="Upvoted" />
-        <StatTile
-          icon={faArrowDown}
-          value={`${downvoted.length}`}
-          label="Downvoted"
         />
       </div>
 
@@ -303,8 +290,7 @@ function AccountTab() {
           Danger zone
         </p>
         <p className="mb-4 text-sm text-grey1">
-          Deleting your account permanently removes your votes, stars, and
-          bans.
+          Deleting your account permanently removes your stars and bans.
         </p>
         <DeleteAccountButton />
       </div>

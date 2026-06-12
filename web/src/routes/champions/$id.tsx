@@ -69,7 +69,6 @@ function ChampionPage() {
   const skinSortOptions = [
     { value: 'release', label: 'Release Order' },
     { value: 'rating', label: 'Battle Rating' },
-    { value: 'votes', label: 'Most Votes' },
     { value: 'stars', label: 'Most Starred' },
     { value: 'x', label: 'Most Banned' },
   ]
@@ -94,9 +93,6 @@ function ChampionPage() {
             (elo[b.id]?.rating ?? -Infinity) - (elo[a.id]?.rating ?? -Infinity) ||
             a.num - b.num,
         )
-        break
-      case 'votes':
-        skins.sort((a, b) => (b.total_votes || 0) - (a.total_votes || 0))
         break
       case 'stars':
         skins.sort((a, b) => (b.total_stars || 0) - (a.total_stars || 0))
@@ -197,7 +193,7 @@ function ChampionPage() {
               </span>
             </h2>
             <p className="text-grey1">
-              Upvote, star, or ban each skin to shape the rankings.
+              Star or ban each skin to crown the community favorites.
             </p>
           </div>
           <div className="w-44">
@@ -218,7 +214,6 @@ function ChampionPage() {
               key={skin.id}
               skin={skin}
               championId={champion.id}
-              initialVote={skin.user_vote ?? 0}
               initialStar={skin.user_star ?? false}
               initialX={skin.user_x ?? false}
               rank={ranks.get(skin.id)}

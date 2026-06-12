@@ -67,20 +67,20 @@ game down one level — a redirect, not a rebuild.
 ## Display rules — two currencies, one job each (PR 3)
 
 The site has two rating systems: battle Elo and community votes
-(up/down + 3 stars + 3 bans). They stop being confusing when each surface
-picks one job:
+(10 stars + 10 bans per player; up/down voting is retired). They stop being
+confusing when each surface picks one job:
 
 - **Elo is the rank.** Anywhere skins are ordered (#N, rankings, sorts), it is
   battle-driven.
 - **Stars/bans are the superlatives.** Scarce and emotional. Shown as badges
   (★ 214 · ⛔ 12), never as a competing rank. They power /rankings/awards.
 - **Skin pages show everything** — the dossier: Elo ± uncertainty, rank, win%,
-  battle count, net votes, stars, bans, price, facts, release.
-- Champion pages surface Elo rank badges; the old "#N by net votes" framing is
-  demoted to an unranked sort option.
+  battle count, stars, bans, price, facts, release.
+- Champion pages surface Elo rank badges; net-vote framing is gone with
+  up/down voting — star/ban counts remain as unranked sort options.
 
 Later phase (gated on real player density + Go API work): Elo becomes the only
-canonical rank everywhere; votes remain engagement + superlative currency.
+canonical rank everywhere; stars/bans remain engagement + superlative currency.
 
 ## Migration map (every old URL gets a redirect stub; no chains)
 

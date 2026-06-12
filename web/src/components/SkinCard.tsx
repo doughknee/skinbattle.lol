@@ -1,10 +1,5 @@
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import {
-  faArrowUp,
-  faArrowDown,
-  faStar,
-  faBan,
-} from '@fortawesome/free-solid-svg-icons'
+import { faStar, faBan } from '@fortawesome/free-solid-svg-icons'
 import { useState, useEffect } from 'react'
 import { Link } from '@tanstack/react-router'
 import { api } from '~/lib/api'
@@ -18,7 +13,6 @@ import type { Skin, VoteTotals } from '~/lib/types'
 interface SkinCardProps {
   skin: Skin
   championId: string
-  initialVote?: number
   initialStar?: boolean
   initialX?: boolean
   // Show the champion name above the skin name — used on pages that mix
@@ -36,13 +30,11 @@ const chipBase =
 const chipIdle =
   'bg-hextech-black/40 text-grey1 outline-icon/30 hover:text-gold1 hover:outline-icon'
 const chipGoldActive = 'bg-gold5/30 text-gold1 outline-gold2'
-const chipBlueActive = 'bg-blue5/60 text-blue1 outline-blue3'
 const chipRedActive = 'bg-red-950/50 text-red-300 outline-red-400/70'
 
 export default function SkinCard({
   skin,
   championId,
-  initialVote,
   initialStar,
   initialX,
   showChampion = false,
@@ -52,20 +44,17 @@ export default function SkinCard({
   const { isAuthenticated, withApiToken, login } = useAuth()
 
   const [totals, setTotals] = useState<VoteTotals>({
-    total_votes: skin.total_votes || 0,
     total_stars: skin.total_stars || 0,
     total_x: skin.total_x || 0,
   })
-  const [userVote, setUserVote] = useState<number>(initialVote ?? 0)
   const [userStar, setUserStar] = useState<boolean>(initialStar ?? false)
   const [userX, setUserX] = useState<boolean>(initialX ?? false)
   const [pending, setPending] = useState(false)
 
   useEffect(() => {
-    setUserVote(initialVote ?? 0)
     setUserStar(initialStar ?? false)
     setUserX(initialX ?? false)
-  }, [initialVote, initialStar, initialX])
+  }, [initialStar, initialX])
 
   const skinName = displaySkinName(skin.name, championId)
   const championName = championDisplayName(championId)
@@ -73,15 +62,13 @@ export default function SkinCard({
   // Optimistic vote with rollback: state (and totals) update immediately,
   // and revert to the pre-vote snapshot if the API call fails.
   const castVote = async (
-    next: { vote: number; star: boolean; x: boolean },
+    next: { star: boolean; x: boolean },
     onSuccess?: () => void,
   ) => {
-    const prev = { vote: userVote, star: userStar, x: userX, totals }
-    setUserVote(next.vote)
+    const prev = { star: userStar, x: userX, totals }
     setUserStar(next.star)
     setUserX(next.x)
     setTotals({
-      total_votes: prev.totals.total_votes + (next.vote - prev.vote),
       total_stars:
         prev.totals.total_stars + (next.star ? 1 : 0) - (prev.star ? 1 : 0),
       total_x: prev.totals.total_x + (next.x ? 1 : 0) - (prev.x ? 1 : 0),
@@ -90,22 +77,13 @@ export default function SkinCard({
     try {
       const data = await withApiToken(
         (token) =>
-          api.vote(
-            {
-              skinId: skin.id,
-              vote: next.vote as -1 | 0 | 1,
-              star: next.star,
-              x: next.x,
-            },
-            token,
-          ),
+          api.vote({ skinId: skin.id, star: next.star, x: next.x }, token),
         'Please sign in to vote.',
       )
       if (data.totals) setTotals(data.totals)
       onSuccess?.()
       window.dispatchEvent(new CustomEvent('updateUserStats'))
     } catch (err) {
-      setUserVote(prev.vote)
       setUserStar(prev.star)
       setUserX(prev.x)
       setTotals(prev.totals)
@@ -113,14 +91,6 @@ export default function SkinCard({
     } finally {
       setPending(false)
     }
-  }
-
-  const handleUpvote = () => {
-    castVote({ vote: userVote === 1 ? 0 : 1, star: userStar, x: userX })
-  }
-
-  const handleDownvote = () => {
-    castVote({ vote: userVote === -1 ? 0 : -1, star: userStar, x: userX })
   }
 
   const handleStar = () => {
@@ -132,7 +102,7 @@ export default function SkinCard({
       )
       return
     }
-    castVote({ vote: userVote, star: newStar, x: userX }, () => {
+    castVote({ star: newStar, x: userX }, () => {
       userStatsStore.adjust({ stars: newStar ? 1 : -1 })
       const used = userStatsStore.get().usedStars
       toast(
@@ -150,7 +120,7 @@ export default function SkinCard({
       toast(`All ${MAX_X} bans used — unban another skin first.`, 'error')
       return
     }
-    castVote({ vote: userVote, star: userStar, x: newX }, () => {
+    castVote({ star: userStar, x: newX }, () => {
       userStatsStore.adjust({ x: newX ? 1 : -1 })
       const used = userStatsStore.get().usedX
       toast(
@@ -225,37 +195,18 @@ export default function SkinCard({
         <div className="@container p-3">
           <div className="flex gap-1.5">
             <button
-              onClick={handleUpvote}
-              disabled={pending}
-              aria-label={`Upvote ${skinName}`}
-              aria-pressed={userVote === 1}
-              title={userVote === 1 ? 'Remove upvote' : 'Upvote'}
-              className={`${chipBase} ${userVote === 1 ? chipGoldActive : chipIdle}`}
-            >
-              <FontAwesomeIcon icon={faArrowUp} className="h-3.5" />
-              <span className="tabular-nums">{totals.total_votes}</span>
-            </button>
-            <button
-              onClick={handleDownvote}
-              disabled={pending}
-              aria-label={`Downvote ${skinName}`}
-              aria-pressed={userVote === -1}
-              title={userVote === -1 ? 'Remove downvote' : 'Downvote'}
-              className={`${chipBase} ${userVote === -1 ? chipBlueActive : chipIdle}`}
-            >
-              <FontAwesomeIcon icon={faArrowDown} className="h-3.5" />
-            </button>
-            <button
               onClick={handleStar}
               disabled={pending}
               aria-label={
-                userStar ? `Unstar ${skinName}` : `Star ${skinName} (3 max)`
+                userStar
+                  ? `Unstar ${skinName}`
+                  : `Star ${skinName} (${MAX_STARS} max)`
               }
               aria-pressed={userStar}
               title={
                 userStar
                   ? 'Remove star'
-                  : 'Star this skin — you only get 3'
+                  : `Star this skin — you only get ${MAX_STARS}`
               }
               className={`${chipBase} ${userStar ? chipGoldActive : chipIdle}`}
             >
@@ -269,10 +220,12 @@ export default function SkinCard({
               onClick={handleX}
               disabled={pending}
               aria-label={
-                userX ? `Unban ${skinName}` : `Ban ${skinName} (3 max)`
+                userX ? `Unban ${skinName}` : `Ban ${skinName} (${MAX_X} max)`
               }
               aria-pressed={userX}
-              title={userX ? 'Remove ban' : 'Ban this skin — you only get 3'}
+              title={
+                userX ? 'Remove ban' : `Ban this skin — you only get ${MAX_X}`
+              }
               className={`${chipBase} ${userX ? chipRedActive : chipIdle}`}
             >
               <FontAwesomeIcon icon={faBan} className="h-3.5" />
@@ -286,10 +239,6 @@ export default function SkinCard({
       ) : (
         <div className="p-3">
           <div className="mb-2 flex items-center justify-center gap-4 text-sm text-grey1 tabular-nums">
-            <span title="Community votes">
-              <FontAwesomeIcon icon={faArrowUp} className="mr-1.5 h-3" />
-              {totals.total_votes}
-            </span>
             <span title="Stars">
               <FontAwesomeIcon icon={faStar} className="mr-1.5 h-3" />
               {totals.total_stars}
