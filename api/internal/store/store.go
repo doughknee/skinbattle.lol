@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
@@ -527,6 +528,14 @@ func (s *Store) UserVotes(ctx context.Context, userID int64) ([]Skin, error) {
 	return skins, nil
 }
 
+// isUsernameViolation reports whether err is a unique violation on
+// users.username.
+func isUsernameViolation(err error) bool {
+	var pgErr *pgconn.PgError
+	return errors.As(err, &pgErr) && pgErr.Code == "23505" &&
+		strings.Contains(pgErr.ConstraintName, "username")
+}
+
 // UpsertUser inserts or updates a user keyed by logto_id.
 // If a legacy user already exists with the same email, it claims that row by
 // setting its logto_id. Returns the local users.id.
@@ -542,6 +551,22 @@ func (s *Store) UpsertUser(ctx context.Context, sub, email, username string) (in
 		username = sub
 	}
 
+	id, err := s.upsertUserAttempt(ctx, sub, email, username, hasEmail, hasUsername)
+	if err == nil {
+		return id, nil
+	}
+	// A username collision (e.g. a legacy local row owns the name Logto
+	// holds) must never block sign-in: retry once keeping the existing or
+	// placeholder name instead of the colliding one.
+	if hasUsername && isUsernameViolation(err) {
+		if id, retryErr := s.upsertUserAttempt(ctx, sub, email, sub, hasEmail, false); retryErr == nil {
+			return id, nil
+		}
+	}
+	return 0, err
+}
+
+func (s *Store) upsertUserAttempt(ctx context.Context, sub, email, username string, hasEmail, hasUsername bool) (int64, error) {
 	// First try: upsert on logto_id (fast path, covers all returning users).
 	var id int64
 	err := s.pool.QueryRow(ctx, `
@@ -628,6 +653,19 @@ func (s *Store) GetUserByID(ctx context.Context, userID int64) (*UserInfo, error
 		return nil, fmt.Errorf("get user %d: %w", userID, err)
 	}
 	return &u, nil
+}
+
+// UsernameTaken reports whether a different user already holds the username.
+func (s *Store) UsernameTaken(ctx context.Context, username string, excludeUserID int64) (bool, error) {
+	var taken bool
+	err := s.pool.QueryRow(ctx,
+		`SELECT EXISTS (SELECT 1 FROM users WHERE username = $1 AND id <> $2)`,
+		username, excludeUserID,
+	).Scan(&taken)
+	if err != nil {
+		return false, fmt.Errorf("check username: %w", err)
+	}
+	return taken, nil
 }
 
 // UpdateUserProfile applies a partial update to the local users row and

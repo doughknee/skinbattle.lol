@@ -348,12 +348,8 @@ function SlidePlate({
     setVotes((m) => ({ ...m, [slide.skinId]: optimistic }))
     setPending(true)
     try {
-      // Built as a value (not a literal) so the call also typechecks once
-      // the up/down-free VoteRequest lands: extra fields on a value are
-      // allowed, and today's required `vote` field is present.
-      const body = { skinId: slide.skinId, star: next.star, x: next.x, vote: 0 as const }
       const data = await withApiToken(
-        (token) => api.vote(body, token),
+        (token) => api.vote({ skinId: slide.skinId, star: next.star, x: next.x }, token),
         'Please sign in to vote.',
       )
       if (data.totals) {

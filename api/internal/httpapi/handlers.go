@@ -401,6 +401,9 @@ func (h *handlers) patchMe(w http.ResponseWriter, r *http.Request) {
 	// A rename has to reach Logto: the JIT provisioner re-syncs the local row
 	// from the Logto profile, so a local-only rename would be reverted within
 	// minutes. Skip the round-trip when the name isn't actually changing.
+	// Tracked so a failed local update can put Logto back (see below).
+	var renamedInLogto bool
+	var renameLogtoID, previousUsername string
 	if req.Username != nil {
 		current, err := h.store.GetUserByID(ctx, user.LocalID)
 		if err != nil {
@@ -415,6 +418,20 @@ func (h *handlers) patchMe(w http.ResponseWriter, r *http.Request) {
 		if current.Username == *req.Username {
 			req.Username = nil // no-op rename; UpdateUserProfile keeps the value
 		} else {
+			// Fail before anything changes anywhere: the local table holds
+			// names Logto doesn't know about (legacy accounts, placeholder
+			// rows), and renaming Logto first against a name a local row
+			// already owns would leave the two stores disagreeing.
+			taken, err := h.store.UsernameTaken(ctx, *req.Username, user.LocalID)
+			if err != nil {
+				log.Printf("store.UsernameTaken: %v", err)
+				writeError(w, http.StatusInternalServerError, "internal error")
+				return
+			}
+			if taken {
+				writeError(w, http.StatusConflict, "that username is already taken")
+				return
+			}
 			logtoID, err := h.store.GetUserLogtoID(ctx, user.LocalID)
 			if err != nil {
 				log.Printf("store.GetUserLogtoID: %v", err)
@@ -437,12 +454,22 @@ func (h *handlers) patchMe(w http.ResponseWriter, r *http.Request) {
 					writeError(w, http.StatusBadGateway, "couldn't update the username with the sign-in service")
 					return
 				}
+				renamedInLogto = true
+				renameLogtoID = logtoID
+				previousUsername = current.Username
 			}
 		}
 	}
 
 	info, err := h.store.UpdateUserProfile(ctx, user.LocalID, req.Username, req.AvatarChampionID)
 	if err != nil {
+		// Lost a race on the unique constraint after Logto already renamed:
+		// put Logto back so the JIT re-sync can't wedge this account.
+		if errors.Is(err, store.ErrUsernameTaken) && renamedInLogto {
+			if rerr := h.logto.UpdateUsername(ctx, renameLogtoID, previousUsername); rerr != nil {
+				log.Printf("logto.UpdateUsername revert %s -> %q: %v", renameLogtoID, previousUsername, rerr)
+			}
+		}
 		switch {
 		case errors.Is(err, store.ErrUsernameTaken):
 			writeError(w, http.StatusConflict, "that username is already taken")

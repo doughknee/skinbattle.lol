@@ -452,11 +452,19 @@ function RankingSlicePage() {
         data: { slice: state.slice, offset: rows.length },
       })
       if (next) {
-        setExtra((prev) =>
-          prev.slice === state.slice
-            ? { slice: state.slice, rows: [...prev.rows, ...next.rows] }
-            : { slice: state.slice, rows: next.rows },
-        )
+        // Ratings keep moving between page loads, so a skin can drift across
+        // the offset boundary; dedupe by id to avoid double rows / dup keys.
+        setExtra((prev) => {
+          const base = prev.slice === state.slice ? prev.rows : []
+          const seen = new Set([
+            ...state.rows.map((r) => r.skinId),
+            ...base.map((r) => r.skinId),
+          ])
+          return {
+            slice: state.slice,
+            rows: [...base, ...next.rows.filter((r) => !seen.has(r.skinId))],
+          }
+        })
       }
     } finally {
       setLoadingMore(false)

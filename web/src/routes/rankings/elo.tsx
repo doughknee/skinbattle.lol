@@ -115,7 +115,7 @@ function HowRankingsWorkPage() {
           A worked example: the upset
         </h2>
         <p className="mt-2 text-grey1">
-          Elementalist Lux sits at 1620, settled after hundreds of battles
+          Elementalist Lux sits at 1620, mostly settled after dozens of battles
           (± 70). Pool Party Graves just hit the arena at 1430, still wobbly
           (± 300). The math expects Lux to win about 3 times in 4. You pick
           Graves.
@@ -137,7 +137,7 @@ function HowRankingsWorkPage() {
           />
         </div>
         <p className="mt-4 text-sm text-grey1">
-          If Lux had won instead, she would have gained about 5 points and
+          If Lux had won instead, she would have gained about 4 points and
           Graves would have dropped about 14. Expected results barely move the
           needle. Upsets are where rankings are made.
         </p>
