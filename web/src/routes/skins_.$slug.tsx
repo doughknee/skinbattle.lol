@@ -75,6 +75,10 @@ const fmtDate = (iso: string) =>
     timeZone: 'UTC',
   })
 
+// Same window as the hub's "New this patch" strip.
+const isNew = (release: string | null | undefined) =>
+  !!release && Date.now() - Date.parse(`${release}T00:00:00Z`) < 21 * 86_400_000
+
 function SkinPage() {
   const state = Route.useLoaderData()
 
@@ -98,8 +102,16 @@ function SkinPage() {
             {state.championName}
           </Link>
         </p>
-        <h1 className="font-serif text-4xl font-bold text-gold1 md:text-5xl">
+        <h1 className="flex flex-wrap items-center gap-3 font-serif text-4xl font-bold text-gold1 md:text-5xl">
           {state.name}
+          {(isNew(state.facts?.release) ||
+            state.facts?.availability === 'Upcoming') && (
+            <span className="bg-blue5/90 px-2 py-1 font-sans text-xs font-bold uppercase tracking-wider text-blue1 outline outline-blue3 -outline-offset-1">
+              {state.facts?.availability === 'Upcoming'
+                ? 'Upcoming'
+                : 'New this patch'}
+            </span>
+          )}
         </h1>
       </header>
 

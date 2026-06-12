@@ -274,6 +274,39 @@ function GamesHubPage() {
         </div>
       </section>
 
+      {hub.newSkins.length > 0 && (
+        <section className="mt-16 max-w-3xl">
+          <h2 className="mb-2 font-serif text-2xl font-bold text-gold2">
+            New this patch
+          </h2>
+          <p className="mb-6 text-grey1">
+            Fresh off the patch notes — unranked until you battle them.
+          </p>
+          <ul className="stagger flex flex-wrap gap-2">
+            {hub.newSkins.map((s) => (
+              <li
+                key={s.skinId}
+                title={`${s.name} — ${s.championName}`}
+                className="relative w-36 overflow-hidden bg-hextech-black/60 outline outline-icon/20 -outline-offset-1 transition duration-150 hover:outline-gold2"
+              >
+                <Link to="/skins/$slug" params={{ slug: s.slug }}>
+                  <img
+                    src={s.splashUrl}
+                    alt={s.name}
+                    loading="lazy"
+                    decoding="async"
+                    className="aspect-video w-full object-cover"
+                  />
+                  <span className="absolute left-1 top-1 bg-blue5/90 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-blue1 outline outline-blue3 -outline-offset-1">
+                    {s.upcoming ? 'Upcoming' : 'New'}
+                  </span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
       <section className="mt-16 max-w-3xl">
         <h2 className="mb-2 font-serif text-2xl font-bold text-gold2">
           Always open

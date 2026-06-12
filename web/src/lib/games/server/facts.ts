@@ -13,7 +13,21 @@ export interface SkinFacts {
   release: string | null
 }
 
-const SKINS: Record<string, SkinFacts> = dataset.skins
+// Meraki stamps not-yet-released skins with release "0000-00-00" (and
+// availability "Upcoming") — normalize that to null so date math never sees
+// an unparseable string.
+const SKINS: Record<string, SkinFacts> = Object.fromEntries(
+  Object.entries(dataset.skins as Record<string, SkinFacts>).map(([id, f]) => [
+    id,
+    {
+      ...f,
+      release:
+        f.release && !Number.isNaN(Date.parse(`${f.release}T00:00:00Z`))
+          ? f.release
+          : null,
+    },
+  ]),
+)
 
 // The RP tiers Price Check offers as answers. Rarer price points (390 RP
 // relics, one-off 2775/5000, gacha 150000) are excluded — a button that is

@@ -8,7 +8,7 @@
 // cadence (alongside catalog sync) and commit the diff.
 //
 //   node web/scripts/snapshot-facts.mjs
-import { writeFileSync, mkdirSync } from 'node:fs'
+import { writeFileSync, mkdirSync, readFileSync, existsSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { join, dirname } from 'node:path'
 
@@ -75,6 +75,18 @@ if (Object.keys(facts).length < 1000) {
 const costs = {}
 for (const f of Object.values(facts)) costs[f.cost] = (costs[f.cost] ?? 0) + 1
 console.log('cost distribution:', costs)
+
+// Idempotent: if the DATA is unchanged, leave the file alone (including its
+// snapshotAt) — the scheduled refresh workflow only opens a PR on a real
+// diff, not on a timestamp churn.
+const skinsJson = JSON.stringify(facts)
+if (existsSync(OUT)) {
+  const prev = JSON.parse(readFileSync(OUT, 'utf8'))
+  if (prev.patch === patch && JSON.stringify(prev.skins) === skinsJson) {
+    console.log('no changes — snapshot left untouched')
+    process.exit(0)
+  }
+}
 
 mkdirSync(dirname(OUT), { recursive: true })
 writeFileSync(
