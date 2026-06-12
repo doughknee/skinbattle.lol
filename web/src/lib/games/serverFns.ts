@@ -11,6 +11,7 @@ import type {
   DailyHubState,
   GuessOption,
   MirrorState,
+  PriceCheckState,
   QuickBattleState,
   SplashdleState,
 } from './types'
@@ -48,6 +49,20 @@ export const fetchSplashdleOptions = createServerFn({ method: 'GET' }).handler(
     return splashdleOptions()
   },
 )
+
+export const fetchPriceCheck = createServerFn({ method: 'POST' })
+  .inputValidator((d: GuestInput) => d)
+  .handler(async ({ data }): Promise<PriceCheckState> => {
+    const { priceCheckState } = await import('./server/pricecheck')
+    return priceCheckState(data.restoreToken)
+  })
+
+export const submitPriceGuess = createServerFn({ method: 'POST' })
+  .inputValidator((d: GuestInput & { tier: number }) => d)
+  .handler(async ({ data }): Promise<PriceCheckState> => {
+    const { submitPriceGuess: submit } = await import('./server/pricecheck')
+    return submit(data.tier, data.restoreToken)
+  })
 
 // Quick Battle state: the current pair plus a preloaded next pair. `refit`
 // manually triggers the Bradley-Terry refit (guarded by GAMES_ADMIN_SECRET

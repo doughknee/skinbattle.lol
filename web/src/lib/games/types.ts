@@ -1,7 +1,7 @@
 // Shared (client-safe) types for the games framework. Server-only logic
 // lives under ./server — never import that from components.
 
-export type GameId = 'splashdle'
+export type GameId = 'splashdle' | 'price-check'
 
 export type DailyStatus = 'not_started' | 'in_progress' | 'won' | 'lost'
 
@@ -60,6 +60,8 @@ export interface HubGame {
   status: DailyStatus
   guessesUsed: number
   maxGuesses: number
+  // Price Check: exact hits so far (its win condition is score, not guesses).
+  score?: number
   streak: StreakInfo
 }
 
@@ -143,6 +145,44 @@ export interface BattleVoteResult {
   guestToken: string
 }
 
+// ─── Price Check ────────────────────────────────────────────────────────────
+
+// An answered round. Facts only ship AFTER the guess — the unanswered
+// round's price never reaches the client.
+export interface PriceRoundResult {
+  skinId: string
+  name: string
+  championName: string
+  splashUrl: string
+  guess: number
+  actual: number
+  correct: boolean
+  oneOff: boolean // adjacent tier — the 🟨 in the share grid
+  legacy: boolean // fun fact: vaulted, not even buyable anymore
+}
+
+export interface PriceCheckState {
+  date: string
+  puzzleNumber: number
+  status: 'in_progress' | 'won' | 'lost'
+  tiers: number[]
+  totalRounds: number
+  winScore: number
+  score: number // exact hits so far
+  results: PriceRoundResult[] // answered rounds, in order
+  // The round being played (price withheld); null once finished.
+  current: {
+    round: number // 1-based
+    skinId: string
+    name: string
+    championName: string
+    splashUrl: string
+  } | null
+  streak: StreakInfo
+  shareText?: string
+  guestToken: string
+}
+
 // ─── The Mirror ─────────────────────────────────────────────────────────────
 
 export type TierName = 'S' | 'A' | 'B' | 'C' | 'D'
@@ -176,10 +216,13 @@ export interface ContrarianTake {
   communityBattles: number
 }
 
-export interface TasteChampion {
-  championId: string
-  championName: string
-  delta: number // champion's avg personal rating − your overall avg, rounded
+// Taste profile entry: a skin line ("you over-index on Coven") or, where
+// line data is thin, a champion. Both can appear — entries are labeled.
+export interface TasteEntry {
+  kind: 'line' | 'champion'
+  id: string
+  name: string
+  delta: number // group's avg personal rating − your overall avg, rounded
   skinsRated: number
 }
 
@@ -200,8 +243,8 @@ export interface MirrorState {
   championsTotal: number
   tiers: MirrorTier[] // empty until the first battle (the page shows a preview)
   contrarian: ContrarianTake[] // |gap| desc
-  tasteOver: TasteChampion[]
-  tasteUnder: TasteChampion[]
+  tasteOver: TasteEntry[]
+  tasteUnder: TasteEntry[]
   completion: ChampionCompletion[] // champions touched, most-rated first
   completionMore: number // touched champions beyond the list cap
 }

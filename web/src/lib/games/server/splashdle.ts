@@ -21,6 +21,7 @@ import { allCatalogSkins, ensureCatalog, getCatalogSkin } from './catalog'
 import { ensureUser, peekUser, type GameUser } from './guests'
 import { getStreak, recordCompletion } from './streaks'
 import { communityBattleCount, userBattleCounts } from './quickbattle'
+import { priceCheckHubInfo, ROUNDS as PRICE_ROUNDS } from './pricecheck'
 
 const GAME = 'splashdle'
 // Recorded on every event so themed variants can be added later without
@@ -415,6 +416,8 @@ export async function dailyHub(
   const user = known?.user ?? { id: '', trustTier: 'guest' as const }
   const result = known ? readResult(db, user.id, date) : null
   const streakRow = getStreak(db, user.id, GAME)
+  const price = priceCheckHubInfo(db, known?.user.id ?? null, date)
+  const priceStreak = getStreak(db, user.id, 'price-check')
   return {
     date,
     guestToken: known?.token ?? '',
@@ -440,6 +443,14 @@ export async function dailyHub(
         guessesUsed: result?.guesses.length ?? 0,
         maxGuesses: MAX_GUESSES,
         streak: { current: streakRow.current, best: streakRow.best },
+      },
+      {
+        id: 'price-check',
+        status: price.status === 'not_started' ? 'not_started' : price.status,
+        guessesUsed: price.rounds,
+        maxGuesses: PRICE_ROUNDS,
+        score: price.score,
+        streak: { current: priceStreak.current, best: priceStreak.best },
       },
     ],
   }

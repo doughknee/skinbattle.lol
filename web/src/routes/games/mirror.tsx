@@ -22,7 +22,7 @@ import type {
   MirrorSkin,
   MirrorState,
   MirrorTier,
-  TasteChampion,
+  TasteEntry,
   TierName,
 } from '~/lib/games/types'
 
@@ -180,7 +180,7 @@ function TasteList({
   empty,
 }: {
   title: string
-  entries: TasteChampion[]
+  entries: TasteEntry[]
   positive: boolean
   empty: string
 }) {
@@ -190,9 +190,12 @@ function TasteList({
       {entries.length > 0 ? (
         <ul className="flex flex-col gap-2">
           {entries.map((e) => (
-            <li key={e.championId} className="flex h-9 items-baseline gap-3">
+            <li key={e.id} className="flex h-9 items-baseline gap-3">
               <span className="min-w-0 truncate font-bold text-gold1">
-                {e.championName}
+                {e.name}
+              </span>
+              <span className="shrink-0 text-xs uppercase tracking-wider text-grey1/70">
+                {e.kind === 'line' ? 'skin line' : 'champion'}
               </span>
               <span
                 className={`font-serif font-bold ${positive ? 'text-blue2' : 'text-red-300'}`}
@@ -413,7 +416,7 @@ function MirrorPage() {
             <SectionHeading
               icon={faPalette}
               title="Taste profile"
-              sub="Champions whose skins you rate well above — or below — your own average."
+              sub="Skin lines and champions you rate well above — or below — your own average."
             />
             {state.tasteOver.length > 0 || state.tasteUnder.length > 0 ? (
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -434,8 +437,8 @@ function MirrorPage() {
               <div className={`${sectionCard} max-w-2xl`}>
                 <p className="text-sm text-grey1">
                   Your profile needs at least two rated skins from the same
-                  champion before a pattern counts. Keep battling — the
-                  matchmaker will get you there.
+                  skin line or champion before a pattern counts. Keep battling
+                  — the matchmaker will get you there.
                 </p>
               </div>
             )}
