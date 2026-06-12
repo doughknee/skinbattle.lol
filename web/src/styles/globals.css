@@ -563,6 +563,17 @@ html {
   outline-offset: 2px !important;
 }
 
+/* Marcellus (--font-sans) ships only weight 400, so `font-bold` /
+   `font-semibold` on body/UI text renders as muddy synthetic bold. Carry that
+   emphasis in Cinzel instead — the brand's display face, which has real
+   500–800 weights (and is already what the buttons use). The rule across the
+   UI is then simply: Marcellus is always regular; anything bolder is Cinzel.
+   Headings and buttons already opt in via `font-serif`, so :not() leaves them
+   untouched; this only upgrades the elements that were faux-bolding. */
+:where(.font-bold, .font-semibold):not(.font-serif, .font-sans) {
+  font-family: var(--font-serif);
+}
+
 /* Legibility for text laid over splash art. */
 .text-shadow-hero {
   text-shadow:
