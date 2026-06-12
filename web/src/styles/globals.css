@@ -45,6 +45,14 @@
   --color-grey-cool: #1e282d;
   --color-hextech-black: #010a13;
 
+  /* Signature gold glow — gold2 at varying intensity, the one bloom the brand
+     uses. `glow` is the card hover bloom; `glow-sm` is the tight dot/diamond
+     glow. Both are sourced from --color-gold2 so the color never drifts. */
+  --shadow-glow: 0 0 28px -6px
+    color-mix(in srgb, var(--color-gold2) 35%, transparent);
+  --shadow-glow-sm: 0 0 10px
+    color-mix(in srgb, var(--color-gold2) 60%, transparent);
+
   /* Motion tokens — entrance animations used across pages. */
   --animate-fade-up: fade-up 0.6s cubic-bezier(0.22, 1, 0.36, 1) both;
   --animate-fade-in: fade-in 0.5s ease-out both;
@@ -252,12 +260,12 @@
   0% {
     opacity: 0;
     transform: scale(3);
-    box-shadow: 0 0 0 rgba(200, 170, 110, 0);
+    box-shadow: 0 0 0 transparent;
   }
   55% {
     opacity: 1;
     transform: scale(0.88);
-    box-shadow: 0 0 52px 6px rgba(200, 170, 110, 0.6);
+    box-shadow: 0 0 52px 6px color-mix(in srgb, var(--color-gold2) 60%, transparent);
   }
   80% {
     transform: scale(1.1);
@@ -265,7 +273,7 @@
   100% {
     opacity: 1;
     transform: scale(1);
-    box-shadow: 0 0 16px rgba(200, 170, 110, 0.25);
+    box-shadow: 0 0 16px color-mix(in srgb, var(--color-gold2) 25%, transparent);
   }
 }
 
@@ -287,17 +295,17 @@
 @keyframes battle-win {
   0% {
     transform: scale(1);
-    box-shadow: 0 0 0 rgba(200, 170, 110, 0);
+    box-shadow: 0 0 0 transparent;
     filter: brightness(1);
   }
   40% {
     transform: scale(1.04);
-    box-shadow: 0 0 56px 4px rgba(200, 170, 110, 0.6);
+    box-shadow: 0 0 56px 4px color-mix(in srgb, var(--color-gold2) 60%, transparent);
     filter: brightness(1.18) saturate(1.12);
   }
   100% {
     transform: scale(1.02);
-    box-shadow: 0 0 30px rgba(200, 170, 110, 0.4);
+    box-shadow: 0 0 30px color-mix(in srgb, var(--color-gold2) 40%, transparent);
     filter: brightness(1.06) saturate(1.04);
   }
 }
@@ -452,7 +460,7 @@
   background: linear-gradient(
     90deg,
     transparent,
-    rgba(200, 170, 110, 0.09),
+    color-mix(in srgb, var(--color-gold2) 9%, transparent),
     transparent
   );
   animation: shimmer 1.6s infinite;

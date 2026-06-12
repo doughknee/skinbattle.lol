@@ -42,7 +42,7 @@ function CallbackPage() {
   // strand the user on the spinner forever - give them a way out.
   if (error || stranded) {
     return (
-      <div className="fixed inset-0 flex flex-col items-center justify-center gap-6 bg-linear-220 from-gradientTop via-[#0A1428] to-gradientBottom bg-fixed px-6 text-center">
+      <div className="fixed inset-0 flex flex-col items-center justify-center gap-6 bg-linear-220 from-gradientTop via-blue7 to-gradientBottom bg-fixed px-6 text-center">
         <p className="font-serif text-3xl font-bold text-gold2">
           Sign-in didn&apos;t complete
         </p>
@@ -67,7 +67,7 @@ function CallbackPage() {
   }
 
   return (
-    <div className="fixed inset-0 flex flex-col items-center justify-center gap-6 bg-linear-220 from-gradientTop via-[#0A1428] to-gradientBottom bg-fixed">
+    <div className="fixed inset-0 flex flex-col items-center justify-center gap-6 bg-linear-220 from-gradientTop via-blue7 to-gradientBottom bg-fixed">
       <Spinner className="h-10 w-10" />
       <p
         className="animate-pulse text-3xl font-serif font-bold text-gold2"
