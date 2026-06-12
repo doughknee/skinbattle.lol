@@ -83,9 +83,15 @@ expire, and (3) a persistent identity worth investing in. Games are sequenced by
   catch-all "Legacy" set is excluded. 📌 Correction to the note below:
   Meraki `release` was populated on all 1,797 skins in this snapshot —
   **the Drought Index is unblocked**.
+- ✅ **The Skin Drought Index** (2026-06-12) — first Insights page, live at
+  `/insights/drought`: every champion ranked by days since their last skin
+  (from the committed facts snapshot's release dates), leader callout, stat
+  strip (longest / 2+ years waiting / average), champion filter, undated
+  champions listed honestly, OG card featuring the drought leader's last
+  splash. Linked from the hub's new Insights section.
 - ◻ Leaderboards, feedback surface beyond Quick Battle (rank deltas on skin
   pages), patch ingestion pipeline (beyond 12-hourly catalog re-sync),
-  per-entity stable URLs, Drought Index — **not started**.
+  per-entity stable URLs — **not started**.
 
 **Architecture note**: game state currently lives in the TanStack Start SSR
 layer (server functions + SQLite at `web/.data/games.db` — persisted via the
@@ -100,9 +106,10 @@ that happen after first paint; one-shot animations cleared by timer, not
 animationend; every interaction answers back before the round-trip
 completes (pending states).
 
-**Next session**: the Skin Drought Index (`/insights/drought`) — per-skin
-release dates are in the committed facts dataset now, so "days since last
-skin" per champion is pure derived data. Citable from day one.
+**Next session**: patch-pipeline hardening (unattended catalog + facts
+re-snapshot with failure alerting — staleness is how fan sites die), or
+per-entity stable URLs (skin pages with rating data, the next citability
+layer). Logto attachment wiring remains blocked on test credentials.
 
 ## Landscape & differentiation
 

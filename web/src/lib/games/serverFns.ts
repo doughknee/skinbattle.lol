@@ -9,6 +9,7 @@ import { createServerFn } from '@tanstack/react-start'
 import type {
   BattleVoteResult,
   DailyHubState,
+  DroughtState,
   GuessOption,
   MirrorState,
   PriceCheckState,
@@ -63,6 +64,15 @@ export const submitPriceGuess = createServerFn({ method: 'POST' })
     const { submitPriceGuess: submit } = await import('./server/pricecheck')
     return submit(data.tier, data.restoreToken)
   })
+
+// The Drought Index is fully anonymous — no guest token, nothing
+// personalized, pure derived data over the catalog + facts snapshot.
+export const fetchDrought = createServerFn({ method: 'GET' }).handler(
+  async (): Promise<DroughtState> => {
+    const { droughtIndex } = await import('./server/insights')
+    return droughtIndex()
+  },
+)
 
 // Quick Battle state: the current pair plus a preloaded next pair. `refit`
 // manually triggers the Bradley-Terry refit (guarded by GAMES_ADMIN_SECRET

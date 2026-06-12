@@ -24,6 +24,7 @@ export const OG_CARDS = [
   'quick-battle',
   'mirror',
   'price-check',
+  'drought',
 ] as const
 export type OgCard = (typeof OG_CARDS)[number]
 
@@ -355,6 +356,34 @@ async function buildCard(card: OgCard): Promise<Node> {
                 }),
               ),
             ),
+          ),
+        ),
+      ])
+    }
+    case 'drought': {
+      const { droughtIndex } = await import('./insights')
+      const drought = await droughtIndex()
+      const leader = drought.rows[0]
+      const bg = leader ? await fetchAsDataUri(leader.lastSkinSplashUrl) : null
+      return frame(bg ? splashBg(bg) : null, [
+        el(
+          'div',
+          { flexDirection: 'column', gap: 18, justifyContent: 'center', flexGrow: 1 },
+          eyebrow('Insights · days since last skin'),
+          title('The Skin Drought Index', 68),
+          leader
+            ? text(
+                `${leader.championName}: ${leader.days.toLocaleString('en-US')} days and counting`,
+                {
+                  fontFamily: 'Inter',
+                  fontWeight: 600,
+                  fontSize: 32,
+                  color: C.gold1,
+                },
+              )
+            : body(''),
+          body(
+            `${drought.stats.overTwoYears} champions have waited 2+ years. Every champion, ranked.`,
           ),
         ),
       ])
