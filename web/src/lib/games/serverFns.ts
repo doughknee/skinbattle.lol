@@ -3,7 +3,7 @@
 // the client bundle.
 //
 // Migration note: when game logic moves to the Go API, these functions keep
-// their signatures and become thin fetch wrappers — components don't change.
+// their signatures and become thin fetch wrappers - components don't change.
 
 import { createServerFn } from '@tanstack/react-start'
 import type {
@@ -51,7 +51,7 @@ export const submitSplashdleGuess = createServerFn({ method: 'POST' })
     return submit(data.skinId, data.restoreToken)
   })
 
-// The guessable catalog for autocomplete — shared by Splashdle and Chroma
+// The guessable catalog for autocomplete - shared by Splashdle and Chroma
 // Vision (both guess across the full skin pool).
 export const fetchSplashdleOptions = createServerFn({ method: 'GET' }).handler(
   async (): Promise<GuessOption[]> => {
@@ -88,7 +88,7 @@ export const submitPriceGuess = createServerFn({ method: 'POST' })
     return submit(data.tier, data.restoreToken)
   })
 
-// Leaderboards are anonymous reads — guests can see the boards (they just
+// Leaderboards are anonymous reads - guests can see the boards (they just
 // can't occupy them).
 export const fetchLeaderboards = createServerFn({ method: 'GET' }).handler(
   async (): Promise<LeaderboardsState> => {
@@ -113,7 +113,7 @@ export const fetchRankingsIndex = createServerFn({ method: 'GET' }).handler(
   },
 )
 
-// Skin pages are read-only (peekUser — viewing never mints a user). Returns
+// Skin pages are read-only (peekUser - viewing never mints a user). Returns
 // null for unknown slugs/ids; the route turns that into a 404.
 export const fetchSkinPage = createServerFn({ method: 'POST' })
   .inputValidator((d: GuestInput & { slug: string }) => d)
@@ -123,7 +123,7 @@ export const fetchSkinPage = createServerFn({ method: 'POST' })
   })
 
 // Home page state: the daily hero slide set + live community numbers.
-// Anonymous like the Drought Index — personalization happens client-side
+// Anonymous like the Drought Index - personalization happens client-side
 // against the Go API once the visitor is signed in.
 export const fetchHome = createServerFn({ method: 'GET' }).handler(
   async (): Promise<HomeState> => {
@@ -132,7 +132,7 @@ export const fetchHome = createServerFn({ method: 'GET' }).handler(
   },
 )
 
-// The Drought Index is fully anonymous — no guest token, nothing
+// The Drought Index is fully anonymous - no guest token, nothing
 // personalized, pure derived data over the catalog + facts snapshot.
 export const fetchDrought = createServerFn({ method: 'GET' }).handler(
   async (): Promise<DroughtState> => {
@@ -152,7 +152,7 @@ export const fetchRoadmap = createServerFn({ method: 'GET' }).handler(
 
 // Quick Battle state: the current pair plus a preloaded next pair. `refit`
 // manually triggers the Bradley-Terry refit (guarded by GAMES_ADMIN_SECRET
-// when set) — reachable via /battle?refit=… for cron/curl.
+// when set) - reachable via /battle?refit=… for cron/curl.
 export const fetchQuickBattle = createServerFn({ method: 'POST' })
   .inputValidator((d: GuestInput & { refit?: string }) => d)
   .handler(async ({ data }): Promise<QuickBattleState> => {

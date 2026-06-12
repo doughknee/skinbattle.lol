@@ -14,19 +14,19 @@ import { ogMeta } from '~/lib/games/ogMeta'
 import type { DroughtRow } from '~/lib/games/types'
 
 export const Route = createFileRoute('/rankings/drought')({
-  // Pure derived data — loads before render (SSR-complete first paint),
+  // Pure derived data - loads before render (SSR-complete first paint),
   // nothing personalized, nothing written.
   loader: () => fetchDrought(),
   head: () => ({
     meta: [
-      { title: 'The Skin Drought Index — Skin Battle' },
+      { title: 'The Skin Drought Index · Skin Battle' },
       {
         name: 'description',
         content:
           'Days since every League champion’s last skin, ranked. Settle the drought argument with a link.',
       },
       ...ogMeta({
-        title: 'The Skin Drought Index — Skin Battle',
+        title: 'The Skin Drought Index · Skin Battle',
         description:
           'Days since every League champion’s last skin, ranked. Settle the drought argument with a link.',
         card: 'drought',
@@ -124,7 +124,7 @@ function DroughtPage() {
       {leader && (
         <p className="animate-fade-up mb-8 max-w-2xl text-lg text-grey1">
           <FontAwesomeIcon icon={faHourglassHalf} className="mr-2 h-4 text-gold2" />
-          Longest drought: <b className="text-gold1">{leader.championName}</b> —{' '}
+          Longest drought: <b className="text-gold1">{leader.championName}</b>,{' '}
           <b className="text-gold1">{leader.days.toLocaleString()} days</b> since{' '}
           {leader.lastSkinName} ({fmtDate(leader.lastSkinDate)}), and counting.
         </p>

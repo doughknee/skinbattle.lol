@@ -35,7 +35,7 @@ export const Route = createFileRoute('/battle/')({
   // /battle is the door AND the game: Quick Battle plays at the top, the
   // daily-challenges strip renders below. Both payloads load in parallel
   // BEFORE the route renders (SSR on first visit, prefetched on navigation)
-  // — no loading states, and the first pick is instant.
+  // - no loading states, and the first pick is instant.
   loader: async ({ deps }) => {
     const restoreToken = guestRestoreToken()
     const [qb, hub] = await Promise.all([
@@ -46,16 +46,16 @@ export const Route = createFileRoute('/battle/')({
   },
   head: ({ loaderData }) => ({
     meta: [
-      { title: 'Battle — Skin Battle' },
+      { title: 'Battle · Skin Battle' },
       {
         name: 'description',
         content:
           'Two League skins. Pick the one you like more. Every vote builds the community ranking.',
       },
       ...ogMeta({
-        title: 'Battle — Skin Battle',
+        title: 'Battle · Skin Battle',
         description:
-          'Two League skins. Pick the one you like more. Every vote builds the community ranking — and your personal tier list.',
+          'Two League skins. Pick the one you like more. Every vote builds the community ranking, and your personal tier list.',
         card: 'quick-battle',
         path: '/battle',
       }),
@@ -95,12 +95,12 @@ export const Route = createFileRoute('/battle/')({
 
 // How long the pick is acknowledged (winner blooms, loser concedes) before
 // the next pair steps in. The vote request fires at pick time, so this beat
-// runs concurrently with the network — it costs nothing.
+// runs concurrently with the network - it costs nothing.
 const PICK_HOLD_MS = 280
 
 // Upper bound on the first-load gate: if both splashes haven't decoded by
 // then, the reveal plays anyway over whatever has arrived. The <head>
-// preloads make the happy path tens of milliseconds — this only exists so
+// preloads make the happy path tens of milliseconds - this only exists so
 // a struggling CDN can't hold the page hostage.
 const REVEAL_GATE_MAX_MS = 2000
 
@@ -202,7 +202,7 @@ function FeedbackBar({ feedback }: { feedback: BattleFeedback | null }) {
             {feedback.rank}
             {feedback.rankBefore !== null &&
               feedback.rankBefore > feedback.rank && (
-                // Pops a beat after the delta — rank climbing is the payoff.
+                // Pops a beat after the delta - rank climbing is the payoff.
                 <span className="animate-delta-pop ml-1 inline-block font-bold text-blue2 [animation-delay:120ms]">
                   ↑{feedback.rankBefore - feedback.rank}
                 </span>
@@ -221,7 +221,7 @@ function FeedbackBar({ feedback }: { feedback: BattleFeedback | null }) {
         </p>
       ) : (
         <p className="text-sm text-grey1">
-          Pick the one you like more — every vote moves the rankings.
+          Pick the one you like more. Every vote moves the rankings.
         </p>
       )}
     </div>
@@ -241,7 +241,7 @@ interface HistoryEntry {
 
 const HISTORY_CAP = 8
 
-// The answer to "wait, what did I just vote on?" — this session's verdicts,
+// The answer to "wait, what did I just vote on?" - this session's verdicts,
 // newest first. Lives below the action buttons so growing it never shifts
 // anything interactive.
 function SessionHistory({ entries }: { entries: HistoryEntry[] }) {
@@ -305,7 +305,7 @@ function BattlePage() {
   // Which side is being acknowledged as the pick, during the hold beat.
   const [pickedSide, setPickedSide] = useState<'a' | 'b' | null>(null)
   // False until the first pair's splashes have decoded (or the gate times
-  // out) — flipping it plays the reveal ceremony. SSR and the pre-hydration
+  // out) - flipping it plays the reveal ceremony. SSR and the pre-hydration
   // paint both render the gated state, so the gate holds from first paint.
   const [revealed, setRevealed] = useState(false)
   const revealedRef = useRef(false)
@@ -314,7 +314,7 @@ function BattlePage() {
   const viewRef = useRef(view)
   viewRef.current = view
   const busyRef = useRef(false)
-  // Skins shown recently in this session — the matchmaker avoids re-serving
+  // Skins shown recently in this session - the matchmaker avoids re-serving
   // them. Variety only; the server never trusts this list for anything else.
   const recentRef = useRef<string[]>([])
   const picksMadeRef = useRef(0)
@@ -332,7 +332,7 @@ function BattlePage() {
   // The full-load gate: hold the reveal until BOTH splashes have actually
   // decoded, so the ceremony never plays over half-painted images. The
   // <head> preloads usually make this near-instant; the race caps how long
-  // a slow CDN can hold the page. A decode failure opens the gate too —
+  // a slow CDN can hold the page. A decode failure opens the gate too -
   // the visible card's onError path owns broken-splash recovery.
   useEffect(() => {
     let alive = true
@@ -383,7 +383,7 @@ function BattlePage() {
       rememberGuestToken(s.guestToken)
       setView((v) => ({ ...v, current: s.pair, next: s.next, stats: s.stats }))
     } catch {
-      toast("Couldn't fetch a new matchup — try refreshing.", 'error')
+      toast("Couldn't fetch a new matchup. Try refreshing.", 'error')
     }
   }, [])
 
@@ -407,7 +407,7 @@ function BattlePage() {
       setPickedSide(winnerId === voted.a.skinId ? 'a' : 'b')
 
       // The vote is in flight DURING the acknowledgment beat, so the hold
-      // costs nothing — by the time the next pair steps in, the feedback is
+      // costs nothing - by the time the next pair steps in, the feedback is
       // usually already on its way back.
       const votePromise = submitBattleVote({
         data: {
@@ -418,7 +418,7 @@ function BattlePage() {
         },
       })
       votePromise.catch(() => {
-        /* handled after the hold — this just silences the unhandled gap */
+        /* handled after the hold - this just silences the unhandled gap */
       })
       await sleep(PICK_HOLD_MS)
       setPickedSide(null)
@@ -451,7 +451,7 @@ function BattlePage() {
         toast(
           err instanceof Error
             ? err.message
-            : "That pick didn't count — try again.",
+            : "That pick didn't count. Try again.",
           'error',
         )
         await resync()
@@ -462,7 +462,7 @@ function BattlePage() {
     [resync],
   )
 
-  // A broken splash in the ON-SCREEN pair (CDN hiccup — the catalog sweep
+  // A broken splash in the ON-SCREEN pair (CDN hiccup - the catalog sweep
   // benches known-dead ones): skip the pair and remember the skin.
   const broken = useCallback(
     (skinId: string) => {
@@ -473,7 +473,7 @@ function BattlePage() {
   )
 
   // A broken splash in the PRELOADED pair: swap in a replacement quietly,
-  // before the player ever sees it — the on-screen battle is not touched.
+  // before the player ever sees it - the on-screen battle is not touched.
   const brokenNext = useCallback(async (skinId: string) => {
     recentRef.current = [...recentRef.current, skinId].slice(-16)
     try {
@@ -592,7 +592,7 @@ function BattlePage() {
         </div>
       </header>
 
-      {/* The arena. Stacked on mobile (thumb-first — share links open on
+      {/* The arena. Stacked on mobile (thumb-first - share links open on
           phones), side by side from md up. In theater mode it relocates
           into the fullscreen overlay below; everything else on the page
           stays put behind it. */}
@@ -659,7 +659,7 @@ function BattlePage() {
       {stats.tier === 'guest' && (
         <p className="mt-10 text-sm text-grey1">
           <FontAwesomeIcon icon={faShuffle} className="mr-1.5 h-3 text-gold2" />
-          Playing as a guest — your picks count at reduced weight. Sign in to
+          Playing as a guest: your picks count at reduced weight. Sign in to
           vote at full strength.
         </p>
       )}
@@ -667,11 +667,11 @@ function BattlePage() {
       <SessionHistory entries={history} />
 
       {/* The rest of the door: today's dailies, fresh patch skins, and the
-          leaderboards — the old games hub, living under the arena. */}
+          leaderboards - the old games hub, living under the arena. */}
       <TodayStrip hub={hub} />
 
       {/* Preload the next pair's splashes while the current one is on screen
-          — by the time it's dealt in, both images are already decoded. A
+          - by the time it's dealt in, both images are already decoded. A
           preload that 403s gets its pair replaced before it's ever shown. */}
       {view.next && (
         <div aria-hidden className="hidden">

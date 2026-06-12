@@ -15,13 +15,13 @@ interface SkinCardProps {
   championId: string
   initialStar?: boolean
   initialX?: boolean
-  // Show the champion name above the skin name — used on pages that mix
+  // Show the champion name above the skin name - used on pages that mix
   // skins from many champions (home, awards, my votes).
   showChampion?: boolean
   // Leaderboard position badge overlaid on the splash (#1, #2, ...).
   rank?: number
   // What the rank badge means here, e.g. "by battle rating in this wardrobe"
-  // — shown as the badge tooltip. Rank meaning is contextual per page.
+  // - shown as the badge tooltip. Rank meaning is contextual per page.
   rankContext?: string
 }
 
@@ -97,7 +97,7 @@ export default function SkinCard({
     const newStar = !userStar
     if (newStar && userStatsStore.get().usedStars >= MAX_STARS) {
       toast(
-        `All ${MAX_STARS} stars used — unstar another skin first.`,
+        `All ${MAX_STARS} stars used. Unstar another skin first.`,
         'error',
       )
       return
@@ -108,7 +108,7 @@ export default function SkinCard({
       toast(
         newStar
           ? `Star ${used}/${MAX_STARS} used`
-          : `Star removed — ${used}/${MAX_STARS} used`,
+          : `Star removed. ${used}/${MAX_STARS} used`,
         'success',
       )
     })
@@ -117,7 +117,7 @@ export default function SkinCard({
   const handleX = () => {
     const newX = !userX
     if (newX && userStatsStore.get().usedX >= MAX_X) {
-      toast(`All ${MAX_X} bans used — unban another skin first.`, 'error')
+      toast(`All ${MAX_X} bans used. Unban another skin first.`, 'error')
       return
     }
     castVote({ star: userStar, x: newX }, () => {
@@ -126,7 +126,7 @@ export default function SkinCard({
       toast(
         newX
           ? `Ban ${used}/${MAX_X} used`
-          : `Ban removed — ${used}/${MAX_X} used`,
+          : `Ban removed. ${used}/${MAX_X} used`,
         'success',
       )
     })
@@ -134,7 +134,7 @@ export default function SkinCard({
 
   return (
     <div className="group relative flex h-full flex-col bg-hextech-black/30 transition duration-300 hover:shadow-[0_0_28px_-6px_rgba(200,170,110,0.35)]">
-      {/* Border drawn on an overlay so it stays visible over the splash art —
+      {/* Border drawn on an overlay so it stays visible over the splash art -
           the image's hover transform otherwise paints above an inset outline.
           Offset -1 keeps it flush with the edge so the image sits inside it. */}
       <div
@@ -206,7 +206,7 @@ export default function SkinCard({
               title={
                 userStar
                   ? 'Remove star'
-                  : `Star this skin — you only get ${MAX_STARS}`
+                  : `Star this skin. You only get ${MAX_STARS}`
               }
               className={`${chipBase} ${userStar ? chipGoldActive : chipIdle}`}
             >
@@ -224,7 +224,7 @@ export default function SkinCard({
               }
               aria-pressed={userX}
               title={
-                userX ? 'Remove ban' : `Ban this skin — you only get ${MAX_X}`
+                userX ? 'Remove ban' : `Ban this skin. You only get ${MAX_X}`
               }
               className={`${chipBase} ${userX ? chipRedActive : chipIdle}`}
             >

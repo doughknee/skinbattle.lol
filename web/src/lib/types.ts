@@ -61,7 +61,7 @@ export interface Me {
   avatar_champion_id: string | null
 }
 
-// PATCH /api/me — partial update. For avatarChampionId, '' clears the avatar
+// PATCH /api/me - partial update. For avatarChampionId, '' clears the avatar
 // while an absent field leaves it unchanged.
 export interface UpdateMeRequest {
   username?: string

@@ -1,5 +1,5 @@
 // The Mirror (server-only): a read surface over the rating data Quick
-// Battle generates — personal tier list, contrarian takes, taste profile,
+// Battle generates - personal tier list, contrarian takes, taste profile,
 // wardrobe completion. Design principle 2: this is the killer feature; every
 // battle sharpens the user's own reflection, not just the global ranking.
 //
@@ -30,7 +30,7 @@ import { skinSlug } from '../slug'
 
 // Tier floors on the personal Elo scale (start 1500, K=48). Chosen so the
 // FIRST battle already moves a skin out of B (one win ≈ 1524 → A, one loss
-// ≈ 1476 → C — the mirror answers back immediately), while the extremes are
+// ≈ 1476 → C - the mirror answers back immediately), while the extremes are
 // earned: S takes ~4 straight wins, D ~5 straight losses. B is the narrow
 // "the jury's split" band around the start rating.
 const TIER_FLOORS: [TierName, number][] = [
@@ -56,7 +56,7 @@ const TASTE_MIN_SKINS = 2
 const TASTE_MIN_DELTA = 20
 const TASTE_LIMIT = 3
 
-// Wardrobe completion list cap — the rest collapses into "+N more".
+// Wardrobe completion list cap - the rest collapses into "+N more".
 const COMPLETION_LIMIT = 12
 
 // ─── data assembly ──────────────────────────────────────────────────────────
@@ -104,7 +104,7 @@ function toMirrorSkin(r: RatedRow): MirrorSkin {
 }
 
 // Bucket by fixed floors (not quantiles): a skin only changes tier when ITS
-// rating moves, so the list is stable under new battles elsewhere — and a
+// rating moves, so the list is stable under new battles elsewhere - and a
 // tier means the same thing for every user.
 function buildTiers(rows: RatedRow[]): MirrorTier[] {
   return TIER_FLOORS.map(([tier, floor], i) => {
@@ -148,7 +148,7 @@ function buildContrarian(db: DatabaseSync, rows: RatedRow[]): ContrarianTake[] {
 }
 
 // Over/under-indexing relative to the user's own average, grouped by skin
-// line (the facts dataset's `set` tags — "you over-index on Coven")
+// line (the facts dataset's `set` tags - "you over-index on Coven")
 // and by champion. Both pools compete on |delta|; entries carry their kind.
 function buildTaste(rows: RatedRow[]): {
   over: TasteEntry[]
@@ -196,7 +196,7 @@ function buildTaste(rows: RatedRow[]): {
   }
 }
 
-// Per-champion wardrobe completion for champions the user has touched —
+// Per-champion wardrobe completion for champions the user has touched -
 // principle 4: the collector itch wearing a progress bar.
 function buildCompletion(
   db: DatabaseSync,

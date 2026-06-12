@@ -19,13 +19,13 @@ import Footer from '~/components/Footer'
 import { readServerConfig, type PublicConfig } from '~/lib/config'
 
 const SITE_URL = 'https://skinbattle.lol'
-const SITE_TITLE = 'SKINBATTLE.LOL — League of Legends Skin Rankings'
+const SITE_TITLE = 'SKINBATTLE.LOL · League of Legends Skin Rankings'
 const SITE_DESCRIPTION =
   'Community-built rankings for every League of Legends skin. Battle, star, and ban your way to the definitive list.'
 
 export const Route = createRootRoute({
   // Runs on the server during SSR; the result is serialized to the client.
-  // staleTime keeps it from re-running on client-side navigations — the
+  // staleTime keeps it from re-running on client-side navigations - the
   // config is per-deployment static, and re-runs in the browser can't read
   // server env anyway.
   loader: () => ({ config: readServerConfig() }),
@@ -37,7 +37,7 @@ export const Route = createRootRoute({
       { title: SITE_TITLE },
       { name: 'description', content: SITE_DESCRIPTION },
       { name: 'theme-color', content: '#0A1428' },
-      // Open Graph / Twitter cards — what Reddit and Discord shares render.
+      // Open Graph / Twitter cards - what Reddit and Discord shares render.
       { property: 'og:type', content: 'website' },
       { property: 'og:site_name', content: 'SKINBATTLE.LOL' },
       { property: 'og:title', content: SITE_TITLE },
@@ -107,7 +107,7 @@ function RootDocument({
     >
       <head>
         <HeadContent />
-        {/* Runtime public config — read by the browser before the app bundle.
+        {/* Runtime public config - read by the browser before the app bundle.
             Sourced from loader data so SSR and client render identically. */}
         <script
           // eslint-disable-next-line react/no-danger

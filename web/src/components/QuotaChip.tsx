@@ -25,7 +25,7 @@ export default function QuotaChip() {
     userStatsStore.get,
     userStatsStore.get,
   )
-  // Server snapshot is false (no localStorage during SSR) — React reconciles
+  // Server snapshot is false (no localStorage during SSR) - React reconciles
   // the client value after hydration without a mismatch.
   const hasQuotaHint = useSyncExternalStore(
     userStatsStore.subscribe,
@@ -38,7 +38,7 @@ export default function QuotaChip() {
   const [loadingPicks, setLoadingPicks] = useState(false)
   const containerRef = useRef<HTMLDivElement>(null)
 
-  // Authoritative quota refresh — on auth change and after every vote
+  // Authoritative quota refresh - on auth change and after every vote
   // (skin cards dispatch 'updateUserStats').
   useEffect(() => {
     if (isLoading) return
@@ -133,8 +133,8 @@ export default function QuotaChip() {
       const s = userStatsStore.get()
       toast(
         kind === 'star'
-          ? `Star removed — ${s.usedStars}/${MAX_STARS} used`
-          : `Ban removed — ${s.usedX}/${MAX_X} used`,
+          ? `Star removed. ${s.usedStars}/${MAX_STARS} used`
+          : `Ban removed. ${s.usedX}/${MAX_X} used`,
         'success',
       )
       window.dispatchEvent(new CustomEvent('updateUserStats'))
@@ -191,7 +191,7 @@ export default function QuotaChip() {
           <div className="border-b border-icon/20 px-4 py-3">
             <p className="font-serif text-sm font-bold text-gold1">My Picks</p>
             <p className="text-xs text-grey1">
-              Your {MAX_STARS} stars and {MAX_X} bans — remove one to free a
+              Your {MAX_STARS} stars and {MAX_X} bans. Remove one to free a
               slot.
             </p>
           </div>

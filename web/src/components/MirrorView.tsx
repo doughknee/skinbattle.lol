@@ -27,13 +27,13 @@ import type {
   TierName,
 } from '~/lib/games/types'
 
-// The Mirror — the tier list your battles build. Lives on /profile (the
+// The Mirror - the tier list your battles build. Lives on /profile (the
 // profile IS the mirror); extracted as a view so the route stays a thin
 // tab shell. Rendering is strictly read-only; the route's loader is what
-// fetches state (peekUser — no user minted by looking).
+// fetches state (peekUser - no user minted by looking).
 
 // The sign-in nudge appears once the tier list is worth keeping (the design
-// doc's ~20-battle conversion moment). Passive — nothing on this page gates.
+// doc's ~20-battle conversion moment). Passive - nothing on this page gates.
 const KEEP_IT_BATTLES = 20
 
 const sectionCard =
@@ -69,7 +69,7 @@ function SectionHeading({
 
 // ─── tier list ──────────────────────────────────────────────────────────────
 
-// "Show names" preference — splash-only tiles by default; the name overlay is
+// "Show names" preference - splash-only tiles by default; the name overlay is
 // opt-in and persists across visits.
 const NAMES_KEY = 'sb:mirror-show-names'
 
@@ -92,7 +92,7 @@ function SkinTile({
 }) {
   return (
     <li
-      title={`${skin.name} — ${skin.rating} · ${skin.battles} ${skin.battles === 1 ? 'battle' : 'battles'}`}
+      title={`${skin.name} · ${skin.rating} · ${skin.battles} ${skin.battles === 1 ? 'battle' : 'battles'}`}
       className={`relative w-24 shrink-0 overflow-hidden bg-hextech-black/60 outline -outline-offset-1 transition duration-150 hover:outline-gold2 ${TIER_STYLE[tier].tile}`}
     >
       <Link to="/skins/$slug" params={{ slug: skin.slug }}>
@@ -337,7 +337,7 @@ function TierListSection({ state }: { state: MirrorState }) {
       <SectionHeading
         icon={faRankingStar}
         title="Your tier list"
-        sub={`Auto-built from ${state.totalBattles.toLocaleString()} battles — only skins you've actually judged. Every battle sharpens it.`}
+        sub={`Auto-built from ${state.totalBattles.toLocaleString()} battles. Only skins you've actually judged. Every battle sharpens it.`}
       />
 
       <div className="mb-3 flex flex-wrap items-center gap-2">
@@ -533,7 +533,7 @@ function ChampionRow({ c }: { c: ChampionCompletion }) {
 
 // ─── empty state ────────────────────────────────────────────────────────────
 
-// What the mirror WILL become — never a blank page. Ghost tiers sketch the
+// What the mirror WILL become - never a blank page. Ghost tiers sketch the
 // shape; the CTA points at the loop that fills it. No user is minted by
 // being here.
 const GHOST_TILES: Record<TierName, number> = { S: 2, A: 4, B: 5, C: 3, D: 2 }
@@ -568,7 +568,7 @@ function EmptyMirror({ state }: { state: MirrorState }) {
             This is where your taste takes shape
           </h2>
           <p className="mt-2 max-w-xl text-grey1">
-            Every Quick Battle pick rates the skins you saw — and the Mirror
+            Every Head-to-Head pick rates the skins you saw, and the Mirror
             turns those picks into your personal tier list, your most
             contrarian takes, and the champions you secretly over-index on. No
             account needed. It starts with one battle.
@@ -609,7 +609,7 @@ function KeepItBanner({ battles }: { battles: number }) {
       <p className="text-sm text-grey1 md:text-base">
         <FontAwesomeIcon icon={faFire} className="mr-2 h-4 text-gold2" />
         <b className="text-gold1">
-          Your tier list is taking shape — {battles.toLocaleString()} battles
+          Your tier list is taking shape, {battles.toLocaleString()} battles
           in.
         </b>{' '}
         Right now it lives in this browser. Create an account to keep it.
@@ -647,7 +647,7 @@ export default function MirrorView({ state }: { state: MirrorState }) {
         <SectionHeading
           icon={faScaleUnbalanced}
           title="Your most contrarian takes"
-          sub="Where you and the community disagree the hardest — both directions."
+          sub="Where you and the community disagree the hardest, in both directions."
         />
         {state.contrarian.length > 0 ? (
           <ul className="flex flex-col gap-2">
@@ -659,8 +659,8 @@ export default function MirrorView({ state }: { state: MirrorState }) {
           <div className={`${sectionCard} max-w-2xl`}>
             <p className="text-sm text-grey1">
               No verdicts yet. A take counts once you've fought a skin at
-              least twice and the community has fought it at least 8 times
-              — keep battling and check back as the room fills in.
+              least twice and the community has fought it at least 8 times.
+              Keep battling and check back as the room fills in.
             </p>
           </div>
         )}
@@ -670,7 +670,7 @@ export default function MirrorView({ state }: { state: MirrorState }) {
         <SectionHeading
           icon={faPalette}
           title="Taste profile"
-          sub="Skin lines and champions you rate well above — or below — your own average."
+          sub="Skin lines and champions you rate well above or below your own average."
         />
         {state.tasteOver.length > 0 || state.tasteUnder.length > 0 ? (
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -678,21 +678,21 @@ export default function MirrorView({ state }: { state: MirrorState }) {
               title="You over-index on"
               entries={state.tasteOver}
               positive
-              empty="No clear favorites yet — battle more skins from the same champions."
+              empty="No clear favorites yet. Battle more skins from the same champions."
             />
             <TasteList
               title="You under-index on"
               entries={state.tasteUnder}
               positive={false}
-              empty="Nothing you're notably cold on — yet."
+              empty="Nothing you're notably cold on, yet."
             />
           </div>
         ) : (
           <div className={`${sectionCard} max-w-2xl`}>
             <p className="text-sm text-grey1">
               Your profile needs at least two rated skins from the same
-              skin line or champion before a pattern counts. Keep battling
-              — the matchmaker will get you there.
+              skin line or champion before a pattern counts. Keep battling.
+              The matchmaker will get you there.
             </p>
           </div>
         )}

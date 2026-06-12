@@ -19,15 +19,15 @@ import { btnChip } from '~/lib/ui'
 import type { Me, UpdateMeRequest } from '~/lib/types'
 
 // Mirrors the server's rule (handlers.go usernamePattern): letters, numbers,
-// underscores; no leading number; 3–30 characters.
+// underscores; no leading number; 3-30 characters.
 const USERNAME_RE = /^[A-Za-z_][A-Za-z0-9_]{2,29}$/
 const USERNAME_HINT =
-  '3–30 characters: letters, numbers, underscores. Cannot start with a number.'
+  '3-30 characters: letters, numbers, underscores. Cannot start with a number.'
 
 const sectionLabel = 'text-xs uppercase tracking-widest text-grey1 mb-1'
 
 // The whole Account card: avatar, username, email, sign-in & security link,
-// logout, and the danger zone. `me` is null when /me failed — the card then
+// logout, and the danger zone. `me` is null when /me failed - the card then
 // just shows less, same as before.
 export default function AccountSettings({
   me,
@@ -289,7 +289,7 @@ function AvatarSection({
           />
           {loadError ? (
             <p className="py-4 text-sm text-red-300">
-              Couldn't load the champion list — try again in a moment.
+              Couldn't load the champion list. Try again in a moment.
             </p>
           ) : !champions || !ddVersion ? (
             <div className="flex items-center gap-3 py-4 text-sm text-grey1">
@@ -331,7 +331,7 @@ function AvatarSection({
 
 // ─── sign-in & security ─────────────────────────────────────────────────────
 
-// Password, passkeys, and MFA live in Logto, not in app code — link out to
+// Password, passkeys, and MFA live in Logto, not in app code - link out to
 // its hosted Account Center ({endpoint}/account, Logto ≥1.39; see DEPLOY.md
 // for the console toggles that enable each section).
 function SecuritySection() {

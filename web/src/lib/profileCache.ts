@@ -33,7 +33,7 @@ export function writeCachedProfile(profile: CachedProfile) {
     if (profile.avatarChampionId === null) localStorage.removeItem(AVATAR_KEY)
     else localStorage.setItem(AVATAR_KEY, profile.avatarChampionId)
   } catch {
-    /* storage unavailable — the header falls back to /me */
+    /* storage unavailable - the header falls back to /me */
   }
 }
 

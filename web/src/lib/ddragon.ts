@@ -38,7 +38,7 @@ export function getDDragonVersion(): Promise<string> {
         try {
           localStorage.setItem(VERSION_KEY, latest)
         } catch {
-          /* storage unavailable — session cache still works */
+          /* storage unavailable - session cache still works */
         }
         return latest
       })

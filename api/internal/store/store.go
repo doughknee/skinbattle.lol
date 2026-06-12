@@ -13,7 +13,7 @@ import (
 
 // Skin mirrors the Skin type from the API contract.
 // The legacy vote/total_votes columns still exist in Postgres but are no
-// longer served — stars and bans are the only catalog-voting currency.
+// longer served - stars and bans are the only catalog-voting currency.
 type Skin struct {
 	ID         string `json:"id"`
 	ChampionID string `json:"champion_id"`
@@ -390,7 +390,7 @@ type VoteInput struct {
 
 // Vote upserts a star/ban vote in a transaction, enforces budgets, and
 // recomputes totals. The legacy vote column is left untouched on existing
-// rows (and zero on new ones) — up/down voting is retired but the data stays.
+// rows (and zero on new ones) - up/down voting is retired but the data stays.
 // Returns the new totals and the champion_id (for cache invalidation).
 func (s *Store) Vote(ctx context.Context, inp VoteInput) (VoteTotals, string, error) {
 	tx, err := s.pool.Begin(ctx)
@@ -446,7 +446,7 @@ func (s *Store) Vote(ctx context.Context, inp VoteInput) (VoteTotals, string, er
 	}
 
 	// Recompute and persist totals for this skin. total_votes is frozen at
-	// its legacy value — nothing writes it anymore.
+	// its legacy value - nothing writes it anymore.
 	var totals VoteTotals
 	err = tx.QueryRow(ctx, `
 		UPDATE skins SET
@@ -600,7 +600,7 @@ func (s *Store) upsertUserAttempt(ctx context.Context, sub, email, username stri
 		return 0, fmt.Errorf("claim legacy user %s: %w", sub, updateErr)
 	}
 
-	// No legacy row either — return the original insert error.
+	// No legacy row either - return the original insert error.
 	return 0, fmt.Errorf("upsert user %s: %w", sub, err)
 }
 
@@ -614,7 +614,7 @@ func (s *Store) DeleteUser(ctx context.Context, userID int64) error {
 	return nil
 }
 
-// GetUserBySub returns a user's local ID and logto_id by local ID — used
+// GetUserBySub returns a user's local ID and logto_id by local ID - used
 // before Logto deletion.
 func (s *Store) GetUserLogtoID(ctx context.Context, userID int64) (string, error) {
 	var logtoID *string

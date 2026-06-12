@@ -51,7 +51,7 @@ export const Route = createFileRoute('/')({
       totalX: totalsBySkin.get(s.skinId)?.total_x ?? 0,
     }))
 
-    // Only feature skins that actually have stars — on a cold start the
+    // Only feature skins that actually have stars - on a cold start the
     // "top starred" list is just arbitrary skins with zero votes.
     const starred = (awards?.topStarred ?? []).filter(
       (s) => (s.total_stars ?? 0) > 0,

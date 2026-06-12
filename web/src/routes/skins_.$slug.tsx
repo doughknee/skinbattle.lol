@@ -20,7 +20,7 @@ import { kebab } from '~/lib/games/slug'
 
 export const Route = createFileRoute('/skins_/$slug')({
   // Stable URLs, immutable key: any slug whose trailing ID resolves gets
-  // redirected to the canonical spelling — old links survive renames.
+  // redirected to the canonical spelling - old links survive renames.
   loader: async ({ params }) => {
     const state = await fetchSkinPage({
       data: { slug: params.slug, restoreToken: guestRestoreToken() },
@@ -34,7 +34,7 @@ export const Route = createFileRoute('/skins_/$slug')({
       })
     }
     // Star/ban totals come from the Go API. Display rule: these are the
-    // SUPERLATIVE currency (badges), never a competing rank — Elo above
+    // SUPERLATIVE currency (badges), never a competing rank - Elo above
     // is the rank. Non-fatal: the dossier must not break when the API is
     // unreachable; the badges just hide.
     let votes: { stars: number; bans: number } | null = null
@@ -55,21 +55,21 @@ export const Route = createFileRoute('/skins_/$slug')({
   head: ({ loaderData }) => ({
     meta: loaderData
       ? [
-          { title: `${loaderData.name} — Skin Battle` },
+          { title: `${loaderData.name} · Skin Battle` },
           {
             name: 'description',
             content: `${loaderData.name} (${loaderData.championName}): community rating, rank, and price facts on Skin Battle.`,
           },
           ...ogMeta({
-            title: `${loaderData.name} — Skin Battle`,
+            title: `${loaderData.name} · Skin Battle`,
             description: loaderData.community
               ? `Rated ${loaderData.community.rating} ± ${loaderData.community.uncertainty} · #${loaderData.community.rank} of ${loaderData.ratedTotal} · ${loaderData.community.battles} battles`
-              : 'Unranked — no battles fought yet. Be the first.',
+              : 'Unranked: no battles fought yet. Be the first.',
             imagePath: `/og/skin/${loaderData.skinId}`,
             path: `/skins/${loaderData.slug}`,
           }),
         ]
-      : [{ title: 'Skin — Skin Battle' }],
+      : [{ title: 'Skin · Skin Battle' }],
   }),
   notFoundComponent: () => (
     <ErrorState
@@ -164,7 +164,7 @@ function SkinPage() {
               </p>
               {!c.calibrated && (
                 <p className="text-sm text-blue2">
-                  Early ranking — needs more votes.
+                  Early ranking: needs more votes.
                 </p>
               )}
             </>
@@ -174,7 +174,7 @@ function SkinPage() {
                 Unranked
               </p>
               <p className="text-sm text-grey1">
-                No battles fought yet — be the first.
+                No battles fought yet. Be the first.
               </p>
             </>
           )}
@@ -257,7 +257,7 @@ function SkinPage() {
                     {state.facts.cost.toLocaleString()} RP
                   </Link>
                   {state.facts.availability === 'Legacy' && (
-                    <span> · Legacy vault — not even buyable anymore</span>
+                    <span> · Legacy vault, not even buyable anymore</span>
                   )}
                 </p>
               )}

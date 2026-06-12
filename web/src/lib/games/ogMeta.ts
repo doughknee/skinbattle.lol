@@ -1,4 +1,4 @@
-// Open Graph / Twitter meta for the games surfaces (client-safe — used in
+// Open Graph / Twitter meta for the games surfaces (client-safe - used in
 // route head() options). Every stable URL points at its purpose-built share
 // card under /og/<card> so links unfurl with a real image instead of nothing.
 //

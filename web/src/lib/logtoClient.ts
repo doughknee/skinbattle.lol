@@ -2,7 +2,7 @@
 //
 // Logto rotates refresh tokens on every use. Two tabs refreshing at the same
 // moment both spend the same single-use refresh token; the loser gets
-// `invalid_grant` and reuse detection can revoke the whole grant — surfacing
+// `invalid_grant` and reuse detection can revoke the whole grant - surfacing
 // to the user as a random logout. A Web Locks API exclusive lock makes one
 // tab refresh while the others wait, and re-reading the persisted token map
 // inside the lock lets the waiters pick up the fresh access token instead of
@@ -35,7 +35,7 @@ export class CrossTabLogtoClient extends LogtoClient {
         return getWithRefresh(resource, organizationId)
       }
       return navigator.locks.request(REFRESH_LOCK, async () => {
-        // Another tab may have refreshed while we waited for the lock — sync
+        // Another tab may have refreshed while we waited for the lock - sync
         // from storage so a still-valid access token is reused rather than
         // re-refreshed.
         await (

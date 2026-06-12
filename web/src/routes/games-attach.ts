@@ -1,7 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router'
 
 // Server-only route: POST /games-attach binds the caller's Logto identity
-// (proved by their API access token) to this device's games record —
+// (proved by their API access token) to this device's games record -
 // attachment, not migration (see lib/games/server/attach.ts). A rejected
 // token writes nothing and returns 401.
 export const Route = createFileRoute('/games-attach')({

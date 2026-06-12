@@ -223,7 +223,7 @@ func (h *handlers) getAwards(w http.ResponseWriter, r *http.Request) {
 }
 
 // voteRequest is the JSON body for POST /api/votes. Stale clients may still
-// send a legacy `vote` field — the decoder drops unknown fields, so it is
+// send a legacy `vote` field - the decoder drops unknown fields, so it is
 // silently ignored rather than rejected.
 type voteRequest struct {
 	SkinID string `json:"skinId"`
@@ -363,7 +363,7 @@ func (h *handlers) getMe(w http.ResponseWriter, r *http.Request) {
 }
 
 // usernamePattern mirrors Logto's username rules (letters, digits, and
-// underscores; no leading digit). The 3–30 length cap is our own.
+// underscores; no leading digit). The 3-30 length cap is our own.
 var usernamePattern = regexp.MustCompile(`^[A-Za-z_][A-Za-z0-9_]{2,29}$`)
 
 // patchMeRequest is the JSON body for PATCH /api/me. Both fields are
@@ -392,7 +392,7 @@ func (h *handlers) patchMe(w http.ResponseWriter, r *http.Request) {
 		trimmed := strings.TrimSpace(*req.Username)
 		if !usernamePattern.MatchString(trimmed) {
 			writeError(w, http.StatusBadRequest,
-				"username must be 3–30 characters of letters, numbers, or underscores, and cannot start with a number")
+				"username must be 3-30 characters of letters, numbers, or underscores, and cannot start with a number")
 			return
 		}
 		req.Username = &trimmed

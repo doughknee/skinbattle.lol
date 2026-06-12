@@ -1,5 +1,5 @@
 // Stable skin URLs (client-safe). Slugs derive from names with the skin ID
-// as the immutable key — Riot occasionally renames skins, so the name part
+// as the immutable key - Riot occasionally renames skins, so the name part
 // is cosmetic and the trailing ID is what resolves. Any slug whose ID
 // matches redirects to the canonical spelling; links never die.
 

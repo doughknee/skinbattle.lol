@@ -1,7 +1,7 @@
 // Public (non-secret) config the browser needs: Logto endpoint/app/resource and
 // the API URL. In production these are injected at RUNTIME by the SSR server into
 // `window.__APP_CONFIG__` (see routes/__root.tsx), so changing an env var +
-// restarting the web container is enough — no rebuild. For local `vite dev` we
+// restarting the web container is enough - no rebuild. For local `vite dev` we
 // fall back to build-time `VITE_*` vars.
 
 export interface PublicConfig {
@@ -30,7 +30,7 @@ function viteFallback(): PublicConfig {
 export function readServerConfig(): PublicConfig {
   // The root loader calls this on client-side navigations too (e.g. a
   // same-route navigate), where server env doesn't exist. Reuse the
-  // runtime-injected config — returning empty strings here would replace the
+  // runtime-injected config - returning empty strings here would replace the
   // Logto client with one pointing at an empty endpoint, flipping the UI to
   // signed-out and breaking sign-in until a full reload.
   if (typeof window !== 'undefined' && window.__APP_CONFIG__) {

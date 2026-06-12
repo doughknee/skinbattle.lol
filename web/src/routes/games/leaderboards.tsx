@@ -1,6 +1,6 @@
 import { createFileRoute, redirect } from '@tanstack/react-router'
 
-// Leaderboards moved under /battle — kept as a redirect so old links keep
+// Leaderboards moved under /battle - kept as a redirect so old links keep
 // working.
 export const Route = createFileRoute('/games/leaderboards')({
   beforeLoad: () => {

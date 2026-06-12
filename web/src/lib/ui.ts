@@ -1,4 +1,4 @@
-// Shared className recipes — the single source of truth for button styles
+// Shared className recipes - the single source of truth for button styles
 // that repeat across pages. Edit here, not at each call site.
 
 const btnBase =

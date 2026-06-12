@@ -1,4 +1,4 @@
-// Skin page engine (server-only): everything one skin's stable URL shows —
+// Skin page engine (server-only): everything one skin's stable URL shows -
 // catalog identity, community rating ± uncertainty with rank (uncertainty
 // is a feature: low-confidence skins get a "needs more votes" flag, not an
 // embarrassment), the committed facts, and the viewer's own take when they
@@ -14,7 +14,7 @@ import { factsFor } from './facts'
 import { skinIdFromSlug, skinSlug } from '../slug'
 
 // Below this many battles the rating is flagged as still calibrating
-// ("Early ranking — needs more votes").
+// ("Early ranking - needs more votes").
 export const CALIBRATED_BATTLES = 10
 
 export async function skinPageState(

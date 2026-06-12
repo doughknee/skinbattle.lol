@@ -7,7 +7,7 @@ export function championDisplayName(championId: string): string {
   return championId.replace(/([a-z])([A-Z])/g, '$1 $2')
 }
 
-// DDragon names the base skin "default" — render it as "Classic <Champion>".
+// DDragon names the base skin "default" - render it as "Classic <Champion>".
 export function displaySkinName(skinName: string, championId: string): string {
   if (skinName.trim().toLowerCase() === 'default') {
     return `Classic ${championDisplayName(championId)}`

@@ -1,6 +1,6 @@
 // Insights: the Skin Drought Index (server-only). "Days since last skin"
 // per champion, derived entirely from the committed facts dataset's release
-// dates + the live catalog — zero community data needed, citable from day
+// dates + the live catalog - zero community data needed, citable from day
 // one (GAMES_ROADMAP, Insights track #1). Skin-drought discourse is a
 // permanent Reddit genre; this page is the link that settles it.
 

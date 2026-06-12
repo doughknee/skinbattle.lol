@@ -17,20 +17,20 @@ import type { PriceCheckState, PriceRoundResult } from '~/lib/games/types'
 
 export const Route = createFileRoute('/battle/price-check')({
   // Data loads BEFORE the route renders (SSR on first visit, prefetched on
-  // navigation) — the page arrives complete, no loading states.
+  // navigation) - the page arrives complete, no loading states.
   loader: () => fetchPriceCheck({ data: { restoreToken: guestRestoreToken() } }),
   head: () => ({
     meta: [
-      { title: 'Price Check — Skin Battle' },
+      { title: 'Price Check · Skin Battle' },
       {
         name: 'description',
         content:
-          'Five League skins a day — guess what each one cost in RP. Legacy relics included.',
+          'Five League skins a day. Guess what each one cost in RP. Legacy relics included.',
       },
       ...ogMeta({
-        title: 'Price Check — Skin Battle',
+        title: 'Price Check · Skin Battle',
         description:
-          'Five League skins a day — guess what each one cost in RP. Legacy relics included.',
+          'Five League skins a day. Guess what each one cost in RP. Legacy relics included.',
         card: 'price-check',
         path: '/battle/price-check',
       }),
@@ -117,16 +117,16 @@ function FeedbackBar({
           className="animate-feedback-pop flex flex-wrap items-baseline justify-center gap-x-2 text-sm md:text-base"
         >
           {last.correct ? (
-            <span className="font-bold text-blue2">{rp(last.actual)} — exact!</span>
+            <span className="font-bold text-blue2">{rp(last.actual)}, exact!</span>
           ) : (
             <span className="text-grey1">
               <b className="text-gold1">{rp(last.actual)}</b>
-              {last.oneOff ? ' — one tier off' : ` — you said ${rp(last.guess)}`}
+              {last.oneOff ? ' (one tier off)' : ` (you said ${rp(last.guess)})`}
             </span>
           )}
           {last.legacy && (
             <span className="text-grey1">
-              · Legacy vault — not even buyable anymore
+              · Legacy vault, not even buyable anymore
             </span>
           )}
         </p>
@@ -164,7 +164,7 @@ function PriceCheckPage() {
       setState(next)
     } catch (err) {
       toast(
-        err instanceof Error ? err.message : "That guess didn't count — try again.",
+        err instanceof Error ? err.message : "That guess didn't count. Try again.",
         'error',
       )
     } finally {
@@ -176,7 +176,7 @@ function PriceCheckPage() {
     if (!state.shareText) return
     try {
       await navigator.clipboard.writeText(state.shareText)
-      toast('Result copied — go flex it!')
+      toast('Result copied. Go flex it!')
     } catch {
       toast("Couldn't copy to clipboard.", 'error')
     }
@@ -213,7 +213,7 @@ function PriceCheckPage() {
         </div>
       </header>
 
-      {/* Splash viewport — fixed aspect so nothing below it ever moves.
+      {/* Splash viewport - fixed aspect so nothing below it ever moves.
           Keyed per skin so each round's art plays one entrance. */}
       <div className="relative aspect-video w-full overflow-hidden bg-hextech-black/60 outline outline-icon/20 -outline-offset-2">
         {shown && (
@@ -238,7 +238,7 @@ function PriceCheckPage() {
 
       <FeedbackBar last={last} finished={finished} />
 
-      {/* Tier buttons — always present at fixed height; disabled once done. */}
+      {/* Tier buttons - always present at fixed height; disabled once done. */}
       <div className="grid grid-cols-3 gap-2 sm:grid-cols-6">
         {state.tiers.map((t) => (
           <button

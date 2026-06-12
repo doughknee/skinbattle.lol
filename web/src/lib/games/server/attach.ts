@@ -1,11 +1,11 @@
 // Guest → account attachment (server-only): the other half of design
 // principle 9. Sign-up has always been "attachment, not migration" in the
-// schema (game_users.logto_sub, merged_into) — this wires it: a signed-in
+// schema (game_users.logto_sub, merged_into) - this wires it: a signed-in
 // visitor's Logto access token proves their identity, and their guest
 // record becomes their account record. Losslessly, or it's a churn landmine.
 //
 // Token validation is strict and standard: RS256 against Logto's JWKS,
-// issuer `${LOGTO_ENDPOINT}/oidc`, audience = the API resource — the same
+// issuer `${LOGTO_ENDPOINT}/oidc`, audience = the API resource - the same
 // access token the SPA already holds for Go-API calls. Any failure rejects;
 // nothing is written on a rejected token.
 
@@ -33,7 +33,7 @@ function jwksFor(endpoint: string): JWTVerifyGetKey {
 }
 
 // Returns the Logto subject for a valid access token, or null. Never throws
-// — a bad token is a 401, not a 500.
+// - a bad token is a 401, not a 500.
 export async function verifyLogtoToken(token: string): Promise<string | null> {
   const endpoint = process.env.LOGTO_ENDPOINT
   const resource = process.env.LOGTO_RESOURCE
@@ -55,7 +55,7 @@ export async function verifyLogtoToken(token: string): Promise<string | null> {
 }
 
 // The ID token (audience = the SPA's app id, same issuer/keys) carries the
-// username claim the access token doesn't. Optional — attachment works
+// username claim the access token doesn't. Optional - attachment works
 // without it; the username just feeds leaderboard display names. The sub
 // must match the access token's: a mismatched pair is treated as no
 // username, never as a different identity.
@@ -84,15 +84,15 @@ export async function verifyLogtoIdToken(
 // ─── attachment & merge ─────────────────────────────────────────────────────
 
 export interface AttachResult {
-  // 'attached'   — this device's record now carries the account
-  // 'merged'     — this device's guest progress was folded into the account
-  // 'already'    — nothing to do (record already carries this account)
+  // 'attached'   - this device's record now carries the account
+  // 'merged'     - this device's guest progress was folded into the account
+  // 'already'    - nothing to do (record already carries this account)
   outcome: 'attached' | 'merged' | 'already'
   guestToken: string
 }
 
 // Recompute a user's personal skin ratings from their (post-merge) raw
-// battle history — the design doc's "recompute personal rating from the
+// battle history - the design doc's "recompute personal rating from the
 // union". Same fixed-K Elo as the live per-pick update, replayed in order.
 function replayPersonalRatings(db: DatabaseSync, userId: string): void {
   const events = db
@@ -195,7 +195,7 @@ function mergeInto(db: DatabaseSync, guestId: string, accountId: string): void {
 
 // Attach the verified Logto subject to this device's record. Called from a
 // request context (reads/sets the guest cookie via ensureUser). `username`
-// (from the verified ID token) refreshes on every call — Logto lets users
+// (from the verified ID token) refreshes on every call - Logto lets users
 // rename, and the leaderboard should follow.
 export function attachSub(
   sub: string,
@@ -204,7 +204,7 @@ export function attachSub(
 ): AttachResult {
   const db = getDb()
   // ensureUser (not peek): a signed-in visitor with no guest record yet
-  // still deserves a row — their plays from here on are attributed to the
+  // still deserves a row - their plays from here on are attributed to the
   // account. This is a write endpoint by definition.
   const { user, token } = ensureUser(db, restoreToken)
 

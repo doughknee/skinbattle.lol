@@ -31,27 +31,27 @@ type Tab = 'mirror' | 'votes' | 'account'
 
 // The profile IS the Mirror (ROUTES.md): the tier list your battles build is
 // the page's centerpiece, with the voting record and account settings as
-// quiet tabs. Guest-capable — guests battle, so guests have a mirror — which
+// quiet tabs. Guest-capable - guests battle, so guests have a mirror - which
 // makes this page itself the sign-up pitch.
 export const Route = createFileRoute('/profile')({
   validateSearch: (s: Record<string, unknown>): { tab?: Tab } =>
     s.tab === 'votes' || s.tab === 'account' ? { tab: s.tab } : {},
-  // The Mirror loads before render (SSR-complete, read-only — viewing mints
+  // The Mirror loads before render (SSR-complete, read-only - viewing mints
   // nothing). Votes/account are auth-only; the page prefetches both payloads
   // in the background once auth resolves, so tab switches are instant.
   loader: () => fetchMirror({ data: { restoreToken: guestRestoreToken() } }),
   head: () => ({
     meta: [
-      { title: 'Your Mirror — Skin Battle' },
+      { title: 'Your Mirror · Skin Battle' },
       {
         name: 'description',
         content:
-          'Your personal League skin tier list, auto-built from your battles — plus your votes and account.',
+          'Your personal League skin tier list, auto-built from your battles, plus your votes and account.',
       },
       ...ogMeta({
-        title: 'The Mirror — Skin Battle',
+        title: 'The Mirror · Skin Battle',
         description:
-          'The personal tier list your battles build — plus your most contrarian takes.',
+          'The personal tier list your battles build, plus your most contrarian takes.',
         card: 'mirror',
         path: '/profile',
       }),
@@ -72,7 +72,7 @@ const tabClass = (active: boolean) =>
       : 'bg-hextech-black/40 text-grey1 outline-icon/30 hover:text-gold1 hover:outline-icon'
   }`
 
-// Inline sign-in gate for the auth-only tabs — the page itself stays open to
+// Inline sign-in gate for the auth-only tabs - the page itself stays open to
 // guests (the Mirror works without an account).
 function SignInGate({ message }: { message: string }) {
   const { login } = useAuth()
@@ -152,7 +152,7 @@ function VotesTab({
 
   if (!isLoading && !isAuthenticated)
     return (
-      <SignInGate message="Stars and bans belong to your account — sign in to see your voting record." />
+      <SignInGate message="Stars and bans belong to your account. Sign in to see your voting record." />
     )
   if (error)
     return <ErrorState title="Couldn't load your votes" message={error} />
@@ -161,7 +161,7 @@ function VotesTab({
   const starred = skins.filter((skin) => skin.user_star)
   const xed = skins.filter((skin) => skin.user_x)
 
-  // Only sections with content render — the stat strip already accounts for
+  // Only sections with content render - the stat strip already accounts for
   // both buckets, so empty grids would just repeat "0".
   const voteSections = [
     { title: 'Starred Skins', skins: starred },
@@ -204,7 +204,7 @@ function VotesTab({
 // ─── account tab ────────────────────────────────────────────────────────────
 
 // Renders the prefetched account payload; `settled` flips once the background
-// fetch finished (even on failure — the settings card just shows less).
+// fetch finished (even on failure - the settings card just shows less).
 function AccountTab({
   me,
   settled,
@@ -218,7 +218,7 @@ function AccountTab({
 
   if (!isLoading && !isAuthenticated)
     return (
-      <SignInGate message="Sign in to manage your account — and to attach your guest battles and streaks to a name that holds leaderboard spots." />
+      <SignInGate message="Sign in to manage your account, and to attach your guest battles and streaks to a name that holds leaderboard spots." />
     )
   if (isLoading || !settled) return <AccountTabSkeleton />
 

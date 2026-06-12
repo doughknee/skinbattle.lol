@@ -12,7 +12,7 @@ import {
 import type { DailyHubState, HubGame } from '~/lib/games/types'
 
 // The daily-challenges strip that lives below the Quick Battle arena on
-// /battle — the old games hub, compacted. Battle is the door; this is the
+// /battle - the old games hub, compacted. Battle is the door; this is the
 // "also today" shelf: three dailies, fresh patch skins, leaderboards.
 
 const cardShell =
@@ -34,7 +34,7 @@ const GAME_CARDS: Record<
   splashdle: {
     to: '/battle/splashdle',
     name: 'Splashdle',
-    blurb: 'Name the skin from a sliver of its splash — six guesses.',
+    blurb: 'Name the skin from a sliver of its splash. Six guesses.',
     icon: faImage,
     wonLabel: (g) => `Solved ${g.guessesUsed}/${g.maxGuesses}`,
     lostLabel: 'Out of guesses',
@@ -42,7 +42,7 @@ const GAME_CARDS: Record<
   'price-check': {
     to: '/battle/price-check',
     name: 'Price Check',
-    blurb: 'Five skins — guess what each one cost in RP.',
+    blurb: 'Five skins. Guess what each one cost in RP.',
     icon: faCoins,
     wonLabel: (g) => `Scored ${g.score ?? 0}/${g.maxGuesses}`,
     lostLabel: 'Better luck tomorrow',
@@ -148,13 +148,13 @@ export default function TodayStrip({ hub }: { hub: DailyHubState }) {
             New this patch
           </h2>
           <p className="mb-5 text-grey1">
-            Fresh off the patch notes — unranked until you battle them.
+            Fresh off the patch notes, unranked until you battle them.
           </p>
           <ul className="stagger flex flex-wrap gap-2">
             {hub.newSkins.map((s) => (
               <li
                 key={s.skinId}
-                title={`${s.name} — ${s.championName}`}
+                title={`${s.name} · ${s.championName}`}
                 className="relative w-36 overflow-hidden bg-hextech-black/60 outline outline-icon/20 -outline-offset-1 transition duration-150 hover:outline-gold2"
               >
                 <Link to="/skins/$slug" params={{ slug: s.slug }}>
@@ -188,7 +188,7 @@ export default function TodayStrip({ hub }: { hub: DailyHubState }) {
               Leaderboards
             </h3>
             <p className="text-sm text-grey1">
-              Streaks, fastest daily solves, and battle volume — the named
+              Streaks, fastest daily solves, and battle volume: the named
               players.
             </p>
           </div>

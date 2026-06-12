@@ -20,7 +20,7 @@ export default function NotFound() {
         Lost in the jungle
       </h1>
       <p className="mb-8 max-w-md text-grey1">
-        This page doesn't exist — it may have moved, or the link was mistyped.
+        This page doesn't exist. It may have moved, or the link was mistyped.
         Ward up and head somewhere familiar.
       </p>
       <div className="flex flex-wrap items-center justify-center gap-3">

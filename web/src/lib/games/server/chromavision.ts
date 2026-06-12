@@ -1,11 +1,11 @@
 // Chroma Vision engine (server-only): name the skin from its colors alone.
 // The splash is rendered as a coarse color mosaic that sharpens with each
-// miss — level 0 is pure color composition (5×3 blocks), level 5 is a
+// miss - level 0 is pure color composition (5×3 blocks), level 5 is a
 // 44-column pixelation where the silhouette finally emerges. Hard mode by
 // design (the roadmap's rotation slot).
 //
 // Same contracts as Splashdle: server-authoritative state (the answer and
-// its splash URL never reach the client mid-game — mosaics ship as data
+// its splash URL never reach the client mid-game - mosaics ship as data
 // URLs), the daily puzzle is seeded from the date and frozen in
 // daily_puzzles, reads never write.
 
@@ -114,7 +114,7 @@ const clamp = (v: number, lo: number, hi: number) =>
 
 // Mosaic for a level: squash the splash down to cols×rows (averaging each
 // region into one color), then blow it back up with nearest-neighbor so the
-// blocks stay crisp. PNG, not JPEG — hard block edges artifact badly.
+// blocks stay crisp. PNG, not JPEG - hard block edges artifact badly.
 // Cached on disk (6 mosaics per day, total).
 async function mosaicDataUrl(
   db: DatabaseSync,
@@ -276,7 +276,7 @@ export async function submitChromaGuess(
     result = { status: 'in_progress', guesses: [] }
   }
   if (result.status !== 'in_progress') {
-    throw new Error("Today's Chroma Vision is already finished — come back tomorrow!")
+    throw new Error("Today's Chroma Vision is already finished. Come back tomorrow!")
   }
   if (result.guesses.length >= MAX_GUESSES) {
     throw new Error('No guesses left.')
@@ -285,7 +285,7 @@ export async function submitChromaGuess(
     throw new Error('You already guessed that skin.')
   }
   const guessed = getCatalogSkin(db, skinId)
-  if (!guessed) throw new Error('Unknown skin — pick one from the suggestions.')
+  if (!guessed) throw new Error('Unknown skin. Pick one from the suggestions.')
 
   const answer = getCatalogSkin(db, puzzle.skinId)
   if (!answer) throw new Error(`puzzle skin ${puzzle.skinId} missing from catalog`)
@@ -362,7 +362,7 @@ export function chromaHubInfo(
 }
 
 // Data for the OG share card: today's puzzle number plus the level-0 mosaic
-// — 15 color blocks reveal essentially nothing, spoiler-free by definition.
+// - 15 color blocks reveal essentially nothing, spoiler-free by definition.
 export async function chromaOgInfo(): Promise<{
   puzzleNumber: number
   mosaic: string

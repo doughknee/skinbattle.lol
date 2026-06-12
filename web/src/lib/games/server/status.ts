@@ -1,10 +1,10 @@
 // Games freshness status (server-only): one JSON surface an external
 // uptime monitor can watch so staleness never goes silent (GAMES_ROADMAP,
-// "patch-cadence pipeline" step 6 — pipeline failure pings us instead of
+// "patch-cadence pipeline" step 6 - pipeline failure pings us instead of
 // silently rotting). Returns 503 when something is critically stale, which
 // is exactly what ping services alert on.
 //
-// NOT a container healthcheck — a stale catalog must not restart-loop the
+// NOT a container healthcheck - a stale catalog must not restart-loop the
 // app. Point an external monitor (UptimeRobot et al.) at /games-status.
 
 import { getDb } from './db'
@@ -16,7 +16,7 @@ const CATALOG_STALE_MS = 26 * 60 * 60 * 1000
 // Patches land ~biweekly; a snapshot older than this means the refresh
 // workflow has been failing (or its PRs aren't getting merged).
 const FACTS_STALE_MS = 45 * 24 * 60 * 60 * 1000
-// The auto-refit triggers at 500 fresh events — far past that means the
+// The auto-refit triggers at 500 fresh events - far past that means the
 // hook is broken.
 const REFIT_OVERDUE_EVENTS = 2000
 

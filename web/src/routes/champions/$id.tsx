@@ -17,7 +17,7 @@ export const Route = createFileRoute('/champions/$id')({
     // Base (public) champion data. User-vote columns are layered in
     // client-side once we have a Logto access token.
     const champion = await api.champion(params.id)
-    // Battle-Elo ranks for the wardrobe — display rule: Elo is THE rank;
+    // Battle-Elo ranks for the wardrobe - display rule: Elo is THE rank;
     // star/ban/vote counts are badges and sorts, never a competing rank.
     // Non-fatal: the page works without the games layer; badges just hide.
     let elo: Record<string, { rank: number; rating: number }> = {}
@@ -31,7 +31,7 @@ export const Route = createFileRoute('/champions/$id')({
         )
       }
     } catch {
-      /* unrated wardrobe — no badges */
+      /* unrated wardrobe - no badges */
     }
     return { champion, elo }
   },
@@ -39,7 +39,7 @@ export const Route = createFileRoute('/champions/$id')({
     meta: [
       {
         title: loaderData
-          ? `${championDisplayName(loaderData.champion.id)} — Skin Battle`
+          ? `${championDisplayName(loaderData.champion.id)} · Skin Battle`
           : 'Skin Battle',
       },
     ],
@@ -74,7 +74,7 @@ function ChampionPage() {
   ]
 
   // The rank badge is the battle-Elo rank within this wardrobe (from the
-  // champion ranking slice). Skins nobody has battled yet get no badge —
+  // champion ranking slice). Skins nobody has battled yet get no badge -
   // ranking zeroes reads as broken.
   const ranks = useMemo(
     () =>

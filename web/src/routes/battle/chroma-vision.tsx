@@ -21,22 +21,22 @@ import type { ChromaVisionState, GuessOption } from '~/lib/games/types'
 
 export const Route = createFileRoute('/battle/chroma-vision')({
   // Data loads BEFORE the route renders (SSR on first visit, prefetched on
-  // navigation), and the mosaic ships inside the payload as a data URL —
+  // navigation), and the mosaic ships inside the payload as a data URL -
   // the page arrives complete in one paint, no loading states.
   loader: () =>
     fetchChromaVision({ data: { restoreToken: guestRestoreToken() } }),
   head: () => ({
     meta: [
-      { title: 'Chroma Vision — Skin Battle' },
+      { title: 'Chroma Vision · Skin Battle' },
       {
         name: 'description',
         content:
-          'Name the League skin from its colors alone. The mosaic sharpens with every miss — six guesses, hard mode.',
+          'Name the League skin from its colors alone. The mosaic sharpens with every miss. Six guesses, hard mode.',
       },
       ...ogMeta({
-        title: 'Chroma Vision — Skin Battle',
+        title: 'Chroma Vision · Skin Battle',
         description:
-          'Name the League skin from its colors alone. The mosaic sharpens with every miss — six guesses, hard mode.',
+          'Name the League skin from its colors alone. The mosaic sharpens with every miss. Six guesses, hard mode.',
         card: 'chroma-vision',
         path: '/battle/chroma-vision',
       }),
@@ -62,7 +62,7 @@ function ChromaVisionPage() {
   const shakeTimer = useRef<number | undefined>(undefined)
   useEffect(() => () => window.clearTimeout(shakeTimer.current), [])
 
-  // What the board looked like on the page's first paint — that content
+  // What the board looked like on the page's first paint - that content
   // renders settled; only post-load guesses play game animations.
   const loadedWith = useRef({
     guessCount: initial.guesses.length,
@@ -179,7 +179,7 @@ function ChromaVisionPage() {
                   icon={faPalette}
                   className="mr-1.5 h-3 text-gold2"
                 />
-                It's all in the palette. Wrong guesses sharpen the mosaic — a
+                It's all in the palette. Wrong guesses sharpen the mosaic: a
                 gold square means right champion, wrong skin.
               </span>
               {state.streak.current > 0 && (
