@@ -119,8 +119,8 @@ function PodiumCard({ row }: { row: RankingRow }) {
     <Link
       to="/skins/$slug"
       params={{ slug: row.slug }}
-      className={`group relative block overflow-hidden bg-hextech-black/60 outline -outline-offset-1 transition duration-200 hover:outline-gold2 ${
-        first ? 'outline-gold2/60 sm:col-span-2' : 'outline-icon/25'
+      className={`card-sheen-host group relative block overflow-hidden bg-hextech-black/60 transition duration-200 hover:shadow-glow ${
+        first ? 'sm:col-span-2' : ''
       }`}
     >
       <img
@@ -128,11 +128,13 @@ function PodiumCard({ row }: { row: RankingRow }) {
         alt={row.name}
         loading={first ? 'eager' : 'lazy'}
         decoding="async"
-        className={`w-full object-cover object-[50%_25%] transition duration-300 group-hover:scale-[1.02] ${
+        className={`w-full object-cover object-[50%_25%] transition duration-300 ease-out group-hover:scale-[1.03] group-hover:brightness-110 group-hover:saturate-[1.06] ${
           first ? 'aspect-[16/10] sm:aspect-[21/9]' : 'aspect-[16/10] sm:aspect-video'
         }`}
       />
       <div className="absolute inset-0 bg-gradient-to-t from-hextech-black/95 via-hextech-black/25 to-transparent" />
+      {/* The light rake — over the splash + gradient, under the badge/title/frame. */}
+      <span aria-hidden className="card-sheen" />
       <span
         className={`absolute left-3 top-3 flex items-center gap-1.5 px-2.5 py-1 font-serif text-sm font-bold outline -outline-offset-1 ${
           first
@@ -176,6 +178,15 @@ function PodiumCard({ row }: { row: RankingRow }) {
           </div>
         </div>
       </div>
+      {/* Frame on its own overlay above the splash, so the hover zoom can't
+          paint over it (an inset outline on the card itself would get eaten).
+          #1 keeps its standing gold edge; all of them ignite to full gold. */}
+      <span
+        aria-hidden
+        className={`pointer-events-none absolute inset-0 z-10 outline -outline-offset-1 transition duration-200 group-hover:outline-gold2 ${
+          first ? 'outline-gold2/60' : 'outline-icon/25'
+        }`}
+      />
     </Link>
   )
 }
@@ -197,7 +208,7 @@ function MidRow({ row }: { row: RankingRow }) {
           alt=""
           loading="lazy"
           decoding="async"
-          className="aspect-video w-24 shrink-0 object-cover object-[50%_20%] outline outline-icon/20 -outline-offset-1 sm:w-36"
+          className="aspect-video w-24 shrink-0 object-cover object-[50%_20%] outline outline-icon/20 -outline-offset-1 transition duration-150 group-hover:outline-gold2/60 group-hover:brightness-110 sm:w-36"
         />
         <div className="min-w-0 flex-1">
           <p className="truncate font-serif font-bold text-gold1 transition duration-150 group-hover:text-gold2 sm:text-lg">
@@ -237,7 +248,7 @@ function CompactRow({ row }: { row: RankingRow }) {
           alt=""
           loading="lazy"
           decoding="async"
-          className="aspect-video w-16 shrink-0 object-cover object-[50%_20%] outline outline-icon/15 -outline-offset-1 sm:w-20"
+          className="aspect-video w-16 shrink-0 object-cover object-[50%_20%] outline outline-icon/15 -outline-offset-1 transition duration-150 group-hover:outline-gold2/50 group-hover:brightness-105 sm:w-20"
         />
         <div className="min-w-0 flex-1">
           <p className="truncate text-sm font-bold text-gold1 transition duration-150 group-hover:text-gold2">
