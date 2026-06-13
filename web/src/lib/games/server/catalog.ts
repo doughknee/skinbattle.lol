@@ -14,6 +14,11 @@ const CDRAGON =
   'https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default'
 // Re-check the versions endpoint at most this often while a catalog exists.
 const SYNC_INTERVAL_MS = 12 * 60 * 60 * 1000
+// Forces a one-time re-import when the INGEST changes without a League patch
+// bump (e.g. the Data Dragon → Community Dragon art switch). Without it a
+// catalog already at the current patch - on a persistent volume - never
+// rebuilds. Bump whenever the stored art/columns must be regenerated.
+const CATALOG_REV = 'cdragon-1'
 
 export interface CatalogSkin {
   id: string
@@ -81,11 +86,13 @@ export async function ensureCatalog(db: DatabaseSync): Promise<string> {
   const version = getMeta(db, 'dd_version')
   const syncedAt = getMeta(db, 'synced_at')
   const populated = skinCount(db) > 0
+  const revCurrent = getMeta(db, 'catalog_rev') === CATALOG_REV
 
   if (
     populated &&
     version &&
     syncedAt &&
+    revCurrent &&
     Date.now() - Date.parse(syncedAt) < SYNC_INTERVAL_MS
   ) {
     return version
@@ -96,7 +103,7 @@ export async function ensureCatalog(db: DatabaseSync): Promise<string> {
     const latest = versions[0]
     if (!latest) throw new Error('empty versions list')
 
-    if (latest !== version || !populated) {
+    if (latest !== version || !populated || !revCurrent) {
       const champData = (await ddJson(
         `${DD}/cdn/${latest}/data/en_US/champion.json`,
       )) as { data: Record<string, DDragonChampion> }
@@ -106,6 +113,7 @@ export async function ensureCatalog(db: DatabaseSync): Promise<string> {
       >
       replaceCatalog(db, champData.data, skins)
       setMeta(db, 'dd_version', latest)
+      setMeta(db, 'catalog_rev', CATALOG_REV)
     }
     setMeta(db, 'synced_at', new Date().toISOString())
     return latest

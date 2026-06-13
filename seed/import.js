@@ -22,6 +22,10 @@ import { Pool } from 'pg';
 const VERSIONS_URL = 'https://ddragon.leagueoflegends.com/api/versions.json';
 const CDRAGON_BASE =
   'https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default';
+// Forces a one-time re-import when the ingest changes without a League patch
+// bump (e.g. the Data Dragon → Community Dragon art switch). Keep in sync with
+// api/internal/ddragon (catalogRev). Bump to rebuild stored art.
+const CATALOG_REV = 'cdragon-1';
 
 if (!process.env.DATABASE_URL) {
   console.error('DATABASE_URL is required');
@@ -151,11 +155,12 @@ async function main() {
 
   const version = await resolveVersion();
   const lastVersion = await getMeta('ddragon_version');
+  const lastRev = await getMeta('catalog_rev');
   const count = await championCount();
 
-  if (count > 0 && lastVersion === version) {
+  if (count > 0 && lastVersion === version && lastRev === CATALOG_REV) {
     console.log(
-      `already at Data Dragon ${version} (${count} champions); nothing to sync.`,
+      `already at Data Dragon ${version} rev ${CATALOG_REV} (${count} champions); nothing to sync.`,
     );
     return;
   }
@@ -193,7 +198,8 @@ async function main() {
   }
 
   await setMeta('ddragon_version', version);
-  console.log(`Recorded patch ${version}.`);
+  await setMeta('catalog_rev', CATALOG_REV);
+  console.log(`Recorded patch ${version} rev ${CATALOG_REV}.`);
 }
 
 main()

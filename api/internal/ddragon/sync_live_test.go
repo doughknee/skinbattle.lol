@@ -47,6 +47,18 @@ func TestSyncVoteIntegrityLive(t *testing.T) {
 		_, _ = pool.Exec(ctx, `DELETE FROM users WHERE email='zz_cdragon@example.com'`)
 	})
 
+	// Reproduce the production skip-guard scenario: a catalog already stamped
+	// at the current patch but under the OLD ingest (stale/absent catalog_rev).
+	// The version guard alone would skip; the rev guard must force a re-import.
+	version, err := resolveVersion(ctx, "")
+	if err != nil {
+		t.Fatalf("resolve version: %v", err)
+	}
+	mustExec(ctx, t, pool, `INSERT INTO seed_meta (key, value) VALUES ('ddragon_version', $1)
+		ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value`, version)
+	mustExec(ctx, t, pool, `INSERT INTO seed_meta (key, value) VALUES ('catalog_rev', 'stale')
+		ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value`)
+
 	var before int
 	if err := pool.QueryRow(ctx, `SELECT count(*) FROM user_skin_votes`).Scan(&before); err != nil {
 		t.Fatalf("count before: %v", err)
@@ -82,7 +94,17 @@ func TestSyncVoteIntegrityLive(t *testing.T) {
 	if !strings.Contains(splash, "communitydragon.org") {
 		t.Errorf("splash_url not repointed to Community Dragon: %s", splash)
 	}
-	t.Logf("OK: %d votes preserved; splash now %s", after, splash)
+
+	// The stale catalog_rev must have advanced - proof the rev guard forced the
+	// re-import despite the patch version being unchanged.
+	var rev string
+	if err := pool.QueryRow(ctx, `SELECT value FROM seed_meta WHERE key='catalog_rev'`).Scan(&rev); err != nil {
+		t.Fatalf("catalog_rev not recorded: %v", err)
+	}
+	if rev != catalogRev {
+		t.Errorf("catalog_rev = %q, want %q", rev, catalogRev)
+	}
+	t.Logf("OK: %d votes preserved; splash now %s; catalog_rev=%s", after, splash, rev)
 }
 
 func mustExec(ctx context.Context, t *testing.T, pool *pgxpool.Pool, sql string, args ...any) {
