@@ -7,6 +7,7 @@ import {
   faMagnifyingGlass,
 } from '@fortawesome/free-solid-svg-icons'
 import AccountButton from './AccountButton'
+import MobileNav from './MobileNav'
 import QuotaChip from './QuotaChip'
 import { CrownMark, Wordmark } from './Brand'
 import { openCommandPalette } from './CommandPalette'
@@ -181,8 +182,9 @@ export default function NavBar() {
           <Wordmark className="hidden text-lg md:inline" />
         </Link>
 
-        {/* Primary nav - Home lives on the logo */}
-        <div className="flex h-full min-w-0 items-center">
+        {/* Primary nav - Home lives on the logo. Desktop only; phones get the
+            full-screen MobileNav takeover (hover dropdowns don't tap open). */}
+        <div className="hidden h-full min-w-0 items-center md:flex">
           {SITE_SECTIONS.map((s) => (
             <NavItem key={s.to} section={s} />
           ))}
@@ -205,6 +207,7 @@ export default function NavBar() {
           </button>
           <QuotaChip />
           <AccountButton />
+          <MobileNav />
         </div>
       </div>
     </nav>

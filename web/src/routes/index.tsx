@@ -639,7 +639,7 @@ function MostLoved({
           icon={faStar}
           title="No stars awarded yet"
           message={`The throne is empty. Be the first to crown a favorite: every player gets ${MAX_STARS} stars to spend.`}
-          cta={{ to: '/skins', label: 'Start Voting' }}
+          cta={{ to: '/champions', label: 'Start Voting' }}
           compact
         />
       ) : (
@@ -770,7 +770,7 @@ function FinalCta() {
               className="h-4 transition-transform duration-150 group-hover:translate-x-1"
             />
           </Link>
-          <Link to="/skins" className={btnSecondary}>
+          <Link to="/champions" className={btnSecondary}>
             Browse the catalog
           </Link>
         </div>

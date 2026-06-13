@@ -6,8 +6,9 @@
 // Nothing should hand-roll its own list of site links.
 //
 // The model (see ROUTES.md): three doors, three verbs.
-//   Battle = do. Skins = find. Rankings = see. Plus You behind the account
-//   button. Leaf content (champion/skin pages, slices) never appears in nav.
+//   Battle = do. Champions = find. Rankings = see. Plus You behind the account
+//   button. Leaf content (champion/skin detail pages, slices) never appears in
+//   nav.
 
 import {
   faChartLine,
@@ -25,7 +26,6 @@ import {
   faRocket,
   faScaleUnbalanced,
   faShieldHalved,
-  faShirt,
   faShuffle,
   faTrophy,
   faUser,
@@ -188,27 +188,15 @@ export const SITE_SECTIONS: SiteSection[] = [
     ],
   },
   {
-    to: '/skins',
-    label: 'Skins',
-    blurb: 'The catalog: every skin, every champion, ready to star or ban.',
-    icon: faShirt,
-    search: 'catalog browse splash art collection',
-    children: [
-      {
-        to: '/skins',
-        label: 'All Skins',
-        blurb: 'The full catalog. Search, sort, and spend your stars and bans.',
-        icon: faShirt,
-        search: 'catalog browse every skin',
-      },
-      {
-        to: '/champions',
-        label: 'By Champion',
-        blurb: 'Every champion and their wardrobe. Star and ban skin by skin.',
-        icon: faUsers,
-        search: 'roster champions browse vote wardrobe',
-      },
-    ],
+    // The catalog door. Browsing by champion is the most natural axis for a
+    // League audience; dive into any wardrobe to star or ban skin by skin. A
+    // plain link, no dropdown - there's one way in, the roster.
+    to: '/champions',
+    label: 'Champions',
+    blurb: 'Every champion and their wardrobe. Star and ban skin by skin.',
+    icon: faUsers,
+    search:
+      'catalog browse champions roster splash art collection wardrobe skins',
   },
 ]
 

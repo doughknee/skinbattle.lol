@@ -113,15 +113,6 @@ export const fetchRankingsIndex = createServerFn({ method: 'GET' }).handler(
   },
 )
 
-// The catalog's Elo standing (skinId, sitewide rank, rating), for the skins
-// page's "Battle Rating" sort. Anonymous derived data, like the slices.
-export const fetchCatalogElo = createServerFn({ method: 'GET' }).handler(
-  async (): Promise<{ skinId: string; rating: number; rank: number }[]> => {
-    const { catalogEloIndex } = await import('./server/rankings')
-    return catalogEloIndex()
-  },
-)
-
 // Skin pages are read-only (peekUser - viewing never mints a user). Returns
 // null for unknown slugs/ids; the route turns that into a 404.
 export const fetchSkinPage = createServerFn({ method: 'POST' })
