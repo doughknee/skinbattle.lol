@@ -188,7 +188,7 @@ function BattleCard({
   const gated = entrance === 'gate' ? 'opacity-0' : ''
   return (
     <div
-      className={`battle-card group relative aspect-video w-full overflow-hidden bg-hextech-black/60 transition duration-200 hover:shadow-glow ${entranceAnim} ${verdictAnim}`}
+      className={`card-sheen-host group relative aspect-video w-full overflow-hidden bg-hextech-black/60 transition duration-200 hover:shadow-glow ${entranceAnim} ${verdictAnim}`}
     >
       <button
         onClick={() => onPick(skin.skinId)}
@@ -208,7 +208,7 @@ function BattleCard({
             "legendary skin catching the light" beat. Skipped behind the gate
             so the shimmer slab stays clean. Clipped by the card's overflow. */}
         {entrance !== 'gate' && (
-          <span aria-hidden className="battle-sheen" />
+          <span aria-hidden className="card-sheen" />
         )}
         <span
           className={`pointer-events-none absolute inset-x-0 bottom-0 flex flex-col bg-gradient-to-t from-hextech-black/95 via-hextech-black/60 to-transparent px-4 pb-3 pt-10 ${gated}`}
