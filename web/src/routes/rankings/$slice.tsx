@@ -15,6 +15,7 @@ import ErrorState from '~/components/ErrorState'
 import { btnChip, btnPrimarySm, btnSecondarySm } from '~/lib/ui'
 import { fetchRankings, fetchRankingsIndex } from '~/lib/games/serverFns'
 import { ogMeta } from '~/lib/games/ogMeta'
+import { createSearcher } from '~/lib/search'
 import type { RankingRow, RankingsIndex, SliceLink } from '~/lib/games/types'
 
 export const Route = createFileRoute('/rankings/$slice')({
@@ -365,11 +366,11 @@ function SliceBar({
 
   const open = SLICE_GROUPS.find((g) => g.key === openKey)
   const q = query.trim().toLowerCase()
-  const links = open
-    ? q
-      ? index[open.key].filter((l) => l.label.toLowerCase().includes(q))
-      : index[open.key]
-    : []
+  const searcher = useMemo(
+    () => (open ? createSearcher(index[open.key], { keys: ['label'] }) : null),
+    [index, open],
+  )
+  const links = searcher ? searcher.search(query) : []
   const capped = open ? open.searchable && !q && links.length > TRAY_CAP : false
   const shown = capped ? links.slice(0, TRAY_CAP) : links
 

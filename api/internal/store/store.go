@@ -133,11 +133,10 @@ func (s *Store) Champions(ctx context.Context) ([]Champion, error) {
 		return nil, fmt.Errorf("iterate champions: %w", err)
 	}
 
-	// Load all skins. splash_ok filters phantom chroma entries whose splash
-	// art 403s on the CDN (hidden by the post-sync sweep, never deleted).
+	// Load all skins.
 	skinRows, err := s.pool.Query(ctx,
 		`SELECT id, champion_id, num, name, chromas, splash_url, total_stars, total_x
-		 FROM skins WHERE splash_ok ORDER BY champion_id, num`,
+		 FROM skins ORDER BY champion_id, num`,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("query skins: %w", err)
@@ -183,7 +182,7 @@ func (s *Store) Champion(ctx context.Context, id string, userID int64) (*Champio
 			       usv.star, usv.x
 			FROM skins sk
 			LEFT JOIN user_skin_votes usv ON usv.skin_id = sk.id AND usv.user_id = $2
-			WHERE sk.champion_id = $1 AND sk.splash_ok
+			WHERE sk.champion_id = $1
 			ORDER BY sk.num`,
 			c.ID, userID,
 		)
@@ -207,7 +206,7 @@ func (s *Store) Champion(ctx context.Context, id string, userID int64) (*Champio
 			SELECT id, champion_id, num, name, chromas, splash_url,
 			       total_stars, total_x
 			FROM skins
-			WHERE champion_id = $1 AND splash_ok
+			WHERE champion_id = $1
 			ORDER BY num`,
 			c.ID,
 		)
@@ -236,7 +235,7 @@ func (s *Store) Skins(ctx context.Context) ([]Skin, error) {
 	rows, err := s.pool.Query(ctx,
 		`SELECT id, champion_id, num, name, chromas, splash_url,
 		        total_stars, total_x
-		 FROM skins WHERE splash_ok ORDER BY champion_id, num`,
+		 FROM skins ORDER BY champion_id, num`,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("query skins: %w", err)
@@ -276,7 +275,6 @@ func (s *Store) TopSkinsBy(ctx context.Context, column string, limit int, userID
 			       usv.star, usv.x
 			FROM skins sk
 			LEFT JOIN user_skin_votes usv ON usv.skin_id = sk.id AND usv.user_id = $2
-			WHERE sk.splash_ok
 			ORDER BY sk.%s DESC
 			LIMIT $1`, column)
 		rows, err = s.pool.Query(ctx, q, limit, userID)
@@ -285,7 +283,6 @@ func (s *Store) TopSkinsBy(ctx context.Context, column string, limit int, userID
 			SELECT id, champion_id, num, name, chromas, splash_url,
 			       total_stars, total_x
 			FROM skins
-			WHERE splash_ok
 			ORDER BY %s DESC
 			LIMIT $1`, column)
 		rows, err = s.pool.Query(ctx, q, limit)
@@ -335,7 +332,7 @@ func (s *Store) SkinsByIDs(ctx context.Context, ids []string, userID int64) ([]S
 			       usv.star, usv.x
 			FROM skins sk
 			LEFT JOIN user_skin_votes usv ON usv.skin_id = sk.id AND usv.user_id = $2
-			WHERE sk.id = ANY($1) AND sk.splash_ok`,
+			WHERE sk.id = ANY($1)`,
 			ids, userID,
 		)
 	} else {
@@ -343,7 +340,7 @@ func (s *Store) SkinsByIDs(ctx context.Context, ids []string, userID int64) ([]S
 			SELECT id, champion_id, num, name, chromas, splash_url,
 			       total_stars, total_x
 			FROM skins
-			WHERE id = ANY($1) AND splash_ok`,
+			WHERE id = ANY($1)`,
 			ids,
 		)
 	}
@@ -494,9 +491,6 @@ func (s *Store) UserStats(ctx context.Context, userID int64) (UserStats, error) 
 }
 
 // UserVotes returns skins the user has starred or banned.
-// Deliberately NOT filtered on splash_ok: a star or X held on a since-hidden
-// phantom skin still counts against the star/X budget, so the user must
-// be able to see it (in My Picks) to release it.
 func (s *Store) UserVotes(ctx context.Context, userID int64) ([]Skin, error) {
 	rows, err := s.pool.Query(ctx, `
 		SELECT sk.id, sk.champion_id, sk.num, sk.name, sk.chromas, sk.splash_url,

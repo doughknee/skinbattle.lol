@@ -220,7 +220,7 @@ function topSkin(): { name: string; splashUrl: string } | null {
   const row = db
     .prepare(
       `SELECT c.name AS name, c.splash_url AS splashUrl
-       FROM skin_ratings r JOIN catalog_skins c ON c.id = r.skin_id AND c.splash_ok = 1
+       FROM skin_ratings r JOIN catalog_skins c ON c.id = r.skin_id
        WHERE r.battles >= 5 ORDER BY r.rating DESC LIMIT 1`,
     )
     .get() as { name: string; splashUrl: string } | undefined

@@ -13,6 +13,7 @@ import ErrorState from '~/components/ErrorState'
 import PageHeader from '~/components/PageHeader'
 import { RouteSkeleton } from '~/components/Skeletons'
 import { championDisplayName } from '~/lib/skinName'
+import { createSearcher } from '~/lib/search'
 import type { Champion } from '~/lib/types'
 
 const sortOptions = [
@@ -137,16 +138,18 @@ function ChampionsPage() {
     [champions],
   )
 
+  // Index the display name (a derived value), id and title.
+  const searcher = useMemo(
+    () =>
+      createSearcher(
+        champions.map((c) => ({ c, name: championDisplayName(c.id), id: c.id, title: c.title })),
+        { keys: ['name', 'id', 'title'] },
+      ),
+    [champions],
+  )
+
   const visible = useMemo(() => {
-    const q = query.trim().toLowerCase()
-    const filtered = q
-      ? champions.filter(
-          (c) =>
-            championDisplayName(c.id).toLowerCase().includes(q) ||
-            c.id.toLowerCase().includes(q) ||
-            c.title.toLowerCase().includes(q),
-        )
-      : [...champions]
+    const filtered = searcher.search(query).map((r) => r.c)
     switch (sortBy) {
       case 'za':
         filtered.sort((a, b) => b.id.localeCompare(a.id))
@@ -169,7 +172,7 @@ function ChampionsPage() {
         filtered.sort((a, b) => a.id.localeCompare(b.id))
     }
     return filtered
-  }, [champions, query, sortBy])
+  }, [searcher, query, sortBy])
 
   // First champion per letter in the current order - the jump-rail targets.
   // Only meaningful while the roster is alphabetical.

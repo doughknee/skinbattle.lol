@@ -62,7 +62,7 @@ async function getOrCreatePuzzle(
   const assetVersion = await ensureCatalog(db)
   const pool = db
     .prepare(
-      'SELECT id FROM catalog_skins WHERE splash_ok = 1 ORDER BY champion_id, num',
+      'SELECT id FROM catalog_skins WHERE num != 0 ORDER BY champion_id, num',
     )
     .all() as unknown as { id: string }[]
   if (pool.length === 0) throw new Error('skin catalog is empty')
@@ -404,6 +404,7 @@ export async function splashdleOptions(): Promise<GuessOption[]> {
     name: s.name,
     championId: s.championId,
     championName: s.championName,
+    tileUrl: s.tileUrl,
   }))
 }
 
