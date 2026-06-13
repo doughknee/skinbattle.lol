@@ -19,6 +19,7 @@ import { fetchHome } from '~/lib/games/serverFns'
 import { SITE_SECTIONS } from '~/lib/siteMap'
 import { btnPrimary, btnSecondary, btnSecondarySm } from '~/lib/ui'
 import { userStatsStore, MAX_STARS, MAX_X } from '~/lib/userStatsStore'
+import { captureSkinVote } from '~/lib/analytics'
 import type { HomeSlide, HomeState } from '~/lib/games/types'
 import type { Skin } from '~/lib/types'
 
@@ -335,6 +336,13 @@ function SlidePlate({
 
   const cast = async (next: { star: boolean; x: boolean }) => {
     if (!isAuthenticated) {
+      // Guest tried to vote from the home hero - record the sign-in intent
+      // (the activation funnel's missing first step) before redirecting.
+      posthog.capture('auth_prompt_clicked', {
+        trigger: 'star_ban_gate',
+        source: 'home_hero',
+        skin_id: slide.skinId,
+      })
       login()
       return
     }
@@ -375,10 +383,11 @@ function SlidePlate({
       })
       const used = userStatsStore.get()
       if (next.star !== prev.star) {
-        posthog.capture(next.star ? 'skin_starred' : 'skin_unstarred', {
-          skin_id: slide.skinId,
-          skin_name: slide.name,
-          stars_used: used.usedStars,
+        captureSkinVote(posthog, next.star ? 'star' : 'unstar', {
+          skinId: slide.skinId,
+          skinName: slide.name,
+          championId: slide.championId,
+          used: used.usedStars,
           source: 'home_hero',
         })
         toast(
@@ -389,10 +398,11 @@ function SlidePlate({
         )
       }
       if (next.x !== prev.x) {
-        posthog.capture(next.x ? 'skin_banned' : 'skin_unbanned', {
-          skin_id: slide.skinId,
-          skin_name: slide.name,
-          bans_used: used.usedX,
+        captureSkinVote(posthog, next.x ? 'ban' : 'unban', {
+          skinId: slide.skinId,
+          skinName: slide.name,
+          championId: slide.championId,
+          used: used.usedX,
           source: 'home_hero',
         })
         toast(

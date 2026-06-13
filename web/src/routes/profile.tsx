@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from '@tanstack/react-router'
 import { useEffect, useState } from 'react'
+import { usePostHog } from 'posthog-js/react'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import {
   faStar,
@@ -252,11 +253,23 @@ function ProfilePage() {
   const { tab } = Route.useSearch()
   const active: Tab = tab ?? 'mirror'
   const { isAuthenticated, isLoading, withApiToken } = useAuth()
+  const posthog = usePostHog()
 
   // Mirror the guest token to localStorage as a cookie backup.
   useEffect(() => {
     rememberGuestToken(mirror.guestToken)
   }, [mirror.guestToken])
+
+  // The Mirror is the activation asset ("sign in to keep it"), so record a
+  // view when it's the active tab - the funnel's proof of engagement before
+  // the sign-in prompt. player_tier rides along as a super-property.
+  useEffect(() => {
+    if (active !== 'mirror') return
+    posthog.capture('mirror_viewed', {
+      skins_ranked: mirror.skinsRated,
+      total_battles: mirror.totalBattles,
+    })
+  }, [active, posthog, mirror.skinsRated, mirror.totalBattles])
 
   // Header identity: the cached profile paints instantly (same trick as the
   // navbar's AccountButton), /me corrects it when it lands, and saves from

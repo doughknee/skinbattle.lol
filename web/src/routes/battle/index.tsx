@@ -26,6 +26,7 @@ import { api } from '~/lib/api'
 import { useAuth } from '~/lib/useAuth'
 import { countBattleAndMaybeOffer, SUPPORT_URL } from '~/lib/support'
 import { userStatsStore, MAX_STARS, MAX_X } from '~/lib/userStatsStore'
+import { captureSkinVote } from '~/lib/analytics'
 import type {
   BattleFeedback,
   BattlePair,
@@ -421,6 +422,13 @@ function BattlePage() {
   const castMark = useCallback(
     async (skinId: string, next: Marks) => {
       if (!isAuthenticated) {
+        // Guest hit the only sign-in-gated action - capture the intent so the
+        // activation funnel has its missing first step (most guests leak here).
+        posthog.capture('auth_prompt_clicked', {
+          trigger: 'star_ban_gate',
+          source: 'battle_arena',
+          skin_id: skinId,
+        })
         login()
         return
       }
@@ -447,10 +455,17 @@ function BattlePage() {
           x: next.x === prev.x ? 0 : next.x ? 1 : -1,
         })
         const now = userStatsStore.get()
+        // Resolve the on-screen skin so the event carries skin_name +
+        // champion_id like the other surfaces (only the current pair can be
+        // marked). viewRef avoids adding `view` to the callback's deps.
+        const onScreen = viewRef.current.current
+        const marked = [onScreen.a, onScreen.b].find((s) => s.skinId === skinId)
         if (next.star !== prev.star) {
-          posthog.capture(next.star ? 'skin_starred' : 'skin_unstarred', {
-            skin_id: skinId,
-            stars_used: now.usedStars,
+          captureSkinVote(posthog, next.star ? 'star' : 'unstar', {
+            skinId,
+            skinName: marked?.name,
+            championId: marked?.championId,
+            used: now.usedStars,
             source: 'battle_arena',
           })
           toast(
@@ -461,9 +476,11 @@ function BattlePage() {
           )
         }
         if (next.x !== prev.x) {
-          posthog.capture(next.x ? 'skin_banned' : 'skin_unbanned', {
-            skin_id: skinId,
-            bans_used: now.usedX,
+          captureSkinVote(posthog, next.x ? 'ban' : 'unban', {
+            skinId,
+            skinName: marked?.name,
+            championId: marked?.championId,
+            used: now.usedX,
             source: 'battle_arena',
           })
           toast(

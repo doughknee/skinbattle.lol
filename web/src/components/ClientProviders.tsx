@@ -1,10 +1,11 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { LogtoProvider } from '@logto/react'
-import { PostHogProvider } from 'posthog-js/react'
+import { PostHogProvider, usePostHog } from 'posthog-js/react'
 import type { ReactNode } from 'react'
 import type { PublicConfig } from '~/lib/config'
 import { makeLogtoConfig } from '~/lib/logto'
 import { CrossTabLogtoClient } from '~/lib/logtoClient'
+import { useAuth } from '~/lib/useAuth'
 
 export default function ClientProviders({
   children,
@@ -20,6 +21,7 @@ export default function ClientProviders({
   const [logtoConfig] = useState(() => makeLogtoConfig(config))
   const app = (
     <LogtoProvider config={logtoConfig} LogtoClientClass={CrossTabLogtoClient}>
+      <PostHogIdentitySync />
       {children}
     </LogtoProvider>
   )
@@ -42,4 +44,24 @@ export default function ClientProviders({
       {app}
     </PostHogProvider>
   )
+}
+
+// Keep guest-vs-member context on EVERY event. register() persists the
+// property and stamps it onto every subsequent capture, so funnels, retention,
+// and replays can all be split by player_tier without each call site
+// re-specifying it. Mounted inside both providers so it can read auth state
+// (useAuth) and the client (usePostHog); a no-op when PostHog is disabled.
+function PostHogIdentitySync() {
+  const posthog = usePostHog()
+  const { isAuthenticated, isLoading } = useAuth()
+  useEffect(() => {
+    // Wait for the SDK to resolve real auth state before tagging, so a
+    // returning member isn't briefly mislabeled 'guest' on first paint.
+    if (isLoading) return
+    posthog?.register({
+      is_authenticated: isAuthenticated,
+      player_tier: isAuthenticated ? 'member' : 'guest',
+    })
+  }, [posthog, isAuthenticated, isLoading])
+  return null
 }

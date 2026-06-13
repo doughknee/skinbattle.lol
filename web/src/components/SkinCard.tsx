@@ -9,6 +9,7 @@ import { toast } from '~/components/Toaster'
 import { openLightbox } from '~/components/Lightbox'
 import { userStatsStore, MAX_STARS, MAX_X } from '~/lib/userStatsStore'
 import { championDisplayName, displaySkinName } from '~/lib/skinName'
+import { captureSkinVote } from '~/lib/analytics'
 import type { Skin, VoteTotals } from '~/lib/types'
 
 interface SkinCardProps {
@@ -107,11 +108,11 @@ export default function SkinCard({
     castVote({ star: newStar, x: userX }, () => {
       userStatsStore.adjust({ stars: newStar ? 1 : -1 })
       const used = userStatsStore.get().usedStars
-      posthog.capture(newStar ? 'skin_starred' : 'skin_unstarred', {
-        skin_id: skin.id,
-        skin_name: skinName,
-        champion_id: championId,
-        stars_used: used,
+      captureSkinVote(posthog, newStar ? 'star' : 'unstar', {
+        skinId: skin.id,
+        skinName,
+        championId,
+        used,
         source: 'skin_card',
       })
       toast(
@@ -132,11 +133,11 @@ export default function SkinCard({
     castVote({ star: userStar, x: newX }, () => {
       userStatsStore.adjust({ x: newX ? 1 : -1 })
       const used = userStatsStore.get().usedX
-      posthog.capture(newX ? 'skin_banned' : 'skin_unbanned', {
-        skin_id: skin.id,
-        skin_name: skinName,
-        champion_id: championId,
-        bans_used: used,
+      captureSkinVote(posthog, newX ? 'ban' : 'unban', {
+        skinId: skin.id,
+        skinName,
+        championId,
+        used,
         source: 'skin_card',
       })
       toast(
@@ -265,7 +266,16 @@ export default function SkinCard({
             </span>
           </div>
           <button
-            onClick={login}
+            onClick={() => {
+              // Sign-in intent from the catalog - the activation funnel's
+              // missing first step, captured before the redirect.
+              posthog.capture('auth_prompt_clicked', {
+                trigger: 'star_ban_gate',
+                source: 'skin_card',
+                skin_id: skin.id,
+              })
+              login()
+            }}
             aria-label={`Sign in to vote on ${skinName}`}
             className="h-10 w-full cursor-pointer bg-gold5/20 text-sm font-bold text-gold1 outline outline-gold2/50 -outline-offset-1 hover:bg-gold5/40 hover:outline-gold2 transition duration-150"
           >

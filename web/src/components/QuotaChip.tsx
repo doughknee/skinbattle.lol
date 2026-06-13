@@ -8,18 +8,21 @@ import {
 import { Link } from '@tanstack/react-router'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faStar, faBan, faXmark } from '@fortawesome/free-solid-svg-icons'
+import { usePostHog } from 'posthog-js/react'
 import { api } from '~/lib/api'
 import { useAuth } from '~/lib/useAuth'
 import { toast } from '~/components/Toaster'
 import { Spinner } from '~/components/Skeletons'
 import { userStatsStore, MAX_STARS, MAX_X } from '~/lib/userStatsStore'
 import { championDisplayName, displaySkinName } from '~/lib/skinName'
+import { captureSkinVote } from '~/lib/analytics'
 import type { Skin } from '~/lib/types'
 
 // Navbar quota chip ("★ 1/10 · ⊘ 2/10") that opens a "My picks" tray listing
 // the skins the user has starred/banned, with one-click removal.
 export default function QuotaChip() {
   const { isAuthenticated, isLoading, withApiToken } = useAuth()
+  const posthog = usePostHog()
   const stats = useSyncExternalStore(
     userStatsStore.subscribe,
     userStatsStore.get,
@@ -131,6 +134,15 @@ export default function QuotaChip() {
       )
       userStatsStore.adjust(kind === 'star' ? { stars: -1 } : { x: -1 })
       const s = userStatsStore.get()
+      // The tray was the one star/ban surface that never reported its
+      // un-votes, so budget-spend funnels undercounted removals.
+      captureSkinVote(posthog, kind === 'star' ? 'unstar' : 'unban', {
+        skinId: skin.id,
+        skinName: displaySkinName(skin.name, skin.champion_id),
+        championId: skin.champion_id,
+        used: kind === 'star' ? s.usedStars : s.usedX,
+        source: 'quota_chip',
+      })
       toast(
         kind === 'star'
           ? `Star removed. ${s.usedStars}/${MAX_STARS} used`
