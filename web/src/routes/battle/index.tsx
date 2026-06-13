@@ -159,10 +159,18 @@ function BattleCard({
 }) {
   const verdictAnim =
     verdict === 'winner'
-      ? 'animate-battle-win z-10 outline-gold2'
+      ? 'animate-battle-win z-10'
       : verdict === 'loser'
         ? 'animate-battle-lose'
         : ''
+  // The gold frame lives on a dedicated overlay (below) that paints ABOVE the
+  // splash. An inset outline on the card itself gets covered the instant the
+  // image takes its hover transform — that's the old "the scale eats the
+  // border" bug. winner crowns the frame gold; otherwise it ignites on hover.
+  const frameTone =
+    verdict === 'winner'
+      ? 'outline-gold2'
+      : 'outline-icon/20 group-hover:outline-gold2'
   const entranceAnim =
     entrance === 'reveal'
       ? side === 'a'
@@ -180,7 +188,7 @@ function BattleCard({
   const gated = entrance === 'gate' ? 'opacity-0' : ''
   return (
     <div
-      className={`group relative aspect-video w-full overflow-hidden bg-hextech-black/60 outline outline-icon/20 -outline-offset-2 transition duration-150 hover:outline-gold2 ${entranceAnim} ${verdictAnim}`}
+      className={`battle-card group relative aspect-video w-full overflow-hidden bg-hextech-black/60 transition duration-200 hover:shadow-glow ${entranceAnim} ${verdictAnim}`}
     >
       <button
         onClick={() => onPick(skin.skinId)}
@@ -194,8 +202,14 @@ function BattleCard({
           fetchPriority="high"
           decoding="async"
           onError={() => onBroken(skin.skinId)}
-          className={`h-full w-full object-cover transition duration-200 group-hover:scale-[1.03] ${gated}`}
+          className={`h-full w-full object-cover transition duration-300 ease-out group-hover:scale-[1.04] group-hover:brightness-110 group-hover:saturate-[1.06] ${gated}`}
         />
+        {/* A single rake of gold light across the splash on hover-in — the
+            "legendary skin catching the light" beat. Skipped behind the gate
+            so the shimmer slab stays clean. Clipped by the card's overflow. */}
+        {entrance !== 'gate' && (
+          <span aria-hidden className="battle-sheen" />
+        )}
         <span
           className={`pointer-events-none absolute inset-x-0 bottom-0 flex flex-col bg-gradient-to-t from-hextech-black/95 via-hextech-black/60 to-transparent px-4 pb-3 pt-10 ${gated}`}
         >
@@ -205,6 +219,12 @@ function BattleCard({
           <span className="text-sm text-grey1">{skin.championName}</span>
         </span>
       </button>
+      {/* Frame overlay: always painted above the splash so the hover transform
+          can never cover it. -outline-offset keeps it inside the card edge. */}
+      <span
+        aria-hidden
+        className={`pointer-events-none absolute inset-0 z-10 outline -outline-offset-2 transition duration-200 ${frameTone}`}
+      />
       <span className={`absolute left-2 top-2 z-10 flex gap-1.5 ${gated}`}>
         <button
           onClick={() => onMark(skin.skinId, { star: !marks.star, x: marks.x })}
