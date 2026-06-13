@@ -1,13 +1,17 @@
-// Imports champions + skins from Riot's Data Dragon CDN into Postgres.
+// Imports champions + skins into Postgres: champion fields from Riot's Data
+// Dragon, skin art from Community Dragon (complete per-skin splashes).
 //
 // - Defaults to the LATEST Data Dragon patch (set DDRAGON_VERSION to pin one).
 // - Idempotent upsert: adds new champions/skins and refreshes metadata without
-//   ever touching vote tallies (skins.total_* / user_skin_votes).
+//   ever touching vote tallies (skins.total_* / user_skin_votes). The skin id
+//   is identical across Data Dragon and Community Dragon, so art re-points in
+//   place and no vote is ever orphaned.
 // - Tracks the imported patch in `seed_meta`, so on redeploy it re-syncs only
 //   when a newer patch is available (otherwise it skips fast).
 //
 // Designed to run as a one-shot service in the deployment stack: it waits for
-// the API to apply migrations (tables exist), then syncs.
+// the API to apply migrations (tables exist), then syncs. The API itself also
+// syncs on startup; this is the standalone equivalent.
 //
 // Usage:
 //   DATABASE_URL=postgres://user:pass@host:5432/db node import.js          # latest
@@ -16,8 +20,8 @@
 import { Pool } from 'pg';
 
 const VERSIONS_URL = 'https://ddragon.leagueoflegends.com/api/versions.json';
-const SPLASH_BASE_URL =
-  'https://ddragon.leagueoflegends.com/cdn/img/champion/splash';
+const CDRAGON_BASE =
+  'https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default';
 
 if (!process.env.DATABASE_URL) {
   console.error('DATABASE_URL is required');
@@ -27,9 +31,12 @@ if (!process.env.DATABASE_URL) {
 const pool = new Pool({ connectionString: process.env.DATABASE_URL });
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
-// Data Dragon lists chroma color variants as separate skin entries named
-// "Base Skin (ColorName)". They aren't real votable skins, so skip them.
-const isChroma = (name) => /\s\(.+\)$/.test(name);
+// Turn a Community Dragon asset path into a CDN URL: strip the
+// /lol-game-data/assets prefix and lowercase the rest (host stays as-is).
+const cdragonAsset = (path) =>
+  path
+    ? CDRAGON_BASE + path.replace(/^\/lol-game-data\/assets/i, '').toLowerCase()
+    : '';
 
 // Resolve the target patch: explicit DDRAGON_VERSION, else the newest published.
 async function resolveVersion() {
@@ -43,41 +50,21 @@ async function resolveVersion() {
   return arr[0];
 }
 
-async function fetchChampionList(version) {
+// Champion fields (id/key/title/blurb/lore) for the whole roster in one fetch.
+async function fetchChampions(version) {
   const res = await fetch(
-    `https://ddragon.leagueoflegends.com/cdn/${version}/data/en_US/champion.json`,
+    `https://ddragon.leagueoflegends.com/cdn/${version}/data/en_US/championFull.json`,
   );
-  if (!res.ok) throw new Error(`champion list: ${res.status}`);
+  if (!res.ok) throw new Error(`championFull: ${res.status}`);
   const json = await res.json();
-  return Object.keys(json.data);
+  return Object.values(json.data);
 }
 
-async function fetchChampionDetails(names, version) {
-  const results = await Promise.all(
-    names.map(async (name) => {
-      try {
-        const res = await fetch(
-          `https://ddragon.leagueoflegends.com/cdn/${version}/data/en_US/champion/${name}.json`,
-        );
-        if (!res.ok) throw new Error(`${res.status}`);
-        const json = await res.json();
-        return json.data[name];
-      } catch (err) {
-        console.error(`details for ${name} failed:`, err.message);
-        return null;
-      }
-    }),
-  );
-  return results.filter(Boolean);
-}
-
-function cleanChampion(data) {
-  const { id, lore, key, blurb, title, skins } = data;
-  const enrichedSkins = skins.map((skin) => ({
-    ...skin,
-    splashUrl: `${SPLASH_BASE_URL}/${id}_${skin.num}.jpg`,
-  }));
-  return { id, lore, key, blurb, title, skins: enrichedSkins };
+// Every skin, keyed by numeric id (= championKey*1000 + num), with art paths.
+async function fetchSkins() {
+  const res = await fetch(`${CDRAGON_BASE}/v1/skins.json`);
+  if (!res.ok) throw new Error(`cdragon skins: ${res.status}`);
+  return res.json();
 }
 
 async function insertChampion(client, c) {
@@ -96,9 +83,17 @@ async function insertSkin(client, championId, skin) {
     `INSERT INTO skins (id, champion_id, num, name, chromas, splash_url)
      VALUES ($1, $2, $3, $4, $5, $6)
      ON CONFLICT (id) DO UPDATE
-       SET name = EXCLUDED.name, chromas = EXCLUDED.chromas,
+       SET champion_id = EXCLUDED.champion_id, num = EXCLUDED.num,
+           name = EXCLUDED.name, chromas = EXCLUDED.chromas,
            splash_url = EXCLUDED.splash_url`,
-    [String(skin.id), championId, skin.num, skin.name, !!skin.chromas, skin.splashUrl],
+    [
+      String(skin.id),
+      championId,
+      skin.id % 1000,
+      skin.name,
+      !!skin.chromaPath,
+      cdragonAsset(skin.splashPath),
+    ],
   );
 }
 
@@ -171,42 +166,40 @@ async function main() {
       : `seeding Data Dragon ${version}`,
   );
 
-  const names = await fetchChampionList(version);
-  console.log(`Fetched ${names.length} champion names`);
+  const champions = await fetchChampions(version);
+  console.log(`Fetched ${champions.length} champions`);
 
-  const details = await fetchChampionDetails(names, version);
-  const cleaned = details.map(cleanChampion);
-  console.log(`Fetched details for ${cleaned.length} champions`);
+  const skins = await fetchSkins();
+  // Champion key (numeric) → champion id, to map skin ids onto champions.
+  const byKey = new Map();
+  for (const c of champions) byKey.set(Number(c.key), c.id);
 
   const client = await pool.connect();
   try {
+    for (const champ of champions) await insertChampion(client, champ);
+
     let skinTotal = 0;
-    for (const champ of cleaned) {
-      await insertChampion(client, champ);
-      for (const skin of champ.skins) {
-        if (isChroma(skin.name)) continue; // chroma variant, not a real skin
-        await insertSkin(client, champ.id, skin);
-        skinTotal++;
-      }
+    for (const skin of Object.values(skins)) {
+      const championId = byKey.get(Math.floor(skin.id / 1000));
+      if (!championId) continue; // a champion championFull doesn't list
+      await insertSkin(client, championId, skin);
+      skinTotal++;
     }
-    console.log(`Synced ${cleaned.length} champions / ${skinTotal} skins.`);
+    console.log(
+      `Synced ${champions.length} champions / ${skinTotal} skins (art: Community Dragon).`,
+    );
   } finally {
     client.release();
   }
 
   await setMeta('ddragon_version', version);
-  // The upsert above may have overwritten splash URLs the API's splash
-  // sweep had repointed (legacy asset casings like FiddleSticks_<num>.jpg).
-  // Clearing the sweep stamp makes the API re-sweep on its next boot.
-  await pool.query(`DELETE FROM seed_meta WHERE key = 'splash_sweep'`);
   console.log(`Recorded patch ${version}.`);
 }
 
 main()
+  .then(() => pool.end())
   .catch((err) => {
-    console.error('Import failed:', err);
-    process.exitCode = 1;
-  })
-  .finally(async () => {
-    await pool.end();
+    console.error(err);
+    pool.end();
+    process.exit(1);
   });

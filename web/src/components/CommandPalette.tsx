@@ -7,6 +7,7 @@ import { api } from '~/lib/api'
 import { Spinner } from '~/components/Skeletons'
 import { championDisplayName, displaySkinName } from '~/lib/skinName'
 import { allSitePages, quickNavPages } from '~/lib/siteMap'
+import { createSearcher } from '~/lib/search'
 import type { Champion } from '~/lib/types'
 
 const OPEN_EVENT = 'sb:open-search'
@@ -38,6 +39,16 @@ const pageEntries: Entry[] = allSitePages().map((p) => ({
 }))
 const quickNavKeys = new Set(quickNavPages().map((p) => `p-${p.to}`))
 
+const MAX_PAGES = 5
+const MAX_CHAMPIONS = 6
+const MAX_SKINS = 10
+
+// label drives prefix ranking; haystack carries the path/search aliases.
+const pageSearcher = createSearcher(pageEntries, {
+  keys: ['label', 'haystack'],
+  limit: MAX_PAGES,
+})
+
 // Champions (with their skin lists) are fetched once per session and reused
 // across palette opens.
 let catalogPromise: Promise<Champion[]> | null = null
@@ -50,10 +61,6 @@ function loadCatalog(): Promise<Champion[]> {
   }
   return catalogPromise
 }
-
-const MAX_PAGES = 5
-const MAX_CHAMPIONS = 6
-const MAX_SKINS = 10
 
 const GROUP_LABELS: Record<Entry['kind'], string> = {
   page: 'Pages',
@@ -139,8 +146,27 @@ export default function CommandPalette() {
     }
   }, [open])
 
+  // One searcher per group so the per-group caps hold and a noisy group can't
+  // crowd another out. Rebuilt only when the catalog arrives.
+  const champSearcher = useMemo(
+    () =>
+      createSearcher(
+        entries.filter((e) => e.kind === 'champion'),
+        { keys: ['label', 'haystack'], limit: MAX_CHAMPIONS },
+      ),
+    [entries],
+  )
+  const skinSearcher = useMemo(
+    () =>
+      createSearcher(
+        entries.filter((e) => e.kind === 'skin'),
+        { keys: ['label', 'haystack'], limit: MAX_SKINS },
+      ),
+    [entries],
+  )
+
   const results = useMemo(() => {
-    const q = query.trim().toLowerCase()
+    const q = query.trim()
     if (!q) {
       // Before typing: the main sections, then the champion roster.
       const quick = pageEntries.filter((p) => quickNavKeys.has(p.key))
@@ -149,26 +175,12 @@ export default function CommandPalette() {
         .slice(0, MAX_CHAMPIONS)
       return [...quick, ...champions]
     }
-    const pages: Entry[] = []
-    for (const p of pageEntries) {
-      if (p.haystack.includes(q)) {
-        pages.push(p)
-        if (pages.length >= MAX_PAGES) break
-      }
-    }
-    const champions: Entry[] = []
-    const skins: Entry[] = []
-    for (const e of entries) {
-      if (!e.haystack.includes(q)) continue
-      if (e.kind === 'champion') {
-        if (champions.length < MAX_CHAMPIONS) champions.push(e)
-      } else if (skins.length < MAX_SKINS) {
-        skins.push(e)
-      }
-      if (champions.length >= MAX_CHAMPIONS && skins.length >= MAX_SKINS) break
-    }
-    return [...pages, ...champions, ...skins]
-  }, [entries, query])
+    return [
+      ...pageSearcher.search(query),
+      ...champSearcher.search(query),
+      ...skinSearcher.search(query),
+    ]
+  }, [entries, query, champSearcher, skinSearcher])
 
   useEffect(() => {
     setActiveIndex(0)

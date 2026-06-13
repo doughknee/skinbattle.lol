@@ -82,7 +82,7 @@ function loadRatedRows(db: DatabaseSync, userId: string): RatedRow[] {
               u.rating AS personal, u.battles AS personalBattles,
               r.rating AS community, r.battles AS communityBattles
        FROM user_skin_ratings u
-       JOIN catalog_skins c ON c.id = u.skin_id AND c.splash_ok = 1
+       JOIN catalog_skins c ON c.id = u.skin_id
        LEFT JOIN skin_ratings r ON r.skin_id = u.skin_id
        WHERE u.user_id = ? AND u.battles > 0
        ORDER BY u.rating DESC`,
@@ -207,7 +207,7 @@ function buildCompletion(
       db
         .prepare(
           `SELECT champion_id AS id, champion_name AS name, COUNT(*) AS total
-           FROM catalog_skins WHERE splash_ok = 1 GROUP BY champion_id`,
+           FROM catalog_skins WHERE num != 0 GROUP BY champion_id`,
         )
         .all() as unknown as { id: string; name: string; total: number }[]
     ).map((r) => [r.id, r]),
@@ -250,7 +250,7 @@ export async function mirrorState(
   const catalog = db
     .prepare(
       `SELECT COUNT(*) AS skins, COUNT(DISTINCT champion_id) AS champions
-       FROM catalog_skins WHERE splash_ok = 1`,
+       FROM catalog_skins WHERE num != 0`,
     )
     .get() as { skins: number; champions: number }
 

@@ -1,12 +1,17 @@
-// Skin catalog, synced from Riot Data Dragon and cached in SQLite.
+// Skin catalog, synced from Community Dragon and cached in SQLite.
 //
-// One fetch of championFull.json per patch covers every champion's skins.
-// This is the seed of the Phase 0 patch-ingestion pipeline: version-aware,
-// and a future cron only needs to call ensureCatalog() on a schedule.
+// One fetch of CommunityDragon's skins.json covers every champion's skins
+// with complete per-skin art (splash / tile / loadscreen / uncentered) -
+// including the newest skins Data Dragon's splash CDN lacks. Champion id and
+// display name come from Data Dragon's champion.json, whose patch number is
+// the asset_version stamped on every game event. Version-aware: a future cron
+// only needs to call ensureCatalog() on a schedule.
 
 import type { DatabaseSync } from 'node:sqlite'
 
 const DD = 'https://ddragon.leagueoflegends.com'
+const CDRAGON =
+  'https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default'
 // Re-check the versions endpoint at most this often while a catalog exists.
 const SYNC_INTERVAL_MS = 12 * 60 * 60 * 1000
 
@@ -17,12 +22,35 @@ export interface CatalogSkin {
   num: number
   name: string
   splashUrl: string
+  tileUrl: string
+  loadscreenUrl: string
+  uncenteredSplashUrl: string
 }
 
+// Data Dragon champion summary - key (numeric, as string) → id + display name.
 interface DDragonChampion {
   id: string
+  key: string
   name: string
-  skins: { id: string; num: number; name: string }[]
+}
+
+// CommunityDragon skin entry (only the fields we read).
+interface CDragonSkin {
+  id: number
+  isBase: boolean
+  name: string
+  splashPath: string | null
+  uncenteredSplashPath: string | null
+  tilePath: string | null
+  loadScreenPath: string | null
+}
+
+// Turn a CommunityDragon asset path into a CDN URL. Paths look like
+// "/lol-game-data/assets/ASSETS/Characters/Aatrox/.../x.jpg"; the CDN serves
+// them lowercased under the global/default root. The host is never lowercased.
+function cdragonAsset(path: string | null | undefined): string {
+  if (!path) return ''
+  return CDRAGON + path.replace(/^\/lol-game-data\/assets/i, '').toLowerCase()
 }
 
 export function getMeta(db: DatabaseSync, k: string): string | null {
@@ -60,9 +88,6 @@ export async function ensureCatalog(db: DatabaseSync): Promise<string> {
     syncedAt &&
     Date.now() - Date.parse(syncedAt) < SYNC_INTERVAL_MS
   ) {
-    // Catalog is fresh, but the splash sweep may not have run for this
-    // version yet (e.g. a db created before sweeps existed).
-    maybeSweepSplashes(db, version)
     return version
   }
 
@@ -72,14 +97,17 @@ export async function ensureCatalog(db: DatabaseSync): Promise<string> {
     if (!latest) throw new Error('empty versions list')
 
     if (latest !== version || !populated) {
-      const full = (await ddJson(
-        `${DD}/cdn/${latest}/data/en_US/championFull.json`,
+      const champData = (await ddJson(
+        `${DD}/cdn/${latest}/data/en_US/champion.json`,
       )) as { data: Record<string, DDragonChampion> }
-      replaceCatalog(db, full.data)
+      const skins = (await ddJson(`${CDRAGON}/v1/skins.json`)) as Record<
+        string,
+        CDragonSkin
+      >
+      replaceCatalog(db, champData.data, skins)
       setMeta(db, 'dd_version', latest)
     }
     setMeta(db, 'synced_at', new Date().toISOString())
-    maybeSweepSplashes(db, latest)
     return latest
   } catch (err) {
     if (populated && version) {
@@ -87,7 +115,7 @@ export async function ensureCatalog(db: DatabaseSync): Promise<string> {
       return version
     }
     throw new Error(
-      `Could not load the skin catalog from Data Dragon: ${err instanceof Error ? err.message : err}`,
+      `Could not load the skin catalog: ${err instanceof Error ? err.message : err}`,
     )
   }
 }
@@ -100,35 +128,41 @@ async function ddJson(url: string): Promise<unknown> {
 
 function replaceCatalog(
   db: DatabaseSync,
-  data: Record<string, DDragonChampion>,
+  champions: Record<string, DDragonChampion>,
+  skins: Record<string, CDragonSkin>,
 ): void {
+  // Champion key (numeric) → { id, display name }.
+  const byKey = new Map<number, { id: string; name: string }>()
+  for (const c of Object.values(champions)) {
+    byKey.set(Number(c.key), { id: c.id, name: c.name })
+  }
+
   const insert = db.prepare(
     `INSERT OR REPLACE INTO catalog_skins
-       (id, champion_id, champion_name, num, name, splash_url)
-     VALUES (?, ?, ?, ?, ?, ?)`,
+       (id, champion_id, champion_name, num, name,
+        splash_url, tile_url, loadscreen_url, uncentered_splash_url)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
   )
   db.exec('BEGIN')
   try {
     db.exec('DELETE FROM catalog_skins')
-    for (const champ of Object.values(data)) {
-      for (const skin of champ.skins) {
-        // Base splashes (num 0) are excluded: guessing one is really
-        // guess-the-champion, which is LoLdle's game - not Splashdle's.
-        if (skin.num === 0) continue
-        // Chroma/variant tiers are listed as skins with a parenthesized
-        // suffix - "Elderwood Wukong (Pearl)" - but have no splash art of
-        // their own (the img CDN 403s). ~6,800 of championFull's ~8,900
-        // entries are these.
-        if (/\s\([^)]+\)$/.test(skin.name)) continue
-        insert.run(
-          String(skin.id),
-          champ.id,
-          champ.name,
-          skin.num,
-          skin.name,
-          `${DD}/cdn/img/champion/splash/${champ.id}_${skin.num}.jpg`,
-        )
-      }
+    for (const skin of Object.values(skins)) {
+      // skin.id = championKey * 1000 + num. Base skins (num 0) are kept in
+      // the catalog but excluded from guess pools by allCatalogSkins.
+      const champ = byKey.get(Math.floor(skin.id / 1000))
+      if (!champ) continue // a champion Data Dragon doesn't list this patch
+      const splash = cdragonAsset(skin.splashPath)
+      insert.run(
+        String(skin.id),
+        champ.id,
+        champ.name,
+        skin.id % 1000,
+        skin.name,
+        splash,
+        cdragonAsset(skin.tilePath) || splash,
+        cdragonAsset(skin.loadScreenPath) || splash,
+        cdragonAsset(skin.uncenteredSplashPath) || splash,
+      )
     }
     db.exec('COMMIT')
   } catch (err) {
@@ -137,116 +171,9 @@ function replaceCatalog(
   }
 }
 
-// championFull.json has a second class of phantom entries beyond the
-// parenthesized chromas filtered at sync: chroma variants with plain names
-// ("Zac Sweet Orange", "Worlds 2017 Ashe Chroma" - 61 in patch 16.12) whose
-// splash URLs 403. No name pattern catches them reliably, so after each
-// patch sync a background sweep HEAD-checks every splash once and clears
-// splash_ok on the dead ones. Until the sweep lands (~30 s), the client's
-// broken-image fallback covers the gap.
-const SWEEP_CONCURRENCY = 32
-// Bump to force a one-time re-sweep on deploy (e.g. after a sweep bugfix);
-// a version bump alone only re-sweeps on the next League patch.
-const SWEEP_REV = 2
-let sweepRunning = false
-
-// Data Dragon's data calls the champion "Fiddlesticks", but the splash CDN
-// serves some of its skins only under the legacy casing "FiddleSticks" -
-// three real skins (Star Nemesis, Blood Moon, Flora Fatalis) 403 on the
-// constructed URL and got benched as phantoms. Before benching, retry known
-// alias spellings and repoint splash_url at whichever actually serves.
-const CHAMPION_ASSET_ALIASES: Record<string, string[]> = {
-  Fiddlesticks: ['FiddleSticks'],
-}
-
-async function splashDead(url: string): Promise<boolean | null> {
-  try {
-    const res = await fetch(url, {
-      method: 'HEAD',
-      signal: AbortSignal.timeout(10_000),
-    })
-    return res.status === 403 || res.status === 404
-  } catch {
-    // Network blip / 5xx: transient - can't tell, don't bench on it.
-    return null
-  }
-}
-
-function maybeSweepSplashes(db: DatabaseSync, version: string): void {
-  const stamp = `${version}#${SWEEP_REV}`
-  if (sweepRunning || getMeta(db, 'splash_sweep_version') === stamp) return
-  sweepRunning = true
-  setImmediate(async () => {
-    try {
-      const skins = db
-        .prepare(
-          'SELECT id, champion_id AS championId, num, splash_url AS url FROM catalog_skins',
-        )
-        .all() as unknown as {
-        id: string
-        championId: string
-        num: number
-        url: string
-      }[]
-      const broken: string[] = []
-      const alive: string[] = []
-      const repointed: { id: string; url: string }[] = []
-      const queue = [...skins]
-      await Promise.all(
-        Array.from({ length: SWEEP_CONCURRENCY }, async () => {
-          for (let s = queue.pop(); s; s = queue.pop()) {
-            const dead = await splashDead(s.url)
-            if (dead === null) continue
-            if (!dead) {
-              alive.push(s.id)
-              continue
-            }
-            let rescued = false
-            for (const alias of CHAMPION_ASSET_ALIASES[s.championId] ?? []) {
-              const aliasUrl = `${DD}/cdn/img/champion/splash/${alias}_${s.num}.jpg`
-              if ((await splashDead(aliasUrl)) === false) {
-                repointed.push({ id: s.id, url: aliasUrl })
-                rescued = true
-                break
-              }
-            }
-            if (!rescued) broken.push(s.id)
-          }
-        }),
-      )
-      // The sweep is authoritative both ways: a previously-benched skin
-      // whose splash now serves (CDN fixed, or rescued via alias) returns
-      // to play instead of staying benched forever.
-      const setOk = db.prepare(
-        'UPDATE catalog_skins SET splash_ok = ? WHERE id = ?',
-      )
-      const setUrl = db.prepare(
-        'UPDATE catalog_skins SET splash_url = ?, splash_ok = 1 WHERE id = ?',
-      )
-      db.exec('BEGIN')
-      try {
-        for (const id of alive) setOk.run(1, id)
-        for (const r of repointed) setUrl.run(r.url, r.id)
-        for (const id of broken) setOk.run(0, id)
-        db.exec('COMMIT')
-      } catch (err) {
-        db.exec('ROLLBACK')
-        throw err
-      }
-      setMeta(db, 'splash_sweep_version', stamp)
-      console.log(
-        `splash sweep (${stamp}): ${skins.length} checked, ${broken.length} benched, ${repointed.length} repointed to alias assets`,
-      )
-    } catch (err) {
-      console.error('splash sweep failed:', err)
-    } finally {
-      sweepRunning = false
-    }
-  })
-}
-
-const SKIN_COLUMNS =
-  'id, champion_id AS championId, champion_name AS championName, num, name, splash_url AS splashUrl'
+const SKIN_COLUMNS = `id, champion_id AS championId, champion_name AS championName,
+   num, name, splash_url AS splashUrl, tile_url AS tileUrl,
+   loadscreen_url AS loadscreenUrl, uncentered_splash_url AS uncenteredSplashUrl`
 
 export function getCatalogSkin(
   db: DatabaseSync,
@@ -258,11 +185,13 @@ export function getCatalogSkin(
   return row ?? null
 }
 
-// Skins eligible for play surfaces - excludes swept-out phantom entries.
+// Skins eligible for play surfaces. Base skins (num 0) live in the catalog
+// for direct lookups but are never dealt into guess/battle pools.
 export function allCatalogSkins(db: DatabaseSync): CatalogSkin[] {
   return db
     .prepare(
-      `SELECT ${SKIN_COLUMNS} FROM catalog_skins WHERE splash_ok = 1 ORDER BY champion_id, num`,
+      `SELECT ${SKIN_COLUMNS} FROM catalog_skins
+       WHERE num != 0 ORDER BY champion_id, num`,
     )
     .all() as unknown as CatalogSkin[]
 }

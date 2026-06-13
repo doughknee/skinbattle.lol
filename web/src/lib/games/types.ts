@@ -58,6 +58,8 @@ export interface GuessOption {
   name: string
   championId: string
   championName: string
+  // Per-skin tile art (Community Dragon) shown in the autocomplete row.
+  tileUrl: string
 }
 
 export interface HubGame {

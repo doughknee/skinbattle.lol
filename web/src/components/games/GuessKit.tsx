@@ -17,6 +17,7 @@ import {
 import { toast } from '~/components/Toaster'
 import { btnPrimarySm, btnSecondarySm } from '~/lib/ui'
 import { skinSlug } from '~/lib/games/slug'
+import { createSearcher, norm } from '~/lib/search'
 import type {
   GuessOption,
   SplashdleAnswer,
@@ -159,64 +160,6 @@ export function GuessSlots({
 
 // ─── autocomplete guess input ───────────────────────────────────────────────
 
-// Punctuation/case-insensitive matching: "project yi" must find
-// "PROJECT: Yi", "kaisa" must find Kai'Sa skins, "kda" must find K/DA.
-// Every query token has to prefix-match a word in the skin or champion name.
-const stripAccents = (s: string) =>
-  s
-    .toLowerCase()
-    .normalize('NFD')
-    .replace(/[̀-ͯ]/g, '')
-
-const norm = (s: string) =>
-  stripAccents(s)
-    .replace(/[^a-z0-9]+/g, ' ')
-    .trim()
-
-// Each whitespace-delimited word is indexed both punctuation-split and
-// punctuation-collapsed, so Kai'Sa answers to "kai sa" AND "kaisa", and
-// K/DA to "k da" AND "kda".
-function wordsOf(s: string): string[] {
-  const out = new Set<string>()
-  for (const raw of stripAccents(s).split(/\s+/)) {
-    const collapsed = raw.replace(/[^a-z0-9]+/g, '')
-    if (collapsed) out.add(collapsed)
-    for (const part of raw.split(/[^a-z0-9]+/)) if (part) out.add(part)
-  }
-  return [...out]
-}
-
-interface SearchableOption {
-  opt: GuessOption
-  nameNorm: string
-  words: string[]
-}
-
-function buildSearchable(options: GuessOption[]): SearchableOption[] {
-  return options.map((opt) => ({
-    opt,
-    nameNorm: norm(opt.name),
-    words: wordsOf(`${opt.name} ${opt.championName}`),
-  }))
-}
-
-function matchOptions(
-  searchable: SearchableOption[],
-  query: string,
-): GuessOption[] {
-  const q = norm(query)
-  if (q.length < 2) return []
-  const tokens = q.split(' ')
-  const starts: GuessOption[] = []
-  const wordMatches: GuessOption[] = []
-  for (const s of searchable) {
-    if (s.nameNorm.startsWith(q)) starts.push(s.opt)
-    else if (tokens.every((t) => s.words.some((w) => w.startsWith(t))))
-      wordMatches.push(s.opt)
-  }
-  return [...starts, ...wordMatches].slice(0, 8)
-}
-
 // Gold-tint the words of a suggestion that the query matched, so the list
 // shows WHY each result is there.
 function HighlightedName({ name, query }: { name: string; query: string }) {
@@ -238,11 +181,6 @@ function HighlightedName({ name, query }: { name: string; query: string }) {
     </>
   )
 }
-
-// Versionless Data Dragon loading portrait - small, cacheable, and gives the
-// suggestion list faces instead of a wall of text.
-const championPortrait = (championId: string) =>
-  `https://ddragon.leagueoflegends.com/cdn/img/champion/loading/${championId}_0.jpg`
 
 const finePointer = () =>
   typeof window !== 'undefined' && window.matchMedia('(pointer: fine)').matches
@@ -266,10 +204,22 @@ export function GuessInput({
   const [open, setOpen] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
 
-  const searchable = useMemo(() => buildSearchable(options), [options])
+  const searcher = useMemo(
+    () =>
+      createSearcher(options, {
+        keys: [
+          { name: 'name', weight: 0.7 },
+          { name: 'championName', weight: 0.3 },
+        ],
+        prefixFirst: true,
+        limit: 8,
+        minLength: 2,
+      }),
+    [options],
+  )
   const matches = useMemo(
-    () => (open ? matchOptions(searchable, query) : []),
-    [searchable, query, open],
+    () => (open ? searcher.search(query) : []),
+    [searcher, query, open],
   )
   // The options list loads in the background after first paint; until it
   // arrives, typing shows a loading row - never a false "no skins match".
@@ -388,10 +338,10 @@ export function GuessInput({
                   } ${used ? 'cursor-not-allowed opacity-40' : ''}`}
                 >
                   <img
-                    src={championPortrait(o.championId)}
+                    src={o.tileUrl}
                     loading="lazy"
                     alt=""
-                    className="h-10 w-8 shrink-0 object-cover object-top outline outline-icon/20 -outline-offset-1"
+                    className="h-10 w-10 shrink-0 object-cover object-center outline outline-icon/20 -outline-offset-1"
                   />
                   <span className="min-w-0 truncate font-bold text-gold1">
                     <HighlightedName name={o.name} query={query} />

@@ -17,6 +17,7 @@ import {
 } from '@fortawesome/free-solid-svg-icons'
 import { btnPrimarySm } from '~/lib/ui'
 import { useAuth } from '~/lib/useAuth'
+import { createSearcher } from '~/lib/search'
 import type {
   ChampionCompletion,
   ContrarianTake,
@@ -178,10 +179,11 @@ function ChampionFilter({
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [isOpen])
 
-  const q = query.trim().toLowerCase()
-  const visible = q
-    ? options.filter((o) => o.name.toLowerCase().includes(q))
-    : options
+  const searcher = useMemo(
+    () => createSearcher(options, { keys: ['name'] }),
+    [options],
+  )
+  const visible = useMemo(() => searcher.search(query), [searcher, query])
   const label =
     selected.size === 0
       ? 'All champions'

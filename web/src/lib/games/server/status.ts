@@ -27,7 +27,7 @@ export async function gamesStatusResponse(): Promise<Response> {
   const syncedAt = Date.parse(getMeta(db, 'synced_at') ?? '') || 0
   const catalogCount = (
     db
-      .prepare('SELECT COUNT(*) AS c FROM catalog_skins WHERE splash_ok = 1')
+      .prepare('SELECT COUNT(*) AS c FROM catalog_skins WHERE num != 0')
       .get() as { c: number }
   ).c
   const events = (

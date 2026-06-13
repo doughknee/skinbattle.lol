@@ -11,6 +11,7 @@ import ErrorState from '~/components/ErrorState'
 import { btnSecondarySm } from '~/lib/ui'
 import { fetchDrought } from '~/lib/games/serverFns'
 import { ogMeta } from '~/lib/games/ogMeta'
+import { createSearcher } from '~/lib/search'
 import type { DroughtRow } from '~/lib/games/types'
 
 export const Route = createFileRoute('/rankings/drought')({
@@ -103,11 +104,11 @@ function DroughtPage() {
   const state = Route.useLoaderData()
   const [filter, setFilter] = useState('')
 
-  const rows = useMemo(() => {
-    const q = filter.trim().toLowerCase()
-    if (!q) return state.rows
-    return state.rows.filter((r) => r.championName.toLowerCase().includes(q))
-  }, [state.rows, filter])
+  const searcher = useMemo(
+    () => createSearcher(state.rows, { keys: ['championName'] }),
+    [state.rows],
+  )
+  const rows = useMemo(() => searcher.search(filter), [searcher, filter])
 
   const leader = state.rows[0]
   const maxDays = leader?.days ?? 0

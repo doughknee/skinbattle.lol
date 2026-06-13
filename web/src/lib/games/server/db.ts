@@ -120,19 +120,19 @@ CREATE TABLE IF NOT EXISTS battle_nonces (
   used_at TEXT NOT NULL
 );
 
--- Skin catalog cached from Data Dragon (re-synced when the patch changes).
--- splash_ok: championFull.json lists some chroma variants WITHOUT the
--- parenthesized suffix the sync filter catches ("Zac Sweet Orange") - their
--- splash URLs 403. A background sweep after each sync HEAD-checks every
--- splash and clears the flag; game pools only deal splash_ok skins.
+-- Skin catalog cached from Community Dragon (re-synced when the patch
+-- changes). CommunityDragon carries complete per-skin art, so every URL
+-- column below is a real CDN URL - no constructed-URL phantoms to sweep.
 CREATE TABLE IF NOT EXISTS catalog_skins (
-  id            TEXT PRIMARY KEY,       -- ddragon skin id, e.g. '266001'
-  champion_id   TEXT NOT NULL,          -- ddragon champion id, e.g. 'Aatrox'
-  champion_name TEXT NOT NULL,          -- display name, e.g. 'Miss Fortune'
-  num           INTEGER NOT NULL,
-  name          TEXT NOT NULL,
-  splash_url    TEXT NOT NULL,
-  splash_ok     INTEGER NOT NULL DEFAULT 1
+  id                    TEXT PRIMARY KEY,  -- skin id, e.g. '266001' (= key*1000 + num)
+  champion_id           TEXT NOT NULL,     -- ddragon champion id, e.g. 'Aatrox'
+  champion_name         TEXT NOT NULL,     -- display name, e.g. 'Miss Fortune'
+  num                   INTEGER NOT NULL,
+  name                  TEXT NOT NULL,
+  splash_url            TEXT NOT NULL,     -- centered splash
+  tile_url              TEXT,              -- square tile (autocomplete thumbs)
+  loadscreen_url        TEXT,              -- tall load-screen card
+  uncentered_splash_url TEXT               -- full uncropped splash
 );
 CREATE TABLE IF NOT EXISTS catalog_meta (
   k TEXT PRIMARY KEY,
@@ -150,19 +150,20 @@ export function getDb(): DatabaseSync {
   db.exec(SCHEMA)
   // Additive migrations for databases created before these columns existed
   // (CREATE TABLE IF NOT EXISTS won't add columns to an existing table).
-  try {
-    db.exec(
-      'ALTER TABLE catalog_skins ADD COLUMN splash_ok INTEGER NOT NULL DEFAULT 1',
-    )
-  } catch {
-    // Column already exists.
-  }
   // Display name for leaderboards, captured from the verified Logto ID
   // token at attach time (guests have none - boards are members-only).
   try {
     db.exec('ALTER TABLE game_users ADD COLUMN username TEXT')
   } catch {
     // Column already exists.
+  }
+  // Community Dragon art columns, for catalogs created on the Data Dragon era.
+  for (const col of ['tile_url', 'loadscreen_url', 'uncentered_splash_url']) {
+    try {
+      db.exec(`ALTER TABLE catalog_skins ADD COLUMN ${col} TEXT`)
+    } catch {
+      // Column already exists.
+    }
   }
   return db
 }
