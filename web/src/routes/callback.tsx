@@ -7,9 +7,27 @@ import { btnPrimarySm, btnSecondarySm } from '~/lib/ui'
 
 export const Route = createFileRoute('/callback')({
   // SSR is meaningless for an OIDC redirect handler - render only on the client.
+  // The pendingComponent doubles as the SSR/pre-hydration fallback for
+  // ssr: false routes, so the spinner paints immediately instead of a blank
+  // shell while the bundle loads.
   ssr: false,
   component: CallbackPage,
+  pendingComponent: Reconnecting,
 })
+
+function Reconnecting() {
+  return (
+    <div className="fixed inset-0 flex flex-col items-center justify-center gap-6 bg-linear-220 from-gradientTop via-blue7 to-gradientBottom">
+      <Spinner className="h-10 w-10" />
+      <p
+        className="animate-pulse text-3xl font-serif font-bold text-gold2"
+        role="status"
+      >
+        Reconnecting to the Rift...
+      </p>
+    </div>
+  )
+}
 
 function CallbackPage() {
   const navigate = useNavigate()
@@ -66,15 +84,5 @@ function CallbackPage() {
     )
   }
 
-  return (
-    <div className="fixed inset-0 flex flex-col items-center justify-center gap-6 bg-linear-220 from-gradientTop via-blue7 to-gradientBottom">
-      <Spinner className="h-10 w-10" />
-      <p
-        className="animate-pulse text-3xl font-serif font-bold text-gold2"
-        role="status"
-      >
-        Reconnecting to the Rift...
-      </p>
-    </div>
-  )
+  return <Reconnecting />
 }
