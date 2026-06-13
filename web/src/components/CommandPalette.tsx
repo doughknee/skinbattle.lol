@@ -41,7 +41,11 @@ const quickNavKeys = new Set(quickNavPages().map((p) => `p-${p.to}`))
 
 const MAX_PAGES = 5
 const MAX_CHAMPIONS = 6
-const MAX_SKINS = 10
+// The biggest champion roster is 23 skins and the biggest skin line is 36, so a
+// 50-row cap guarantees a champion or skin-line search shows EVERY member while
+// still bounding a broad/generic query. (search-completeness.test.ts asserts no
+// real group is ever truncated against this number.)
+const MAX_SKINS = 50
 
 // label drives prefix ranking; haystack carries the path/search aliases.
 const pageSearcher = createSearcher(pageEntries, {
@@ -60,6 +64,20 @@ function loadCatalog(): Promise<Champion[]> {
     })
   }
   return catalogPromise
+}
+
+// skinId → skin lines, lazy-loaded (~46KB) so "Bewitching" / "PROJECT" / "High
+// Noon" surface every member skin, not just the ones whose name happens to
+// carry the line. Failure is non-fatal: search still works on names alone.
+type SkinLineMap = Record<string, string[]>
+let skinLinesPromise: Promise<SkinLineMap> | null = null
+function loadSkinLines(): Promise<SkinLineMap> {
+  if (!skinLinesPromise) {
+    skinLinesPromise = import('~/lib/games/data/skin-lines.json')
+      .then((m) => m.default as SkinLineMap)
+      .catch(() => ({}))
+  }
+  return skinLinesPromise
 }
 
 const GROUP_LABELS: Record<Entry['kind'], string> = {
@@ -98,8 +116,8 @@ export default function CommandPalette() {
   useEffect(() => {
     if (!open || entries.length > 0) return
     let cancelled = false
-    loadCatalog()
-      .then((champions) => {
+    Promise.all([loadCatalog(), loadSkinLines()])
+      .then(([champions, skinLines]) => {
         if (cancelled) return
         const built: Entry[] = []
         for (const c of champions) {
@@ -117,13 +135,17 @@ export default function CommandPalette() {
           const champName = championDisplayName(c.id)
           for (const s of c.skins ?? []) {
             const name = displaySkinName(s.name, c.id)
+            const lines = skinLines[s.id] ?? []
             built.push({
               key: `s-${s.id}`,
               kind: 'skin',
               label: name,
-              sub: champName,
+              // Show the skin line as context when we have it; champion name otherwise.
+              sub: lines.length ? `${champName} · ${lines[0]}` : champName,
               championId: c.id,
-              haystack: `${name} ${champName}`.toLowerCase(),
+              // Index the champion name AND the skin lines so a skin is findable
+              // by its champion ("anivia") and by its theme ("bewitching").
+              haystack: `${name} ${champName} ${lines.join(' ')}`.toLowerCase(),
             })
           }
         }

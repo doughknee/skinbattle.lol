@@ -204,6 +204,20 @@ console.log(
   `releases: ${releases.length} dated, newest ${releases[releases.length - 1]}`,
 )
 
+// Client-safe skin-line map (skinId → sets, minus the "Legacy" availability
+// bucket — mirrors skinSets()). The full facts file is server-only and ~290KB;
+// the command palette only needs themes, so we emit a trimmed ~46KB map it can
+// lazy-load to make every skin findable by its skin line. Deterministic (no
+// timestamp), written every run so it can never drift from skin-facts.json.
+const LINES_OUT = join(dirname(OUT), 'skin-lines.json')
+const skinLines = {}
+for (const [id, f] of Object.entries(facts)) {
+  const sets = (f.sets ?? []).filter((s) => s !== 'Legacy')
+  if (sets.length) skinLines[id] = sets
+}
+writeFileSync(LINES_OUT, JSON.stringify(skinLines))
+console.log(`wrote ${Object.keys(skinLines).length} skin-line entries → ${LINES_OUT}`)
+
 // Idempotent: if the DATA is unchanged, leave the file alone (including its
 // snapshotAt) — the scheduled refresh workflow only opens a PR on a real
 // diff, not on a timestamp churn.
