@@ -210,9 +210,14 @@ export function GuessInput({
         keys: [
           { name: 'name', weight: 0.7 },
           { name: 'championName', weight: 0.3 },
+          // Index skin lines so you can find a skin by its theme ("Bewitching").
+          { name: 'sets', weight: 0.3 },
         ],
         prefixFirst: true,
-        limit: 8,
+        // The dropdown scrolls, so the cap is about findability, not screen
+        // space: it must clear the largest champion roster (23) and skin line
+        // (36) or a guessable skin gets cut from the list. 50 covers both.
+        limit: 50,
         minLength: 2,
       }),
     [options],

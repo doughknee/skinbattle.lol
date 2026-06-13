@@ -60,6 +60,9 @@ export interface GuessOption {
   championName: string
   // Per-skin tile art (Community Dragon) shown in the autocomplete row.
   tileUrl: string
+  // Skin line(s) this skin belongs to, so the guess box finds it by theme
+  // ("Bewitching") the same way the command palette does.
+  sets: string[]
 }
 
 export interface HubGame {

@@ -18,6 +18,7 @@ import type {
 import { appendEvent, DATA_DIR, getDb } from './db'
 import { MAX_GUESSES, puzzleNumber, seedFloats, utcToday } from './daily'
 import { allCatalogSkins, ensureCatalog, getCatalogSkin } from './catalog'
+import { skinSets } from './facts'
 import { ensureUser, peekUser, type GameUser } from './guests'
 import { getStreak, recordCompletion } from './streaks'
 import { communityBattleCount, userBattleCounts } from './quickbattle'
@@ -405,6 +406,7 @@ export async function splashdleOptions(): Promise<GuessOption[]> {
     championId: s.championId,
     championName: s.championName,
     tileUrl: s.tileUrl,
+    sets: skinSets(s.id),
   }))
 }
 
