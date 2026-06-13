@@ -337,6 +337,44 @@
   }
 }
 
+/* Quick Battle hover — picking a contender is the "I want THIS one" beat, so
+   the card answers in kind: the gold frame ignites and the whole card blooms
+   gold (Tailwind on the card), the splash warms and leans in (Tailwind on the
+   <img>), and one rake of light sweeps across the art like a legendary skin
+   catching the sun. Transform/opacity only; fires once per hover-in. The sweep
+   sits over the splash but under the name plate and frame, so text and edge
+   stay crisp. Clipped to the card by its overflow. */
+.battle-sheen {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0;
+  transform: translateX(-130%) skewX(-12deg);
+  background: linear-gradient(
+    90deg,
+    transparent 30%,
+    color-mix(in srgb, var(--color-gold1) 26%, transparent) 47%,
+    color-mix(in srgb, var(--color-gold1) 6%, transparent) 58%,
+    transparent 72%
+  );
+}
+.battle-card:hover .battle-sheen {
+  animation: battle-sheen 0.85s cubic-bezier(0.22, 1, 0.36, 1);
+}
+@keyframes battle-sheen {
+  0% {
+    transform: translateX(-130%) skewX(-12deg);
+    opacity: 0;
+  }
+  18% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateX(130%) skewX(-12deg);
+    opacity: 0;
+  }
+}
+
 /* The feedback line popping in under the new pair. */
 @keyframes feedback-pop {
   from {
@@ -546,6 +584,7 @@
   .animate-feedback-pop,
   .animate-delta-pop,
   .animate-history-in,
+  .battle-card:hover .battle-sheen,
   .route-progress-bar {
     animation: none !important;
   }
