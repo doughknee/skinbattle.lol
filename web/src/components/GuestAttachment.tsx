@@ -8,6 +8,7 @@
 // the server side is idempotent anyway ('already' is a no-op).
 
 import { useEffect, useRef } from 'react'
+import { usePostHog } from 'posthog-js/react'
 import { useAuth } from '~/lib/useAuth'
 import { getLogtoClient } from '~/lib/logtoClient'
 import {
@@ -18,6 +19,7 @@ import {
 
 export default function GuestAttachment() {
   const { isAuthenticated, getApiToken } = useAuth()
+  const posthog = usePostHog()
   const inFlight = useRef(false)
 
   useEffect(() => {
@@ -61,6 +63,7 @@ export default function GuestAttachment() {
           guestToken: string
         }
         rememberGuestToken(result.guestToken)
+        posthog.capture('guest_account_attached', { outcome: result.outcome })
         try {
           sessionStorage.setItem(ATTACH_SESSION_KEY, marker)
         } catch {

@@ -7,6 +7,7 @@ import {
   faFire,
   faShareNodes,
 } from '@fortawesome/free-solid-svg-icons'
+import { usePostHog } from 'posthog-js/react'
 import ErrorState from '~/components/ErrorState'
 import { toast } from '~/components/Toaster'
 import { btnPrimarySm, btnSecondarySm } from '~/lib/ui'
@@ -145,6 +146,7 @@ function FeedbackBar({
 
 function PriceCheckPage() {
   const initial = Route.useLoaderData()
+  const posthog = usePostHog()
   const [state, setState] = useState<PriceCheckState>(initial)
   const busyRef = useRef(false)
   const playedRef = useRef(false)
@@ -161,6 +163,22 @@ function PriceCheckPage() {
       const next = await submitPriceGuess({
         data: { tier, restoreToken: guestRestoreToken() },
       })
+      const last = next.results[next.results.length - 1]
+      posthog.capture('price_check_guess_submitted', {
+        puzzle_number: next.puzzleNumber,
+        round: state.current?.round ?? next.results.length,
+        guessed_tier: tier,
+        correct: last?.correct ?? false,
+        one_off: last?.oneOff ?? false,
+        actual_price: last?.actual,
+      })
+      if (next.status !== 'in_progress') {
+        posthog.capture('price_check_completed', {
+          puzzle_number: next.puzzleNumber,
+          score: next.score,
+          total_rounds: next.totalRounds,
+        })
+      }
       setState(next)
     } catch (err) {
       toast(
@@ -170,13 +188,18 @@ function PriceCheckPage() {
     } finally {
       busyRef.current = false
     }
-  }, [])
+  }, [posthog, state.current?.round])
 
   const share = async () => {
     if (!state.shareText) return
     try {
       await navigator.clipboard.writeText(state.shareText)
       toast('Result copied. Go flex it!')
+      posthog.capture('price_check_result_shared', {
+        puzzle_number: state.puzzleNumber,
+        score: state.score,
+        total_rounds: state.totalRounds,
+      })
     } catch {
       toast("Couldn't copy to clipboard.", 'error')
     }

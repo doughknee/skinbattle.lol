@@ -22,6 +22,8 @@
     "@tanstack/react-start": "1.168.22",
     "jimp": "^1.6.1",
     "jose": "^6.2.3",
+    "posthog-js": "^1.386.6",
+    "posthog-node": "^5.37.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "satori": "^0.26.0",

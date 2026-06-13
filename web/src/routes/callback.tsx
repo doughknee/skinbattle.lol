@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
-import { useHandleSignInCallback } from '@logto/react'
+import { useHandleSignInCallback, useLogto } from '@logto/react'
+import { usePostHog } from 'posthog-js/react'
 import { useAuth, sessionExpiredStore } from '~/lib/useAuth'
 import { Spinner } from '~/components/Skeletons'
 import { btnPrimarySm, btnSecondarySm } from '~/lib/ui'
@@ -32,10 +33,24 @@ function Reconnecting() {
 function CallbackPage() {
   const navigate = useNavigate()
   const { login } = useAuth()
+  const posthog = usePostHog()
+  const { getIdTokenClaims } = useLogto()
   const [stranded, setStranded] = useState(false)
-  const { isAuthenticated, isLoading, error } = useHandleSignInCallback(() => {
-    // Successful sign-in → fresh session, back to home.
+  const { isAuthenticated, isLoading, error } = useHandleSignInCallback(async () => {
+    // Successful sign-in → identify the user in PostHog, then go home.
     sessionExpiredStore.set(false)
+    try {
+      const claims = await getIdTokenClaims()
+      if (claims?.sub) {
+        posthog.identify(claims.sub, {
+          email: claims.email,
+          username: claims.username,
+        })
+      }
+    } catch {
+      /* non-fatal: analytics shouldn't block navigation */
+    }
+    posthog.capture('user_signed_in')
     navigate({ to: '/' })
   })
 

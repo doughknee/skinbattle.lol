@@ -2,6 +2,7 @@ import { createFileRoute } from '@tanstack/react-router'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faFire, faPalette } from '@fortawesome/free-solid-svg-icons'
+import { usePostHog } from 'posthog-js/react'
 import ErrorState from '~/components/ErrorState'
 import { toast } from '~/components/Toaster'
 import {
@@ -54,6 +55,7 @@ export const Route = createFileRoute('/battle/chroma-vision')({
 
 function ChromaVisionPage() {
   const initial = Route.useLoaderData()
+  const posthog = usePostHog()
   const [state, setState] = useState<ChromaVisionState>(initial)
   const [options, setOptions] = useState<GuessOption[]>([])
   const [submitting, setSubmitting] = useState(false)
@@ -104,6 +106,22 @@ function ChromaVisionPage() {
       })
       rememberGuestToken(next.guestToken)
       const last = next.guesses[next.guesses.length - 1]
+      posthog.capture('chromavision_guess_submitted', {
+        puzzle_number: next.puzzleNumber,
+        guess_number: next.guesses.length,
+        correct: last?.correct ?? false,
+        champion_match: last?.championMatch ?? false,
+        guessed_skin_id: opt.skinId,
+      })
+      if (next.status !== 'in_progress') {
+        posthog.capture('chromavision_completed', {
+          puzzle_number: next.puzzleNumber,
+          outcome: next.status,
+          guesses_used: next.guesses.length,
+          max_guesses: next.maxGuesses,
+          streak: next.streak.current,
+        })
+      }
       // Full miss jolts the mosaic; a right-champion near-miss doesn't.
       // Cleared on a timer, never animationend (backgrounded tabs).
       if (last && !last.correct && !last.championMatch) {
@@ -121,7 +139,7 @@ function ChromaVisionPage() {
       setPending(null)
       setSubmitting(false)
     }
-  }, [])
+  }, [posthog])
 
   const playing = state.status === 'in_progress'
   const guessedIds = new Set(state.guesses.map((g) => g.skinId))

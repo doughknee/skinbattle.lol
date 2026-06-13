@@ -11,6 +11,7 @@ import {
   faStar,
   faUsers,
 } from '@fortawesome/free-solid-svg-icons'
+import { usePostHog } from 'posthog-js/react'
 import ErrorState from '~/components/ErrorState'
 import { toast } from '~/components/Toaster'
 import TodayStrip from '~/components/games/TodayStrip'
@@ -349,6 +350,7 @@ const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms))
 function BattlePage() {
   const { qb: initial, hub } = Route.useLoaderData()
   const { isAuthenticated, getApiToken, withApiToken, login } = useAuth()
+  const posthog = usePostHog()
   const [view, setView] = useState<View>({
     current: initial.pair,
     next: initial.next,
@@ -445,20 +447,32 @@ function BattlePage() {
           x: next.x === prev.x ? 0 : next.x ? 1 : -1,
         })
         const now = userStatsStore.get()
-        if (next.star !== prev.star)
+        if (next.star !== prev.star) {
+          posthog.capture(next.star ? 'skin_starred' : 'skin_unstarred', {
+            skin_id: skinId,
+            stars_used: now.usedStars,
+            source: 'battle_arena',
+          })
           toast(
             next.star
               ? `Star ${now.usedStars}/${MAX_STARS} used`
               : `Star removed. ${now.usedStars}/${MAX_STARS} used`,
             'success',
           )
-        if (next.x !== prev.x)
+        }
+        if (next.x !== prev.x) {
+          posthog.capture(next.x ? 'skin_banned' : 'skin_unbanned', {
+            skin_id: skinId,
+            bans_used: now.usedX,
+            source: 'battle_arena',
+          })
           toast(
             next.x
               ? `Ban ${now.usedX}/${MAX_X} used`
               : `Ban removed. ${now.usedX}/${MAX_X} used`,
             'success',
           )
+        }
         window.dispatchEvent(new CustomEvent('updateUserStats'))
       } catch (err) {
         setMarks((m) => new Map(m).set(skinId, prev))
@@ -467,7 +481,7 @@ function BattlePage() {
         markBusyRef.current = false
       }
     },
-    [isAuthenticated, login, withApiToken],
+    [isAuthenticated, login, posthog, withApiToken],
   )
 
   // Manual-refit runs report through the console (the trigger is an admin
@@ -574,6 +588,16 @@ function BattlePage() {
       try {
         const res = await votePromise
         rememberGuestToken(res.guestToken)
+        posthog.capture('battle_vote_submitted', {
+          winner_skin_id: winnerId,
+          winner_skin_name: res.feedback.winnerName,
+          loser_skin_name: res.feedback.loserName,
+          elo_delta: res.feedback.delta,
+          winner_rank: res.feedback.rank,
+          agreement_pct: res.feedback.agreementPct,
+          session_picks: picksMadeRef.current,
+          player_tier: res.stats.tier,
+        })
         setView((prev) => ({
           ...prev,
           next: res.nextPair,

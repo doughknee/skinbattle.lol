@@ -98,8 +98,14 @@ Notes:
   VITE_LOGTO_ENDPOINT=https://auth.skinbattle.lol
   VITE_LOGTO_APP_ID=<from step 3>
   VITE_LOGTO_RESOURCE=https://api.skinbattle.lol
+  POSTHOG_PROJECT_TOKEN=<PostHog project token>   # public client token
+  POSTHOG_HOST=https://us.i.posthog.com           # or your region's host
   PORT=3000
   ```
+  PostHog vars are read at **runtime** (like Logto) — set/rotate them and restart
+  the `web` service, no rebuild. An empty token disables analytics. Browser events
+  are proxied **same-origin** through `/ingest` by `server.mjs`, so no extra Coolify
+  proxy rule is needed for PostHog (unlike `/api`) and ad-blockers can't drop them.
 - **Same-origin proxy:** route `https://skinbattle.lol/api/*` to the `api` service.
   Configure this in Coolify's proxy (Traefik label / additional domain rule) so the
   browser's `/api` calls reach Go. Alternatively give the API its own domain

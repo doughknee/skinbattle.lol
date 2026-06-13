@@ -22,6 +22,21 @@ export default defineConfig({
         target: process.env.DEV_API_PROXY || 'http://localhost:8080',
         changeOrigin: true,
       },
+      '/ingest/static': {
+        target: 'https://us-assets.i.posthog.com',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/ingest/, ''),
+      },
+      '/ingest/array': {
+        target: 'https://us-assets.i.posthog.com',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/ingest/, ''),
+      },
+      '/ingest': {
+        target: 'https://us.i.posthog.com',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/ingest/, ''),
+      },
     },
   },
   // The OG-card renderer (server-only, reached via dynamic import from

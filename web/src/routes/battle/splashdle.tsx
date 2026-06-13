@@ -2,6 +2,7 @@ import { createFileRoute } from '@tanstack/react-router'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faCheck, faFire } from '@fortawesome/free-solid-svg-icons'
+import { usePostHog } from 'posthog-js/react'
 import ErrorState from '~/components/ErrorState'
 import { toast } from '~/components/Toaster'
 import {
@@ -54,6 +55,7 @@ export const Route = createFileRoute('/battle/splashdle')({
 
 function SplashdlePage() {
   const initial = Route.useLoaderData()
+  const posthog = usePostHog()
   const [state, setState] = useState<SplashdleState>(initial)
   const [options, setOptions] = useState<GuessOption[]>([])
   const [submitting, setSubmitting] = useState(false)
@@ -105,6 +107,22 @@ function SplashdlePage() {
       })
       rememberGuestToken(next.guestToken)
       const last = next.guesses[next.guesses.length - 1]
+      posthog.capture('splashdle_guess_submitted', {
+        puzzle_number: next.puzzleNumber,
+        guess_number: next.guesses.length,
+        correct: last?.correct ?? false,
+        champion_match: last?.championMatch ?? false,
+        guessed_skin_id: opt.skinId,
+      })
+      if (next.status !== 'in_progress') {
+        posthog.capture('splashdle_completed', {
+          puzzle_number: next.puzzleNumber,
+          outcome: next.status,
+          guesses_used: next.guesses.length,
+          max_guesses: next.maxGuesses,
+          streak: next.streak.current,
+        })
+      }
       // A full miss jolts the splash; a near-miss (right champion) doesn't -
       // warm should never feel like rejection. Cleared on a timer rather
       // than animationend, which never fires in a backgrounded tab.
@@ -123,7 +141,7 @@ function SplashdlePage() {
       setPending(null)
       setSubmitting(false)
     }
-  }, [])
+  }, [posthog])
 
   const playing = state.status === 'in_progress'
   const guessedIds = new Set(state.guesses.map((g) => g.skinId))

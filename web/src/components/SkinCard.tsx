@@ -2,6 +2,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faStar, faBan } from '@fortawesome/free-solid-svg-icons'
 import { useState, useEffect } from 'react'
 import { Link } from '@tanstack/react-router'
+import { usePostHog } from 'posthog-js/react'
 import { api } from '~/lib/api'
 import { useAuth } from '~/lib/useAuth'
 import { toast } from '~/components/Toaster'
@@ -42,6 +43,7 @@ export default function SkinCard({
   rankContext,
 }: SkinCardProps) {
   const { isAuthenticated, withApiToken, login } = useAuth()
+  const posthog = usePostHog()
 
   const [totals, setTotals] = useState<VoteTotals>({
     total_stars: skin.total_stars || 0,
@@ -105,6 +107,13 @@ export default function SkinCard({
     castVote({ star: newStar, x: userX }, () => {
       userStatsStore.adjust({ stars: newStar ? 1 : -1 })
       const used = userStatsStore.get().usedStars
+      posthog.capture(newStar ? 'skin_starred' : 'skin_unstarred', {
+        skin_id: skin.id,
+        skin_name: skinName,
+        champion_id: championId,
+        stars_used: used,
+        source: 'skin_card',
+      })
       toast(
         newStar
           ? `Star ${used}/${MAX_STARS} used`
@@ -123,6 +132,13 @@ export default function SkinCard({
     castVote({ star: userStar, x: newX }, () => {
       userStatsStore.adjust({ x: newX ? 1 : -1 })
       const used = userStatsStore.get().usedX
+      posthog.capture(newX ? 'skin_banned' : 'skin_unbanned', {
+        skin_id: skin.id,
+        skin_name: skinName,
+        champion_id: championId,
+        bans_used: used,
+        source: 'skin_card',
+      })
       toast(
         newX
           ? `Ban ${used}/${MAX_X} used`
