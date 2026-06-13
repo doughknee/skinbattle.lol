@@ -11,6 +11,7 @@ export type SkinVoteAction = 'star' | 'unstar' | 'ban' | 'unban'
 
 export type SkinVoteSource =
   | 'skin_card'
+  | 'skin_page'
   | 'home_hero'
   | 'battle_arena'
   | 'quota_chip'

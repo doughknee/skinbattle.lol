@@ -231,7 +231,11 @@ function AwardsPage() {
           The awards only crown the extremes. See every skin in order on the
           full ranking, sliced by price, line, champion, or year.
         </p>
-        <Link to="/rankings/all" className={`group ${btnSecondarySm}`}>
+        <Link
+          to="/rankings/$slice"
+          params={{ slice: 'all' }}
+          className={`group ${btnSecondarySm}`}
+        >
           Browse the full ranking
           <FontAwesomeIcon
             icon={faArrowRight}
