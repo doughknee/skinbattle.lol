@@ -137,17 +137,20 @@ function ChampionPage() {
     <>
       {/* ── Champion hero ────────────────────────────────────── */}
       <section className="relative min-h-[58vh] w-full overflow-hidden">
+        {/* The splash is masked to transparent at the bottom so it dissolves
+            into the viewport-fixed page gradient - the same gradient the next
+            section sits on - for a true crossfade, not a hard seam. */}
         {splash && (
           <img
             src={splash}
             alt={`${champion.id} splash art`}
-            className="absolute inset-0 h-full w-full object-cover object-top"
+            className="absolute inset-0 h-full w-full object-cover object-top [mask-image:linear-gradient(to_bottom,#000_42%,transparent_94%)] [-webkit-mask-image:linear-gradient(to_bottom,#000_42%,transparent_94%)]"
           />
         )}
-        <div className="absolute inset-0 bg-gradient-to-r from-hextech-black/95 via-hextech-black/60 to-transparent" />
-        <div className="absolute inset-0 bg-gradient-to-t from-gradientTop via-transparent to-hextech-black/40" />
+        {/* Left wash for title legibility, faded out at the bottom with the art. */}
+        <div className="absolute inset-0 bg-gradient-to-r from-hextech-black/85 via-hextech-black/30 to-transparent [mask-image:linear-gradient(to_bottom,#000_42%,transparent_94%)] [-webkit-mask-image:linear-gradient(to_bottom,#000_42%,transparent_94%)]" />
 
-        <div className="animate-fade-up container mx-auto px-6 relative z-10 flex min-h-[58vh] flex-col justify-end pt-28 pb-12">
+        <div className="animate-fade-up container mx-auto max-w-5xl px-6 relative z-10 flex min-h-[58vh] flex-col justify-end pt-28 pb-24">
           <Link
             to="/champions"
             className="mb-6 inline-flex w-fit items-center gap-2 text-sm font-serif font-bold uppercase tracking-widest text-grey1 hover:text-gold1 transition duration-150"
@@ -183,7 +186,7 @@ function ChampionPage() {
       </section>
 
       {/* ── Skins ────────────────────────────────────────────── */}
-      <section className="container mx-auto px-6 py-16">
+      <section className="container mx-auto max-w-5xl px-6 py-16">
         <div className="mb-10 flex flex-wrap items-end justify-between gap-4">
           <div>
             <h2 className="font-serif text-3xl md:text-4xl font-bold text-gold2 mb-2">
@@ -208,7 +211,7 @@ function ChampionPage() {
             />
           </div>
         </div>
-        <div className="stagger grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-x-6 gap-y-10">
+        <div className="stagger grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
           {sortedSkins.map((skin) => (
             <SkinCard
               key={skin.id}

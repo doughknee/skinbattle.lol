@@ -151,7 +151,7 @@ function AwardsPage() {
   }, [isAuthenticated, getApiToken, baseAwards])
 
   return (
-    <div className="container mx-auto px-6 pt-28 pb-12">
+    <div className="container mx-auto max-w-5xl px-6 pt-28 pb-16">
       <PageHeader
         eyebrow="The community has spoken"
         title="Awards"
@@ -222,17 +222,21 @@ function AwardsPage() {
         </section>
       )}
 
-      {/* Hand off browsing to the dedicated skins page */}
+      {/* Hand off browsing to the full ranking - every skin, sliceable. */}
       <section className="border-t border-icon/20 pt-12 text-center">
         <h2 className="font-serif text-2xl md:text-3xl font-bold text-gold2 mb-3">
           Looking for the rest?
         </h2>
         <p className="mx-auto mb-8 max-w-xl text-lg text-grey1">
-          The awards only crown the extremes. Browse, search, and sort the full
-          collection on the skins page.
+          The awards only crown the extremes. See every skin in order on the
+          full ranking, sliced by price, line, champion, or year.
         </p>
-        <Link to="/skins" className={`group ${btnSecondarySm}`}>
-          Browse all skins
+        <Link
+          to="/rankings/$slice"
+          params={{ slice: 'all' }}
+          className={`group ${btnSecondarySm}`}
+        >
+          Browse the full ranking
           <FontAwesomeIcon
             icon={faArrowRight}
             className="h-4 transition-transform duration-150 group-hover:translate-x-1"

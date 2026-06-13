@@ -4,14 +4,13 @@ import { usePostHog } from 'posthog-js/react'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import {
   faArrowLeft,
-  faBan,
   faChartLine,
   faCircleInfo,
   faRankingStar,
   faShuffle,
-  faStar,
 } from '@fortawesome/free-solid-svg-icons'
 import ErrorState from '~/components/ErrorState'
+import SkinVoteBar from '~/components/SkinVoteBar'
 import { api } from '~/lib/api'
 import { btnPrimarySm, btnSecondarySm } from '~/lib/ui'
 import { fetchSkinPage } from '~/lib/games/serverFns'
@@ -77,7 +76,7 @@ export const Route = createFileRoute('/skins_/$slug')({
       title="No such skin"
       message="That link doesn't resolve to a skin in the catalog."
       retry={false}
-      back={{ to: '/skins', label: 'Browse skins' }}
+      back={{ to: '/rankings/all', label: 'The full ranking' }}
     />
   ),
   errorComponent: ({ error }) => (
@@ -193,23 +192,6 @@ function SkinPage() {
               </p>
             </>
           )}
-          {state.votes &&
-            (state.votes.stars > 0 || state.votes.bans > 0) && (
-              <p className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm">
-                {state.votes.stars > 0 && (
-                  <span className="font-bold text-gold2">
-                    <FontAwesomeIcon icon={faStar} className="mr-1 h-3" />
-                    {state.votes.stars.toLocaleString()}
-                  </span>
-                )}
-                {state.votes.bans > 0 && (
-                  <span className="font-bold text-danger">
-                    <FontAwesomeIcon icon={faBan} className="mr-1 h-3" />
-                    {state.votes.bans.toLocaleString()}
-                  </span>
-                )}
-              </p>
-            )}
         </div>
 
         <div className={card}>
@@ -305,6 +287,14 @@ function SkinPage() {
           )}
         </div>
       </section>
+
+      <SkinVoteBar
+        skinId={state.skinId}
+        championId={state.championId}
+        skinName={state.name}
+        baseStars={state.votes?.stars ?? 0}
+        baseBans={state.votes?.bans ?? 0}
+      />
 
       <div className="mt-8 flex flex-wrap items-center gap-3">
         <Link to="/battle" className={btnPrimarySm}>

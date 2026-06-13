@@ -48,13 +48,16 @@ function Column({ title, pages }: { title: string; pages: SitePage[] }) {
 }
 
 export default function Footer() {
-  // Each section with children gets its own column; anything childless plus
-  // the profile pages (mirror, votes, account) group into a "You" column.
-  const you = [
-    ...SITE_SECTIONS.filter((s) => !s.children?.length),
-    ...PROFILE_PAGES,
-  ]
-  const grouped = SITE_SECTIONS.filter((s) => (s.children?.length ?? 0) > 0)
+  // Every top-level section gets its own column: a dropdown section lists its
+  // children beneath the landing link; a plain link (Champions) stands alone.
+  // The profile tabs (mirror, votes, account) get the "You" column.
+  const columns = SITE_SECTIONS.map((s) => ({
+    to: s.to,
+    title: s.label,
+    // Landing first, children after - minus any child pointing back at the
+    // landing page (e.g. a dropdown's hero row).
+    pages: [s, ...(s.children ?? []).filter((c) => c.to !== s.to)],
+  }))
 
   return (
     <footer className="mt-24 border-t border-icon/20 bg-hextech-black/40">
@@ -70,13 +73,10 @@ export default function Footer() {
           </p>
         </div>
 
-        {grouped.map((s) => {
-          // Section landing first, children after - minus any child that
-          // points back at the landing page (e.g. "Browse the Slices").
-          const pages = [s, ...s.children!.filter((c) => c.to !== s.to)]
-          return <Column key={s.to} title={s.label} pages={pages} />
-        })}
-        <Column title="You" pages={you} />
+        {columns.map((col) => (
+          <Column key={col.to} title={col.title} pages={col.pages} />
+        ))}
+        <Column title="You" pages={PROFILE_PAGES} />
         <Column title="The Site" pages={SECONDARY_PAGES} />
       </div>
 
