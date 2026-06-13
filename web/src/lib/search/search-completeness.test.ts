@@ -75,27 +75,30 @@ const MAX_SKINS = 50 // CommandPalette.tsx — covers the largest champion/skin-
 const paletteSearcher = (limit?: number) =>
   createSearcher(paletteEntries, { keys: ['label', 'haystack'], limit })
 
-// Guess box (Splashdle / Chroma Vision) — GuessKit.tsx lines 207-219.
-//   keys name(0.7)/championName(0.3), prefixFirst, limit 8, minLength 2.
-//   name = raw skin name, championName = DB display name.
+// Guess box (Splashdle / Chroma Vision) — GuessKit.tsx.
+//   keys name(0.7)/championName(0.3)/sets(0.3), prefixFirst, minLength 2.
+//   name = raw skin name, championName = DB display name, sets = skin lines.
 interface GuessEntry {
   skinId: string
   championId: string
   name: string
   championName: string
+  sets: string[]
 }
 const guessEntries: GuessEntry[] = SKINS.map((s) => ({
   skinId: s.id,
   championId: s.championId,
   name: s.name,
   championName: s.championName,
+  sets: s.sets,
 }))
-const GUESS_LIMIT = 8
+const GUESS_LIMIT = 50 // GuessKit.tsx — covers the largest champion/skin-line group
 const guessSearcher = (limit?: number) =>
   createSearcher(guessEntries, {
     keys: [
       { name: 'name', weight: 0.7 },
       { name: 'championName', weight: 0.3 },
+      { name: 'sets', weight: 0.3 },
     ],
     prefixFirst: true,
     limit,
@@ -171,16 +174,41 @@ describe('champion search — real UI result caps', () => {
     ).toEqual([])
   })
 
-  // The guess box is a *narrowing* autocomplete for a guessing game, not a
-  // browse surface — its 8-row cap is intentional. The contract is "an exact
-  // skin name resolves, and a champion prefix surfaces its skins up to the
-  // cap", NOT exhaustiveness.
-  it('guess box resolves an exact skin name and narrows by champion', () => {
+  // The guess box dropdown scrolls, so its cap is a findability guarantee, not
+  // a screen-space one: in a guessing game you must be able to surface any skin
+  // by typing its champion. A skin cut from the list is unguessable.
+  it('guess box (Splashdle / Chroma Vision) surfaces every skin for every champion', () => {
     const search = guessSearcher(GUESS_LIMIT)
-    expect(search.search('Bewitching Batnivia').some((e) => e.skinId === '34037')).toBe(true)
-    const anivia = search.search('Anivia')
-    expect(anivia.length).toBeGreaterThan(0)
-    expect(anivia.length).toBeLessThanOrEqual(GUESS_LIMIT)
+    const unguessable: Array<{ champion: string; total: number; hidden: string[] }> = []
+
+    for (const [championId, skins] of byChampion) {
+      const found = new Set(search.search(championDisplayName(championId)).map((e) => e.skinId))
+      const hidden = skins.filter((s) => !found.has(s.id))
+      if (hidden.length) {
+        unguessable.push({
+          champion: championDisplayName(championId),
+          total: skins.length,
+          hidden: hidden.map((s) => s.name),
+        })
+      }
+    }
+
+    if (unguessable.length) writeReport('search-gaps-guessbox-cap.report.json', unguessable)
+    expect(
+      unguessable,
+      summarize('champions with a skin the guess box cannot surface by champion name', unguessable),
+    ).toEqual([])
+  })
+
+  it('guess box finds skins by skin line', () => {
+    const search = guessSearcher(GUESS_LIMIT)
+    const gaps: Array<{ line: string; unfindable: string[] }> = []
+    for (const [set, skins] of bySet) {
+      const found = new Set(search.search(set).map((e) => e.skinId))
+      const unfindable = skins.filter((s) => !found.has(s.id)).map((s) => `${s.name} (${s.championName})`)
+      if (unfindable.length) gaps.push({ line: set, unfindable })
+    }
+    expect(gaps, summarize('skin lines the guess box cannot surface by line name', gaps)).toEqual([])
   })
 })
 
