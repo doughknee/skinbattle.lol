@@ -9,6 +9,11 @@ export interface PublicConfig {
   logtoAppId: string
   logtoResource: string
   apiUrl: string
+  // PostHog: project token is a PUBLIC client token (shipped to the browser).
+  // Empty token disables analytics (see ClientProviders). posthogHost is only
+  // the ui_host for toolbar deep-links; ingestion goes same-origin via /ingest.
+  posthogToken: string
+  posthogHost: string
 }
 
 declare global {
@@ -23,6 +28,8 @@ function viteFallback(): PublicConfig {
     logtoAppId: import.meta.env.VITE_LOGTO_APP_ID || '',
     logtoResource: import.meta.env.VITE_LOGTO_RESOURCE || '',
     apiUrl: import.meta.env.VITE_API_URL || '/api',
+    posthogToken: import.meta.env.VITE_PUBLIC_POSTHOG_PROJECT_TOKEN || '',
+    posthogHost: import.meta.env.VITE_PUBLIC_POSTHOG_HOST || '',
   }
 }
 
@@ -43,6 +50,8 @@ export function readServerConfig(): PublicConfig {
     logtoAppId: env.LOGTO_APP_ID || fb.logtoAppId,
     logtoResource: env.LOGTO_RESOURCE || fb.logtoResource,
     apiUrl: env.PUBLIC_API_URL || fb.apiUrl,
+    posthogToken: env.POSTHOG_PROJECT_TOKEN || fb.posthogToken,
+    posthogHost: env.POSTHOG_HOST || fb.posthogHost,
   }
 }
 

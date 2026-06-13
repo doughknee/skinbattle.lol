@@ -170,6 +170,10 @@ services:
       - LOGTO_ENDPOINT=${SERVICE_URL_LOGTO}
       - LOGTO_APP_ID=${LOGTO_APP_ID}
       - LOGTO_RESOURCE=${LOGTO_AUDIENCE:-https://api.skinbattle.lol}
+      # PostHog analytics. Token is a PUBLIC client token; injected at runtime
+      # (no rebuild). Browser events go same-origin via /ingest (server.mjs proxy).
+      - POSTHOG_PROJECT_TOKEN=${POSTHOG_PROJECT_TOKEN}
+      - POSTHOG_HOST=${POSTHOG_HOST:-https://us.i.posthog.com}
       - PORT=3000
     volumes:
       # Games data: SQLite db (guests, streaks, append-only event log) +

@@ -8,6 +8,7 @@ import {
   faScaleUnbalanced,
   faStar,
 } from '@fortawesome/free-solid-svg-icons'
+import { usePostHog } from 'posthog-js/react'
 import SkinCard from '~/components/SkinCard'
 import EmptyState from '~/components/EmptyState'
 import { HomeSkeleton } from '~/components/Skeletons'
@@ -318,6 +319,7 @@ function SlidePlate({
   onJump: (i: number) => void
 }) {
   const { isAuthenticated, withApiToken, login } = useAuth()
+  const posthog = usePostHog()
   const [pending, setPending] = useState(false)
   // Optimistic per-skin overrides on top of loader totals + auth enrichment.
   const [votes, setVotes] = useState<Record<string, SlideVote>>({})
@@ -373,6 +375,12 @@ function SlidePlate({
       })
       const used = userStatsStore.get()
       if (next.star !== prev.star) {
+        posthog.capture(next.star ? 'skin_starred' : 'skin_unstarred', {
+          skin_id: slide.skinId,
+          skin_name: slide.name,
+          stars_used: used.usedStars,
+          source: 'home_hero',
+        })
         toast(
           next.star
             ? `Star ${used.usedStars}/${MAX_STARS} used`
@@ -381,6 +389,12 @@ function SlidePlate({
         )
       }
       if (next.x !== prev.x) {
+        posthog.capture(next.x ? 'skin_banned' : 'skin_unbanned', {
+          skin_id: slide.skinId,
+          skin_name: slide.name,
+          bans_used: used.usedX,
+          source: 'home_hero',
+        })
         toast(
           next.x
             ? `Ban ${used.usedX}/${MAX_X} used`

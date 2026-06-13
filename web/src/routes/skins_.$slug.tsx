@@ -1,5 +1,6 @@
 import { createFileRoute, Link, notFound, redirect } from '@tanstack/react-router'
 import { useEffect } from 'react'
+import { usePostHog } from 'posthog-js/react'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import {
   faArrowLeft,
@@ -102,10 +103,24 @@ const isNew = (release: string | null | undefined) =>
 
 function SkinPage() {
   const state = Route.useLoaderData()
+  const posthog = usePostHog()
 
   useEffect(() => {
     rememberGuestToken(state.guestToken)
   }, [state.guestToken])
+
+  useEffect(() => {
+    posthog.capture('skin_page_viewed', {
+      skin_id: state.skinId,
+      skin_name: state.name,
+      champion_id: state.championId,
+      champion_name: state.championName,
+      elo_rank: state.community?.rank ?? null,
+      battles: state.community?.battles ?? 0,
+    })
+  // Only fire once per skin: re-firing on posthog identity changes isn't useful here.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [state.skinId])
 
   const c = state.community
   const winRate =

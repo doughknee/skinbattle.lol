@@ -5,6 +5,7 @@
 
 import { Link } from '@tanstack/react-router'
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { usePostHog } from 'posthog-js/react'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import {
   faArrowLeft,
@@ -554,6 +555,7 @@ export function ResultPanel({
   animate: boolean
   gameName: string // "Splashdle" | "Chroma Vision" - used in the countdown
 }) {
+  const posthog = usePostHog()
   const [countdown, setCountdown] = useState(nextPuzzleCountdown)
 
   useEffect(() => {
@@ -566,6 +568,13 @@ export function ResultPanel({
     try {
       await navigator.clipboard.writeText(shareText)
       toast('Result copied. Go flex it!')
+      posthog.capture('game_result_shared', {
+        game_name: gameName,
+        outcome: status,
+        guesses_used: guesses.length,
+        max_guesses: maxGuesses,
+        streak: streak.current,
+      })
     } catch {
       toast("Couldn't copy to clipboard.", 'error')
     }

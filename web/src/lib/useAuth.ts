@@ -11,6 +11,7 @@
 //   revocation).
 import { useCallback, useSyncExternalStore } from 'react'
 import { LogtoClientError, LogtoError, useLogto } from '@logto/react'
+import { usePostHog } from 'posthog-js/react'
 import { getLogtoClient } from './logtoClient'
 import { getLogtoResource, redirectUri, postSignOutUri } from './logto'
 import { clearGuestIdentity } from './games/client'
@@ -52,6 +53,7 @@ function isSessionDead(err: unknown): boolean {
 
 export function useAuth() {
   const { isAuthenticated: sdkAuthenticated, isLoading } = useLogto()
+  const posthog = usePostHog()
   const expired = useSyncExternalStore(
     sessionExpiredStore.subscribe,
     sessionExpiredStore.get,
@@ -160,6 +162,8 @@ export function useAuth() {
     sessionExpiredStore.set(false)
     const client = getLogtoClient()
     if (!client) return
+    posthog.capture('user_signed_out')
+    posthog.reset()
     // Drop the games guest identity BEFORE the sign-out redirect unloads the
     // page - otherwise the next account on this browser inherits this
     // device's games record (tier list, history, streaks).
@@ -169,7 +173,7 @@ export function useAuth() {
         console.error('sign-out redirect failed:', err)
         toast("Couldn't reach the sign-out service. Please try again.", 'error')
       })
-  }, [])
+  }, [posthog])
 
   return {
     isAuthenticated,
