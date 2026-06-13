@@ -23,6 +23,11 @@ const (
 	// CommunityDragon serves complete per-skin art; asset paths from
 	// skins.json are appended to this root, lowercased.
 	cdragonBase = "https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default"
+	// catalogRev forces a one-time re-import when the INGEST changes without a
+	// League patch bump (e.g. the Data Dragon → Community Dragon art switch):
+	// the version guard alone would skip re-syncing a catalog already at the
+	// current patch. Bump this whenever the stored art/columns must be rebuilt.
+	catalogRev = "cdragon-1"
 )
 
 var httpClient = &http.Client{Timeout: 60 * time.Second}
@@ -102,19 +107,20 @@ func Sync(ctx context.Context, pool *pgxpool.Pool, pinnedVersion string) error {
 		return fmt.Errorf("resolve version: %w", err)
 	}
 
-	var stored string
+	var stored, storedRev string
 	_ = pool.QueryRow(ctx, `SELECT value FROM seed_meta WHERE key = 'ddragon_version'`).Scan(&stored)
+	_ = pool.QueryRow(ctx, `SELECT value FROM seed_meta WHERE key = 'catalog_rev'`).Scan(&storedRev)
 
 	var count int
 	if err := pool.QueryRow(ctx, `SELECT count(*) FROM champions`).Scan(&count); err != nil {
 		return fmt.Errorf("count champions: %w", err)
 	}
 
-	if count > 0 && stored == version {
-		log.Printf("ddragon: already at %s (%d champions); nothing to sync", version, count)
+	if count > 0 && stored == version && storedRev == catalogRev {
+		log.Printf("ddragon: already at %s rev %s (%d champions); nothing to sync", version, catalogRev, count)
 		return nil
 	}
-	log.Printf("ddragon: syncing to %s (previous=%q, %d champions present)", version, stored, count)
+	log.Printf("ddragon: syncing to %s rev %s (previous=%q rev %q, %d champions present)", version, catalogRev, stored, storedRev, count)
 
 	// Champion fields (id/key/title/blurb/lore) from Data Dragon's
 	// championFull.json - one request covers the whole roster.
@@ -192,6 +198,13 @@ func Sync(ctx context.Context, pool *pgxpool.Pool, pinnedVersion string) error {
 		version,
 	); err != nil {
 		return fmt.Errorf("record version: %w", err)
+	}
+	if _, err := tx.Exec(ctx,
+		`INSERT INTO seed_meta (key, value, updated_at) VALUES ('catalog_rev', $1, now())
+		 ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value, updated_at = now()`,
+		catalogRev,
+	); err != nil {
+		return fmt.Errorf("record catalog rev: %w", err)
 	}
 
 	if err := tx.Commit(ctx); err != nil {
