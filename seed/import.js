@@ -25,7 +25,8 @@ const CDRAGON_BASE =
 // Forces a one-time re-import when the ingest changes without a League patch
 // bump (e.g. the Data Dragon → Community Dragon art switch). Keep in sync with
 // api/internal/ddragon (catalogRev). Bump to rebuild stored art.
-const CATALOG_REV = 'cdragon-1';
+// cdragon-2: reconcile away stale Data-Dragon-only skins (broken splashes).
+const CATALOG_REV = 'cdragon-2';
 
 if (!process.env.DATABASE_URL) {
   console.error('DATABASE_URL is required');
@@ -184,14 +185,25 @@ async function main() {
     for (const champ of champions) await insertChampion(client, champ);
 
     let skinTotal = 0;
+    const present = [];
     for (const skin of Object.values(skins)) {
       const championId = byKey.get(Math.floor(skin.id / 1000));
       if (!championId) continue; // a champion championFull doesn't list
       await insertSkin(client, championId, skin);
+      present.push(String(skin.id));
       skinTotal++;
     }
+    // Reconcile: drop leftover Data-Dragon-only skins Community Dragon no longer
+    // lists (old chromas/phantoms), keeping any that carry votes so none is lost.
+    const pruned = await client.query(
+      `DELETE FROM skins s
+         WHERE s.id <> ALL($1::text[])
+           AND NOT EXISTS (SELECT 1 FROM user_skin_votes v WHERE v.skin_id = s.id)`,
+      [present],
+    );
     console.log(
-      `Synced ${champions.length} champions / ${skinTotal} skins (art: Community Dragon).`,
+      `Synced ${champions.length} champions / ${skinTotal} skins (art: Community Dragon)` +
+        (pruned.rowCount ? `; pruned ${pruned.rowCount} stale skins.` : '.'),
     );
   } finally {
     client.release();

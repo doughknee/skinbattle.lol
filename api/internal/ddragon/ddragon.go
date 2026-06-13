@@ -27,7 +27,8 @@ const (
 	// League patch bump (e.g. the Data Dragon → Community Dragon art switch):
 	// the version guard alone would skip re-syncing a catalog already at the
 	// current patch. Bump this whenever the stored art/columns must be rebuilt.
-	catalogRev = "cdragon-1"
+	// cdragon-2: reconcile away stale Data-Dragon-only skins (broken splashes).
+	catalogRev = "cdragon-2"
 )
 
 var httpClient = &http.Client{Timeout: 60 * time.Second}
@@ -172,11 +173,13 @@ func Sync(ctx context.Context, pool *pgxpool.Pool, pinnedVersion string) error {
 	}
 
 	skinTotal := 0
+	present := make([]string, 0, len(skins))
 	for _, s := range skins {
 		championID, ok := byKey[s.ID/1000]
 		if !ok {
 			continue // a champion championFull doesn't list this patch
 		}
+		id := strconv.Itoa(s.ID)
 		if _, err := tx.Exec(ctx,
 			`INSERT INTO skins (id, champion_id, num, name, chromas, splash_url)
 			 VALUES ($1, $2, $3, $4, $5, $6)
@@ -184,12 +187,29 @@ func Sync(ctx context.Context, pool *pgxpool.Pool, pinnedVersion string) error {
 			   SET champion_id = EXCLUDED.champion_id, num = EXCLUDED.num,
 			       name = EXCLUDED.name, chromas = EXCLUDED.chromas,
 			       splash_url = EXCLUDED.splash_url`,
-			strconv.Itoa(s.ID), championID, s.ID%1000, s.Name,
+			id, championID, s.ID%1000, s.Name,
 			s.ChromaPath != "", cdragonAsset(s.SplashPath),
 		); err != nil {
 			return fmt.Errorf("upsert skin %d: %w", s.ID, err)
 		}
+		present = append(present, id)
 		skinTotal++
+	}
+
+	// Reconcile against Community Dragon's authoritative set: drop leftover
+	// Data Dragon rows it no longer lists (old chromas/phantoms) UNLESS they
+	// carry votes - those are kept so no vote is ever lost. Without this, a
+	// stale row with a now-dead Data Dragon splash would render broken (the
+	// old splash-sweep that hid those is gone).
+	if tag, err := tx.Exec(ctx,
+		`DELETE FROM skins s
+		   WHERE s.id <> ALL($1)
+		     AND NOT EXISTS (SELECT 1 FROM user_skin_votes v WHERE v.skin_id = s.id)`,
+		present,
+	); err != nil {
+		return fmt.Errorf("reconcile skins: %w", err)
+	} else if n := tag.RowsAffected(); n > 0 {
+		log.Printf("ddragon: pruned %d stale skins absent from Community Dragon", n)
 	}
 
 	if _, err := tx.Exec(ctx,

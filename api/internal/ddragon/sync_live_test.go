@@ -43,8 +43,24 @@ func TestSyncVoteIntegrityLive(t *testing.T) {
 	}
 	mustExec(ctx, t, pool, `INSERT INTO user_skin_votes (skin_id, user_id, star) VALUES ($1,$2,true)
 		ON CONFLICT (skin_id, user_id) DO UPDATE SET star = true`, skinID, userID)
+
+	// Two leftover Data-Dragon-only skins Community Dragon doesn't list (high
+	// nums that don't exist): one vote-less (must be pruned), one with a vote
+	// (must survive the reconcile).
+	const stalePhantom = "266098" // no votes → pruned
+	const staleVoted = "266099"   // has a vote → kept
+	for _, id := range []string{stalePhantom, staleVoted} {
+		mustExec(ctx, t, pool, `INSERT INTO skins (id, champion_id, num, name, splash_url)
+			VALUES ($1,'Aatrox',$2::int,'Phantom',$3)
+			ON CONFLICT (id) DO NOTHING`, id, id[3:],
+			"https://ddragon.leagueoflegends.com/cdn/img/champion/splash/Aatrox_"+id[3:]+".jpg")
+	}
+	mustExec(ctx, t, pool, `INSERT INTO user_skin_votes (skin_id, user_id, star) VALUES ($1,$2,true)
+		ON CONFLICT (skin_id, user_id) DO UPDATE SET star = true`, staleVoted, userID)
+
 	t.Cleanup(func() {
 		_, _ = pool.Exec(ctx, `DELETE FROM users WHERE email='zz_cdragon@example.com'`)
+		_, _ = pool.Exec(ctx, `DELETE FROM skins WHERE id IN ($1,$2)`, stalePhantom, staleVoted)
 	})
 
 	// Reproduce the production skip-guard scenario: a catalog already stamped
@@ -104,7 +120,23 @@ func TestSyncVoteIntegrityLive(t *testing.T) {
 	if rev != catalogRev {
 		t.Errorf("catalog_rev = %q, want %q", rev, catalogRev)
 	}
-	t.Logf("OK: %d votes preserved; splash now %s; catalog_rev=%s", after, splash, rev)
+
+	// Reconcile: the vote-less stale skin is pruned; the voted one survives.
+	var phantomExists, votedExists bool
+	if err := pool.QueryRow(ctx, `SELECT EXISTS(SELECT 1 FROM skins WHERE id='266098')`).Scan(&phantomExists); err != nil {
+		t.Fatalf("check phantom: %v", err)
+	}
+	if phantomExists {
+		t.Error("vote-less stale skin (266098) was not pruned")
+	}
+	if err := pool.QueryRow(ctx, `SELECT EXISTS(SELECT 1 FROM skins WHERE id='266099')`).Scan(&votedExists); err != nil {
+		t.Fatalf("check voted: %v", err)
+	}
+	if !votedExists {
+		t.Error("vote-bearing stale skin (266099) was wrongly pruned")
+	}
+
+	t.Logf("OK: %d votes preserved; splash now %s; catalog_rev=%s; phantom pruned, voted kept", after, splash, rev)
 }
 
 func mustExec(ctx context.Context, t *testing.T, pool *pgxpool.Pool, sql string, args ...any) {
