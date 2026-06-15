@@ -16,6 +16,21 @@ export interface ReleaseEntry {
 // Newest first. The page renders this array top to bottom.
 export const RELEASES: ReleaseEntry[] = [
   {
+    date: '2026-06-15',
+    title: 'Head-to-Head answers back',
+    highlights: [
+      "Every Head-to-Head pick now tells you what it did: where that skin sits in the live ranking, how far it just climbed, and how the rest of the room voted on that exact matchup — “you're the first to pick this” or “521 players agree with you.”",
+      'A "More ways to play" shelf now lives at the bottom of every game, so you can jump straight between Head-to-Head and the daily puzzles from anywhere.',
+      'The daily games show the crowd too: each guess tells you how many other players made the same call for today’s puzzle.',
+    ],
+    fixes: [
+      'Price Check is now Price Point.',
+      'You can undo your most recent Head-to-Head pick if you mis-clicked.',
+      'Daily games open with a snappier entrance, and the daily card now shows your streak and a live countdown to the next puzzle.',
+      'Tidied up the Head-to-Head cards so the only thing to do is pick a side.',
+    ],
+  },
+  {
     date: '2026-06-12',
     title: 'New skins now land here the same week Riot ships them',
     highlights: [
