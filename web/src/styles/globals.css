@@ -499,31 +499,43 @@
   background: var(--color-gold2);
   box-shadow: 0 0 6px 1px color-mix(in srgb, var(--color-gold2) 60%, transparent);
   opacity: 0;
-  animation: ember-rise var(--ember-dur, 3s) linear infinite;
-  animation-delay: var(--ember-delay, 0s);
+  animation: ember-rise var(--ember-dur, 3s) ease-out infinite;
+  /* --ember-card-delay (set per fresh card) shifts the whole bed; the net
+     delay goes negative so each spark starts already mid-rise, never empty. */
+  animation-delay: calc(var(--ember-delay, 0s) - var(--ember-card-delay, 0s));
 }
 /* Each spark gets its own lane, tempo, and drift so the loop never reads
    as a pattern. */
-.battle-embers i:nth-child(1) { --ember-x: 12%; --ember-dur: 2.6s; --ember-delay: 0s;    --ember-drift: 4px; }
-.battle-embers i:nth-child(2) { --ember-x: 30%; --ember-dur: 3.4s; --ember-delay: 0.9s;  --ember-drift: -5px; width: 2px; height: 2px; }
-.battle-embers i:nth-child(3) { --ember-x: 48%; --ember-dur: 2.9s; --ember-delay: 1.7s;  --ember-drift: 3px; }
-.battle-embers i:nth-child(4) { --ember-x: 64%; --ember-dur: 3.8s; --ember-delay: 0.4s;  --ember-drift: -3px; width: 2px; height: 2px; }
-.battle-embers i:nth-child(5) { --ember-x: 80%; --ember-dur: 3.1s; --ember-delay: 2.2s;  --ember-drift: 5px; }
-.battle-embers i:nth-child(6) { --ember-x: 91%; --ember-dur: 2.7s; --ember-delay: 1.3s;  --ember-drift: -4px; width: 2px; height: 2px; }
+.battle-embers i:nth-child(1) { --ember-x: 10%; --ember-dur: 2.6s; --ember-delay: 0s;    --ember-drift: 6px; }
+.battle-embers i:nth-child(2) { --ember-x: 29%; --ember-dur: 3.5s; --ember-delay: 0.9s;  --ember-drift: -8px; width: 2px; height: 2px; }
+.battle-embers i:nth-child(3) { --ember-x: 47%; --ember-dur: 2.9s; --ember-delay: 1.7s;  --ember-drift: 5px; }
+.battle-embers i:nth-child(4) { --ember-x: 63%; --ember-dur: 4.1s; --ember-delay: 0.4s;  --ember-drift: -4px; width: 2px; height: 2px; }
+.battle-embers i:nth-child(5) { --ember-x: 79%; --ember-dur: 3.1s; --ember-delay: 2.2s;  --ember-drift: 9px; }
+.battle-embers i:nth-child(6) { --ember-x: 91%; --ember-dur: 2.7s; --ember-delay: 1.3s;  --ember-drift: -6px; width: 2px; height: 2px; }
 
+/* Rise with an S-weave (drift one way, back, then settle) and a flicker, so
+   each spark traces its own organic path instead of a straight march. */
 @keyframes ember-rise {
   0% {
     transform: translate(0, 0) scale(1);
     opacity: 0;
   }
-  12% {
+  10% {
     opacity: 0.9;
   }
-  60% {
+  32% {
+    transform: translate(calc(var(--ember-drift, 0px) * 0.6), -16px) scale(0.85);
+    opacity: 0.85;
+  }
+  46% {
     opacity: 0.5;
   }
+  62% {
+    transform: translate(calc(var(--ember-drift, 0px) * -0.5), -33px) scale(0.6);
+    opacity: 0.62;
+  }
   100% {
-    transform: translate(var(--ember-drift, 0px), -52px) scale(0.4);
+    transform: translate(var(--ember-drift, 0px), -52px) scale(0.32);
     opacity: 0;
   }
 }

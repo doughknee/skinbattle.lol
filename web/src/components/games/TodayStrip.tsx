@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, type CSSProperties } from 'react'
 import { Link } from '@tanstack/react-router'
 import { AnimatedNumber } from './AnimatedNumber'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
@@ -160,7 +160,7 @@ function ActionChip({
 // ember-bedded card that rakes gold on hover and lifts; one in progress is a
 // warm blue "resume"; a finished one drops to a flat, glow-less receipt (and is
 // sorted to the bottom by the strip). Each gets room to breathe in one column.
-function DailyCard({ game }: { game: HubGame }) {
+function DailyCard({ game, index }: { game: HubGame; index: number }) {
   const card = GAME_CARDS[game.id]
   const done = game.status === 'won' || game.status === 'lost'
   const won = game.status === 'won'
@@ -178,7 +178,13 @@ function DailyCard({ game }: { game: HubGame }) {
       {/* Always-on ember bed only on fresh dailies - the "come play me" energy,
           kept off in-progress/done so the eye lands on what's untouched. */}
       {fresh && (
-        <span className="battle-embers" aria-hidden>
+        // Offset the whole ember bed per card so two or three open dailies
+        // don't rise in lockstep - negative net delays start each mid-cycle.
+        <span
+          className="battle-embers"
+          aria-hidden
+          style={{ '--ember-card-delay': `${0.5 + index * 1.2}s` } as CSSProperties}
+        >
           <i />
           <i />
           <i />
@@ -304,8 +310,8 @@ export default function TodayStrip({ hub }: { hub: DailyHubState }) {
         </p>
       </div>
       <div className="stagger flex flex-col gap-3">
-        {orderedGames.map((g) => (
-          <DailyCard key={g.id} game={g} />
+        {orderedGames.map((g, i) => (
+          <DailyCard key={g.id} game={g} index={i} />
         ))}
       </div>
     </section>
