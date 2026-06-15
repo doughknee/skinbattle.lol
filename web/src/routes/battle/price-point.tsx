@@ -18,6 +18,7 @@ import {
 import { guestRestoreToken, rememberGuestToken } from '~/lib/games/client'
 import { ogMeta } from '~/lib/games/ogMeta'
 import TodayStrip from '~/components/games/TodayStrip'
+import GameBreadcrumb from '~/components/games/GameBreadcrumb'
 import { ConsensusStat } from '~/components/games/GuessKit'
 import type { PriceCheckState, PriceRoundResult } from '~/lib/games/types'
 
@@ -248,6 +249,7 @@ function PriceCheckPage() {
     <div
       className={`${entering ? 'stagger ' : ''}container mx-auto max-w-3xl px-6 pt-28 pb-16`}
     >
+      <GameBreadcrumb label="Price Point" />
       <header className="mb-6">
         <p className="mb-2 text-sm font-semibold uppercase tracking-[0.3em] text-gold2">
           Daily · what did it cost?

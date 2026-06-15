@@ -71,8 +71,8 @@ function TermsPage() {
         <Section title="Your account">
           <p>
             One account per person. Keep your credentials to yourself, and
-            pick a username that wouldn't get you reported in champ select —
-            abusive or impersonating usernames may be changed or removed.
+            pick a username that wouldn't get you reported in champ select.
+            Abusive or impersonating usernames may be changed or removed.
           </p>
         </Section>
 
@@ -89,7 +89,7 @@ function TermsPage() {
         <Section title="Your votes">
           <p>
             Votes you cast become part of the community dataset. The site may
-            aggregate, display, and anonymize them — that's what makes the
+            aggregate, display, and anonymize them. That's what makes the
             rankings exist. Usernames may appear on leaderboards. You can
             delete your account (and disconnect your votes from your identity)
             any time from{' '}

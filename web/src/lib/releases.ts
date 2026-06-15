@@ -19,7 +19,7 @@ export const RELEASES: ReleaseEntry[] = [
     date: '2026-06-15',
     title: 'Head-to-Head answers back',
     highlights: [
-      "Every Head-to-Head pick now tells you what it did: where that skin sits in the live ranking, how far it just climbed, and how the rest of the room voted on that exact matchup — “you're the first to pick this” or “521 players agree with you.”",
+      "Every Head-to-Head pick now tells you what it did: where that skin sits in the live ranking, how far it just climbed, and how the rest of the room voted on that exact matchup: “you're the first to pick this” or “521 players agree with you.”",
       'A "More ways to play" shelf now lives at the bottom of every game, so you can jump straight between Head-to-Head and the daily puzzles from anywhere.',
       'The daily games show the crowd too: each guess tells you how many other players made the same call for today’s puzzle.',
     ],

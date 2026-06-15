@@ -128,7 +128,7 @@ function PrivacyPage() {
               Profile → Account
             </Link>
             . That permanently removes your account and your sign-in identity.
-            Your individual votes are disconnected from you — they survive
+            Your individual votes are disconnected from you. They survive
             only inside anonymous aggregate tallies, with nothing linking them
             back to a person. Guest data lives in your browser: clearing
             cookies and site data for skinbattle.lol orphans it.

@@ -86,7 +86,7 @@ export default function SkinVoteBar({
           Cast your verdict
         </p>
         <p className="text-sm text-grey1">
-          {MAX_STARS} stars, {MAX_X} bans — spend them on the skins that earn it.
+          {MAX_STARS} stars, {MAX_X} bans. Spend them on the skins that earn it.
         </p>
       </div>
 

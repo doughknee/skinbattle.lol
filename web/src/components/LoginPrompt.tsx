@@ -74,7 +74,7 @@ export default function LoginPrompt() {
         </h2>
         <p className="mx-auto mt-2 max-w-sm text-grey1">
           {detail.message ??
-            'Create a free account to star the skins you love and ban the ones you don’t — 10 of each to spend, and every vote shapes the rankings.'}
+            'Create a free account to star the skins you love and ban the ones you don’t: 10 of each to spend, and every vote shapes the rankings.'}
         </p>
         <div className="mt-6 flex flex-col gap-2.5">
           <button

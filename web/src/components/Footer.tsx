@@ -100,7 +100,7 @@ export default function Footer() {
             className="group inline-flex items-center gap-1.5 transition duration-150 hover:text-gold1"
           >
             <HoneyfruitIcon className="h-3.5 w-3.5 transition duration-150 group-hover:scale-125" />
-            runs on honeyfruit — toss one
+            runs on honeyfruit, toss one
           </a>
         </p>
       </div>

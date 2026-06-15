@@ -15,6 +15,7 @@ import {
   faCoins,
   faFire,
   faImage,
+  faLayerGroup,
   faPalette,
 } from '@fortawesome/free-solid-svg-icons'
 import type { DailyHubState, HubGame } from '~/lib/games/types'
@@ -26,7 +27,7 @@ import type { DailyHubState, HubGame } from '~/lib/games/types'
 // link to itself, so the row reads the same everywhere.
 
 // Every mode the strip can show; `current` names the one we're on (if any).
-type ModeId = 'head-to-head' | HubGame['id']
+type ModeId = 'head-to-head' | 'tier-list' | HubGame['id']
 
 // Per-game card copy. Win/loss chip labels differ: Splashdle is
 // guess-counted, Price Point is score-counted.
@@ -215,6 +216,40 @@ function HeadToHeadCard({
               {quickBattle.communityBattles > 0
                 ? `${quickBattle.communityBattles.toLocaleString('en-US')} battles & counting`
                 : 'Quick, endless, no signup'}
+            </p>
+            <span className="inline-flex items-center gap-2 bg-gold5/30 px-3 py-1.5 text-sm font-bold text-gold1 outline outline-gold2 -outline-offset-1 transition duration-150 group-hover:bg-gold5/45">
+              Play
+              <FontAwesomeIcon
+                icon={faArrowRight}
+                className="h-3.5 transition-transform duration-150 group-hover:translate-x-0.5"
+              />
+            </span>
+          </>
+        )
+      }
+    />
+  )
+}
+
+// Tier List — a battle mode like Head-to-Head (endless, no won/lost daily), so
+// it carries a persistent Play CTA rather than a streak/countdown.
+function TierListCard({ index, current }: { index: number; current: boolean }) {
+  return (
+    <ModeCard
+      to="/battle/tiers"
+      icon={faLayerGroup}
+      name="Tier List"
+      blurb="Sort a set S to D. See how the crowd ranks it."
+      index={index}
+      tone={current ? 'current' : 'fresh'}
+      right={
+        current ? (
+          <HereChip />
+        ) : (
+          <>
+            <p className="flex items-center gap-1.5 text-sm font-bold text-gold1">
+              <FontAwesomeIcon icon={faLayerGroup} className="h-3.5 text-gold2" />
+              Champions, lines, years & more
             </p>
             <span className="inline-flex items-center gap-2 bg-gold5/30 px-3 py-1.5 text-sm font-bold text-gold1 outline outline-gold2 -outline-offset-1 transition duration-150 group-hover:bg-gold5/45">
               Play
@@ -447,10 +482,15 @@ export default function TodayStrip({
 
   return (
     <section className="mt-16">
-      <div className="mb-5 flex flex-wrap items-center justify-between gap-x-4 gap-y-1">
-        <h2 className="font-serif text-2xl font-bold text-gold2">
-          More ways to play
-        </h2>
+      <h2 className="mb-6 font-serif text-2xl font-bold text-gold2">
+        More ways to play
+      </h2>
+
+      {/* Daily puzzles lead — they're time-bound (do them before the reset). */}
+      <div className="mb-2 flex flex-wrap items-center justify-between gap-x-4 gap-y-1">
+        <h3 className="text-xs font-semibold uppercase tracking-[0.25em] text-gold2/80">
+          Daily puzzles
+        </h3>
         <p className="flex items-center gap-2 text-sm font-bold text-grey1">
           {done > 0 && (
             <>
@@ -462,25 +502,27 @@ export default function TodayStrip({
               </span>
             </>
           )}
-          <span>Daily puzzles reset in</span>
+          <span>Reset in</span>
           <Countdown />
         </p>
       </div>
+      <div className="stagger mb-8 flex flex-col gap-3">
+        {orderedGames.map((g, i) => (
+          <DailyCard key={g.id} game={g} index={i} current={current === g.id} />
+        ))}
+      </div>
+
+      {/* Endless battles below — always open, no clock. */}
+      <h3 className="mb-2 text-xs font-semibold uppercase tracking-[0.25em] text-gold2/80">
+        Battles · endless
+      </h3>
       <div className="stagger flex flex-col gap-3">
-        {/* Flagship first: the endless mode leads, the dailies follow. */}
         <HeadToHeadCard
           quickBattle={hub.quickBattle}
           index={0}
           current={current === 'head-to-head'}
         />
-        {orderedGames.map((g, i) => (
-          <DailyCard
-            key={g.id}
-            game={g}
-            index={i + 1}
-            current={current === g.id}
-          />
-        ))}
+        <TierListCard index={1} current={current === 'tier-list'} />
       </div>
     </section>
   )

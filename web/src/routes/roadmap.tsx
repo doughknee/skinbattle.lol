@@ -148,7 +148,7 @@ const LIVE_NOW: { label: string; to: string; params?: object }[] = [
   { label: 'Leaderboards', to: '/battle/leaderboards' },
   { label: 'Your Mirror', to: '/profile' },
   {
-    label: 'The full ranking — sliceable by price, line, champion, year',
+    label: 'The full ranking, sliceable by price, line, champion, year',
     to: '/rankings/$slice',
     params: { slice: 'all' },
   },

@@ -10,23 +10,33 @@
 import { createHash, createHmac, randomBytes, timingSafeEqual } from 'node:crypto'
 import type { DatabaseSync } from 'node:sqlite'
 import type {
+  SharedRankingRow,
+  SharedTierListState,
+  SubmittedTierList,
   TierBoard,
+  TierFeedState,
   TierListResult,
   TierListSkin,
   TierListState,
   TierListStats,
   TierName,
   TierResultRow,
+  TierScopeCatalog,
 } from '../types'
 import { appendEvent, getDb } from './db'
+import { sanitizeSharePayload, type SharePayload } from '../share'
 import {
   allCatalogSkins,
+  baseCatalogSkins,
+  championBaseSkin,
   ensureCatalog,
   getCatalogSkin,
   getMeta,
   setMeta,
   type CatalogSkin,
 } from './catalog'
+import { factsFor, PRICE_TIERS } from './facts'
+import { kebab } from '../slug'
 import { ensureUser, peekUser, type GameUser } from './guests'
 import { utcToday } from './daily'
 import {
@@ -73,6 +83,13 @@ export function boardHash(skinIds: string[]): string {
 
 const boardType = (boardId: string): string => boardId.split(':')[0] ?? 'custom'
 
+const BOARD_SUBTITLE =
+  'Sort each skin into a tier. No wrong answers, just your taste.'
+
+// Rarity buckets worth their own board (others are too thin / not a theme).
+// Order is best→niche so the picker reads naturally.
+const RARITIES = ['Ultimate', 'Exalted', 'Transcendent', 'Mythic', 'Legendary', 'Epic', 'Rare']
+
 export interface BoardScope {
   boardId: string
   title: string
@@ -80,22 +97,115 @@ export interface BoardScope {
   skins: CatalogSkin[]
 }
 
-// Resolve a board id to its skins. MVP: champion only. The id grammar mirrors
-// the rankings slices, so the Phase-2 axes (line/year/price/rarity) slot in
-// here as more branches.
+// slug → display name for a skin line (e.g. 'star-guardian' → 'Star Guardian').
+function lineName(db: DatabaseSync, slug: string): string | null {
+  for (const s of allCatalogSkins(db)) {
+    for (const set of factsFor(s.id)?.sets ?? []) {
+      if (set !== 'Legacy' && kebab(set) === slug) return set
+    }
+  }
+  return null
+}
+
+// Resolve a board id to its skins across every axis. The id grammar mirrors the
+// rankings slices: champion (within-champ), line / year / price / rarity
+// (cross-champion bridges). Returns null for unknown/too-thin scopes.
 export function resolveBoard(db: DatabaseSync, boardId: string): BoardScope | null {
+  const scoped = (match: (s: CatalogSkin) => boolean, title: string): BoardScope | null => {
+    const skins = allCatalogSkins(db).filter(match)
+    if (skins.length < MIN_BOARD) return null
+    return { boardId, title, subtitle: BOARD_SUBTITLE, skins }
+  }
+
   const champ = /^champion:(.+)$/.exec(boardId)
   if (champ) {
     const skins = allCatalogSkins(db).filter((s) => s.championId === champ[1])
     if (skins.length < MIN_BOARD) return null
+    // Anchor champion boards with the base skin so players have a known floor
+    // to judge the premium skins against ("is this even better than default?").
+    const base = championBaseSkin(db, champ[1])
     return {
-      boardId: `champion:${champ[1]}`,
+      boardId,
       title: `Rank ${skins[0].championName}'s skins`,
-      subtitle: 'Sort each skin into a tier — no wrong answers, just your taste.',
-      skins,
+      subtitle: BOARD_SUBTITLE,
+      skins: base ? [base, ...skins] : skins,
     }
   }
+  const line = /^line:(.+)$/.exec(boardId)
+  if (line) {
+    const name = lineName(db, line[1])
+    if (!name) return null
+    return scoped((s) => factsFor(s.id)?.sets.includes(name) ?? false, `Rank the ${name} skins`)
+  }
+  const year = /^year:(\d{4})$/.exec(boardId)
+  if (year) {
+    return scoped(
+      (s) => factsFor(s.id)?.release?.startsWith(year[1]) ?? false,
+      `Rank the best skins of ${year[1]}`,
+    )
+  }
+  const price = /^price:(\d+)$/.exec(boardId)
+  if (price) {
+    const rp = Number(price[1])
+    if (!(PRICE_TIERS as readonly number[]).includes(rp)) return null
+    return scoped((s) => factsFor(s.id)?.cost === rp, `Rank the ${rp.toLocaleString()} RP skins`)
+  }
+  const rarity = /^rarity:(.+)$/.exec(boardId)
+  if (rarity) {
+    const name = RARITIES.find((r) => r.toLowerCase() === rarity[1])
+    if (!name) return null
+    return scoped((s) => factsFor(s.id)?.rarity === name, `Rank the ${name} skins`)
+  }
   return null
+}
+
+// ─── make-your-own scope catalog ────────────────────────────────────────────
+
+// Every scope a player can pick from "make your own", grouped by axis and
+// filtered to those with enough skins to rank. Pure catalog math — no ratings.
+export function tierScopeCatalog(db: DatabaseSync): TierScopeCatalog {
+  const champ = new Map<string, { name: string; count: number }>()
+  const line = new Map<string, number>()
+  const year = new Map<string, number>()
+  const price = new Map<number, number>()
+  const rarity = new Map<string, number>()
+  for (const s of allCatalogSkins(db)) {
+    const c = champ.get(s.championId) ?? { name: s.championName, count: 0 }
+    c.count += 1
+    champ.set(s.championId, c)
+    const f = factsFor(s.id)
+    for (const set of f?.sets ?? []) {
+      if (set !== 'Legacy') line.set(set, (line.get(set) ?? 0) + 1)
+    }
+    const y = f?.release?.slice(0, 4)
+    if (y) year.set(y, (year.get(y) ?? 0) + 1)
+    if (f?.cost != null && (PRICE_TIERS as readonly number[]).includes(f.cost)) {
+      price.set(f.cost, (price.get(f.cost) ?? 0) + 1)
+    }
+    if (f?.rarity) rarity.set(f.rarity, (rarity.get(f.rarity) ?? 0) + 1)
+  }
+  const big = (n: number) => n >= MIN_BOARD
+  return {
+    champions: [...champ.entries()]
+      .filter(([, c]) => big(c.count))
+      .sort((a, b) => a[1].name.localeCompare(b[1].name))
+      .map(([id, c]) => ({ boardId: `champion:${id}`, label: c.name, count: c.count })),
+    lines: [...line.entries()]
+      .filter(([, n]) => big(n))
+      .sort((a, b) => a[0].localeCompare(b[0]))
+      .map(([name, n]) => ({ boardId: `line:${kebab(name)}`, label: name, count: n })),
+    years: [...year.entries()]
+      .filter(([, n]) => big(n))
+      .sort((a, b) => b[0].localeCompare(a[0]))
+      .map(([y, n]) => ({ boardId: `year:${y}`, label: y, count: n })),
+    prices: [...price.entries()]
+      .filter(([, n]) => big(n))
+      .sort((a, b) => a[0] - b[0])
+      .map(([rp, n]) => ({ boardId: `price:${rp}`, label: `${rp.toLocaleString()} RP`, count: n })),
+    rarities: RARITIES.map((name) => ({ name, count: rarity.get(name) ?? 0 }))
+      .filter((r) => big(r.count))
+      .map((r) => ({ boardId: `rarity:${r.name.toLowerCase()}`, label: r.name, count: r.count })),
+  }
 }
 
 // ─── coverage-aware selection ───────────────────────────────────────────────
@@ -129,20 +239,25 @@ function uncertaintyMap(
 function championCandidates(db: DatabaseSync): Candidate[] {
   const unc = uncertaintyMap(db)
   const now = Date.now()
-  const byChamp = new Map<string, { ids: string[]; needSum: number }>()
-  for (const s of allCatalogSkins(db)) {
+  const byChamp = new Map<string, { ids: string[]; needSum: number; nonBase: number }>()
+  const tally = (s: CatalogSkin, isBase: boolean) => {
     const r = unc.get(s.id)
     const need = r
       ? inflateUncertainty(r.uncertainty, r.lastBattleAt, now)
       : START_UNCERTAINTY
-    const e = byChamp.get(s.championId) ?? { ids: [], needSum: 0 }
+    const e = byChamp.get(s.championId) ?? { ids: [], needSum: 0, nonBase: 0 }
     e.ids.push(s.id)
     e.needSum += need
+    if (!isBase) e.nonBase += 1
     byChamp.set(s.championId, e)
   }
+  for (const s of allCatalogSkins(db)) tally(s, false)
+  // The base skin rides along (matching resolveBoard) so the board hash and
+  // coverage score include the baseline; eligibility still gates on real skins.
+  for (const s of baseCatalogSkins(db)) tally(s, true)
   const out: Candidate[] = []
   for (const [championId, e] of byChamp) {
-    if (e.ids.length < MIN_BOARD) continue
+    if (e.nonBase < MIN_BOARD) continue
     out.push({
       boardId: `champion:${championId}`,
       need: e.needSum / e.ids.length,
@@ -246,9 +361,18 @@ const shuffle = <T>(arr: T[]): T[] => {
   return out
 }
 
+// Display name: a champion's base (num 0) skin is its own champion name in the
+// catalog, which reads like a bug next to the themed skins — label it as the
+// baseline so it's unmistakable.
+const tierDisplayName = (s: {
+  num: number
+  name: string
+  championName: string
+}): string => (s.num === 0 ? `${s.championName} (base skin)` : s.name)
+
 const toTierSkin = (s: CatalogSkin): TierListSkin => ({
   skinId: s.id,
-  name: s.name,
+  name: tierDisplayName(s),
   championId: s.championId,
   championName: s.championName,
   splashUrl: s.splashUrl,
@@ -440,17 +564,36 @@ function tierAgreement(
   return out
 }
 
+interface RatingView {
+  rating: number
+  delta: number
+}
+
+// Current community ratings for a set of skins (0 when a skin has none yet).
+function ratingsFor(db: DatabaseSync, ids: string[]): Map<string, number> {
+  const out = new Map<string, number>()
+  if (ids.length === 0) return out
+  const rows = db
+    .prepare(
+      `SELECT skin_id AS id, rating FROM skin_ratings WHERE skin_id IN (${ids
+        .map(() => '?')
+        .join(',')})`,
+    )
+    .all(...ids) as unknown as { id: string; rating: number }[]
+  for (const r of rows) out.set(r.id, r.rating)
+  return out
+}
+
+// `ratingOf` lets this serve both the live submit (the just-applied deltas) and
+// a restored past submission (current ratings, no fresh delta).
 function buildCompare(
   db: DatabaseSync,
   boardId: string,
   ordered: string[][],
-  results: TierSkinResult[],
+  ratingOf: (skinId: string) => RatingView,
 ): TierResultRow[] {
-  const after = new Map(results.map((r) => [r.skinId, r]))
   const placed = ordered.flat()
-  const byRatingDesc = [...placed].sort(
-    (a, b) => (after.get(b)?.after ?? 0) - (after.get(a)?.after ?? 0),
-  )
+  const byRatingDesc = [...placed].sort((a, b) => ratingOf(b).rating - ratingOf(a).rating)
   const community = quintileTiers(byRatingDesc)
   const yourTier = new Map<string, TierName>()
   ordered.forEach((ids, ti) => ids.forEach((id) => yourTier.set(id, TIER_ORDER[ti])))
@@ -465,15 +608,16 @@ function buildCompare(
     const a = agree.get(id)
     const same = a?.byTier[yt] ?? 0
     const pct = a && a.total >= AGREEMENT_MIN ? Math.round((100 * same) / a.total) : null
+    const rv = ratingOf(id)
     rows.push({
       skinId: id,
-      name: skin.name,
+      name: tierDisplayName(skin),
       championName: skin.championName,
       splashUrl: skin.splashUrl,
       yourTier: yt,
       communityTier: ct,
-      rating: Math.round(after.get(id)?.after ?? 0),
-      delta: Math.round(after.get(id)?.delta ?? 0),
+      rating: Math.round(rv.rating),
+      delta: Math.round(rv.delta),
       agreementPct: pct,
       hotTake: Math.abs(TIER_ORDER.indexOf(yt) - TIER_ORDER.indexOf(ct)) >= HOT_TAKE_GAP,
     })
@@ -481,24 +625,216 @@ function buildCompare(
   return rows // already in your S→D placement order
 }
 
+function usernameOf(db: DatabaseSync, userId: string): string | null {
+  return (
+    (
+      db.prepare('SELECT username FROM game_users WHERE id = ?').get(userId) as
+        | { username: string | null }
+        | undefined
+    )?.username ?? null
+  )
+}
+
+// The player's most recent submission for a board (full saved tiers), or null.
+function latestSubmission(
+  db: DatabaseSync,
+  userId: string,
+  boardId: string,
+): { tiers: Partial<Record<TierName, string[]>>; hash: string; at: string } | null {
+  const row = db
+    .prepare(
+      `SELECT payload, created_at AS at FROM game_events
+       WHERE game = ? AND type = 'tier_submitted' AND user_id = ?
+         AND json_extract(payload, '$.boardId') = ?
+       ORDER BY created_at DESC LIMIT 1`,
+    )
+    .get(GAME, userId, boardId) as { payload: string; at: string } | undefined
+  if (!row) return null
+  const p = JSON.parse(row.payload) as {
+    tiers: Partial<Record<TierName, string[]>>
+    boardHash: string
+  }
+  return { tiers: p.tiers, hash: p.boardHash, at: row.at }
+}
+
+// If the player already ranked this exact board and it's still current (contents
+// unchanged, within the re-serve cooldown), rebuild their saved ranking plus a
+// fresh community comparison — so a refresh / revisit shows the result instead
+// of a blank board. Returns null (→ let them rank) when stale or never done.
+function restoreSubmission(
+  db: DatabaseSync,
+  user: GameUser,
+  scope: BoardScope,
+): SubmittedTierList | null {
+  const prior = latestSubmission(db, user.id, scope.boardId)
+  if (!prior) return null
+  const currentHash = boardHash(scope.skins.map((s) => s.id))
+  if (isStale({ hash: prior.hash, at: prior.at }, currentHash, Date.now())) return null
+
+  const ordered = sanitizeTiers(prior.tiers, new Set(scope.skins.map((s) => s.id)))
+  if (ordered.reduce((n, t) => n + t.length, 0) < MIN_PLACED) return null
+
+  const ratings = ratingsFor(db, ordered.flat())
+  const rows = buildCompare(db, scope.boardId, ordered, (id) => ({
+    rating: ratings.get(id) ?? 0,
+    delta: 0, // historical view — no fresh rating move to attribute
+  }))
+  return {
+    tiers: Object.fromEntries(TIER_ORDER.map((t, i) => [t, ordered[i]])),
+    result: {
+      rows,
+      boardId: scope.boardId,
+      nextBoard: buildBoard(db, pickBoardForUser(db, user, new Set([scope.boardId]))),
+      stats: statsFor(db, user),
+      username: usernameOf(db, user.id),
+      guestToken: '', // already-known user keeps its own token client-side
+    },
+  }
+}
+
 // ─── public surface (called from server functions) ──────────────────────────
 
 // Read-only: serve the daily board (or a coverage board if the daily can't be
 // built) plus the player's stats. Mints nothing.
-export async function tierListState(restoreToken?: string | null): Promise<TierListState> {
+export async function tierListState(
+  restoreToken?: string | null,
+  boardId?: string | null,
+): Promise<TierListState> {
   const db = getDb()
   await ensureCatalog(db)
   const known = peekUser(db, restoreToken)
+  const user = known?.user ?? null
 
-  const dailyId = dailyBoardId(db, utcToday())
-  const dailyScope = dailyId ? resolveBoard(db, dailyId) : null
-  const scope = dailyScope ?? pickBoardForUser(db, known?.user ?? null, new Set())
-  return {
-    board: buildBoard(db, scope),
-    daily: dailyScope !== null,
-    stats: statsFor(db, known?.user ?? null),
-    guestToken: known?.token ?? '',
+  // Which board to serve: an explicit make-your-own pick, else today's daily,
+  // else a coverage-need board.
+  let scope: BoardScope | null = boardId ? resolveBoard(db, boardId) : null
+  let daily = false
+  if (!scope) {
+    const dailyScope = (() => {
+      const id = dailyBoardId(db, utcToday())
+      return id ? resolveBoard(db, id) : null
+    })()
+    if (dailyScope) {
+      scope = dailyScope
+      daily = true
+    } else {
+      scope = pickBoardForUser(db, user, new Set())
+    }
   }
+
+  // Already ranked this board (and still current)? Restore it so a refresh /
+  // revisit shows the saved result instead of forcing a do-over.
+  const submitted = user ? restoreSubmission(db, user, scope) : null
+  const board = submitted
+    ? buildBoard(db, {
+        ...scope,
+        skins: TIER_ORDER.flatMap((t) => submitted.tiers[t] ?? [])
+          .map((id) => getCatalogSkin(db, id))
+          .filter((s): s is CatalogSkin => s !== null),
+      })
+    : buildBoard(db, scope)
+
+  return {
+    board,
+    daily,
+    stats: statsFor(db, user),
+    guestToken: known?.token ?? '',
+    submitted,
+  }
+}
+
+// The "make your own" picker's options, grouped by axis (champion / line / year
+// / price / rarity). Read-only catalog math; mints nothing.
+export async function tierScopes(): Promise<TierScopeCatalog> {
+  const db = getDb()
+  await ensureCatalog(db)
+  return tierScopeCatalog(db)
+}
+
+// The community browser: recent submissions (who ranked what + their S picks),
+// newest first, paged. Anonymous read.
+const FEED_PAGE = 30
+const FEED_AXES = ['champion', 'line', 'year', 'price', 'rarity']
+export async function tierListFeed(
+  offset = 0,
+  axis?: string,
+  boardId?: string,
+): Promise<TierFeedState> {
+  const db = getDb()
+  await ensureCatalog(db)
+  const start = Math.max(0, Math.trunc(offset))
+  // A specific board (e.g. champion:Jax) takes precedence over a broad axis.
+  const byBoard =
+    typeof boardId === 'string' && boardId.length > 0 && boardId.length < 120
+      ? boardId
+      : null
+  const filter = !byBoard && axis && FEED_AXES.includes(axis) ? axis : null
+  const clause = (col: string) =>
+    byBoard
+      ? ` AND json_extract(${col}, '$.boardId') = ?`
+      : filter
+        ? ` AND json_extract(${col}, '$.boardType') = ?`
+        : ''
+  const params = byBoard ? [byBoard] : filter ? [filter] : []
+  const total = (
+    db
+      .prepare(
+        `SELECT COUNT(*) AS c FROM game_events WHERE game = ? AND type = 'tier_submitted'${clause('payload')}`,
+      )
+      .get(GAME, ...params) as { c: number }
+  ).c
+  const raw = db
+    .prepare(
+      `SELECT ge.payload AS payload, ge.created_at AS at, gu.username AS username
+       FROM game_events ge
+       LEFT JOIN game_users gu ON gu.id = ge.user_id
+       WHERE ge.game = ? AND ge.type = 'tier_submitted'${clause('ge.payload')}
+       ORDER BY ge.created_at DESC LIMIT ? OFFSET ?`,
+    )
+    .all(GAME, ...params, FEED_PAGE, start) as unknown as {
+    payload: string
+    at: string
+    username: string | null
+  }[]
+
+  // Board titles repeat across rows — resolve each once.
+  const titleCache = new Map<string, string>()
+  const titleFor = (boardId: string): string => {
+    const cached = titleCache.get(boardId)
+    if (cached !== undefined) return cached
+    const scope = resolveBoard(db, boardId)
+    const t = scope ? scope.title.replace(/^Rank /, '') : boardId
+    titleCache.set(boardId, t)
+    return t
+  }
+
+  const rows = raw.map((r) => {
+    const p = JSON.parse(r.payload) as {
+      boardId: string
+      boardType?: string
+      tiers: Partial<Record<TierName, string[]>>
+      placed?: number
+      total?: number
+    }
+    const sTier = (p.tiers.S ?? [])
+      .map((id) => {
+        const s = getCatalogSkin(db, id)
+        return s ? tierDisplayName(s) : null
+      })
+      .filter((n): n is string => n !== null)
+    return {
+      boardId: p.boardId,
+      boardTitle: titleFor(p.boardId),
+      boardType: p.boardType ?? p.boardId.split(':')[0] ?? 'custom',
+      who: r.username?.trim() || 'Guest',
+      sTier,
+      placed: p.placed ?? 0,
+      total: p.total ?? 0,
+      at: r.at,
+    }
+  })
+
+  return { rows, total, offset: start, pageSize: FEED_PAGE }
 }
 
 export async function submitTierList(
@@ -553,8 +889,136 @@ export async function submitTierList(
     throw err
   }
 
-  const rows = buildCompare(db, claim.b, ordered, results)
+  const after = new Map(results.map((r) => [r.skinId, r]))
+  const rows = buildCompare(db, claim.b, ordered, (id) => ({
+    rating: after.get(id)?.after ?? 0,
+    delta: after.get(id)?.delta ?? 0,
+  }))
   const exclude = new Set([...(recent ?? []).slice(-SESSION_RECENT), claim.b])
   const nextBoard = buildBoard(db, pickBoardForUser(db, user, exclude))
-  return { rows, nextBoard, stats: statsFor(db, user), guestToken: token }
+  return {
+    rows,
+    boardId: claim.b,
+    nextBoard,
+    stats: statsFor(db, user),
+    username: usernameOf(db, user.id),
+    guestToken: token,
+  }
+}
+
+// ─── shares ─────────────────────────────────────────────────────────────────
+
+const SHARE_ID = /^[A-Za-z0-9_-]{6,16}$/
+
+// Store a share payload, return its short id. Minted on demand when a player
+// shares, so links stay short (/battle/tiers?s=<id>) and the image endpoint +
+// recipient view resolve by id. Validates the (client-supplied) input first.
+export function createTierShare(input: unknown): { id: string } {
+  const payload = sanitizeSharePayload(input)
+  if (!payload) throw new Error('Invalid share.')
+  const db = getDb()
+  const json = JSON.stringify(payload)
+  const now = new Date().toISOString()
+  for (let i = 0; i < 5; i++) {
+    const id = randomBytes(6).toString('base64url') // ~8 url-safe chars
+    try {
+      db.prepare(
+        'INSERT INTO tier_shares (id, payload, created_at) VALUES (?, ?, ?)',
+      ).run(id, json, now)
+      return { id }
+    } catch {
+      // Astronomically rare id collision — retry with a fresh one.
+    }
+  }
+  throw new Error('Could not create a share link.')
+}
+
+export function getTierShare(db: DatabaseSync, id: string): SharePayload | null {
+  if (!SHARE_ID.test(id)) return null
+  const row = db.prepare('SELECT payload FROM tier_shares WHERE id = ?').get(id) as
+    | { payload: string }
+    | undefined
+  if (!row) return null
+  try {
+    return sanitizeSharePayload(JSON.parse(row.payload))
+  } catch {
+    return null
+  }
+}
+
+function resolveRanking(
+  db: DatabaseSync,
+  tiers: Partial<Record<TierName, string[]>>,
+): SharedRankingRow[] {
+  const out: SharedRankingRow[] = []
+  for (const tier of TIER_ORDER) {
+    for (const id of tiers[tier] ?? []) {
+      const s = getCatalogSkin(db, id)
+      if (s) {
+        out.push({
+          skinId: id,
+          name: tierDisplayName(s),
+          championName: s.championName,
+          splashUrl: s.splashUrl,
+          tier,
+        })
+      }
+    }
+  }
+  return out
+}
+
+// What a recipient sees when they open a share link. The board they (re)rank is
+// the sharer's exact placed set (so the comparison lines up), or the full
+// champion board for a 'board'-only share. An unknown/expired id falls back to
+// a normal coverage board so the link is never a dead end.
+export async function sharedTierListState(
+  id: string,
+  restoreToken?: string | null,
+): Promise<SharedTierListState> {
+  const db = getDb()
+  await ensureCatalog(db)
+  const known = peekUser(db, restoreToken)
+  const base = {
+    shareId: id,
+    stats: statsFor(db, known?.user ?? null),
+    guestToken: known?.token ?? '',
+  }
+  const fallback = (): SharedTierListState => ({
+    found: false,
+    mode: 'board',
+    sharerName: null,
+    reveal: false,
+    board: buildBoard(db, pickBoardForUser(db, known?.user ?? null, new Set())),
+    ranking: null,
+    ...base,
+  })
+
+  const payload = getTierShare(db, id)
+  if (!payload) return fallback()
+  const scope = resolveBoard(db, payload.boardId)
+  if (!scope) return fallback()
+
+  let board: TierBoard
+  let ranking: SharedRankingRow[] | null = null
+  if (payload.mode === 'board' || !payload.tiers) {
+    board = buildBoard(db, scope)
+  } else {
+    const ids = TIER_ORDER.flatMap((t) => payload.tiers![t] ?? [])
+    const skins = ids
+      .map((sid) => getCatalogSkin(db, sid))
+      .filter((s): s is CatalogSkin => s !== null)
+    board = buildBoard(db, { ...scope, skins })
+    ranking = resolveRanking(db, payload.tiers)
+  }
+
+  return {
+    found: true,
+    mode: payload.mode,
+    sharerName: payload.name ?? null,
+    reveal: payload.mode === 'reveal',
+    board,
+    ranking,
+    ...base,
+  }
 }

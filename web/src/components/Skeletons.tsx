@@ -110,6 +110,30 @@ export function SkinGridSkeleton({
   )
 }
 
+// Tier List pending state: header + five tier rows, sized like the real board
+// so the footer doesn't ride up and shift when the content streams in.
+export function TierListSkeleton() {
+  return (
+    <div className="animate-fade-in container mx-auto max-w-4xl px-4 pt-28 pb-16 md:px-6">
+      <div className="mb-8">
+        <LoadingQuip quip="Shuffling the tiers..." />
+      </div>
+      <div className="mb-6 space-y-3">
+        <div className="skeleton h-10 w-72 max-w-full" />
+        <div className="skeleton h-4 w-96 max-w-full" />
+      </div>
+      <div className="flex flex-col gap-2" aria-hidden>
+        {Array.from({ length: 5 }, (_, i) => (
+          <div key={i} className="flex items-stretch gap-2">
+            <div className="skeleton h-[5.5rem] w-12 shrink-0 md:h-24" />
+            <div className="skeleton h-[5.5rem] flex-1 md:h-24" />
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
 export function ChampionGridSkeleton({ count = 9 }: { count?: number }) {
   return (
     <div
