@@ -17,6 +17,7 @@ export function ogMeta(opts: {
     | 'games'
     | 'splashdle'
     | 'quick-battle'
+    | 'tier-list'
     | 'mirror'
     | 'price-check'
     | 'chroma-vision'

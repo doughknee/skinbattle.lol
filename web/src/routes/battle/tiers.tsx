@@ -11,6 +11,7 @@ import {
 } from '@fortawesome/free-solid-svg-icons'
 import ErrorState from '~/components/ErrorState'
 import { toast } from '~/components/Toaster'
+import { ogMeta } from '~/lib/games/ogMeta'
 import { fetchTierList, submitTierList } from '~/lib/games/serverFns'
 import { guestRestoreToken, rememberGuestToken } from '~/lib/games/client'
 import type {
@@ -31,8 +32,15 @@ export const Route = createFileRoute('/battle/tiers')({
       {
         name: 'description',
         content:
-          "Drag a champion's skins into tiers. One tier list is worth dozens of head-to-head verdicts — and builds the community ranking.",
+          "Sort a champion's skins into tiers. One tier list is worth dozens of head-to-head verdicts — and builds the community ranking.",
       },
+      ...ogMeta({
+        title: 'Tier List · Skin Battle',
+        description:
+          "Sort a champion's skins S to D, then see how your take stacks up against the community.",
+        card: 'tier-list',
+        path: '/battle/tiers',
+      }),
     ],
   }),
   errorComponent: ({ error }) => (
