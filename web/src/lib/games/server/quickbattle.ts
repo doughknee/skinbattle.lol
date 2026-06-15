@@ -28,6 +28,7 @@ import {
   getSkinRating,
   globalRank,
   GUEST_WEIGHT,
+  inflateUncertainty,
   maybeAutoRefit,
   MEMBER_WEIGHT,
   runRefit,
@@ -58,7 +59,7 @@ const LIMITS = {
 
 // ─── matchmaker ─────────────────────────────────────────────────────────────
 
-interface RatedSkin {
+export interface RatedSkin {
   id: string
   championId: string
   championName: string
@@ -73,31 +74,75 @@ interface RatedSkin {
 // matchmaker owes it placement matches.
 const PLACEMENT_BATTLES = 10
 
-// Pair-type mix (principle 6 - pacing beats efficiency): mostly informative
-// pairs, seeded with placement matches, paced with easy dunks and marquee
-// title fights. Never only agonizing 50/50s.
+// Pair-type mix (principle 6 - pacing beats efficiency): placement matches to
+// cover the catalog, informative 50/50s for the useful-and-fun choices, paced
+// with easy dunks and marquee title fights. Never only agonizing 50/50s.
 type PairType = 'informative' | 'placement' | 'dunk' | 'marquee'
 
-const MIX: [type: PairType, cut: number][] = [
-  ['informative', 0.5],
-  ['placement', 0.75],
-  ['dunk', 0.9],
-  ['marquee', 1],
-]
+// Placement's share of every deal is coverage-driven, not a fixed cut: it
+// tracks how far the catalog is from being "floored" (every eligible skin at
+// PLACEMENT_BATTLES). Wide-open catalog → placement dominates so every skin
+// gets its shot fast; fully floored → it drops to a maintenance trickle and the
+// deal is mostly informative. This is what makes coverage self-correcting - a
+// patch that adds new skins reopens the gap, so placement automatically ramps
+// back up with zero hand-tuning.
+const MIN_PLACEMENT_SHARE = 0.15
+const MAX_PLACEMENT_SHARE = 0.8
+// How the remaining (non-placement) share splits, renormalized from the
+// original informative-heavy pacing (informative 0.5 / dunk 0.15 / marquee 0.1).
+const INFORMATIVE_OF_REST = 2 / 3
+const DUNK_OF_REST = 0.2
+
+// Mean fractional shortfall toward the placement floor across the catalog: 1.0
+// when nothing has fought, 0.0 once every skin is placed. Zero-battle skins
+// count full weight, so coverage gaps dominate it. O(n) over ~2k in-memory
+// rows - negligible.
+export function coverageDeficit(skins: RatedSkin[]): number {
+  if (skins.length === 0) return 0
+  let short = 0
+  for (const s of skins)
+    short += PLACEMENT_BATTLES - Math.min(s.battles, PLACEMENT_BATTLES)
+  return short / (skins.length * PLACEMENT_BATTLES)
+}
+
+// Cumulative cut points for the deal roll, with placement sized by the live
+// coverage deficit and the rest paced behind it.
+export function dealMix(skins: RatedSkin[]): [type: PairType, cut: number][] {
+  const placement = Math.min(
+    MAX_PLACEMENT_SHARE,
+    Math.max(MIN_PLACEMENT_SHARE, coverageDeficit(skins)),
+  )
+  const rest = 1 - placement
+  const informative = placement + rest * INFORMATIVE_OF_REST
+  const dunk = informative + rest * DUNK_OF_REST
+  return [
+    ['placement', placement],
+    ['informative', informative],
+    ['dunk', dunk],
+    ['marquee', 1],
+  ]
+}
 
 function loadRatedSkins(db: DatabaseSync): RatedSkin[] {
   const ratings = new Map(
     (
       db
-        .prepare('SELECT skin_id, rating, uncertainty, battles FROM skin_ratings')
+        .prepare(
+          'SELECT skin_id, rating, uncertainty, battles, last_battle_at AS lastBattleAt FROM skin_ratings',
+        )
         .all() as unknown as {
         skin_id: string
         rating: number
         uncertainty: number
         battles: number
+        lastBattleAt: string | null
       }[]
     ).map((r) => [r.skin_id, r]),
   )
+  // Re-inflate by idle time here too: an ossified ±60 skin must LOOK uncertain
+  // to resurface in the informative pool, otherwise it would never be picked
+  // and so never get the battle that would re-inflate its stored value.
+  const now = Date.now()
   return allCatalogSkins(db).map((s) => {
     const r = ratings.get(s.id)
     return {
@@ -107,7 +152,9 @@ function loadRatedSkins(db: DatabaseSync): RatedSkin[] {
       name: s.name,
       splashUrl: s.splashUrl,
       rating: r?.rating ?? START_RATING,
-      uncertainty: r?.uncertainty ?? START_UNCERTAINTY,
+      uncertainty: r
+        ? inflateUncertainty(r.uncertainty, r.lastBattleAt, now)
+        : START_UNCERTAINTY,
       battles: r?.battles ?? 0,
     }
   })
@@ -190,7 +237,7 @@ function dealPair(
 
   const roll = Math.random()
   let type: PairType = 'informative'
-  for (const [t, cut] of MIX) {
+  for (const [t, cut] of dealMix(skins)) {
     if (roll < cut) {
       type = t
       break

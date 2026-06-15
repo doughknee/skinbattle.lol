@@ -93,12 +93,13 @@ CREATE TABLE IF NOT EXISTS streaks (
 -- periodic Bradley-Terry refit recomputes them from scratch - so this table
 -- can always be rebuilt. uncertainty makes confidence visible ("1480 ± 90").
 CREATE TABLE IF NOT EXISTS skin_ratings (
-  skin_id     TEXT PRIMARY KEY,
-  rating      REAL NOT NULL,
-  uncertainty REAL NOT NULL,
-  battles     INTEGER NOT NULL DEFAULT 0,  -- raw count (unweighted)
-  wins        INTEGER NOT NULL DEFAULT 0,
-  updated_at  TEXT NOT NULL
+  skin_id        TEXT PRIMARY KEY,
+  rating         REAL NOT NULL,
+  uncertainty    REAL NOT NULL,
+  battles        INTEGER NOT NULL DEFAULT 0,  -- raw count (unweighted)
+  wins           INTEGER NOT NULL DEFAULT 0,
+  updated_at     TEXT NOT NULL,
+  last_battle_at TEXT                         -- last real battle; drives time-decay of confidence
 );
 
 -- The same pick that updates the global rating updates the user's personal
@@ -164,6 +165,14 @@ export function getDb(): DatabaseSync {
     } catch {
       // Column already exists.
     }
+  }
+  // Per-skin last-battle timestamp, for time-based re-inflation of uncertainty
+  // (Glicko: confidence widens during inactivity). Nullable - a skin that has
+  // never fought is already at full uncertainty, so NULL needs no backfill.
+  try {
+    db.exec('ALTER TABLE skin_ratings ADD COLUMN last_battle_at TEXT')
+  } catch {
+    // Column already exists.
   }
   return db
 }
