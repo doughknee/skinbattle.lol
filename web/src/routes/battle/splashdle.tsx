@@ -20,6 +20,7 @@ import {
 import { guestRestoreToken, rememberGuestToken } from '~/lib/games/client'
 import { ogMeta } from '~/lib/games/ogMeta'
 import TodayStrip from '~/components/games/TodayStrip'
+import GameBreadcrumb from '~/components/games/GameBreadcrumb'
 import type { GuessOption, SplashdleState } from '~/lib/games/types'
 
 export const Route = createFileRoute('/battle/splashdle')({
@@ -173,6 +174,7 @@ function SplashdlePage() {
 
   return (
     <div className="container mx-auto max-w-3xl px-6 pt-28 pb-16">
+      <GameBreadcrumb label="Splashdle" />
       <header className="animate-fade-up mb-8">
         <p className="mb-2 text-sm font-semibold uppercase tracking-[0.3em] text-gold2">
           Daily · guess the skin

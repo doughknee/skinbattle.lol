@@ -87,7 +87,7 @@ export const Route = createFileRoute('/')({
 // home page never drifts from what's actually live.
 const battlePages =
   SITE_SECTIONS.find((s) => s.to === '/battle')?.children ?? []
-const dailyGames = battlePages.filter((p) => p.group === 'Daily challenges')
+const dailyGames = battlePages.filter((p) => p.group === 'Puzzles')
 
 function formatCount(n: number): string {
   return n.toLocaleString('en-US')

@@ -203,3 +203,23 @@ export function allCatalogSkins(db: DatabaseSync): CatalogSkin[] {
     )
     .all() as unknown as CatalogSkin[]
 }
+
+// A champion's base (num 0) skin — the default look. Only the Tier List uses
+// this, as a baseline anchor for champion boards.
+export function championBaseSkin(
+  db: DatabaseSync,
+  championId: string,
+): CatalogSkin | null {
+  const row = db
+    .prepare(`SELECT ${SKIN_COLUMNS} FROM catalog_skins WHERE champion_id = ? AND num = 0`)
+    .get(championId) as unknown as CatalogSkin | undefined
+  return row ?? null
+}
+
+// Every base (num 0) skin — used by the Tier List's champion-board candidate
+// generation so coverage scoring and board hashes include the baseline.
+export function baseCatalogSkins(db: DatabaseSync): CatalogSkin[] {
+  return db
+    .prepare(`SELECT ${SKIN_COLUMNS} FROM catalog_skins WHERE num = 0 ORDER BY champion_id`)
+    .all() as unknown as CatalogSkin[]
+}

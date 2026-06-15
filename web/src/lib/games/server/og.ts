@@ -10,6 +10,7 @@
 
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
+import { createHash } from 'node:crypto'
 import satori from 'satori'
 import { Resvg } from '@resvg/resvg-js'
 import { DATA_DIR, getDb } from './db'
@@ -34,6 +35,19 @@ export type OgCard = (typeof OG_CARDS)[number]
 
 const W = 1200
 const H = 630
+
+// The downloadable tier-list share image is taller (5 tier rows of thumbnails).
+const SHARE_W = 1200
+const SHARE_H = 1000
+
+// Tier colors for the share image, matching the in-app builder. [fill, text].
+const TIER_HEX: Record<string, [string, string]> = {
+  S: ['#c8423a', '#ffffff'],
+  A: ['#d98a2b', '#0a1014'],
+  B: ['#3fa05a', '#0a1014'],
+  C: ['#3a78c8', '#ffffff'],
+  D: ['#565a63', '#ffffff'],
+}
 
 // Hextech palette, sourced from the canonical brand constants (satori renders
 // outside the browser, so it can't read the Tailwind/CSS tokens).
@@ -298,7 +312,7 @@ async function buildCard(card: OgCard): Promise<Node> {
           'div',
           { flexDirection: 'column', gap: 18, justifyContent: 'center', flexGrow: 1 },
           eyebrow("New · sort a champion's wardrobe"),
-          title('Tier Lists'),
+          title('Tier Drop'),
           body(
             "Rank a champion's skins S to D. One tier list shapes the community ranking as much as dozens of head-to-head battles.",
           ),
@@ -677,6 +691,169 @@ export async function rankingsOgResponse(slice: string): Promise<Response> {
     })
   } catch (err) {
     console.error(`og rankings card render failed (${slice}):`, err)
+    return new Response('Card unavailable', { status: 500 })
+  }
+}
+
+// The downloadable share image: the sharer's tiers, thumbnails and all, with
+// their name and a SKINBATTLE.LOL watermark.
+function buildTierShareCard(
+  name: string | undefined,
+  champ: string,
+  rows: { tier: string; skins: { uri: string }[] }[],
+): Node {
+  return el(
+    'div',
+    {
+      width: SHARE_W,
+      height: SHARE_H,
+      backgroundColor: C.black,
+      flexDirection: 'column',
+      fontFamily: 'Inter',
+      padding: 44,
+    },
+    el(
+      'div',
+      {
+        flexDirection: 'column',
+        flexGrow: 1,
+        border: `2px solid ${C.gold5}`,
+        padding: 40,
+        gap: 16,
+      },
+      el(
+        'div',
+        { flexDirection: 'column', gap: 4 },
+        text(name ? `${name}'s tier list` : 'My tier list', {
+          fontFamily: 'Cinzel',
+          fontWeight: 700,
+          fontSize: 54,
+          color: C.gold1,
+        }),
+        text(champ.toUpperCase(), {
+          fontFamily: 'Inter',
+          fontWeight: 600,
+          fontSize: 26,
+          letterSpacing: 4,
+          color: C.gold2,
+        }),
+      ),
+      el(
+        'div',
+        { flexDirection: 'column', gap: 10, flexGrow: 1 },
+        ...rows.map((r) =>
+          el(
+            'div',
+            { gap: 10, flexGrow: 1, alignItems: 'stretch' },
+            el(
+              'div',
+              {
+                width: 84,
+                alignItems: 'center',
+                justifyContent: 'center',
+                backgroundColor: TIER_HEX[r.tier][0],
+              },
+              text(r.tier, {
+                fontFamily: 'Cinzel',
+                fontWeight: 700,
+                fontSize: 44,
+                color: TIER_HEX[r.tier][1],
+              }),
+            ),
+            el(
+              'div',
+              {
+                flexGrow: 1,
+                flexWrap: 'wrap',
+                gap: 8,
+                alignContent: 'center',
+                backgroundColor: 'rgba(255,255,255,0.04)',
+                padding: 8,
+              },
+              ...r.skins.map((s) => ({
+                type: 'img',
+                props: {
+                  src: s.uri,
+                  width: 76,
+                  height: 76,
+                  style: { width: 76, height: 76, objectFit: 'cover' },
+                },
+              })),
+            ),
+          ),
+        ),
+      ),
+      el(
+        'div',
+        { justifyContent: 'center', alignItems: 'baseline' },
+        text('SKINBATTLE.LOL', {
+          fontFamily: 'Cinzel',
+          fontWeight: 700,
+          fontSize: 32,
+          letterSpacing: 8,
+          color: C.gold2,
+        }),
+      ),
+    ),
+  )
+}
+
+// Per-share tier-list image (the sharer's ranking). The encoded payload carries
+// the tiers + name; thumbnails are resolved from the catalog. Cached per payload
+// per UTC day.
+export async function tierShareImageResponse(id: string): Promise<Response> {
+  const db = getDb()
+  await ensureCatalog(db)
+  const { getTierShare } = await import('./tierlist')
+  const { getCatalogSkin } = await import('./catalog')
+  const payload = getTierShare(db, id)
+  if (!payload || !payload.tiers) return new Response('Not found', { status: 404 })
+  const data = id
+
+  try {
+    const dir = join(DATA_DIR, 'cache')
+    mkdirSync(dir, { recursive: true })
+    const key = createHash('sha1').update(data).digest('hex').slice(0, 16)
+    const path = join(dir, `og-tier-${key}-${utcToday()}.png`)
+    let png: Buffer
+    if (existsSync(path)) {
+      png = readFileSync(path)
+    } else {
+      const order = ['S', 'A', 'B', 'C', 'D'] as const
+      let champ = ''
+      const rows = await Promise.all(
+        order.map(async (t) => {
+          const ids = payload.tiers![t] ?? []
+          const skins = (
+            await Promise.all(
+              ids.map(async (id) => {
+                const s = getCatalogSkin(db, id)
+                if (!s) return null
+                if (!champ) champ = s.championName
+                const uri = await fetchAsDataUri(s.tileUrl || s.splashUrl)
+                return uri ? { uri } : null
+              }),
+            )
+          ).filter((x): x is { uri: string } => x !== null)
+          return { tier: t, skins }
+        }),
+      )
+      const node = buildTierShareCard(payload.name, champ, rows)
+      const svg = await satori(node as never, {
+        width: SHARE_W,
+        height: SHARE_H,
+        fonts: fonts() as never,
+      })
+      png = Buffer.from(
+        new Resvg(svg, { fitTo: { mode: 'width', value: SHARE_W } }).render().asPng(),
+      )
+      writeFileSync(path, png)
+    }
+    return new Response(new Uint8Array(png), {
+      headers: { 'content-type': 'image/png', 'cache-control': 'public, max-age=3600' },
+    })
+  } catch (err) {
+    console.error('og tier-share render failed:', err)
     return new Response('Card unavailable', { status: 500 })
   }
 }

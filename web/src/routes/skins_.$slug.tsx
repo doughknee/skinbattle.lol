@@ -228,7 +228,7 @@ function SkinPage() {
             </>
           ) : (
             <>
-              <p className="font-serif text-3xl font-bold text-grey1">—</p>
+              <p className="font-serif text-3xl font-bold text-grey1">?</p>
               <p className="text-sm text-grey1">
                 You haven't battled this skin yet. It might come up in Quick
                 Battle.

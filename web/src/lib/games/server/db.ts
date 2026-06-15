@@ -142,6 +142,15 @@ CREATE TABLE IF NOT EXISTS battle_nonces (
   used_at TEXT NOT NULL
 );
 
+-- Shared tier lists: a short id → the share payload (board + tiers + name +
+-- reveal mode). Keeps share links short and lets the image endpoint and the
+-- recipient view resolve by id. Minted on demand when a player shares.
+CREATE TABLE IF NOT EXISTS tier_shares (
+  id         TEXT PRIMARY KEY,
+  payload    TEXT NOT NULL,
+  created_at TEXT NOT NULL
+);
+
 -- Skin catalog cached from Community Dragon (re-synced when the patch
 -- changes). CommunityDragon carries complete per-skin art, so every URL
 -- column below is a real CDN URL - no constructed-URL phantoms to sweep.

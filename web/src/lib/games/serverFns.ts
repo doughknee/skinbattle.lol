@@ -23,10 +23,14 @@ import type {
   RoadmapState,
   SkinPageState,
   SplashdleState,
+  SharedTierListState,
+  TierFeedState,
   TierListResult,
   TierListState,
   TierName,
+  TierScopeCatalog,
 } from './types'
+import type { ShareMode } from './share'
 
 // Every game call may carry the localStorage backup of the guest token so a
 // cleared cookie can be restored without losing progress (see server/guests.ts).
@@ -191,12 +195,31 @@ export const submitBattleUndo = createServerFn({ method: 'POST' })
     return undoLastVote(data.restoreToken)
   })
 
-// Tier List: serve the daily (or a coverage-picked) board to rank. Read-only.
+// Tier List: serve the daily (or a coverage-picked) board to rank — or, when
+// boardId is given, the exact scope the player picked in "make your own".
 export const fetchTierList = createServerFn({ method: 'POST' })
-  .inputValidator((d: GuestInput) => d)
+  .inputValidator((d: GuestInput & { boardId?: string }) => d)
   .handler(async ({ data }): Promise<TierListState> => {
     const { tierListState } = await import('./server/tierlist')
-    return tierListState(data.restoreToken)
+    return tierListState(data.restoreToken, data.boardId)
+  })
+
+// The "make your own" picker options, grouped by axis (champion/line/year/
+// price/rarity). Anonymous catalog data — no guest token needed.
+export const fetchTierScopes = createServerFn({ method: 'GET' }).handler(
+  async (): Promise<TierScopeCatalog> => {
+    const { tierScopes } = await import('./server/tierlist')
+    return tierScopes()
+  },
+)
+
+// The community tier-list browser: recent submissions, newest first, paged.
+// Anonymous derived data.
+export const fetchTierFeed = createServerFn({ method: 'POST' })
+  .inputValidator((d: { offset?: number; axis?: string; boardId?: string }) => d)
+  .handler(async ({ data }): Promise<TierFeedState> => {
+    const { tierListFeed } = await import('./server/tierlist')
+    return tierListFeed(data.offset ?? 0, data.axis, data.boardId)
   })
 
 // Submit a tier list: its cross-tier comparisons feed the community ratings,
@@ -214,4 +237,29 @@ export const submitTierList = createServerFn({ method: 'POST' })
   .handler(async ({ data }): Promise<TierListResult> => {
     const { submitTierList: submit } = await import('./server/tierlist')
     return submit(data.boardToken, data.tiers, data.recent, data.restoreToken)
+  })
+
+// Mint a short share link for a tier list: stores the payload, returns an id
+// the share URL and image endpoint resolve by (keeps links short).
+export const createTierShare = createServerFn({ method: 'POST' })
+  .inputValidator(
+    (d: {
+      boardId: string
+      tiers?: Partial<Record<TierName, string[]>> | null
+      name?: string
+      mode: ShareMode
+    }) => d,
+  )
+  .handler(async ({ data }): Promise<{ id: string }> => {
+    const { createTierShare: create } = await import('./server/tierlist')
+    return create(data)
+  })
+
+// Resolve a shared tier-list link (?s=<id>) for the recipient: the board to
+// (re)rank, the reveal mode, and the sharer's ranking when it's shared.
+export const fetchSharedTierList = createServerFn({ method: 'POST' })
+  .inputValidator((d: GuestInput & { id: string }) => d)
+  .handler(async ({ data }): Promise<SharedTierListState> => {
+    const { sharedTierListState } = await import('./server/tierlist')
+    return sharedTierListState(data.id, data.restoreToken)
   })

@@ -212,6 +212,36 @@ export interface TierListState {
   daily: boolean // true when this is the global daily board
   stats: TierListStats
   guestToken: string
+  // Present when the player already ranked this exact board (and it's still
+  // current): their saved tiers + a fresh comparison, so the page shows the
+  // result instead of a blank board to re-rank.
+  submitted?: SubmittedTierList | null
+}
+
+// A restored, already-submitted tier list: the saved placement plus a freshly
+// recomputed comparison (community tiers, agreement, hot takes).
+export interface SubmittedTierList {
+  tiers: Partial<Record<TierName, string[]>>
+  result: TierListResult
+}
+
+// One row in the community tier-list browser: who ranked what, their S-tier
+// picks, and when.
+export interface TierFeedRow {
+  boardId: string
+  boardTitle: string // e.g. "Lillia's skins", "Star Guardian skins"
+  boardType: string // champion | line | year | price | rarity
+  who: string // account username, or "Guest"
+  sTier: string[] // their S-tier skin names
+  placed: number
+  total: number
+  at: string // ISO submission time
+}
+export interface TierFeedState {
+  rows: TierFeedRow[]
+  total: number // total community submissions (for the header / paging)
+  offset: number
+  pageSize: number
 }
 
 // Post-submit comparison: your placement vs the community's, per skin.
@@ -230,7 +260,44 @@ export interface TierResultRow {
 
 export interface TierListResult {
   rows: TierResultRow[] // your S→D order
+  boardId: string // the board you just ranked (for the share link)
   nextBoard: TierBoard
+  stats: TierListStats
+  username: string | null // your account username, prefilled into the share card
+  guestToken: string
+}
+
+export interface SharedRankingRow {
+  skinId: string
+  name: string
+  championName: string
+  splashUrl: string
+  tier: TierName
+}
+
+// A pickable scope in "make your own", and the full catalog grouped by axis.
+export interface TierScopeOption {
+  boardId: string // e.g. 'champion:Lux', 'line:star-guardian', 'year:2021'
+  label: string // human label ("Lux", "Star Guardian", "2021", "1350 RP")
+  count: number // skins in the scope, before the served-board cap
+}
+export interface TierScopeCatalog {
+  champions: TierScopeOption[]
+  lines: TierScopeOption[]
+  years: TierScopeOption[]
+  prices: TierScopeOption[]
+  rarities: TierScopeOption[]
+}
+
+// What a shared link (/battle/tiers?s=<id>) resolves to for the recipient.
+export interface SharedTierListState {
+  found: boolean // false = unknown/expired id (board is then a fresh fallback)
+  shareId: string
+  mode: 'reveal' | 'hide' | 'board'
+  sharerName: string | null
+  reveal: boolean // show the sharer's ranking immediately (reveal mode)
+  board: TierBoard // the set the recipient (re)ranks
+  ranking: SharedRankingRow[] | null // the sharer's tiers (reveal & hide); null for board
   stats: TierListStats
   guestToken: string
 }

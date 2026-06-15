@@ -206,7 +206,7 @@ function ChampionsPage() {
       <PageHeader
         eyebrow="The catalog"
         title="Champions"
-        subtitle={`Every champion and their wardrobe — ${champions.length} champions, ${totalSkins.toLocaleString()} skins to judge. Pick one to star or ban skin by skin.`}
+        subtitle={`Every champion and their wardrobe: ${champions.length} champions, ${totalSkins.toLocaleString()} skins to judge. Pick one to star or ban skin by skin.`}
         className="mb-8"
       />
 

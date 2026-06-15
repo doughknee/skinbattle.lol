@@ -250,7 +250,7 @@ function ConsensusCallout({ feedback }: { feedback: BattleFeedback | null }) {
     return wrap(gold, faBolt, <>First to pick this matchup</>)
   }
   if (agree <= 0) {
-    return wrap(blue, faFire, <>Bold — you're the only one so far</>)
+    return wrap(blue, faFire, <>Bold, you're the only one so far</>)
   }
   return wrap(
     minority ? blue : gold,
@@ -973,7 +973,7 @@ function BattlePage() {
           <FontAwesomeIcon icon={faShuffle} className="mr-1.5 h-3 text-gold2" />
           You're signed out, but nothing's lost: every pick is saved and already
           shaping your own taste at full strength. They count at half toward the
-          community ranking for now —{' '}
+          community ranking for now;{' '}
           <button
             onClick={login}
             className="cursor-pointer font-bold text-gold1 underline-offset-2 transition duration-150 hover:underline"

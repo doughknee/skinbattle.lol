@@ -6,6 +6,7 @@ import {
   quintileTiers,
   resolveBoard,
   sanitizeTiers,
+  tierScopeCatalog,
 } from './tierlist'
 
 function catalogDb(): DatabaseSync {
@@ -52,16 +53,24 @@ describe('quintileTiers', () => {
 })
 
 describe('resolveBoard', () => {
-  it('resolves a champion to its eligible (non-base) skins', () => {
+  it('resolves a champion to its skins plus the base-skin anchor', () => {
     const db = catalogDb()
-    addSkin(db, '99000', 'Lux', 0) // base — excluded
+    addSkin(db, '99000', 'Lux', 0) // base — now included as the baseline
     for (let i = 1; i <= 6; i++) addSkin(db, `9900${i}`, 'Lux', i)
     addSkin(db, '1001', 'Annie', 1)
     const scope = resolveBoard(db, 'champion:Lux')
     expect(scope).not.toBeNull()
-    expect(scope!.skins.length).toBe(6)
+    expect(scope!.skins.length).toBe(7) // 6 themed + the base skin
+    expect(scope!.skins.some((s) => s.id === '99000' && s.num === 0)).toBe(true)
     expect(scope!.title).toContain('Lux')
     expect(scope!.skins.every((s) => s.championId === 'Lux')).toBe(true)
+  })
+
+  it('gates on real (non-base) skin count, not the base anchor', () => {
+    const db = catalogDb()
+    addSkin(db, '99000', 'Lux', 0) // base present
+    for (let i = 1; i <= 3; i++) addSkin(db, `9900${i}`, 'Lux', i) // only 3 themed
+    expect(resolveBoard(db, 'champion:Lux')).toBeNull() // 3 < MIN_BOARD
   })
 
   it('returns null for too-thin, unknown, and unsupported scopes', () => {
@@ -69,7 +78,33 @@ describe('resolveBoard', () => {
     for (let i = 1; i <= 3; i++) addSkin(db, `100${i}`, 'Annie', i) // only 3 < MIN_BOARD
     expect(resolveBoard(db, 'champion:Annie')).toBeNull()
     expect(resolveBoard(db, 'champion:Nobody')).toBeNull()
-    expect(resolveBoard(db, 'line:star-guardian')).toBeNull() // not in MVP
+    expect(resolveBoard(db, 'line:star-guardian')).toBeNull() // no skins in this line here
+  })
+
+  it('rejects malformed make-your-own axis scopes', () => {
+    const db = catalogDb()
+    for (let i = 1; i <= 6; i++) addSkin(db, `9900${i}`, 'Lux', i)
+    expect(resolveBoard(db, 'price:9999')).toBeNull() // not a real RP tier
+    expect(resolveBoard(db, 'rarity:bogus')).toBeNull() // unknown rarity bucket
+    expect(resolveBoard(db, 'year:1998')).toBeNull() // no skins shipped that year
+    expect(resolveBoard(db, 'nonsense:x')).toBeNull() // unknown axis
+  })
+})
+
+describe('tierScopeCatalog', () => {
+  it('groups champions with enough skins, skips thin ones, exposes every axis', () => {
+    const db = catalogDb()
+    for (let i = 1; i <= 6; i++) addSkin(db, `9900${i}`, 'Lux', i) // 6 ≥ MIN_BOARD
+    addSkin(db, '1001', 'Annie', 1)
+    addSkin(db, '1002', 'Annie', 2) // 2 < MIN_BOARD → skipped
+    const cat = tierScopeCatalog(db)
+    expect(cat.champions.some((c) => c.boardId === 'champion:Lux')).toBe(true)
+    expect(cat.champions.find((c) => c.boardId === 'champion:Lux')?.count).toBe(6)
+    expect(cat.champions.some((c) => c.boardId === 'champion:Annie')).toBe(false)
+    // Every axis is present as an array (cross-champ axes need facts, absent here).
+    for (const axis of [cat.lines, cat.years, cat.prices, cat.rarities]) {
+      expect(Array.isArray(axis)).toBe(true)
+    }
   })
 })
 
