@@ -41,7 +41,7 @@ export const Route = createFileRoute('/battle/leaderboards')({
 
 const GAME_NAMES: Record<GameId, string> = {
   splashdle: 'Splashdle',
-  'price-check': 'Price Check',
+  'price-check': 'Price Point',
   'chroma-vision': 'Chroma Vision',
 }
 

@@ -29,7 +29,7 @@ import type { DailyHubState, HubGame } from '~/lib/games/types'
 type ModeId = 'head-to-head' | HubGame['id']
 
 // Per-game card copy. Win/loss chip labels differ: Splashdle is
-// guess-counted, Price Check is score-counted.
+// guess-counted, Price Point is score-counted.
 const GAME_CARDS: Record<
   HubGame['id'],
   {
@@ -50,8 +50,8 @@ const GAME_CARDS: Record<
     lostLabel: 'Out of guesses',
   },
   'price-check': {
-    to: '/battle/price-check',
-    name: 'Price Check',
+    to: '/battle/price-point',
+    name: 'Price Point',
     blurb: 'Five skins. Guess what each one cost in RP.',
     icon: faCoins,
     wonLabel: (g) => `Scored ${g.score ?? 0}/${g.maxGuesses}`,

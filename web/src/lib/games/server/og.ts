@@ -368,7 +368,7 @@ async function buildCard(card: OgCard): Promise<Node> {
           'div',
           { flexDirection: 'column', gap: 18, justifyContent: 'center', flexGrow: 1 },
           eyebrow('Daily · what did it cost?'),
-          title(`Price Check #${priceCheckPuzzleNumber(utcToday())}`, 76),
+          title(`Price Point #${priceCheckPuzzleNumber(utcToday())}`, 76),
           body('Five skins. Guess what each cost in RP. Legacy relics included.'),
           el(
             'div',

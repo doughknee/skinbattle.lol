@@ -71,10 +71,10 @@ expire, and (3) a persistent identity worth investing in. Games are sequenced by
   `og:`/`twitter:` meta pointing at their card. Per-entity stable URLs
   (`/skins/<slug>`, `/u/<name>`, ranking slices) still pending — they need
   their pages to exist first.
-- ✅ **Static facts dataset + Price Check + skin-line taste** (2026-06-12) —
+- ✅ **Static facts dataset + Price Point + skin-line taste** (2026-06-12) —
   `scripts/snapshot-facts.mjs` snapshots Meraki (cost/rarity/availability/
   sets/release) into committed `data/skin-facts.json` (1,797 skins; never
-  fetched at runtime; re-run on patch cadence). **Price Check** live at
+  fetched at runtime; re-run on patch cadence). **Price Point** live at
   `/games/price-check`: five seeded skins a day on distinct champions,
   guess each RP tier (520–3250 buttons), win = 3+ exact, 🟩/🟨(one tier
   off)/🟥 share grid, legacy fun-facts, streaks, hub checklist slot, OG
@@ -403,7 +403,7 @@ Runs unattended; staleness is how fan sites die. Daily check (patches land
    per the ASU policy.
 3. **Ingest** — new skins: assets, names, IDs, skin-line tags; re-snapshot the
    wiki facts dataset and diff prices/availability (legacy-vaulting changes
-   Price Check's pool).
+   Price Point's pool).
 4. **Activate** — new skins enter the placement-match queue with the "new"
    badge and boosted matchmaking frequency.
 5. **Announce** — "New this patch" surface on the site; later, the Discord bot
@@ -452,7 +452,7 @@ that compounding away. The hub is the homepage habit loop.
 |---|---|---|
 | **Splashdle** (flagship) | Tight crop of a **skin** splash, zooms out per wrong guess, 6 guesses, streak + share grid. Guess-the-skin across all ~1,600 — deliberately NOT LoLdle's guess-the-champion | Splash art only |
 | **Quick Battle** | Two skins, pick one, next pair — endless swipe; every pick updates global + personal ratings | Splash art only |
-| **Price Check** | Guess the RP tier (520/750/975/1350/1820/…); legacy skins surfaced as a fun fact ("not even buyable anymore") | Static price data |
+| **Price Point** | Guess the RP tier (520/750/975/1350/1820/…); legacy skins surfaced as a fun fact ("not even buyable anymore") | Static price data |
 | **Chroma Vision** (rotation/hard mode) | Name the skin from its color palette or silhouette | Splash art only |
 
 **The mirror ships in Phase 1, not later** — it's nearly free once Quick Battle
@@ -573,7 +573,7 @@ Phase 0  Framework: daily seed, guest sessions + merge, streaks,
          share + OG cards + stable URLs, leaderboards, match/rating
          storage (global + personal), feedback surface, patch
          ingestion, static facts dataset
-Phase 1  Daily Hub: Splashdle · Quick Battle · Price Check · Chroma
+Phase 1  Daily Hub: Splashdle · Quick Battle · Price Point · Chroma
          Vision + the mirror (tier list, contrarian takes, taste
          profile, completion) + Drought Index
    ▼     (threshold: ~10 battles/skin median + healthy DAU)

@@ -1,5 +1,7 @@
-// Price Check engine (server-only): five skins a day, guess each one's RP
-// tier. Prices come from the committed facts snapshot (server/facts.ts) -
+// Price Point engine (server-only): five skins a day, guess each one's RP
+// tier. (Internal id stays "price-check" - the GAME constant, DB keys, and
+// analytics events - so renaming the display name never orphans stored data.)
+// Prices come from the committed facts snapshot (server/facts.ts) -
 // never fetched at runtime. Legacy skins stay in the pool and surface a fun
 // fact ("not even buyable anymore"), per the roadmap.
 //
@@ -151,7 +153,7 @@ function buildShareText(
     .map((r) => (r.correct ? '🟩' : r.oneOff ? '🟨' : '🟥'))
     .join('')
   const lines = [
-    `Price Check #${puzzleNumber(date, EPOCH)} ${scoreOf(results)}/${ROUNDS}`,
+    `Price Point #${puzzleNumber(date, EPOCH)} ${scoreOf(results)}/${ROUNDS}`,
     grid,
   ]
   if (streak.current > 1) lines.push(`🔥 ${streak.current}-day streak`)
@@ -258,7 +260,7 @@ export async function submitPriceGuess(
     result = { status: 'in_progress', guesses: [] }
   }
   if (result.status !== 'in_progress' || result.guesses.length >= ROUNDS) {
-    throw new Error("Today's Price Check is already finished. Come back tomorrow!")
+    throw new Error("Today's Price Point is already finished. Come back tomorrow!")
   }
 
   const skinId = puzzle.skinIds[result.guesses.length]

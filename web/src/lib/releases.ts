@@ -43,12 +43,12 @@ export const RELEASES: ReleaseEntry[] = [
   },
   {
     date: '2026-06-11',
-    title: 'The games arrive: Splashdle, Head-to-Head, Price Check, and your Mirror',
+    title: 'The games arrive: Splashdle, Head-to-Head, Price Point, and your Mirror',
     highlights: [
       'Splashdle: name the skin from a tiny sliver of its splash art. A fresh puzzle every midnight UTC and a streak to defend.',
       'Head-to-Head: two skins, pick one, repeat forever. Every pick moves the community rankings the instant you click, and the site tells you exactly what your vote just did.',
       'The Mirror: a personal tier list that builds itself from your battles, plus your most contrarian takes and the skin lines you secretly over-love.',
-      'Price Check: guess what each skin cost in RP. Five skins a day. Harder than it sounds.',
+      'Price Point: guess what each skin cost in RP. Five skins a day. Harder than it sounds.',
       'Every skin got a permanent page, the rankings learned to slice by price, skin line, champion, and year, and the Drought Index now ranks every champion by days since their last skin.',
     ],
     fixes: [

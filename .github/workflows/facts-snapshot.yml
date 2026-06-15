@@ -44,7 +44,7 @@ jobs:
             module (rarity from CommunityDragon).
 
             Review the diff for new skins, price changes, and
-            legacy-vaulting, then merge — Price Check pools, skin pages,
+            legacy-vaulting, then merge — Price Point pools, skin pages,
             the Drought Index, and the Mirror's skin-line taste profile
             all read this dataset.
           delete-branch: true

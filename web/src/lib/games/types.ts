@@ -70,7 +70,7 @@ export interface HubGame {
   status: DailyStatus
   guessesUsed: number
   maxGuesses: number
-  // Price Check: exact hits so far (its win condition is score, not guesses).
+  // Price Point: exact hits so far (its win condition is score, not guesses).
   score?: number
   streak: StreakInfo
   // True only when the current streak is genuinely still running into today
@@ -176,7 +176,7 @@ export interface BattleUndoResult {
   stats: BattleStats
 }
 
-// ─── Price Check ────────────────────────────────────────────────────────────
+// ─── Price Point (internal id: price-check) ─────────────────────────────────
 
 // An answered round. Facts only ship AFTER the guess - the unanswered
 // round's price never reaches the client.

@@ -124,11 +124,11 @@ export const SITE_SECTIONS: SiteSection[] = [
         group: 'Daily challenges',
       },
       {
-        to: '/battle/price-check',
-        label: 'Price Check',
+        to: '/battle/price-point',
+        label: 'Price Point',
         blurb: 'Guess what each skin cost in RP.',
         icon: faCoins,
-        search: 'rp cost price guess daily',
+        search: 'rp cost price point check guess daily',
         group: 'Daily challenges',
       },
       {
