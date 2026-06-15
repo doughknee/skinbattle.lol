@@ -23,6 +23,7 @@ export const OG_CARDS = [
   'games',
   'splashdle',
   'quick-battle',
+  'tier-list',
   'mirror',
   'price-check',
   'chroma-vision',
@@ -279,6 +280,51 @@ async function buildCard(card: OgCard): Promise<Node> {
           eyebrow('Endless · which do you like more?'),
           title('Head-to-Head'),
           body('Two skins. Pick one. Every vote builds the community ranking.'),
+          battlesLine
+            ? text(battlesLine, {
+                fontFamily: 'Inter',
+                fontWeight: 600,
+                fontSize: 30,
+                color: C.gold1,
+              })
+            : body(''),
+        ),
+      ])
+    }
+    case 'tier-list': {
+      const tierColors = [C.red, C.gold2, C.blue2, C.gold1, C.grey1]
+      return frame(null, [
+        el(
+          'div',
+          { flexDirection: 'column', gap: 18, justifyContent: 'center', flexGrow: 1 },
+          eyebrow("New · sort a champion's wardrobe"),
+          title('Tier Lists'),
+          body(
+            "Rank a champion's skins S to D. One tier list shapes the community ranking as much as dozens of head-to-head battles.",
+          ),
+          el(
+            'div',
+            { gap: 14, marginTop: 10 },
+            ...['S', 'A', 'B', 'C', 'D'].map((t, i) =>
+              el(
+                'div',
+                {
+                  width: 84,
+                  height: 84,
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  border: `2px solid ${C.gold5}`,
+                  backgroundColor: 'rgba(1,10,19,0.6)',
+                },
+                text(t, {
+                  fontFamily: 'Cinzel',
+                  fontWeight: 700,
+                  fontSize: 48,
+                  color: tierColors[i],
+                }),
+              ),
+            ),
+          ),
           battlesLine
             ? text(battlesLine, {
                 fontFamily: 'Inter',
