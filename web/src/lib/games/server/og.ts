@@ -312,7 +312,7 @@ async function buildCard(card: OgCard): Promise<Node> {
           'div',
           { flexDirection: 'column', gap: 18, justifyContent: 'center', flexGrow: 1 },
           eyebrow("New · sort a champion's wardrobe"),
-          title('Tier Lists'),
+          title('Tier Drop'),
           body(
             "Rank a champion's skins S to D. One tier list shapes the community ranking as much as dozens of head-to-head battles.",
           ),

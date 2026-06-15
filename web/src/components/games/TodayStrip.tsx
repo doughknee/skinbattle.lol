@@ -238,7 +238,7 @@ function TierListCard({ index, current }: { index: number; current: boolean }) {
     <ModeCard
       to="/battle/tiers"
       icon={faLayerGroup}
-      name="Tier List"
+      name="Tier Drop"
       blurb="Sort a set S to D. See how the crowd ranks it."
       index={index}
       tone={current ? 'current' : 'fresh'}

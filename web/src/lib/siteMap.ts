@@ -119,10 +119,10 @@ export const SITE_SECTIONS: SiteSection[] = [
       },
       {
         to: '/battle/tiers',
-        label: 'Tier List',
+        label: 'Tier Drop',
         blurb: "Rank a champion's skins S to D - dozens of verdicts in one go.",
         icon: faLayerGroup,
-        search: 'tier list rank s a b c d champion skins drag tierlist',
+        search: 'tier drop tier list rank s a b c d champion skins drag tierlist',
       },
       {
         to: '/battle/splashdle',

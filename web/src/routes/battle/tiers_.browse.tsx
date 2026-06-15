@@ -41,7 +41,7 @@ export const Route = createFileRoute('/battle/tiers_/browse')({
     <ErrorState
       title="Couldn't load tier lists"
       message={error.message}
-      back={{ to: '/battle/tiers', label: 'Back to Tier List' }}
+      back={{ to: '/battle/tiers', label: 'Back to Tier Drop' }}
     />
   ),
   pendingComponent: () => <TierListSkeleton />,
@@ -233,7 +233,7 @@ function BrowsePage() {
         </Link>
         <span className="text-icon/40">/</span>
         <Link to="/battle/tiers" className="transition-colors hover:text-gold1">
-          Tier List
+          Tier Drop
         </Link>
         <span className="text-icon/40">/</span>
         <span className="text-gold2">Community</span>

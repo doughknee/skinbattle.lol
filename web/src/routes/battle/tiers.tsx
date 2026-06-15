@@ -108,7 +108,7 @@ export const Route = createFileRoute('/battle/tiers')({
     const title =
       shared?.found && shared.sharerName
         ? `${shared.sharerName}'s tier list · Skin Battle`
-        : 'Tier List · Skin Battle'
+        : 'Tier Drop · Skin Battle'
     const description =
       "Sort a champion's skins S to D, then see how your take stacks up against the community."
     return {
@@ -319,10 +319,10 @@ function TierBreadcrumb({ current }: { current?: string }) {
           to="/battle/tiers"
           className="transition-colors hover:text-gold1"
         >
-          Tier List
+          Tier Drop
         </Link>
       ) : (
-        <span className="text-gold2">Tier List</span>
+        <span className="text-gold2">Tier Drop</span>
       )}
       {current && (
         <>
@@ -433,7 +433,7 @@ function TierListLanding({
       <header className="animate-fade-up mb-8">
         <p className="mb-2 text-sm font-semibold uppercase tracking-[0.3em] text-gold2">
           <FontAwesomeIcon icon={faLayerGroup} className="mr-2 h-3.5" />
-          Tier List
+          Tier Drop
         </p>
         <h1 className="font-serif text-4xl font-bold text-gold1 md:text-5xl">
           Rank some skins.
@@ -980,7 +980,7 @@ function Builder({
         <div className="mb-2 flex items-center justify-between gap-3">
           <p className="text-sm font-semibold uppercase tracking-[0.3em] text-gold2">
             <FontAwesomeIcon icon={faLayerGroup} className="mr-2 h-3.5" />
-            Tier List
+            Tier Drop
           </p>
           <div className="flex items-center gap-3">
             {rankedCount > 0 && (
