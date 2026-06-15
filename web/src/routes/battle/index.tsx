@@ -4,14 +4,12 @@ import { motion, useAnimate, useReducedMotion } from 'motion/react'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import {
   faArrowTrendUp,
-  faBan,
   faCompress,
   faExpand,
   faFire,
   faKeyboard,
   faRotateLeft,
   faShuffle,
-  faStar,
   faUser,
   faUsers,
 } from '@fortawesome/free-solid-svg-icons'
@@ -28,11 +26,8 @@ import {
 } from '~/lib/games/serverFns'
 import { ogMeta } from '~/lib/games/ogMeta'
 import { guestRestoreToken, rememberGuestToken } from '~/lib/games/client'
-import { api } from '~/lib/api'
 import { useAuth } from '~/lib/useAuth'
 import { countBattleAndMaybeOffer, SUPPORT_URL } from '~/lib/support'
-import { userStatsStore, MAX_STARS, MAX_X } from '~/lib/userStatsStore'
-import { captureSkinVote } from '~/lib/analytics'
 import type {
   BattleFeedback,
   BattlePair,
@@ -120,21 +115,6 @@ const PICK_HOLD_MS = 280
 // immediately and each splash blur-ups into place as it decodes.
 type Entrance = 'reveal' | 'round' | 'settled'
 
-// The viewer's catalog marks (star/ban) for one skin.
-interface Marks {
-  star: boolean
-  x: boolean
-}
-
-const NO_MARKS: Marks = { star: false, x: false }
-
-const markChip =
-  'flex h-8 w-8 cursor-pointer items-center justify-center outline -outline-offset-1 transition duration-150 active:scale-[0.94]'
-const markIdle =
-  'bg-hextech-black/70 text-grey1 outline-icon/30 hover:text-gold1 hover:outline-gold2'
-const markGold = 'bg-gold5/40 text-gold1 outline-gold2'
-const markRed = 'bg-danger-surface/60 text-danger outline-danger-border/70'
-
 function BattleCard({
   skin,
   side,
@@ -142,8 +122,6 @@ function BattleCard({
   onPick,
   onBroken,
   entrance,
-  marks,
-  onMark,
 }: {
   skin: BattleSkin
   side: 'a' | 'b'
@@ -152,10 +130,6 @@ function BattleCard({
   onPick: (skinId: string) => void
   onBroken: (skinId: string) => void
   entrance: Entrance
-  // Catalog star/ban: picking decides the battle, these crown (or condemn)
-  // the skin itself - the two currencies, woven into one surface.
-  marks: Marks
-  onMark: (skinId: string, next: Marks) => void
 }) {
   // Splash blur-up: the image fades + sharpens into place as it decodes, so
   // there's no loading skeleton to hide behind. Preloaded/cached splashes are
@@ -234,28 +208,6 @@ function BattleCard({
         aria-hidden
         className={`pointer-events-none absolute inset-0 z-10 outline -outline-offset-2 transition duration-200 ${frameTone}`}
       />
-      <span className="absolute left-2 top-2 z-10 flex gap-1.5">
-        <button
-          onClick={() => onMark(skin.skinId, { star: !marks.star, x: marks.x })}
-          aria-pressed={marks.star}
-          aria-label={marks.star ? `Unstar ${skin.name}` : `Star ${skin.name}`}
-          title={
-            marks.star ? 'Remove star' : `Star this skin (${MAX_STARS} max)`
-          }
-          className={`${markChip} ${marks.star ? markGold : markIdle}`}
-        >
-          <FontAwesomeIcon icon={faStar} className="h-3.5" />
-        </button>
-        <button
-          onClick={() => onMark(skin.skinId, { star: marks.star, x: !marks.x })}
-          aria-pressed={marks.x}
-          aria-label={marks.x ? `Unban ${skin.name}` : `Ban ${skin.name}`}
-          title={marks.x ? 'Remove ban' : `Ban this skin (${MAX_X} max)`}
-          className={`${markChip} ${marks.x ? markRed : markIdle}`}
-        >
-          <FontAwesomeIcon icon={faBan} className="h-3.5" />
-        </button>
-      </span>
     </div>
   )
 }
@@ -506,7 +458,7 @@ const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms))
 
 function BattlePage() {
   const { qb: initial, hub } = Route.useLoaderData()
-  const { isAuthenticated, getApiToken, withApiToken, login } = useAuth()
+  const { login } = useAuth()
   const posthog = usePostHog()
   const [view, setView] = useState<View>({
     current: initial.pair,
@@ -514,13 +466,6 @@ function BattlePage() {
     feedback: null,
     stats: initial.stats,
   })
-  // The viewer's catalog star/ban marks, keyed by skin id, so the chips on
-  // rotating battle cards reflect prior votes. Loaded once when auth
-  // resolves; local toggles overlay it optimistically.
-  const [marks, setMarks] = useState<Map<string, Marks>>(new Map())
-  const marksRef = useRef(marks)
-  marksRef.current = marks
-  const markBusyRef = useRef(false)
   const [session, setSession] = useState(0)
   const [history, setHistory] = useState<HistoryEntry[]>([])
   // Screen-shake on each pick: a short, decaying jolt of the whole arena (the
@@ -547,119 +492,6 @@ function BattlePage() {
   useEffect(() => {
     rememberGuestToken(initial.guestToken)
   }, [initial.guestToken])
-
-  useEffect(() => {
-    let cancelled = false
-    if (!isAuthenticated) {
-      setMarks(new Map())
-      return
-    }
-    void (async () => {
-      const token = await getApiToken()
-      if (!token) return
-      try {
-        const data = await api.userVotes(token)
-        if (!cancelled)
-          setMarks(
-            new Map(
-              data.skins.map((s) => [
-                s.id,
-                { star: s.user_star ?? false, x: s.user_x ?? false },
-              ]),
-            ),
-          )
-      } catch {
-        /* chips start unmarked; voting still works */
-      }
-    })()
-    return () => {
-      cancelled = true
-    }
-  }, [isAuthenticated, getApiToken])
-
-  // Catalog star/ban from the arena: same budget rules and optimistic flow
-  // as SkinCard, against the page-level marks map.
-  const castMark = useCallback(
-    async (skinId: string, next: Marks) => {
-      if (!isAuthenticated) {
-        // Guest hit the only sign-in-gated action - capture the intent so the
-        // activation funnel has its missing first step (most guests leak here).
-        posthog.capture('auth_prompt_clicked', {
-          trigger: 'star_ban_gate',
-          source: 'battle_arena',
-          skin_id: skinId,
-        })
-        login()
-        return
-      }
-      if (markBusyRef.current) return
-      const prev = marksRef.current.get(skinId) ?? NO_MARKS
-      const used = userStatsStore.get()
-      if (next.star && !prev.star && used.usedStars >= MAX_STARS) {
-        toast(`All ${MAX_STARS} stars used. Unstar another skin first.`, 'error')
-        return
-      }
-      if (next.x && !prev.x && used.usedX >= MAX_X) {
-        toast(`All ${MAX_X} bans used. Unban another skin first.`, 'error')
-        return
-      }
-      markBusyRef.current = true
-      setMarks((m) => new Map(m).set(skinId, next))
-      try {
-        await withApiToken(
-          (token) => api.vote({ skinId, star: next.star, x: next.x }, token),
-          'Please sign in to vote.',
-        )
-        userStatsStore.adjust({
-          stars: next.star === prev.star ? 0 : next.star ? 1 : -1,
-          x: next.x === prev.x ? 0 : next.x ? 1 : -1,
-        })
-        const now = userStatsStore.get()
-        // Resolve the on-screen skin so the event carries skin_name +
-        // champion_id like the other surfaces (only the current pair can be
-        // marked). viewRef avoids adding `view` to the callback's deps.
-        const onScreen = viewRef.current.current
-        const marked = [onScreen.a, onScreen.b].find((s) => s.skinId === skinId)
-        if (next.star !== prev.star) {
-          captureSkinVote(posthog, next.star ? 'star' : 'unstar', {
-            skinId,
-            skinName: marked?.name,
-            championId: marked?.championId,
-            used: now.usedStars,
-            source: 'battle_arena',
-          })
-          toast(
-            next.star
-              ? `Star ${now.usedStars}/${MAX_STARS} used`
-              : `Star removed. ${now.usedStars}/${MAX_STARS} used`,
-            'success',
-          )
-        }
-        if (next.x !== prev.x) {
-          captureSkinVote(posthog, next.x ? 'ban' : 'unban', {
-            skinId,
-            skinName: marked?.name,
-            championId: marked?.championId,
-            used: now.usedX,
-            source: 'battle_arena',
-          })
-          toast(
-            next.x
-              ? `Ban ${now.usedX}/${MAX_X} used`
-              : `Ban removed. ${now.usedX}/${MAX_X} used`,
-            'success',
-          )
-        }
-        window.dispatchEvent(new CustomEvent('updateUserStats'))
-      } catch (err) {
-        setMarks((m) => new Map(m).set(skinId, prev))
-        toast(err instanceof Error ? err.message : 'Vote failed', 'error')
-      } finally {
-        markBusyRef.current = false
-      }
-    },
-    [isAuthenticated, login, posthog, withApiToken],
-  )
 
   // Manual-refit runs report through the console (the trigger is an admin
   // affordance, not a player surface).
@@ -917,8 +749,6 @@ function BattlePage() {
           onPick={pick}
           onBroken={broken}
           entrance={entrance}
-          marks={marks.get(current.a.skinId) ?? NO_MARKS}
-          onMark={castMark}
         />
         <BattleCard
           skin={current.b}
@@ -929,8 +759,6 @@ function BattlePage() {
           onPick={pick}
           onBroken={broken}
           entrance={entrance}
-          marks={marks.get(current.b.skinId) ?? NO_MARKS}
-          onMark={castMark}
         />
       </div>
       <span
