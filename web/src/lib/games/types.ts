@@ -180,6 +180,61 @@ export interface BattleUndoResult {
   stats: BattleStats
 }
 
+// ─── Tier List ──────────────────────────────────────────────────────────────
+
+export interface TierListSkin {
+  skinId: string
+  name: string
+  championId: string
+  championName: string
+  splashUrl: string
+}
+
+// A dealt board: which skins to rank plus the signed claim that the server
+// dealt exactly these. Ratings are absent (they would bias placement).
+export interface TierBoard {
+  token: string
+  boardId: string // e.g. 'champion:Lux'
+  boardType: string // 'champion' (MVP); later 'line' | 'year' | …
+  title: string
+  subtitle: string
+  skins: TierListSkin[] // shuffled
+}
+
+export interface TierListStats {
+  total: number // this user's lifetime submissions
+  community: number // all tier lists ever submitted
+  tier: 'guest' | 'member'
+}
+
+export interface TierListState {
+  board: TierBoard
+  daily: boolean // true when this is the global daily board
+  stats: TierListStats
+  guestToken: string
+}
+
+// Post-submit comparison: your placement vs the community's, per skin.
+export interface TierResultRow {
+  skinId: string
+  name: string
+  championName: string
+  splashUrl: string
+  yourTier: TierName
+  communityTier: TierName // rating-quintile within this board (MVP)
+  rating: number // updated community rating
+  delta: number // this submission's rating move
+  agreementPct: number | null // % who placed it in your tier (null until enough data)
+  hotTake: boolean // your tier is ≥2 tiers off the community's
+}
+
+export interface TierListResult {
+  rows: TierResultRow[] // your S→D order
+  nextBoard: TierBoard
+  stats: TierListStats
+  guestToken: string
+}
+
 // ─── Price Point (internal id: price-check) ─────────────────────────────────
 
 // An answered round. Facts only ship AFTER the guess - the unanswered

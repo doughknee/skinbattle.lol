@@ -23,6 +23,9 @@ import type {
   RoadmapState,
   SkinPageState,
   SplashdleState,
+  TierListResult,
+  TierListState,
+  TierName,
 } from './types'
 
 // Every game call may carry the localStorage backup of the guest token so a
@@ -186,4 +189,29 @@ export const submitBattleUndo = createServerFn({ method: 'POST' })
   .handler(async ({ data }): Promise<BattleUndoResult | null> => {
     const { undoLastVote } = await import('./server/quickbattle')
     return undoLastVote(data.restoreToken)
+  })
+
+// Tier List: serve the daily (or a coverage-picked) board to rank. Read-only.
+export const fetchTierList = createServerFn({ method: 'POST' })
+  .inputValidator((d: GuestInput) => d)
+  .handler(async ({ data }): Promise<TierListState> => {
+    const { tierListState } = await import('./server/tierlist')
+    return tierListState(data.restoreToken)
+  })
+
+// Submit a tier list: its cross-tier comparisons feed the community ratings,
+// and the result carries the post-submit "how you compare" rows + a next board.
+export const submitTierList = createServerFn({ method: 'POST' })
+  .inputValidator(
+    (
+      d: GuestInput & {
+        boardToken: string
+        tiers: Partial<Record<TierName, string[]>>
+        recent?: string[]
+      },
+    ) => d,
+  )
+  .handler(async ({ data }): Promise<TierListResult> => {
+    const { submitTierList: submit } = await import('./server/tierlist')
+    return submit(data.boardToken, data.tiers, data.recent, data.restoreToken)
   })

@@ -222,12 +222,14 @@ export function reverseLiveUpdate(
     uncertainty: inflate(w.uncertainty),
     battles: w.battles - 1,
     wins: Math.max(0, w.wins - 1),
+    lastBattleAt: w.lastBattleAt,
   }
   const loser: SkinRating = {
     rating: l.rating - loserDelta,
     uncertainty: inflate(l.uncertainty),
     battles: l.battles - 1,
     wins: l.wins,
+    lastBattleAt: l.lastBattleAt,
   }
   if (winner.battles <= 0)
     db.prepare('DELETE FROM skin_ratings WHERE skin_id = ?').run(winnerId)
@@ -301,6 +303,157 @@ export function applyPersonalUpdate(
   put.run(userId, winnerId, w.rating + delta, w.battles + 1, now)
   put.run(userId, loserId, l.rating - delta, l.battles + 1, now)
   return { winnerBefore: w, loserBefore: l }
+}
+
+// ─── tier-list update (one submission, many comparisons) ────────────────────
+
+// Tiers, best→worst. The rating engine only needs the order; the S/A/B/C/D
+// labels are the game's concern. The refit reads payloads in this order.
+export const TIER_ORDER = ['S', 'A', 'B', 'C', 'D'] as const
+
+// A submission's ~P implied comparisons all come from one rater in one sitting,
+// so they are correlated - not P independent observations. We cap a single
+// submission's contribution at ~TIER_EFFECTIVE_CAP effective comparisons, which
+// keeps uncertainty honest (losing to four skins in your list is not four
+// independent losses).
+export const TIER_EFFECTIVE_CAP = 8
+
+export interface TierComparison {
+  winnerId: string
+  loserId: string
+}
+
+// Implied comparisons from tiers ordered best→worst (index 0 = top): every skin
+// in a higher tier beats every skin in a lower one. Same-tier pairs are ties
+// and carry no comparison (MVP - the full ordering is logged for a later
+// Plackett-Luce refit that can use ties).
+export function tierComparisons(tiers: string[][]): TierComparison[] {
+  const out: TierComparison[] = []
+  for (let hi = 0; hi < tiers.length; hi++) {
+    for (let lo = hi + 1; lo < tiers.length; lo++) {
+      for (const winnerId of tiers[hi]) {
+        for (const loserId of tiers[lo]) out.push({ winnerId, loserId })
+      }
+    }
+  }
+  return out
+}
+
+// Per-comparison down-weight: boards with ≤TIER_EFFECTIVE_CAP comparisons count
+// fully; larger boards are scaled so one submission injects at most ~CAP
+// effective comparisons.
+export function tierDownweight(pairCount: number): number {
+  return pairCount > 0 ? Math.min(1, TIER_EFFECTIVE_CAP / pairCount) : 0
+}
+
+export interface TierSkinResult {
+  skinId: string
+  before: number
+  after: number
+  delta: number
+}
+
+// One tier-list submission. A batched, order-free Elo update over every implied
+// comparison (so placement order carries no bias), down-weighted for
+// correlation, plus the same to the user's personal mirror. battles counts ONE
+// appearance per placed skin (a coverage proxy, so the matchmaker credits it),
+// NOT one per comparison; wins stays head-to-head only. Must run inside the
+// caller's transaction alongside the event append.
+export function applyTierListUpdate(
+  db: DatabaseSync,
+  userId: string,
+  tiers: string[][],
+  trust: number,
+): TierSkinResult[] {
+  const comps = tierComparisons(tiers)
+  const placed = [...new Set(tiers.flat())]
+  if (comps.length === 0 || placed.length === 0) return []
+  const dw = tierDownweight(comps.length)
+  const effW = trust * dw
+  const nowMs = Date.now()
+  const nowIso = new Date(nowMs).toISOString()
+  const bump = (m: Map<string, number>, k: string, v: number) =>
+    m.set(k, (m.get(k) ?? 0) + v)
+
+  // Community update.
+  const cur = new Map(placed.map((id) => [id, getSkinRating(db, id)]))
+  const actual = new Map<string, number>()
+  const expected = new Map<string, number>()
+  const count = new Map<string, number>()
+  for (const { winnerId, loserId } of comps) {
+    const e = expectedScore(cur.get(winnerId)!.rating, cur.get(loserId)!.rating)
+    bump(actual, winnerId, 1)
+    bump(expected, winnerId, e)
+    bump(expected, loserId, 1 - e) // loser's expected score; actual is 0
+    bump(count, winnerId, 1)
+    bump(count, loserId, 1)
+  }
+
+  const results: TierSkinResult[] = []
+  for (const id of placed) {
+    const r = cur.get(id)!
+    const unc = inflateUncertainty(r.uncertainty, r.lastBattleAt, nowMs)
+    const delta = kFor(unc) * effW * ((actual.get(id) ?? 0) - (expected.get(id) ?? 0))
+    // Total tightening weight for this skin, clamped so the decay factor stays
+    // positive even on a huge board.
+    const decayWeight = Math.min(effW * (count.get(id) ?? 0), 9)
+    putSkinRating(db, id, {
+      rating: r.rating + delta,
+      uncertainty: decayUncertainty(unc, decayWeight),
+      battles: r.battles + 1,
+      wins: r.wins,
+      lastBattleAt: nowIso,
+    })
+    results.push({ skinId: id, before: r.rating, after: r.rating + delta, delta })
+  }
+
+  applyPersonalTierUpdate(db, userId, comps, dw, nowIso)
+  return results
+}
+
+// The same decomposition against the user's personal taste model. Unweighted by
+// trust (a user's list is theirs) but still correlation-down-weighted by dw.
+function applyPersonalTierUpdate(
+  db: DatabaseSync,
+  userId: string,
+  comps: TierComparison[],
+  dw: number,
+  nowIso: string,
+): void {
+  const ids = [...new Set(comps.flatMap((c) => [c.winnerId, c.loserId]))]
+  const read = (skinId: string) =>
+    (db
+      .prepare(
+        'SELECT rating, battles FROM user_skin_ratings WHERE user_id = ? AND skin_id = ?',
+      )
+      .get(userId, skinId) as { rating: number; battles: number } | undefined) ?? {
+      rating: START_RATING,
+      battles: 0,
+    }
+  const cur = new Map(ids.map((id) => [id, read(id)]))
+  const actual = new Map<string, number>()
+  const expected = new Map<string, number>()
+  const bump = (m: Map<string, number>, k: string, v: number) =>
+    m.set(k, (m.get(k) ?? 0) + v)
+  for (const { winnerId, loserId } of comps) {
+    const e = expectedScore(cur.get(winnerId)!.rating, cur.get(loserId)!.rating)
+    bump(actual, winnerId, 1)
+    bump(expected, winnerId, e)
+    bump(expected, loserId, 1 - e)
+  }
+  const put = db.prepare(
+    `INSERT INTO user_skin_ratings (user_id, skin_id, rating, battles, updated_at)
+     VALUES (?, ?, ?, ?, ?)
+     ON CONFLICT (user_id, skin_id) DO UPDATE SET
+       rating = excluded.rating,
+       battles = excluded.battles,
+       updated_at = excluded.updated_at`,
+  )
+  for (const id of ids) {
+    const r = cur.get(id)!
+    const delta = K_PERSONAL * dw * ((actual.get(id) ?? 0) - (expected.get(id) ?? 0))
+    put.run(userId, id, r.rating + delta, r.battles + 1, nowIso)
+  }
 }
 
 // Rank among skins that have actually fought (battles > 0). ~2k rows - a
@@ -420,6 +573,44 @@ export function runRefit(db: DatabaseSync): RefitSummary {
         ? `${p.winnerId}|${p.loserId}`
         : `${p.loserId}|${p.winnerId}`
     bump(pairs, key, weight)
+  }
+
+  // Tier-list submissions feed the same tallies: explode each into
+  // down-weighted cross-tier comparisons. battles counts one appearance per
+  // placed skin (coverage proxy), not one per comparison; wins stays H2H only.
+  const tierRows = db
+    .prepare(
+      `SELECT e.payload AS payload, u.logto_sub AS logtoSub, e.created_at AS createdAt
+       FROM game_events e
+       LEFT JOIN game_users u ON u.id = e.user_id
+       WHERE e.game = 'tier-list' AND e.type = 'tier_submitted'`,
+    )
+    .all() as unknown as {
+    payload: string
+    logtoSub: string | null
+    createdAt: string
+  }[]
+
+  for (const row of tierRows) {
+    const parsed = JSON.parse(row.payload) as { tiers?: Record<string, string[]> }
+    const tierMap = parsed.tiers ?? {}
+    const tiers = TIER_ORDER.map((t) => tierMap[t] ?? [])
+    const comps = tierComparisons(tiers)
+    if (comps.length === 0) continue
+    const weight =
+      (row.logtoSub ? MEMBER_WEIGHT : GUEST_WEIGHT) * tierDownweight(comps.length)
+    for (const { winnerId, loserId } of comps) {
+      bump(wins, winnerId, weight)
+      bump(games, winnerId, weight)
+      bump(games, loserId, weight)
+      const key =
+        winnerId < loserId ? `${winnerId}|${loserId}` : `${loserId}|${winnerId}`
+      bump(pairs, key, weight)
+    }
+    for (const id of new Set(tiers.flat())) {
+      bump(rawBattles, id, 1) // one appearance, not one per comparison
+      seen(id, row.createdAt)
+    }
   }
 
   const ids = [...games.keys()]

@@ -40,7 +40,7 @@ CREATE TABLE IF NOT EXISTS game_events (
   user_id        TEXT NOT NULL,
   game           TEXT NOT NULL,
   puzzle_date    TEXT NOT NULL,         -- YYYY-MM-DD (UTC)
-  type           TEXT NOT NULL,         -- puzzle_started | guess_submitted | puzzle_completed | battle_voted
+  type           TEXT NOT NULL,         -- puzzle_started | guess_submitted | puzzle_completed | battle_voted | tier_submitted
   payload        TEXT NOT NULL,         -- JSON
   question_asked TEXT NOT NULL,         -- e.g. 'guess-the-skin'
   asset_version  TEXT NOT NULL,         -- Data Dragon patch the assets came from
@@ -56,6 +56,10 @@ CREATE INDEX IF NOT EXISTS idx_game_events_battle_pair
 -- guess_submitted rows by the guessed skin for a given game + day.
 CREATE INDEX IF NOT EXISTS idx_game_events_guess
   ON game_events (game, type, puzzle_date, json_extract(payload, '$.skinId'));
+-- Tier-list dedup ("has this user already ranked this board?") scans by
+-- user + board id straight out of the JSON payload.
+CREATE INDEX IF NOT EXISTS idx_game_events_tier
+  ON game_events (game, type, user_id, json_extract(payload, '$.boardId'));
 
 -- The day's puzzle, frozen on first request so a mid-day catalog refresh
 -- can never change the answer under players.
@@ -198,7 +202,12 @@ export interface GameEvent {
   userId: string
   game: string
   puzzleDate: string
-  type: 'puzzle_started' | 'guess_submitted' | 'puzzle_completed' | 'battle_voted'
+  type:
+    | 'puzzle_started'
+    | 'guess_submitted'
+    | 'puzzle_completed'
+    | 'battle_voted'
+    | 'tier_submitted'
   payload: Record<string, unknown>
   questionAsked: string
   assetVersion: string
