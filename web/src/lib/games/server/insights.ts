@@ -14,56 +14,6 @@ import { skinSlug } from '../slug'
 
 const DAY_MS = 86_400_000
 
-// "New this patch" window: League patches land ~biweekly, so three weeks
-// catches the current drop plus stragglers.
-const NEW_SKIN_DAYS = 21
-const NEW_SKIN_CAP = 8
-
-export interface NewSkin {
-  skinId: string
-  slug: string
-  name: string
-  championName: string
-  splashUrl: string
-  release: string | null // null = the wiki hasn't dated it yet
-  upcoming: boolean
-}
-
-// The announce surface (pipeline step 5): skins released within the window
-// plus Upcoming ones already in the live catalog, newest first. New-skin
-// hype days are the site's natural traffic spikes.
-export function newThisPatch(db: DatabaseSync, today: string): NewSkin[] {
-  const todayMs = Date.parse(`${today}T00:00:00Z`)
-  const fresh: NewSkin[] = []
-  for (const skin of allCatalogSkins(db)) {
-    const facts = factsFor(skin.id)
-    if (!facts) continue
-    const upcoming = facts.availability === 'Upcoming'
-    if (!upcoming) {
-      if (!facts.release) continue
-      const age = (todayMs - Date.parse(`${facts.release}T00:00:00Z`)) / DAY_MS
-      if (age < 0 || age > NEW_SKIN_DAYS) continue
-    }
-    fresh.push({
-      skinId: skin.id,
-      slug: skinSlug(skin.name, skin.id),
-      name: skin.name,
-      championName: skin.championName,
-      splashUrl: skin.splashUrl,
-      release: facts.release,
-      upcoming,
-    })
-  }
-  return fresh
-    .sort(
-      (a, b) =>
-        Number(b.upcoming) - Number(a.upcoming) ||
-        (b.release ?? '').localeCompare(a.release ?? '') ||
-        a.name.localeCompare(b.name),
-    )
-    .slice(0, NEW_SKIN_CAP)
-}
-
 export async function droughtIndex(): Promise<DroughtState> {
   const db: DatabaseSync = getDb()
   await ensureCatalog(db)

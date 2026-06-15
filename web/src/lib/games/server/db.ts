@@ -52,6 +52,10 @@ CREATE INDEX IF NOT EXISTS idx_game_events_user ON game_events (user_id, game, p
 -- by matchup, so index the pair key straight out of the JSON payload.
 CREATE INDEX IF NOT EXISTS idx_game_events_battle_pair
   ON game_events (game, type, json_extract(payload, '$.pairKey'));
+-- Puzzle guess consensus ("N others also guessed this skin today") counts
+-- guess_submitted rows by the guessed skin for a given game + day.
+CREATE INDEX IF NOT EXISTS idx_game_events_guess
+  ON game_events (game, type, puzzle_date, json_extract(payload, '$.skinId'));
 
 -- The day's puzzle, frozen on first request so a mid-day catalog refresh
 -- can never change the answer under players.
@@ -111,6 +115,19 @@ CREATE TABLE IF NOT EXISTS user_skin_ratings (
   battles    INTEGER NOT NULL DEFAULT 0,
   updated_at TEXT NOT NULL,
   PRIMARY KEY (user_id, skin_id)
+);
+
+-- The single most-recent undoable vote per user, overwritten on each vote and
+-- cleared on undo. Holds the pre-vote rating snapshots so an undo restores both
+-- caches (community + personal) in O(1) without a refit. quickbattle.undoLastVote
+-- is the ONLY path that deletes from game_events - a deliberate, contained
+-- exception to the append-only rule, scoped to a player retracting their own
+-- last pick before the next refit folds it in.
+CREATE TABLE IF NOT EXISTS battle_undo (
+  user_id    TEXT PRIMARY KEY,
+  event_id   INTEGER NOT NULL,
+  snapshot   TEXT NOT NULL,        -- JSON: ids + pre-vote community & personal ratings
+  created_at TEXT NOT NULL
 );
 
 -- Replay guard for signed battle-pair tokens: each issued pair may be voted
@@ -179,21 +196,26 @@ export interface GameEvent {
   trustTier: 'guest' | 'member'
 }
 
-// The only write path for game_events - inserts only, by design.
-export function appendEvent(d: DatabaseSync, e: GameEvent): void {
-  d.prepare(
-    `INSERT INTO game_events
+// The append path for game_events - inserts only (the lone delete is the
+// scoped vote-undo in quickbattle). Returns the new row id so a vote can record
+// it for a possible undo.
+export function appendEvent(d: DatabaseSync, e: GameEvent): number {
+  const info = d
+    .prepare(
+      `INSERT INTO game_events
        (user_id, game, puzzle_date, type, payload, question_asked, asset_version, trust_tier, created_at)
      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-  ).run(
-    e.userId,
-    e.game,
-    e.puzzleDate,
-    e.type,
-    JSON.stringify(e.payload),
-    e.questionAsked,
-    e.assetVersion,
-    e.trustTier,
-    new Date().toISOString(),
-  )
+    )
+    .run(
+      e.userId,
+      e.game,
+      e.puzzleDate,
+      e.type,
+      JSON.stringify(e.payload),
+      e.questionAsked,
+      e.assetVersion,
+      e.trustTier,
+      new Date().toISOString(),
+    )
+  return Number(info.lastInsertRowid)
 }

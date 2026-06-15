@@ -4,6 +4,6 @@ import { createFileRoute, redirect } from '@tanstack/react-router'
 // share-text URLs keep working.
 export const Route = createFileRoute('/games/price-check')({
   beforeLoad: () => {
-    throw redirect({ to: '/battle/price-check' })
+    throw redirect({ to: '/battle/price-point' })
   },
 })

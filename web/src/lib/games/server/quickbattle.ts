@@ -15,6 +15,7 @@ import type {
   BattlePair,
   BattleSkin,
   BattleStats,
+  BattleUndoResult,
   BattleVoteResult,
   QuickBattleState,
 } from '../types'
@@ -30,9 +31,14 @@ import {
   GUEST_WEIGHT,
   maybeAutoRefit,
   MEMBER_WEIGHT,
+  rankNeighbors,
+  ratedCount,
+  restorePersonalRating,
+  reverseLiveUpdate,
   runRefit,
   START_RATING,
   START_UNCERTAINTY,
+  type PersonalBefore,
   type RefitSummary,
 } from './ratings'
 
@@ -437,8 +443,8 @@ export async function submitBattleVote(
   let live
   try {
     live = applyLiveUpdate(db, winnerId, loserId, weight)
-    applyPersonalUpdate(db, user.id, winnerId, loserId)
-    appendEvent(db, {
+    const personalBefore = applyPersonalUpdate(db, user.id, winnerId, loserId)
+    const eventId = appendEvent(db, {
       userId: user.id,
       game: GAME,
       puzzleDate: date,
@@ -456,6 +462,34 @@ export async function submitBattleVote(
       assetVersion,
       trustTier: user.trustTier,
     })
+    // Record just enough to undo this single pick: the event row to delete and
+    // the pre-vote snapshots to restore both caches in O(1). Overwrites any
+    // prior row - only the most recent pick is undoable.
+    db.prepare(
+      `INSERT INTO battle_undo (user_id, event_id, snapshot, created_at)
+       VALUES (?, ?, ?, ?)
+       ON CONFLICT (user_id) DO UPDATE SET
+         event_id = excluded.event_id,
+         snapshot = excluded.snapshot,
+         created_at = excluded.created_at`,
+    ).run(
+      user.id,
+      eventId,
+      JSON.stringify({
+        winnerId,
+        loserId,
+        type: claim.t,
+        // Community reversal composes via inverse-delta (survives concurrent
+        // votes/refits), so we store this vote's deltas + weight, not absolute
+        // pre-vote ratings. Personal reversal is per-user and can't interleave
+        // on the undoable (most-recent) pick, so its absolute snapshot is safe.
+        weight,
+        winnerDelta: live.winnerDelta,
+        loserDelta: live.loserDelta,
+        personalBefore,
+      }),
+      new Date().toISOString(),
+    )
     db.exec('COMMIT')
   } catch (err) {
     db.exec('ROLLBACK')
@@ -465,6 +499,10 @@ export async function submitBattleVote(
   // Feedback - principle 1: every pick answers back within the same round
   // trip that fetched the next pair.
   const agreement = pairAgreement(db, pairKey, winnerId)
+  // The winner's located standing: its rank, the field size, and the named
+  // skins on either side - the wordless "needle" for the feedback line.
+  const winnerRank = globalRank(db, live.winner.rating)
+  const neighbors = rankNeighbors(db, live.winner.rating, winnerRank)
   const feedback: BattleFeedback = {
     winnerSkinId: winnerId,
     winnerName: skinName(db, winnerId),
@@ -473,10 +511,14 @@ export async function submitBattleVote(
     rating: Math.round(live.winner.rating),
     uncertainty: Math.round(live.winner.uncertainty),
     battles: live.winner.battles,
-    rank: globalRank(db, live.winner.rating),
+    rank: winnerRank,
     rankBefore,
     agreementPct: agreement.pct,
     pairVotes: agreement.votes,
+    pairWinnerVotes: agreement.winnerVotes,
+    ratedCount: ratedCount(db),
+    neighborAbove: neighbors.above,
+    neighborBelow: neighbors.below,
   }
 
   const skins = loadRatedSkins(db)
@@ -495,6 +537,115 @@ export async function submitBattleVote(
   }
 }
 
+// Undo a player's most recent pick: restore both rating caches from the saved
+// pre-vote snapshot, delete the vote event (the one place we delete from the
+// append-only log), and hand back the exact matchup to decide again. Returns
+// null when there's nothing to undo - no user, or the last pick was already
+// taken back. Only the single most recent pick is undoable.
+export async function undoLastVote(
+  restoreToken?: string | null,
+): Promise<BattleUndoResult | null> {
+  const db = getDb()
+  await ensureCatalog(db)
+  const known = peekUser(db, restoreToken)
+  if (!known?.user) return null
+  const user = known.user
+
+  const row = db
+    .prepare(
+      'SELECT event_id AS eventId, snapshot FROM battle_undo WHERE user_id = ?',
+    )
+    .get(user.id) as { eventId: number; snapshot: string } | undefined
+  if (!row) return null
+
+  const snap = JSON.parse(row.snapshot) as {
+    winnerId: string
+    loserId: string
+    type: PairType
+    weight: number
+    winnerDelta: number
+    loserDelta: number
+    personalBefore: { winnerBefore: PersonalBefore; loserBefore: PersonalBefore }
+  }
+
+  // Resolve the matchup to re-present BEFORE mutating anything, so a missing
+  // catalog row can't leave the log half-reversed (the reversal is otherwise
+  // committed before the pair is rebuilt).
+  const aSkin = loadBattleSkin(db, snap.winnerId)
+  const bSkin = loadBattleSkin(db, snap.loserId)
+  if (!aSkin || !bSkin) throw new Error('Could not restore the matchup.')
+
+  db.exec('BEGIN IMMEDIATE')
+  try {
+    // Community: inverse-delta on the current rows (composes with concurrent
+    // votes/refits). Personal: absolute restore is safe (per-user, no interleave).
+    reverseLiveUpdate(
+      db,
+      snap.winnerId,
+      snap.loserId,
+      snap.winnerDelta,
+      snap.loserDelta,
+      snap.weight,
+    )
+    restorePersonalRating(
+      db,
+      user.id,
+      snap.winnerId,
+      snap.personalBefore.winnerBefore,
+    )
+    restorePersonalRating(
+      db,
+      user.id,
+      snap.loserId,
+      snap.personalBefore.loserBefore,
+    )
+    db.prepare('DELETE FROM game_events WHERE id = ? AND user_id = ?').run(
+      row.eventId,
+      user.id,
+    )
+    db.prepare('DELETE FROM battle_undo WHERE user_id = ?').run(user.id)
+    db.exec('COMMIT')
+  } catch (err) {
+    db.exec('ROLLBACK')
+    throw err
+  }
+
+  // Re-shuffle sides so the retried matchup carries no positional hint.
+  const [first, second] = Math.random() < 0.5 ? [aSkin, bSkin] : [bSkin, aSkin]
+  const pair: BattlePair = {
+    token: signPair(db, first.skinId, second.skinId, snap.type),
+    a: first,
+    b: second,
+  }
+  return { pair, stats: statsFor(db, user) }
+}
+
+function loadBattleSkin(db: DatabaseSync, skinId: string): BattleSkin | null {
+  const row = db
+    .prepare(
+      `SELECT id, champion_id AS championId, champion_name AS championName,
+              name, splash_url AS splashUrl
+       FROM catalog_skins WHERE id = ?`,
+    )
+    .get(skinId) as
+    | {
+        id: string
+        championId: string
+        championName: string
+        name: string
+        splashUrl: string
+      }
+    | undefined
+  if (!row) return null
+  return {
+    skinId: row.id,
+    name: row.name,
+    championId: row.championId,
+    championName: row.championName,
+    splashUrl: row.splashUrl,
+  }
+}
+
 function skinName(db: DatabaseSync, skinId: string): string {
   const row = db
     .prepare('SELECT name FROM catalog_skins WHERE id = ?')
@@ -508,7 +659,7 @@ function pairAgreement(
   db: DatabaseSync,
   pairKey: string,
   winnerId: string,
-): { pct: number | null; votes: number } {
+): { pct: number | null; votes: number; winnerVotes: number } {
   const rows = db
     .prepare(
       `SELECT payload FROM game_events
@@ -517,9 +668,12 @@ function pairAgreement(
     )
     .all(GAME, pairKey) as unknown as { payload: string }[]
   const votes = rows.length
-  if (votes < AGREEMENT_MIN_VOTES) return { pct: null, votes }
-  const same = rows.filter(
+  const winnerVotes = rows.filter(
     (r) => (JSON.parse(r.payload) as { winnerId: string }).winnerId === winnerId,
   ).length
-  return { pct: Math.round((100 * same) / votes), votes }
+  // The raw count drives the "you + N agree / first to pick this" line; the
+  // percentage stays gated until the matchup has enough votes to be meaningful.
+  const pct =
+    votes < AGREEMENT_MIN_VOTES ? null : Math.round((100 * winnerVotes) / votes)
+  return { pct, votes, winnerVotes }
 }

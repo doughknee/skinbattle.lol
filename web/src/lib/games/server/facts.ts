@@ -30,7 +30,7 @@ const SKINS: Record<string, SkinFacts> = Object.fromEntries(
   ]),
 )
 
-// The RP tiers Price Check offers as answers. Rarer price points (390 RP
+// The RP tiers Price Point offers as answers. Rarer prices (390 RP
 // relics, one-off 2775/5000, gacha 150000) are excluded - a button that is
 // almost never the answer is a wasted button.
 export const PRICE_TIERS = [520, 750, 975, 1350, 1820, 3250] as const
@@ -39,7 +39,7 @@ export function factsFor(skinId: string): SkinFacts | null {
   return SKINS[skinId] ?? null
 }
 
-// Skin ids eligible for Price Check: a known cost on a standard tier.
+// Skin ids eligible for Price Point: a known cost on a standard tier.
 export function priceCheckIds(): string[] {
   return Object.entries(SKINS)
     .filter(([, f]) => f.cost !== null && (PRICE_TIERS as readonly number[]).includes(f.cost))

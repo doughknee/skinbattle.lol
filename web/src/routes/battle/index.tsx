@@ -1,32 +1,34 @@
-import { createFileRoute } from '@tanstack/react-router'
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { createFileRoute, Link } from '@tanstack/react-router'
+import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
+import { motion, useAnimate, useReducedMotion } from 'motion/react'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import {
   faArrowTrendUp,
-  faBan,
+  faBolt,
   faCompress,
   faExpand,
   faFire,
+  faKeyboard,
+  faRotateLeft,
   faShuffle,
-  faStar,
+  faUser,
   faUsers,
 } from '@fortawesome/free-solid-svg-icons'
 import { usePostHog } from 'posthog-js/react'
 import ErrorState from '~/components/ErrorState'
 import { toast } from '~/components/Toaster'
 import TodayStrip from '~/components/games/TodayStrip'
+import { AnimatedNumber } from '~/components/games/AnimatedNumber'
 import {
   fetchDailyHub,
   fetchQuickBattle,
+  submitBattleUndo,
   submitBattleVote,
 } from '~/lib/games/serverFns'
 import { ogMeta } from '~/lib/games/ogMeta'
 import { guestRestoreToken, rememberGuestToken } from '~/lib/games/client'
-import { api } from '~/lib/api'
 import { useAuth } from '~/lib/useAuth'
 import { countBattleAndMaybeOffer, SUPPORT_URL } from '~/lib/support'
-import { userStatsStore, MAX_STARS, MAX_X } from '~/lib/userStatsStore'
-import { captureSkinVote } from '~/lib/analytics'
 import type {
   BattleFeedback,
   BattlePair,
@@ -106,34 +108,13 @@ export const Route = createFileRoute('/battle/')({
 // runs concurrently with the network - it costs nothing.
 const PICK_HOLD_MS = 280
 
-// Upper bound on the first-load gate: if both splashes haven't decoded by
-// then, the reveal plays anyway over whatever has arrived. The <head>
-// preloads make the happy path tens of milliseconds - this only exists so
-// a struggling CDN can't hold the page hostage.
-const REVEAL_GATE_MAX_MS = 2000
-
 // ─── battle cards ───────────────────────────────────────────────────────────
 
-// How a pair arrives on stage. 'gate': held as a shimmering slab while the
-// first pair's splashes decode. 'reveal': the one-time first-load ceremony.
-// 'round': the quick per-pick entrance. 'settled': no entrance (the pair is
-// mid-verdict).
-type Entrance = 'gate' | 'reveal' | 'round' | 'settled'
-
-// The viewer's catalog marks (star/ban) for one skin.
-interface Marks {
-  star: boolean
-  x: boolean
-}
-
-const NO_MARKS: Marks = { star: false, x: false }
-
-const markChip =
-  'flex h-8 w-8 cursor-pointer items-center justify-center outline -outline-offset-1 transition duration-150 active:scale-[0.94]'
-const markIdle =
-  'bg-hextech-black/70 text-grey1 outline-icon/30 hover:text-gold1 hover:outline-gold2'
-const markGold = 'bg-gold5/40 text-gold1 outline-gold2'
-const markRed = 'bg-danger-surface/60 text-danger outline-danger-border/70'
+// How a pair arrives on stage. 'reveal': the one-time first-load ceremony.
+// 'round': the per-pick square-up entrance. 'settled': no entrance (the pair
+// is mid-verdict). There's no loading gate - the card frame + entrance play
+// immediately and each splash blur-ups into place as it decodes.
+type Entrance = 'reveal' | 'round' | 'settled'
 
 function BattleCard({
   skin,
@@ -142,8 +123,6 @@ function BattleCard({
   onPick,
   onBroken,
   entrance,
-  marks,
-  onMark,
 }: {
   skin: BattleSkin
   side: 'a' | 'b'
@@ -152,11 +131,15 @@ function BattleCard({
   onPick: (skinId: string) => void
   onBroken: (skinId: string) => void
   entrance: Entrance
-  // Catalog star/ban: picking decides the battle, these crown (or condemn)
-  // the skin itself - the two currencies, woven into one surface.
-  marks: Marks
-  onMark: (skinId: string, next: Marks) => void
 }) {
+  // Splash blur-up: the image fades + sharpens into place as it decodes, so
+  // there's no loading skeleton to hide behind. Preloaded/cached splashes are
+  // already `complete`, where onLoad may not fire - so check on mount too.
+  const imgRef = useRef<HTMLImageElement>(null)
+  const [imgLoaded, setImgLoaded] = useState(false)
+  useEffect(() => {
+    if (imgRef.current?.complete) setImgLoaded(true)
+  }, [])
   const verdictAnim =
     verdict === 'winner'
       ? 'animate-battle-win z-10'
@@ -180,78 +163,113 @@ function BattleCard({
         ? side === 'a'
           ? 'animate-battle-in-a'
           : 'animate-battle-in-b'
-        : entrance === 'gate'
-          ? 'skeleton'
-          : ''
-  // Behind the gate the card is a branded shimmer slab: the <img> is mounted
-  // (so it downloads and decodes) but invisible until the reveal plays.
-  const gated = entrance === 'gate' ? 'opacity-0' : ''
+        : ''
   return (
     <div
       className={`card-sheen-host group relative aspect-video w-full overflow-hidden bg-hextech-black/60 transition duration-200 hover:shadow-glow ${entranceAnim} ${verdictAnim}`}
     >
-      <button
+      <motion.button
         onClick={() => onPick(skin.skinId)}
         aria-label={`Pick ${skin.name}`}
+        whileTap={{ scale: 0.94 }}
+        transition={{ type: 'spring', stiffness: 800, damping: 26 }}
         className="block h-full w-full cursor-pointer text-left"
       >
         <img
+          ref={imgRef}
           src={skin.splashUrl}
           alt={`${skin.name} splash art`}
           loading="eager"
           fetchPriority="high"
           decoding="async"
+          onLoad={() => setImgLoaded(true)}
           onError={() => onBroken(skin.skinId)}
-          className={`h-full w-full object-cover transition duration-300 ease-out group-hover:scale-[1.04] group-hover:brightness-110 group-hover:saturate-[1.06] ${gated}`}
+          className={`h-full w-full object-cover transition duration-500 ease-out group-hover:scale-[1.04] group-hover:brightness-110 group-hover:saturate-[1.06] ${
+            imgLoaded
+              ? 'scale-100 opacity-100 blur-0'
+              : 'scale-105 opacity-0 blur-sm'
+          }`}
         />
         {/* A single rake of gold light across the splash on hover-in — the
-            "legendary skin catching the light" beat. Skipped behind the gate
-            so the shimmer slab stays clean. Clipped by the card's overflow. */}
-        {entrance !== 'gate' && (
-          <span aria-hidden className="card-sheen" />
-        )}
+            "legendary skin catching the light" beat. Clipped by the card's
+            overflow. */}
+        <span aria-hidden className="card-sheen" />
         <span
-          className={`pointer-events-none absolute inset-x-0 bottom-0 flex flex-col bg-gradient-to-t from-hextech-black/95 via-hextech-black/60 to-transparent px-4 pb-3 pt-10 ${gated}`}
+          className="pointer-events-none absolute inset-x-0 bottom-0 flex flex-col bg-gradient-to-t from-hextech-black/95 via-hextech-black/60 to-transparent px-4 pb-3 pt-10"
         >
           <span className="font-serif text-lg font-bold leading-tight text-gold1 md:text-xl">
             {skin.name}
           </span>
           <span className="text-sm text-grey1">{skin.championName}</span>
         </span>
-      </button>
+      </motion.button>
       {/* Frame overlay: always painted above the splash so the hover transform
           can never cover it. -outline-offset keeps it inside the card edge. */}
       <span
         aria-hidden
         className={`pointer-events-none absolute inset-0 z-10 outline -outline-offset-2 transition duration-200 ${frameTone}`}
       />
-      <span className={`absolute left-2 top-2 z-10 flex gap-1.5 ${gated}`}>
-        <button
-          onClick={() => onMark(skin.skinId, { star: !marks.star, x: marks.x })}
-          aria-pressed={marks.star}
-          aria-label={marks.star ? `Unstar ${skin.name}` : `Star ${skin.name}`}
-          title={
-            marks.star ? 'Remove star' : `Star this skin (${MAX_STARS} max)`
-          }
-          className={`${markChip} ${marks.star ? markGold : markIdle}`}
-        >
-          <FontAwesomeIcon icon={faStar} className="h-3.5" />
-        </button>
-        <button
-          onClick={() => onMark(skin.skinId, { star: marks.star, x: !marks.x })}
-          aria-pressed={marks.x}
-          aria-label={marks.x ? `Unban ${skin.name}` : `Ban ${skin.name}`}
-          title={marks.x ? 'Remove ban' : `Ban this skin (${MAX_X} max)`}
-          className={`${markChip} ${marks.x ? markRed : markIdle}`}
-        >
-          <FontAwesomeIcon icon={faBan} className="h-3.5" />
-        </button>
-      </span>
     </div>
   )
 }
 
 // ─── feedback line ──────────────────────────────────────────────────────────
+
+// A battle-count number that rolls on change (Motion+ odometer, loaded
+// client-only by AnimatedNumber so it never runs server-side).
+function AnimatedCount({ value }: { value: number }) {
+  return <AnimatedNumber value={value} />
+}
+
+// A standalone "fun bonus stat": how the rest of the room voted on this exact
+// matchup, off the pair's real vote log. Its own pilled callout below the beat
+// (not crammed onto the feedback line) - being first or a contrarian is a win
+// too, so each case gets its own icon + tone. Pops in keyed per pick.
+function ConsensusCallout({ feedback }: { feedback: BattleFeedback | null }) {
+  if (!feedback) return null
+  const others = feedback.pairVotes - 1 // everyone else ever served this matchup
+  const agree = feedback.pairWinnerVotes - 1 // ...who picked your side
+  const pct = feedback.agreementPct
+  const minority = pct !== null && pct < 50
+  const gold = 'bg-gold5/20 text-gold1 outline-gold2/40'
+  const blue = 'bg-blue5/30 text-blue1 outline-blue3/50'
+
+  const wrap = (tone: string, icon: typeof faUsers, body: ReactNode) => (
+    <div className="mt-1 flex justify-center pb-1">
+      <span
+        key={feedback.winnerSkinId}
+        className={`animate-feedback-pop inline-flex items-center gap-1.5 px-3 py-1 text-sm font-bold outline -outline-offset-1 ${tone}`}
+      >
+        <FontAwesomeIcon icon={icon} className="h-3.5" />
+        {body}
+      </span>
+    </div>
+  )
+
+  if (others <= 0) {
+    return wrap(gold, faBolt, <>First to pick this matchup</>)
+  }
+  if (agree <= 0) {
+    return wrap(blue, faFire, <>Bold — you're the only one so far</>)
+  }
+  return wrap(
+    minority ? blue : gold,
+    minority ? faFire : faUsers,
+    <span>
+      {minority && 'Rare take · '}
+      <b className="tabular-nums">
+        <AnimatedNumber value={agree} />
+      </b>{' '}
+      {agree === 1 ? 'player agrees' : 'players agree'}
+      {pct !== null && (
+        <>
+          {' · '}
+          <AnimatedNumber value={pct} />%
+        </>
+      )}
+    </span>,
+  )
+}
 
 // Fixed-height by design: the bar exists from first paint and only its
 // CONTENT swaps, so answering back never reflows the arena above it.
@@ -267,9 +285,6 @@ function FeedbackBar({ feedback }: { feedback: BattleFeedback | null }) {
           <span className="font-serif font-bold text-gold1">
             {feedback.winnerName}
           </span>
-          <span className="animate-delta-pop delta-glow inline-block text-base font-bold text-blue2 md:text-lg">
-            +{feedback.delta}
-          </span>
           <span className="text-grey1">
             beat <span className="text-gold1/80">{feedback.loserName}</span>
           </span>
@@ -278,80 +293,195 @@ function FeedbackBar({ feedback }: { feedback: BattleFeedback | null }) {
             {feedback.rank}
             {feedback.rankBefore !== null &&
               feedback.rankBefore > feedback.rank && (
-                // Pops a beat after the delta - rank climbing is the payoff.
-                <span className="animate-delta-pop ml-1 inline-block font-bold text-blue2 [animation-delay:120ms]">
-                  ↑{feedback.rankBefore - feedback.rank}
+                // The win: a pick that pushed this skin UP the ranking. The
+                // climb is the payoff, so make it obvious - count it up (Motion+
+                // odometer) and pop it big. Only shows on real rank gains.
+                <span className="animate-delta-pop delta-glow ml-1.5 inline-flex items-baseline gap-0.5 text-base font-bold text-blue2 [animation-delay:120ms] md:text-lg">
+                  ↑
+                  <AnimatedNumber value={feedback.rankBefore - feedback.rank} />
                 </span>
               )}
           </span>
-          {feedback.agreementPct !== null ? (
-            <span className="text-grey1">
-              · <b className="text-gold1">{feedback.agreementPct}%</b> agree
-              with you ({feedback.pairVotes} votes)
-            </span>
-          ) : (
-            <span className="text-grey1">
-              · {feedback.rating} ± {feedback.uncertainty}
-            </span>
-          )}
+          {/* The always-true lever: this pick is now part of a growing,
+              kept-for-good pile of evidence deciding this skin's place. Honest
+              even when the rank doesn't visibly move, and never overclaims a
+              single pick. The raw +delta (half-strength for guests, and pure
+              measurement) is deliberately gone. */}
+          <span className="text-grey1">
+            decided by{' '}
+            <b className="text-gold1">{feedback.battles.toLocaleString()}</b>{' '}
+            {feedback.battles === 1 ? 'battle' : 'battles'} and counting
+          </span>
         </p>
       ) : (
         <p className="text-sm text-grey1">
-          Pick the one you like more. Every vote moves the rankings.
+          Pick the one you like more. Every vote moves the{' '}
+          <Link
+            to="/rankings"
+            className="font-bold text-gold1 underline-offset-2 transition duration-150 hover:underline"
+          >
+            rankings
+          </Link>
+          .
         </p>
       )}
     </div>
   )
 }
 
+// ─── located standing (the "needle") ────────────────────────────────────────
+
+// The wordless needle the FeedbackBar narrates: where the just-won skin
+// actually SITS in the whole rated field, flanked by its named rivals. No
+// per-pick motion - an honest 0-2 rank move is sub-pixel on a 1,400-deep
+// field, so faking visible movement would lie. Felt weight comes from a real,
+// named place: "you put this skin at #789, right behind X, just ahead of Y."
+// Lives below the bar (never above the cards), so its height never disturbs
+// the act; renders only once a verdict exists, then stays put across picks.
+function Standing({ feedback }: { feedback: BattleFeedback | null }) {
+  if (!feedback) return null
+  const { neighborAbove, neighborBelow } = feedback
+  // A subordinate caption of the beat, not a second sentence: it hugs the line
+  // above (-mt) and runs smaller/dimmer, so the eye reads one verdict with a
+  // "where it landed" detail. No winner name (the beat just said it).
+  return (
+    <p
+      key={feedback.winnerSkinId}
+      className="animate-feedback-pop -mt-3 flex flex-wrap items-baseline justify-center gap-x-1.5 gap-y-0.5 px-2 pb-1 text-center text-xs text-grey1/70"
+    >
+      <span>
+        <span className="font-bold text-gold2/90">
+          #{feedback.rank.toLocaleString()}
+        </span>
+        {feedback.ratedCount > 0 && (
+          <> of {feedback.ratedCount.toLocaleString()}</>
+        )}
+      </span>
+      {(neighborAbove || neighborBelow) && (
+        <span aria-hidden className="text-grey1/40">
+          ·
+        </span>
+      )}
+      {neighborAbove && (
+        <span>
+          just behind <span className="text-grey1">{neighborAbove.name}</span>
+        </span>
+      )}
+      {neighborAbove && neighborBelow && (
+        <span aria-hidden className="text-grey1/40">
+          ·
+        </span>
+      )}
+      {neighborBelow && (
+        <span>
+          just ahead of <span className="text-grey1">{neighborBelow.name}</span>
+        </span>
+      )}
+    </p>
+  )
+}
+
 // ─── session history ────────────────────────────────────────────────────────
+
+interface HistorySkin {
+  skinId: string
+  name: string
+  championName: string
+  splashUrl: string
+}
 
 interface HistoryEntry {
   id: number
-  winnerName: string
-  loserName: string
-  delta: number
+  winner: HistorySkin
+  loser: HistorySkin
   rank: number
   agreementPct: number | null
 }
 
 const HISTORY_CAP = 8
 
-// The answer to "wait, what did I just vote on?" - this session's verdicts,
-// newest first. Lives below the action buttons so growing it never shifts
-// anything interactive.
-function SessionHistory({ entries }: { entries: HistoryEntry[] }) {
+// This session's verdicts, newest first: each row shows the matchup you
+// decided (winner's splash bright, loser's dimmed), where the winner now sits,
+// and how the room agreed. The newest pick carries an Undo that re-opens the
+// exact matchup. Lives below the arena so growing it never shifts the cards.
+function SessionHistory({
+  entries,
+  canUndo,
+  onUndo,
+  undoing,
+}: {
+  entries: HistoryEntry[]
+  canUndo: boolean
+  onUndo: () => void
+  undoing: boolean
+}) {
   if (entries.length === 0) return null
   return (
-    <section className="mt-12 max-w-2xl">
-      <h2 className="mb-3 font-serif text-lg font-bold text-gold2">
+    <section className="mx-auto mt-12 max-w-2xl">
+      <h2 className="mb-3 text-center font-serif text-lg font-bold text-gold2">
         Your verdicts this session
       </h2>
-      <ol className="flex flex-col gap-1.5">
+      <ol className="flex flex-col gap-2">
         {entries.map((e, i) => (
           <li
             key={e.id}
-            className={`flex h-10 items-center gap-2 overflow-hidden whitespace-nowrap bg-hextech-black/30 px-3 text-sm outline outline-icon/10 -outline-offset-1 ${
+            className={`flex items-center gap-3 bg-hextech-black/30 p-2 outline outline-icon/10 -outline-offset-1 ${
               i === 0 ? 'animate-history-in' : ''
             }`}
           >
-            <span className="min-w-0 truncate font-bold text-gold1">
-              {e.winnerName}
-            </span>
-            <span className="shrink-0 font-bold text-blue2">+{e.delta}</span>
-            <span className="shrink-0 text-grey1">beat</span>
-            <span className="min-w-0 truncate text-grey1">{e.loserName}</span>
-            <span className="ml-auto shrink-0 text-gold2">#{e.rank}</span>
-            {e.agreementPct !== null && (
-              <span className="shrink-0 text-grey1">
-                · {e.agreementPct}% agree
-              </span>
+            <img
+              src={e.winner.splashUrl}
+              alt=""
+              loading="lazy"
+              decoding="async"
+              className="h-10 w-16 shrink-0 object-cover outline outline-gold2/60 -outline-offset-1"
+            />
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-sm">
+                <span className="font-bold text-gold1">{e.winner.name}</span>
+                <span className="text-grey1"> over </span>
+                <span className="text-grey1">{e.loser.name}</span>
+              </p>
+              <p className="truncate text-xs text-grey1/60">
+                {e.winner.championName} vs {e.loser.championName}
+              </p>
+            </div>
+            <img
+              src={e.loser.splashUrl}
+              alt=""
+              loading="lazy"
+              decoding="async"
+              className="hidden h-10 w-16 shrink-0 object-cover opacity-40 grayscale outline outline-icon/20 -outline-offset-1 sm:block"
+            />
+            <div className="shrink-0 text-right text-xs leading-tight">
+              <p className="font-bold text-gold2">#{e.rank.toLocaleString()}</p>
+              {e.agreementPct !== null && (
+                <p className="text-grey1/70">{e.agreementPct}% agree</p>
+              )}
+            </div>
+            {i === 0 && canUndo && (
+              <button
+                onClick={onUndo}
+                disabled={undoing}
+                title="Undo this pick and decide the matchup again"
+                className="flex shrink-0 cursor-pointer items-center gap-1.5 self-stretch bg-hextech-black/60 px-2.5 text-xs font-bold text-grey1 outline outline-icon/30 -outline-offset-1 transition duration-150 hover:text-gold1 hover:outline-gold2 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                <FontAwesomeIcon icon={faRotateLeft} className="h-3" />
+                Undo
+              </button>
             )}
           </li>
         ))}
       </ol>
-      <p className="mt-3 text-sm text-grey1">
-        Every verdict sharpens the tier list your picks are building.
+      <p className="mt-3 text-center text-sm text-grey1">
+        Every verdict sharpens the{' '}
+        <Link
+          to="/battle/mirror"
+          className="font-bold text-gold1 underline-offset-2 transition duration-150 hover:underline"
+        >
+          tier list
+        </Link>{' '}
+        your picks are building.
       </p>
     </section>
   )
@@ -370,7 +500,7 @@ const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms))
 
 function BattlePage() {
   const { qb: initial, hub } = Route.useLoaderData()
-  const { isAuthenticated, getApiToken, withApiToken, login } = useAuth()
+  const { login } = useAuth()
   const posthog = usePostHog()
   const [view, setView] = useState<View>({
     current: initial.pair,
@@ -378,22 +508,19 @@ function BattlePage() {
     feedback: null,
     stats: initial.stats,
   })
-  // The viewer's catalog star/ban marks, keyed by skin id, so the chips on
-  // rotating battle cards reflect prior votes. Loaded once when auth
-  // resolves; local toggles overlay it optimistically.
-  const [marks, setMarks] = useState<Map<string, Marks>>(new Map())
-  const marksRef = useRef(marks)
-  marksRef.current = marks
-  const markBusyRef = useRef(false)
   const [session, setSession] = useState(0)
   const [history, setHistory] = useState<HistoryEntry[]>([])
+  // Screen-shake on each pick: a short, decaying jolt of the whole arena (the
+  // classic "impact" juice). Driven imperatively via useAnimate so it replays
+  // every pick without remounting the arena; skipped under reduced-motion.
+  const [arenaRef, animateArena] = useAnimate()
+  const reduceMotion = useReducedMotion()
+  // Whether the newest verdict can still be taken back. True right after a pick,
+  // false once undone (the server only keeps the single most-recent pick).
+  const [canUndo, setCanUndo] = useState(false)
+  const [undoing, setUndoing] = useState(false)
   // Which side is being acknowledged as the pick, during the hold beat.
   const [pickedSide, setPickedSide] = useState<'a' | 'b' | null>(null)
-  // False until the first pair's splashes have decoded (or the gate times
-  // out) - flipping it plays the reveal ceremony. SSR and the pre-hydration
-  // paint both render the gated state, so the gate holds from first paint.
-  const [revealed, setRevealed] = useState(false)
-  const revealedRef = useRef(false)
   // Theater mode: the arena takes over the viewport in a fixed overlay.
   const [theater, setTheater] = useState(false)
   const viewRef = useRef(view)
@@ -408,152 +535,11 @@ function BattlePage() {
     rememberGuestToken(initial.guestToken)
   }, [initial.guestToken])
 
-  useEffect(() => {
-    let cancelled = false
-    if (!isAuthenticated) {
-      setMarks(new Map())
-      return
-    }
-    void (async () => {
-      const token = await getApiToken()
-      if (!token) return
-      try {
-        const data = await api.userVotes(token)
-        if (!cancelled)
-          setMarks(
-            new Map(
-              data.skins.map((s) => [
-                s.id,
-                { star: s.user_star ?? false, x: s.user_x ?? false },
-              ]),
-            ),
-          )
-      } catch {
-        /* chips start unmarked; voting still works */
-      }
-    })()
-    return () => {
-      cancelled = true
-    }
-  }, [isAuthenticated, getApiToken])
-
-  // Catalog star/ban from the arena: same budget rules and optimistic flow
-  // as SkinCard, against the page-level marks map.
-  const castMark = useCallback(
-    async (skinId: string, next: Marks) => {
-      if (!isAuthenticated) {
-        // Guest hit the only sign-in-gated action - capture the intent so the
-        // activation funnel has its missing first step (most guests leak here).
-        posthog.capture('auth_prompt_clicked', {
-          trigger: 'star_ban_gate',
-          source: 'battle_arena',
-          skin_id: skinId,
-        })
-        login()
-        return
-      }
-      if (markBusyRef.current) return
-      const prev = marksRef.current.get(skinId) ?? NO_MARKS
-      const used = userStatsStore.get()
-      if (next.star && !prev.star && used.usedStars >= MAX_STARS) {
-        toast(`All ${MAX_STARS} stars used. Unstar another skin first.`, 'error')
-        return
-      }
-      if (next.x && !prev.x && used.usedX >= MAX_X) {
-        toast(`All ${MAX_X} bans used. Unban another skin first.`, 'error')
-        return
-      }
-      markBusyRef.current = true
-      setMarks((m) => new Map(m).set(skinId, next))
-      try {
-        await withApiToken(
-          (token) => api.vote({ skinId, star: next.star, x: next.x }, token),
-          'Please sign in to vote.',
-        )
-        userStatsStore.adjust({
-          stars: next.star === prev.star ? 0 : next.star ? 1 : -1,
-          x: next.x === prev.x ? 0 : next.x ? 1 : -1,
-        })
-        const now = userStatsStore.get()
-        // Resolve the on-screen skin so the event carries skin_name +
-        // champion_id like the other surfaces (only the current pair can be
-        // marked). viewRef avoids adding `view` to the callback's deps.
-        const onScreen = viewRef.current.current
-        const marked = [onScreen.a, onScreen.b].find((s) => s.skinId === skinId)
-        if (next.star !== prev.star) {
-          captureSkinVote(posthog, next.star ? 'star' : 'unstar', {
-            skinId,
-            skinName: marked?.name,
-            championId: marked?.championId,
-            used: now.usedStars,
-            source: 'battle_arena',
-          })
-          toast(
-            next.star
-              ? `Star ${now.usedStars}/${MAX_STARS} used`
-              : `Star removed. ${now.usedStars}/${MAX_STARS} used`,
-            'success',
-          )
-        }
-        if (next.x !== prev.x) {
-          captureSkinVote(posthog, next.x ? 'ban' : 'unban', {
-            skinId,
-            skinName: marked?.name,
-            championId: marked?.championId,
-            used: now.usedX,
-            source: 'battle_arena',
-          })
-          toast(
-            next.x
-              ? `Ban ${now.usedX}/${MAX_X} used`
-              : `Ban removed. ${now.usedX}/${MAX_X} used`,
-            'success',
-          )
-        }
-        window.dispatchEvent(new CustomEvent('updateUserStats'))
-      } catch (err) {
-        setMarks((m) => new Map(m).set(skinId, prev))
-        toast(err instanceof Error ? err.message : 'Vote failed', 'error')
-      } finally {
-        markBusyRef.current = false
-      }
-    },
-    [isAuthenticated, login, posthog, withApiToken],
-  )
-
   // Manual-refit runs report through the console (the trigger is an admin
   // affordance, not a player surface).
   useEffect(() => {
     if (initial.refit) console.log('rating refit:', initial.refit)
   }, [initial.refit])
-
-  // The full-load gate: hold the reveal until BOTH splashes have actually
-  // decoded, so the ceremony never plays over half-painted images. The
-  // <head> preloads usually make this near-instant; the race caps how long
-  // a slow CDN can hold the page. A decode failure opens the gate too -
-  // the visible card's onError path owns broken-splash recovery.
-  useEffect(() => {
-    let alive = true
-    const decoded = (url: string) => {
-      const img = new Image()
-      img.src = url
-      return img.decode().catch(() => {})
-    }
-    void Promise.race([
-      Promise.all([
-        decoded(initial.pair.a.splashUrl),
-        decoded(initial.pair.b.splashUrl),
-      ]),
-      sleep(REVEAL_GATE_MAX_MS),
-    ]).then(() => {
-      if (!alive) return
-      revealedRef.current = true
-      setRevealed(true)
-    })
-    return () => {
-      alive = false
-    }
-  }, [initial.pair])
 
   // Theater chrome: Esc backs out, and the page behind the overlay keeps
   // its scroll position.
@@ -589,12 +575,13 @@ function BattlePage() {
     async (winnerId: string) => {
       const v = viewRef.current
       // The only wait in the loop: a pick before the previous round trip
-      // settles (faster than the network) is dropped, not queued. No voting
-      // on a pair that's still behind the first-load gate either.
-      if (!revealedRef.current || !v.next || busyRef.current) return
+      // settles (faster than the network) is dropped, not queued.
+      if (!v.next || busyRef.current) return
       busyRef.current = true
 
       const voted = v.current
+      const winnerSkin = voted.a.skinId === winnerId ? voted.a : voted.b
+      const loserSkin = voted.a.skinId === winnerId ? voted.b : voted.a
       recentRef.current = [
         ...recentRef.current,
         voted.a.skinId,
@@ -603,6 +590,15 @@ function BattlePage() {
       picksMadeRef.current += 1
       setSession((s) => s + 1)
       setPickedSide(winnerId === voted.a.skinId ? 'a' : 'b')
+      // The hit: a short, decaying jolt of the whole arena. Transform-only,
+      // overlaps the free 280ms beat, skipped under reduced-motion.
+      if (!reduceMotion && arenaRef.current) {
+        void animateArena(
+          arenaRef.current,
+          { x: [0, -6, 5, -3, 2, 0], rotate: [0, -0.5, 0.4, -0.2, 0.1, 0] },
+          { duration: 0.26, ease: 'easeOut' },
+        )
+      }
 
       // The vote is in flight DURING the acknowledgment beat, so the hold
       // costs nothing - by the time the next pair steps in, the feedback is
@@ -645,15 +641,25 @@ function BattlePage() {
           [
             {
               id: res.stats.total,
-              winnerName: res.feedback.winnerName,
-              loserName: res.feedback.loserName,
-              delta: res.feedback.delta,
+              winner: {
+                skinId: winnerSkin.skinId,
+                name: winnerSkin.name,
+                championName: winnerSkin.championName,
+                splashUrl: winnerSkin.splashUrl,
+              },
+              loser: {
+                skinId: loserSkin.skinId,
+                name: loserSkin.name,
+                championName: loserSkin.championName,
+                splashUrl: loserSkin.splashUrl,
+              },
               rank: res.feedback.rank,
               agreementPct: res.feedback.agreementPct,
             },
             ...h,
           ].slice(0, HISTORY_CAP),
         )
+        setCanUndo(true)
         // The one-time honeyfruit moment: fires on the 50th lifetime battle
         // vote, then never again (see ~/lib/support).
         if (countBattleAndMaybeOffer()) {
@@ -676,8 +682,44 @@ function BattlePage() {
         busyRef.current = false
       }
     },
-    [resync],
+    [resync, reduceMotion, animateArena, arenaRef],
   )
+
+  // Take back the most recent pick: the server reverses both ratings and hands
+  // the exact matchup back to decide again. Shares busyRef with pick() so the
+  // two never overlap; feedback clears so the beat/standing reset to "decide".
+  const undoLast = useCallback(async () => {
+    if (busyRef.current) return
+    busyRef.current = true
+    setUndoing(true)
+    try {
+      const res = await submitBattleUndo({
+        data: { restoreToken: guestRestoreToken() },
+      })
+      if (!res) {
+        setCanUndo(false)
+        toast('Nothing to undo.', 'info')
+        return
+      }
+      setView((prev) => ({
+        ...prev,
+        current: res.pair,
+        feedback: null,
+        stats: res.stats,
+      }))
+      setHistory((h) => h.slice(1))
+      setSession((s) => Math.max(0, s - 1))
+      setCanUndo(false)
+    } catch (err) {
+      toast(
+        err instanceof Error ? err.message : "Couldn't undo that pick.",
+        'error',
+      )
+    } finally {
+      setUndoing(false)
+      busyRef.current = false
+    }
+  }, [])
 
   // A broken splash in the ON-SCREEN pair (CDN hiccup - the catalog sweep
   // benches known-dead ones): skip the pair and remember the skin.
@@ -716,12 +758,10 @@ function BattlePage() {
   }, [pick])
 
   const { current, feedback, stats } = view
-  // The first pair holds behind the gate until its splashes decode, then
-  // plays the one-time reveal ceremony; every pair after it gets the quick
-  // per-round entrance. During the verdict beat nothing re-enters.
-  const entrance: Entrance = !revealed
-    ? 'gate'
-    : pickedSide !== null
+  // First load plays the one-time reveal ceremony; every pair after it gets the
+  // per-round square-up entrance. During the verdict beat nothing re-enters.
+  const entrance: Entrance =
+    pickedSide !== null
       ? 'settled'
       : picksMadeRef.current === 0
         ? 'reveal'
@@ -735,7 +775,7 @@ function BattlePage() {
   // (inner span, keyed per pair) as each new matchup lands. Both moves are
   // transform/opacity-only; the glow is static (.vs-glow), never keyframed.
   const arena = (
-    <div className="relative w-full">
+    <div ref={arenaRef} className="relative w-full">
       <div
         key={current.token}
         className={`grid w-full grid-cols-1 md:grid-cols-2 ${
@@ -751,8 +791,6 @@ function BattlePage() {
           onPick={pick}
           onBroken={broken}
           entrance={entrance}
-          marks={marks.get(current.a.skinId) ?? NO_MARKS}
-          onMark={castMark}
         />
         <BattleCard
           skin={current.b}
@@ -763,19 +801,30 @@ function BattlePage() {
           onPick={pick}
           onBroken={broken}
           entrance={entrance}
-          marks={marks.get(current.b.skinId) ?? NO_MARKS}
-          onMark={castMark}
         />
       </div>
       <span
         className={`pointer-events-none absolute left-1/2 top-1/2 z-10 block -translate-x-1/2 -translate-y-1/2 ${
-          entrance === 'gate'
-            ? 'opacity-0'
-            : entrance === 'reveal'
-              ? 'animate-vs-slam'
-              : ''
+          entrance === 'reveal' ? 'animate-vs-slam' : ''
         }`}
       >
+        {/* The strike connecting: a ring flung outward from the badge on each
+            pick (keyed by the session count so it replays). Behind the VS text;
+            the badge persists across rounds, so this never fights the remount. */}
+        {session > 0 && (
+          <>
+            <span
+              key={`flash-${session}`}
+              aria-hidden
+              className="animate-vs-flash absolute left-1/2 top-1/2 h-12 w-12 rounded-full bg-gold2/50 blur-md"
+            />
+            <span
+              key={`ring-${session}`}
+              aria-hidden
+              className="animate-vs-impact absolute left-1/2 top-1/2 h-12 w-12 rounded-full outline outline-[3px] outline-gold2"
+            />
+          </>
+        )}
         <span
           key={current.token}
           className={`vs-glow flex h-12 w-12 items-center justify-center rounded-full bg-hextech-black/90 font-serif text-sm font-bold text-gold2 outline outline-gold5 -outline-offset-2 ${
@@ -785,18 +834,6 @@ function BattlePage() {
           VS
         </span>
       </span>
-      {!theater && (
-        <button
-          onClick={() => setTheater(true)}
-          aria-label="Enter theater mode"
-          title="Theater mode"
-          className={`absolute right-2 top-2 z-20 flex h-9 w-9 cursor-pointer items-center justify-center bg-hextech-black/70 text-grey1 outline outline-icon/30 -outline-offset-1 transition duration-150 hover:text-gold1 hover:outline-gold2 ${
-            revealed ? '' : 'pointer-events-none opacity-0'
-          }`}
-        >
-          <FontAwesomeIcon icon={faExpand} className="h-4" />
-        </button>
-      )}
     </div>
   )
 
@@ -806,24 +843,69 @@ function BattlePage() {
         <p className="mb-2 text-sm font-semibold uppercase tracking-[0.3em] text-gold2">
           Endless · which do you like more?
         </p>
-        <div className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-1">
+        <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-2">
           <h1 className="font-serif text-4xl md:text-5xl font-bold text-gold1">
             Head-to-Head
           </h1>
-          <p className="flex items-center gap-4 text-sm text-grey1">
-            {session > 0 && (
-              <span className="flex items-center gap-1.5 font-bold text-gold2">
-                <FontAwesomeIcon icon={faFire} className="h-3.5" />
-                {session} this session
-              </span>
+          <div className="flex items-center gap-3">
+            {/* Your slice next to the room: session + your lifetime, then the
+                community total - one glance at where your picks sit in the whole. */}
+            <p className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-grey1">
+              {session > 0 && (
+                <span className="flex items-center gap-1.5 font-bold text-gold2">
+                  <FontAwesomeIcon icon={faFire} className="h-3.5" />
+                  <span className="tabular-nums">
+                    <AnimatedCount value={session} /> this session
+                  </span>
+                </span>
+              )}
+              {stats.total > 0 && (
+                <span className="flex items-center gap-1.5">
+                  <FontAwesomeIcon icon={faUser} className="h-3.5 text-gold2" />
+                  <span className="tabular-nums">
+                    <b className="text-gold1">
+                      <AnimatedCount value={stats.total} />
+                    </b>{' '}
+                    battles fought
+                  </span>
+                </span>
+              )}
+              {stats.community > 0 && (
+                <span className="flex items-center gap-1.5">
+                  <FontAwesomeIcon icon={faUsers} className="h-3.5 text-gold2" />
+                  <span className="tabular-nums">
+                    <b className="text-gold1">
+                      <AnimatedCount value={stats.community} />
+                    </b>{' '}
+                    community
+                  </span>
+                </span>
+              )}
+            </p>
+            {/* Arena controls: off the splash and on the existing title row, so
+                no row is added and the game isn't pushed down. */}
+            {!theater && (
+              <div
+                className="flex shrink-0 items-center gap-1.5"
+              >
+                <span
+                  title="← and → to vote"
+                  aria-label="Keyboard: left and right arrow keys vote"
+                  className="hidden h-8 w-8 cursor-help items-center justify-center bg-hextech-black/70 text-grey1 outline outline-icon/30 -outline-offset-1 md:flex"
+                >
+                  <FontAwesomeIcon icon={faKeyboard} className="h-3.5 text-gold2/80" />
+                </span>
+                <button
+                  onClick={() => setTheater(true)}
+                  aria-label="Enter theater mode"
+                  title="Theater mode"
+                  className="flex h-8 w-8 cursor-pointer items-center justify-center bg-hextech-black/70 text-grey1 outline outline-icon/30 -outline-offset-1 transition duration-150 hover:text-gold1 hover:outline-gold2"
+                >
+                  <FontAwesomeIcon icon={faExpand} className="h-3.5" />
+                </button>
+              </div>
             )}
-            {stats.total > 0 && (
-              <span>
-                <b className="text-gold1">{stats.total.toLocaleString()}</b>{' '}
-                battles fought
-              </span>
-            )}
-          </p>
+          </div>
         </div>
       </header>
 
@@ -844,7 +926,9 @@ function BattlePage() {
               {session > 0 && (
                 <span className="flex items-center gap-1.5 text-sm normal-case tracking-normal text-gold1">
                   <FontAwesomeIcon icon={faFire} className="h-3" />
-                  {session} this session
+                  <span className="tabular-nums">
+                    <AnimatedCount value={session} /> this session
+                  </span>
                 </span>
               )}
             </p>
@@ -875,35 +959,41 @@ function BattlePage() {
         <>
           {arena}
           <FeedbackBar feedback={feedback} />
+          <Standing feedback={feedback} />
+          <ConsensusCallout feedback={feedback} />
         </>
       )}
 
-      <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-3">
-        <p className="flex items-center gap-2 text-sm text-grey1">
-          <FontAwesomeIcon icon={faUsers} className="h-3.5 text-gold2" />
-          <span>
-            <b className="text-gold1">{stats.community.toLocaleString()}</b>{' '}
-            community battles fought
-          </span>
-        </p>
-        <p className="hidden text-sm text-grey1 md:block">
-          Tip: ← and → vote with the keyboard.
-        </p>
-      </div>
-
       {stats.tier === 'guest' && (
-        <p className="mt-10 text-sm text-grey1">
+        // Reframed from a penalty ("counts less") into the honest upgrade path:
+        // raw votes are kept for good and move the personal taste model at full
+        // strength now; the community-side half-weight is reversible - the refit
+        // re-weights the whole history to full on sign-in (see games/ratings).
+        <p className="mx-auto mt-10 max-w-2xl text-center text-sm text-grey1">
           <FontAwesomeIcon icon={faShuffle} className="mr-1.5 h-3 text-gold2" />
-          Playing as a guest: your picks count at reduced weight. Sign in to
-          vote at full strength.
+          You're signed out, but nothing's lost: every pick is saved and already
+          shaping your own taste at full strength. They count at half toward the
+          community ranking for now —{' '}
+          <button
+            onClick={login}
+            className="cursor-pointer font-bold text-gold1 underline-offset-2 transition duration-150 hover:underline"
+          >
+            sign in
+          </button>{' '}
+          and all of them upgrade to full, retroactively.
         </p>
       )}
 
-      <SessionHistory entries={history} />
+      <SessionHistory
+        entries={history}
+        canUndo={canUndo}
+        onUndo={undoLast}
+        undoing={undoing}
+      />
 
-      {/* The rest of the door: today's dailies, fresh patch skins, and the
-          leaderboards - the old games hub, living under the arena. */}
-      <TodayStrip hub={hub} />
+      {/* The rest of the door: today's daily puzzles - the old games hub,
+          living under the arena. */}
+      <TodayStrip hub={hub} current="head-to-head" />
 
       {/* Preload the next pair's splashes while the current one is on screen
           - by the time it's dealt in, both images are already decoded. A

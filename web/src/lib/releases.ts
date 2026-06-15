@@ -16,6 +16,21 @@ export interface ReleaseEntry {
 // Newest first. The page renders this array top to bottom.
 export const RELEASES: ReleaseEntry[] = [
   {
+    date: '2026-06-15',
+    title: 'Head-to-Head answers back',
+    highlights: [
+      "Every Head-to-Head pick now tells you what it did: where that skin sits in the live ranking, how far it just climbed, and how the rest of the room voted on that exact matchup — “you're the first to pick this” or “521 players agree with you.”",
+      'A "More ways to play" shelf now lives at the bottom of every game, so you can jump straight between Head-to-Head and the daily puzzles from anywhere.',
+      'The daily games show the crowd too: each guess tells you how many other players made the same call for today’s puzzle.',
+    ],
+    fixes: [
+      'Price Check is now Price Point.',
+      'You can undo your most recent Head-to-Head pick if you mis-clicked.',
+      'Daily games open with a snappier entrance, and the daily card now shows your streak and a live countdown to the next puzzle.',
+      'Tidied up the Head-to-Head cards so the only thing to do is pick a side.',
+    ],
+  },
+  {
     date: '2026-06-12',
     title: 'New skins now land here the same week Riot ships them',
     highlights: [
@@ -43,12 +58,12 @@ export const RELEASES: ReleaseEntry[] = [
   },
   {
     date: '2026-06-11',
-    title: 'The games arrive: Splashdle, Head-to-Head, Price Check, and your Mirror',
+    title: 'The games arrive: Splashdle, Head-to-Head, Price Point, and your Mirror',
     highlights: [
       'Splashdle: name the skin from a tiny sliver of its splash art. A fresh puzzle every midnight UTC and a streak to defend.',
       'Head-to-Head: two skins, pick one, repeat forever. Every pick moves the community rankings the instant you click, and the site tells you exactly what your vote just did.',
       'The Mirror: a personal tier list that builds itself from your battles, plus your most contrarian takes and the skin lines you secretly over-love.',
-      'Price Check: guess what each skin cost in RP. Five skins a day. Harder than it sounds.',
+      'Price Point: guess what each skin cost in RP. Five skins a day. Harder than it sounds.',
       'Every skin got a permanent page, the rankings learned to slice by price, skin line, champion, and year, and the Drought Index now ranks every champion by days since their last skin.',
     ],
     fixes: [

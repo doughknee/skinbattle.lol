@@ -7,6 +7,7 @@
 
 import { createServerFn } from '@tanstack/react-start'
 import type {
+  BattleUndoResult,
   BattleVoteResult,
   ChromaVisionState,
   DailyHubState,
@@ -176,4 +177,13 @@ export const submitBattleVote = createServerFn({ method: 'POST' })
   .handler(async ({ data }): Promise<BattleVoteResult> => {
     const { submitBattleVote: submit } = await import('./server/quickbattle')
     return submit(data.pairToken, data.winnerId, data.recent, data.restoreToken)
+  })
+
+// Undo the player's most recent pick: reverses the rating updates and returns
+// the exact matchup to decide again. Null when there's nothing to take back.
+export const submitBattleUndo = createServerFn({ method: 'POST' })
+  .inputValidator((d: GuestInput) => d)
+  .handler(async ({ data }): Promise<BattleUndoResult | null> => {
+    const { undoLastVote } = await import('./server/quickbattle')
+    return undoLastVote(data.restoreToken)
   })

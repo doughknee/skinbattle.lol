@@ -80,8 +80,8 @@
      anything over ~250ms reads as sluggish at that cadence. The b-card and
      VS delays keep the round-to-round grammar (left, right, VS) of the
      first-load reveal without slowing the loop. */
-  --animate-battle-in-a: battle-in-a 0.25s cubic-bezier(0.22, 1, 0.36, 1) both;
-  --animate-battle-in-b: battle-in-b 0.25s cubic-bezier(0.22, 1, 0.36, 1) 0.06s
+  --animate-battle-in-a: battle-in-a 0.32s cubic-bezier(0.22, 1, 0.36, 1) both;
+  --animate-battle-in-b: battle-in-b 0.32s cubic-bezier(0.22, 1, 0.36, 1) 0.05s
     both;
   --animate-vs-round: vs-round 0.32s cubic-bezier(0.34, 1.56, 0.64, 1) 0.1s
     both;
@@ -90,6 +90,10 @@
   --animate-feedback-pop: feedback-pop 0.18s ease-out both;
   --animate-delta-pop: delta-pop 0.45s cubic-bezier(0.22, 1, 0.36, 1) both;
   --animate-history-in: history-in 0.18s ease-out both;
+  /* The strike connecting: a ring flung outward from the VS badge the instant
+     you pick. One-shot, transform/opacity only, on the persistent badge. */
+  --animate-vs-impact: vs-impact 0.55s cubic-bezier(0.22, 1, 0.36, 1) both;
+  --animate-vs-flash: vs-flash 0.4s ease-out both;
 
   /* Quick Battle's first-load ceremony — plays ONCE per visit, after both
      splashes have decoded (the page gates on that, so the reveal never
@@ -204,25 +208,41 @@
 /* The incoming contenders enter from their own corners — mirrored, subtle,
    because this plays on every pick and the loop must never feel like
    waiting on a transition. */
+/* Per-round square-up: each contender sweeps in from its wing, overshoots a
+   few px toward the opponent with a quick brightness flash, then settles. */
 @keyframes battle-in-a {
-  from {
+  0% {
     opacity: 0;
-    transform: translateX(-14px) scale(0.99);
+    transform: translateX(-38px) scale(0.96);
+    filter: brightness(1.18);
   }
-  to {
+  70% {
+    opacity: 1;
+    transform: translateX(5px) scale(1.012);
+    filter: brightness(1.04);
+  }
+  100% {
     opacity: 1;
     transform: none;
+    filter: none;
   }
 }
 
 @keyframes battle-in-b {
-  from {
+  0% {
     opacity: 0;
-    transform: translateX(14px) scale(0.99);
+    transform: translateX(38px) scale(0.96);
+    filter: brightness(1.18);
   }
-  to {
+  70% {
+    opacity: 1;
+    transform: translateX(-5px) scale(1.012);
+    filter: brightness(1.04);
+  }
+  100% {
     opacity: 1;
     transform: none;
+    filter: none;
   }
 }
 
@@ -316,24 +336,49 @@
     box-shadow: 0 0 0 transparent;
     filter: brightness(1);
   }
-  40% {
-    transform: scale(1.04);
-    box-shadow: 0 0 56px 4px color-mix(in srgb, var(--color-gold2) 60%, transparent);
-    filter: brightness(1.18) saturate(1.12);
+  30% {
+    transform: scale(1.09);
+    box-shadow: 0 0 84px 12px color-mix(in srgb, var(--color-gold2) 78%, transparent);
+    filter: brightness(1.34) saturate(1.22);
   }
   100% {
-    transform: scale(1.02);
-    box-shadow: 0 0 30px color-mix(in srgb, var(--color-gold2) 40%, transparent);
-    filter: brightness(1.06) saturate(1.04);
+    transform: scale(1.04);
+    box-shadow: 0 0 40px color-mix(in srgb, var(--color-gold2) 48%, transparent);
+    filter: brightness(1.08) saturate(1.06);
   }
 }
 
-/* …while the loser concedes — dimmed, drained, stepping back. */
+/* …while the loser reels — dimmed, drained, knocked back hard. */
 @keyframes battle-lose {
   to {
-    opacity: 0.3;
-    transform: scale(0.97);
-    filter: saturate(0.1) brightness(0.55);
+    opacity: 0.25;
+    transform: scale(0.9) rotate(2.6deg);
+    filter: saturate(0.05) brightness(0.45);
+  }
+}
+
+/* A ring flung outward from the VS badge when a pick lands — the strike
+   connecting. Sized to the badge, scales out and fades. */
+@keyframes vs-impact {
+  0% {
+    transform: translate(-50%, -50%) scale(0.6);
+    opacity: 0.78;
+  }
+  100% {
+    transform: translate(-50%, -50%) scale(3.2);
+    opacity: 0;
+  }
+}
+
+/* A hot gold flash blooming from the badge center on the hit — pure punch. */
+@keyframes vs-flash {
+  0% {
+    transform: translate(-50%, -50%) scale(0.4);
+    opacity: 0.8;
+  }
+  100% {
+    transform: translate(-50%, -50%) scale(2.4);
+    opacity: 0;
   }
 }
 
@@ -454,31 +499,43 @@
   background: var(--color-gold2);
   box-shadow: 0 0 6px 1px color-mix(in srgb, var(--color-gold2) 60%, transparent);
   opacity: 0;
-  animation: ember-rise var(--ember-dur, 3s) linear infinite;
-  animation-delay: var(--ember-delay, 0s);
+  animation: ember-rise var(--ember-dur, 3s) ease-out infinite;
+  /* --ember-card-delay (set per fresh card) shifts the whole bed; the net
+     delay goes negative so each spark starts already mid-rise, never empty. */
+  animation-delay: calc(var(--ember-delay, 0s) - var(--ember-card-delay, 0s));
 }
 /* Each spark gets its own lane, tempo, and drift so the loop never reads
    as a pattern. */
-.battle-embers i:nth-child(1) { --ember-x: 12%; --ember-dur: 2.6s; --ember-delay: 0s;    --ember-drift: 4px; }
-.battle-embers i:nth-child(2) { --ember-x: 30%; --ember-dur: 3.4s; --ember-delay: 0.9s;  --ember-drift: -5px; width: 2px; height: 2px; }
-.battle-embers i:nth-child(3) { --ember-x: 48%; --ember-dur: 2.9s; --ember-delay: 1.7s;  --ember-drift: 3px; }
-.battle-embers i:nth-child(4) { --ember-x: 64%; --ember-dur: 3.8s; --ember-delay: 0.4s;  --ember-drift: -3px; width: 2px; height: 2px; }
-.battle-embers i:nth-child(5) { --ember-x: 80%; --ember-dur: 3.1s; --ember-delay: 2.2s;  --ember-drift: 5px; }
-.battle-embers i:nth-child(6) { --ember-x: 91%; --ember-dur: 2.7s; --ember-delay: 1.3s;  --ember-drift: -4px; width: 2px; height: 2px; }
+.battle-embers i:nth-child(1) { --ember-x: 10%; --ember-dur: 2.6s; --ember-delay: 0s;    --ember-drift: 6px; }
+.battle-embers i:nth-child(2) { --ember-x: 29%; --ember-dur: 3.5s; --ember-delay: 0.9s;  --ember-drift: -8px; width: 2px; height: 2px; }
+.battle-embers i:nth-child(3) { --ember-x: 47%; --ember-dur: 2.9s; --ember-delay: 1.7s;  --ember-drift: 5px; }
+.battle-embers i:nth-child(4) { --ember-x: 63%; --ember-dur: 4.1s; --ember-delay: 0.4s;  --ember-drift: -4px; width: 2px; height: 2px; }
+.battle-embers i:nth-child(5) { --ember-x: 79%; --ember-dur: 3.1s; --ember-delay: 2.2s;  --ember-drift: 9px; }
+.battle-embers i:nth-child(6) { --ember-x: 91%; --ember-dur: 2.7s; --ember-delay: 1.3s;  --ember-drift: -6px; width: 2px; height: 2px; }
 
+/* Rise with an S-weave (drift one way, back, then settle) and a flicker, so
+   each spark traces its own organic path instead of a straight march. */
 @keyframes ember-rise {
   0% {
     transform: translate(0, 0) scale(1);
     opacity: 0;
   }
-  12% {
+  10% {
     opacity: 0.9;
   }
-  60% {
+  32% {
+    transform: translate(calc(var(--ember-drift, 0px) * 0.6), -16px) scale(0.85);
+    opacity: 0.85;
+  }
+  46% {
     opacity: 0.5;
   }
+  62% {
+    transform: translate(calc(var(--ember-drift, 0px) * -0.5), -33px) scale(0.6);
+    opacity: 0.62;
+  }
   100% {
-    transform: translate(var(--ember-drift, 0px), -52px) scale(0.4);
+    transform: translate(var(--ember-drift, 0px), -52px) scale(0.32);
     opacity: 0;
   }
 }
@@ -579,6 +636,8 @@
   .animate-battle-reveal-b,
   .animate-vs-slam,
   .animate-vs-round,
+  .animate-vs-impact,
+  .animate-vs-flash,
   .animate-battle-win,
   .animate-battle-lose,
   .animate-feedback-pop,

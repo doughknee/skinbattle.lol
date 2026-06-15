@@ -10,6 +10,17 @@ RUN npm ci || npm install
 # injected at RUNTIME via env vars (see src/lib/config.ts + routes/__root.tsx),
 # so no per-environment build args are needed here.
 COPY . .
+
+# Motion+ (paid) is intentionally absent from package.json/lockfile - its
+# install URL carries a license token we never commit. Install it here, into
+# this build stage's node_modules, so Vite can bundle the odometer into the
+# client chunks (it's client-only, so it never reaches the runtime image).
+# MOTION_PLUS_TOKEN must be set as a Coolify *build* variable: the script needs
+# it to fetch the package, and `npm run build` below hard-fails without
+# motion-plus ("Rollup failed to resolve import 'motion-plus/react'").
+ARG MOTION_PLUS_TOKEN
+RUN MOTION_PLUS_TOKEN="$MOTION_PLUS_TOKEN" npm run motion-plus
+
 RUN npm run build
 
 # ── Runtime stage ───────────────────────────────────────────────

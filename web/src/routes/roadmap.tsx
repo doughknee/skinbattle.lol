@@ -143,7 +143,7 @@ function Era({
 const LIVE_NOW: { label: string; to: string; params?: object }[] = [
   { label: 'Head-to-Head battles', to: '/battle' },
   { label: 'Splashdle', to: '/battle/splashdle' },
-  { label: 'Price Check', to: '/battle/price-check' },
+  { label: 'Price Point', to: '/battle/price-point' },
   { label: 'Chroma Vision', to: '/battle/chroma-vision' },
   { label: 'Leaderboards', to: '/battle/leaderboards' },
   { label: 'Your Mirror', to: '/profile' },

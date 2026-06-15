@@ -157,6 +157,11 @@ services:
   web:
     build:
       context: ./web
+      args:
+        # Motion+ (paid) is fetched at build time via its tokenized URL (see
+        # web/Dockerfile). Set MOTION_PLUS_TOKEN in this resource's env vars;
+        # the build hard-fails without it (the odometer import won't resolve).
+        - MOTION_PLUS_TOKEN=${MOTION_PLUS_TOKEN}
     restart: unless-stopped
     depends_on:
       - api

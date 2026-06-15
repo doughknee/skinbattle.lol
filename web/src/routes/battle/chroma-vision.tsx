@@ -13,19 +13,28 @@ import {
 } from '~/components/games/GuessKit'
 import {
   fetchChromaVision,
+  fetchDailyHub,
   fetchSplashdleOptions,
   submitChromaGuess,
 } from '~/lib/games/serverFns'
 import { guestRestoreToken, rememberGuestToken } from '~/lib/games/client'
 import { ogMeta } from '~/lib/games/ogMeta'
+import TodayStrip from '~/components/games/TodayStrip'
 import type { ChromaVisionState, GuessOption } from '~/lib/games/types'
 
 export const Route = createFileRoute('/battle/chroma-vision')({
   // Data loads BEFORE the route renders (SSR on first visit, prefetched on
   // navigation), and the mosaic ships inside the payload as a data URL -
-  // the page arrives complete in one paint, no loading states.
-  loader: () =>
-    fetchChromaVision({ data: { restoreToken: guestRestoreToken() } }),
+  // the page arrives complete in one paint, no loading states. The modes
+  // strip loads alongside so it's part of the same first paint.
+  loader: async () => {
+    const restoreToken = guestRestoreToken()
+    const [state, hub] = await Promise.all([
+      fetchChromaVision({ data: { restoreToken } }),
+      fetchDailyHub({ data: { restoreToken } }),
+    ])
+    return { state, hub }
+  },
   head: () => ({
     meta: [
       { title: 'Chroma Vision · Skin Battle' },
@@ -54,7 +63,7 @@ export const Route = createFileRoute('/battle/chroma-vision')({
 })
 
 function ChromaVisionPage() {
-  const initial = Route.useLoaderData()
+  const { state: initial, hub } = Route.useLoaderData()
   const posthog = usePostHog()
   const [state, setState] = useState<ChromaVisionState>(initial)
   const [options, setOptions] = useState<GuessOption[]>([])
@@ -63,6 +72,17 @@ function ChromaVisionPage() {
   const [shake, setShake] = useState(false)
   const shakeTimer = useRef<number | undefined>(undefined)
   useEffect(() => () => window.clearTimeout(shakeTimer.current), [])
+
+  // One-time entrance: content cascades up on mount, then we drop the
+  // `stagger` class once the cascade is done. Without this, nodes that mount
+  // later (the result panel on finish) would inherit a fresh cascade animation
+  // that never starts - leaving them stuck invisible. Replays on every
+  // navigation since the page remounts, so swapping games feels deliberate.
+  const [entering, setEntering] = useState(true)
+  useEffect(() => {
+    const t = window.setTimeout(() => setEntering(false), 800)
+    return () => window.clearTimeout(t)
+  }, [])
 
   // What the board looked like on the page's first paint - that content
   // renders settled; only post-load guesses play game animations.
@@ -167,20 +187,25 @@ function ChromaVisionPage() {
         </div>
       </header>
 
-      <div className="flex flex-col gap-6">
+      {/* Content cascades up on mount (see `entering`); the class drops once
+          the cascade finishes so the result panel can mount cleanly later. */}
+      <div className={`${entering ? 'stagger ' : ''}flex flex-col gap-6`}>
         {/* The mosaic: pure color composition at first, the silhouette
-            emerging block by block with each miss; the full reveal at the
-            end. */}
-        <GuessViewport
-          image={state.image}
-          levelKey={`${state.status}-${state.zoomLevel}`}
-          playing={playing}
-          shake={shake}
-          soft={atLoadState}
-          caption={`Mosaic ${state.zoomLevel + 1}/${state.totalLevels}`}
-          playingAlt="A color mosaic of a mystery skin splash"
-          answerName={state.answer?.name}
-        />
+            emerging block by block with each miss; the full reveal at the end.
+            Wrapped so the cascade's fade-up lands on this div, not the figure
+            (whose own shake/reveal animations would collide). */}
+        <div>
+          <GuessViewport
+            image={state.image}
+            levelKey={`${state.status}-${state.zoomLevel}`}
+            playing={playing}
+            shake={shake}
+            soft={atLoadState}
+            caption={`Mosaic ${state.zoomLevel + 1}/${state.totalLevels}`}
+            playingAlt="A color mosaic of a mystery skin splash"
+            answerName={state.answer?.name}
+          />
+        </div>
 
         {playing ? (
           <>
@@ -212,6 +237,7 @@ function ChromaVisionPage() {
               pending={pending}
               maxGuesses={state.maxGuesses}
               animateFrom={animateFrom}
+              counts={state.guessCounts}
             />
           </>
         ) : (
@@ -230,10 +256,13 @@ function ChromaVisionPage() {
               guesses={state.guesses}
               maxGuesses={state.maxGuesses}
               animateFrom={animateFrom}
+              counts={state.guessCounts}
             />
           </>
         )}
       </div>
+
+      <TodayStrip hub={hub} current="chroma-vision" />
     </div>
   )
 }

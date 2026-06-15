@@ -16,6 +16,7 @@ import type {
   StreakInfo,
 } from '../types'
 import { appendEvent, DATA_DIR, getDb } from './db'
+import { skinGuessCounts } from './consensus'
 import { MAX_GUESSES, puzzleNumber, seedFloats, utcToday } from './daily'
 import { allCatalogSkins, ensureCatalog, getCatalogSkin } from './catalog'
 import { skinSets } from './facts'
@@ -24,7 +25,6 @@ import { getStreak, recordCompletion } from './streaks'
 import { communityBattleCount, userBattleCounts } from './quickbattle'
 import { priceCheckHubInfo, ROUNDS as PRICE_ROUNDS } from './pricecheck'
 import { chromaHubInfo } from './chromavision'
-import { newThisPatch } from './insights'
 
 const GAME = 'splashdle'
 // Recorded on every event so themed variants can be added later without
@@ -229,6 +229,12 @@ async function assembleState(
     maxGuesses: MAX_GUESSES,
     status: result.status,
     guesses: result.guesses,
+    guessCounts: skinGuessCounts(
+      db,
+      GAME,
+      date,
+      result.guesses.map((g) => g.skinId),
+    ),
     image: '',
     zoomLevel,
     totalLevels: LEVELS.length,
@@ -425,6 +431,17 @@ export async function dailyHub(
   const priceStreak = getStreak(db, user.id, 'price-check')
   const chroma = chromaHubInfo(db, known?.user.id ?? null, date)
   const chromaStreak = getStreak(db, user.id, 'chroma-vision')
+  // "Alive" = the streak is still running into today (last result was yesterday
+  // or today). A stale current>0 (days were missed, not yet reset) is NOT
+  // alive, so the "keep your streak alive" nudge can never lie. Freeze tokens
+  // are deliberately ignored - that mechanic isn't wired (no grant/redeem yet),
+  // so it can't truthfully protect a streak.
+  const prev = new Date(`${date}T00:00:00Z`)
+  prev.setUTCDate(prev.getUTCDate() - 1)
+  const yesterday = prev.toISOString().slice(0, 10)
+  const alive = (row: { current: number; lastResultDate: string | null }) =>
+    row.current > 0 &&
+    (row.lastResultDate === date || row.lastResultDate === yesterday)
   return {
     date,
     guestToken: known?.token ?? '',
@@ -443,7 +460,6 @@ export async function dailyHub(
           ).c
         : 0,
     },
-    newSkins: newThisPatch(db, date),
     games: [
       {
         id: GAME,
@@ -451,6 +467,7 @@ export async function dailyHub(
         guessesUsed: result?.guesses.length ?? 0,
         maxGuesses: MAX_GUESSES,
         streak: { current: streakRow.current, best: streakRow.best },
+        streakAlive: alive(streakRow),
       },
       {
         id: 'price-check',
@@ -459,6 +476,7 @@ export async function dailyHub(
         maxGuesses: PRICE_ROUNDS,
         score: price.score,
         streak: { current: priceStreak.current, best: priceStreak.best },
+        streakAlive: alive(priceStreak),
       },
       {
         id: 'chroma-vision',
@@ -466,6 +484,7 @@ export async function dailyHub(
         guessesUsed: chroma.guessesUsed,
         maxGuesses: MAX_GUESSES,
         streak: { current: chromaStreak.current, best: chromaStreak.best },
+        streakAlive: alive(chromaStreak),
       },
     ],
   }

@@ -28,7 +28,7 @@ Route count is not a smell; door count is.
 /battle                  Quick Battle PLAYS HERE (no landing page in the way),
                          with "Today's challenges" + leaderboards strip below
   /battle/splashdle      Daily: name the skin from a sliver of splash
-  /battle/price-check    Daily: guess the RP
+  /battle/price-point    Daily: guess the RP
   /battle/chroma-vision  Daily: name the skin from its colors
   /battle/leaderboards   Streaks, fastest solves, battle volume
 /skins                   The catalog door — "All Skins" lens (tab bar links
@@ -90,10 +90,11 @@ canonical rank everywhere; stars/bans remain engagement + superlative currency.
 | /games                | /battle                |
 | /games/quick-battle   | /battle                |
 | /games/splashdle      | /battle/splashdle      |
-| /games/price-check    | /battle/price-check    |
+| /games/price-check    | /battle/price-point    |
 | /games/chroma-vision  | /battle/chroma-vision  |
 | /games/leaderboards   | /battle/leaderboards   |
 | /games/mirror         | /profile (the profile IS the Mirror) |
+| /battle/price-check   | /battle/price-point    |
 | /battle/mirror        | /profile (brief interim home during the move) |
 | /leaderboards         | /battle/leaderboards (retargeted stub) |
 | /awards               | /rankings/awards       |

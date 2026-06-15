@@ -34,6 +34,9 @@ export interface SplashdleState {
   maxGuesses: number
   status: 'in_progress' | 'won' | 'lost'
   guesses: SplashdleGuess[]
+  // skinId -> how many players (incl. you) have guessed that skin for today's
+  // puzzle. Live as of this read; powers "N others also guessed this".
+  guessCounts: Record<string, number>
   // While playing: a base64 data URL of the server-cropped splash (the full
   // image - and its answer-revealing URL - never reaches the client until the
   // game is over). After completion: the real full splash URL.
@@ -70,9 +73,13 @@ export interface HubGame {
   status: DailyStatus
   guessesUsed: number
   maxGuesses: number
-  // Price Check: exact hits so far (its win condition is score, not guesses).
+  // Price Point: exact hits so far (its win condition is score, not guesses).
   score?: number
   streak: StreakInfo
+  // True only when the current streak is genuinely still running into today
+  // (last result was today or yesterday). Gates the honest "keep your streak
+  // alive" nudge so it can never show for a stale/dead streak.
+  streakAlive: boolean
 }
 
 export interface DailyHubState {
@@ -88,18 +95,6 @@ export interface DailyHubState {
   mirror: {
     skinsRated: number
   }
-  // "New this patch" strip - skins released in the last ~3 weeks plus
-  // Upcoming ones already in the live catalog. Empty outside drop windows;
-  // the section hides itself.
-  newSkins: {
-    skinId: string
-    slug: string
-    name: string
-    championName: string
-    splashUrl: string
-    release: string | null // null = Upcoming
-    upcoming: boolean
-  }[]
   guestToken: string
 }
 
@@ -142,7 +137,19 @@ export interface BattleFeedback {
   rank: number
   rankBefore: number | null // null = this was the skin's placement battle
   agreementPct: number | null // null until the matchup has enough votes
-  pairVotes: number
+  pairVotes: number // total votes ever cast on this exact matchup (incl. yours)
+  pairWinnerVotes: number // of those, how many picked your winner (incl. yours)
+  // Located standing - the winner's place in the whole rated field plus its
+  // named neighbours. The wordless "needle" the rest of the line narrates:
+  // felt weight from a real, named position, not from faked per-pick motion.
+  ratedCount: number // the denominator for "#789 of 1,420" (0 if unknown)
+  neighborAbove: RankNeighbor | null // the skin one rung higher, or null at #1
+  neighborBelow: RankNeighbor | null // the skin one rung lower, or null at last
+}
+
+export interface RankNeighbor {
+  name: string
+  rank: number
 }
 
 export interface RefitSummary {
@@ -167,7 +174,13 @@ export interface BattleVoteResult {
   guestToken: string
 }
 
-// ─── Price Check ────────────────────────────────────────────────────────────
+export interface BattleUndoResult {
+  // The exact matchup of the undone pick, freshly tokenised to decide again.
+  pair: BattlePair
+  stats: BattleStats
+}
+
+// ─── Price Point (internal id: price-check) ─────────────────────────────────
 
 // An answered round. Facts only ship AFTER the guess - the unanswered
 // round's price never reaches the client.
@@ -181,6 +194,8 @@ export interface PriceRoundResult {
   correct: boolean
   oneOff: boolean // adjacent tier - the 🟨 in the share grid
   legacy: boolean // fun fact: vaulted, not even buyable anymore
+  // How many players (incl. you) guessed this same tier for this skin today.
+  guessedBy: number
 }
 
 export interface PriceCheckState {
