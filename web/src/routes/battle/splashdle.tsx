@@ -239,6 +239,7 @@ function SplashdlePage() {
               pending={pending}
               maxGuesses={state.maxGuesses}
               animateFrom={animateFrom}
+              counts={state.guessCounts}
             />
           </>
         ) : (
@@ -257,6 +258,7 @@ function SplashdlePage() {
               guesses={state.guesses}
               maxGuesses={state.maxGuesses}
               animateFrom={animateFrom}
+              counts={state.guessCounts}
             />
           </>
         )}

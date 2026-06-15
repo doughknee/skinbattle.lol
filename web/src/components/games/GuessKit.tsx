@@ -13,6 +13,7 @@ import {
   faFire,
   faMagnifyingGlass,
   faShareNodes,
+  faUsers,
 } from '@fortawesome/free-solid-svg-icons'
 import { toast } from '~/components/Toaster'
 import { btnPrimarySm, btnSecondarySm } from '~/lib/ui'
@@ -396,11 +397,41 @@ export function GuessInput({
 // Fixed board = fixed page height: the footer never moves during a game.
 // Each slot's CONTENT is keyed, so empty → pending → verdict transitions
 // animate while the rows themselves stay perfectly still.
+// A neutral bonus-stat chip: how many OTHER players made the same guess
+// (`others` excludes you). Deliberately understated - it's a popularity stat,
+// not a reward, so a wrong-but-lonely guess gets a plain "just you", never a
+// gold star. `what` is the verb phrase for the tooltip ("guessed X"). Shared by
+// the puzzle boards (Splashdle/Chroma/Price Point).
+export function ConsensusStat({
+  others,
+  what,
+}: {
+  others: number
+  what: string
+}) {
+  const title =
+    others <= 0
+      ? `Only you ${what} today`
+      : `${others.toLocaleString('en-US')} other ${
+          others === 1 ? 'player' : 'players'
+        } ${what} today`
+  return (
+    <span
+      title={title}
+      className="inline-flex shrink-0 items-center gap-1 bg-hextech-black/50 px-1.5 py-0.5 text-xs font-semibold text-grey1 outline outline-icon/20 -outline-offset-1"
+    >
+      <FontAwesomeIcon icon={faUsers} className="h-2.5 text-grey1/70" />
+      {others <= 0 ? 'just you' : others.toLocaleString('en-US')}
+    </span>
+  )
+}
+
 export function GuessBoard({
   guesses,
   pending,
   maxGuesses,
   animateFrom = 0,
+  counts,
 }: {
   guesses: SplashdleGuess[]
   pending?: GuessOption | null
@@ -409,6 +440,9 @@ export function GuessBoard({
   // replace a skeleton, so they render settled instead of replaying their
   // entrance over the loading state.
   animateFrom?: number
+  // skinId -> total players (incl. you) who guessed it today; drives the
+  // "N others also guessed this" caption.
+  counts?: Record<string, number>
 }) {
   return (
     <ol className="flex flex-col gap-2">
@@ -435,16 +469,24 @@ export function GuessBoard({
                     animate && i === guesses.length - 1 ? 'animate-tile-pop' : ''
                   }`}
                 />
-                <span className="min-w-0 truncate font-bold text-gold1">
+                <span className="min-w-0 flex-1 truncate font-bold text-gold1">
                   {g.name}
                 </span>
-                <span className="ml-auto shrink-0 text-sm text-grey1">
-                  {g.championMatch ? (
-                    <span className="font-bold text-gold2">
-                      Right champion, wrong skin
-                    </span>
-                  ) : (
-                    g.championName
+                <span className="ml-auto flex shrink-0 items-center gap-2.5 text-sm text-grey1">
+                  <span className="hidden sm:inline">
+                    {g.championMatch ? (
+                      <span className="font-bold text-gold2">
+                        Right champion, wrong skin
+                      </span>
+                    ) : (
+                      g.championName
+                    )}
+                  </span>
+                  {counts && counts[g.skinId] != null && (
+                    <ConsensusStat
+                      others={counts[g.skinId] - 1}
+                      what={`guessed ${g.name}`}
+                    />
                   )}
                 </span>
               </div>

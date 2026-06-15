@@ -18,6 +18,7 @@ import {
 import { guestRestoreToken, rememberGuestToken } from '~/lib/games/client'
 import { ogMeta } from '~/lib/games/ogMeta'
 import TodayStrip from '~/components/games/TodayStrip'
+import { ConsensusStat } from '~/components/games/GuessKit'
 import type { PriceCheckState, PriceRoundResult } from '~/lib/games/types'
 
 export const Route = createFileRoute('/battle/price-point')({
@@ -95,15 +96,24 @@ function ResultsBoard({
             }`}
           >
             <span className="shrink-0">{mark}</span>
-            <span className="min-w-0 truncate font-bold text-gold1">{r.name}</span>
-            <span className="ml-auto shrink-0 text-grey1">
-              {r.correct ? (
-                <b className="text-blue2">{rp(r.actual)}</b>
-              ) : (
-                <>
-                  you said {rp(r.guess)} · <b className="text-gold1">{rp(r.actual)}</b>
-                </>
-              )}
+            <span className="min-w-0 flex-1 truncate font-bold text-gold1">
+              {r.name}
+            </span>
+            <span className="ml-auto flex shrink-0 items-center gap-2.5 text-grey1">
+              <ConsensusStat
+                others={r.guessedBy - 1}
+                what={`said ${rp(r.guess)} for ${r.name}`}
+              />
+              <span>
+                {r.correct ? (
+                  <b className="text-blue2">{rp(r.actual)}</b>
+                ) : (
+                  <>
+                    you said {rp(r.guess)} ·{' '}
+                    <b className="text-gold1">{rp(r.actual)}</b>
+                  </>
+                )}
+              </span>
             </span>
           </li>
         )

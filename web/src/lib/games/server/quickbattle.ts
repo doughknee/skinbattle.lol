@@ -515,6 +515,7 @@ export async function submitBattleVote(
     rankBefore,
     agreementPct: agreement.pct,
     pairVotes: agreement.votes,
+    pairWinnerVotes: agreement.winnerVotes,
     ratedCount: ratedCount(db),
     neighborAbove: neighbors.above,
     neighborBelow: neighbors.below,
@@ -658,7 +659,7 @@ function pairAgreement(
   db: DatabaseSync,
   pairKey: string,
   winnerId: string,
-): { pct: number | null; votes: number } {
+): { pct: number | null; votes: number; winnerVotes: number } {
   const rows = db
     .prepare(
       `SELECT payload FROM game_events
@@ -667,9 +668,12 @@ function pairAgreement(
     )
     .all(GAME, pairKey) as unknown as { payload: string }[]
   const votes = rows.length
-  if (votes < AGREEMENT_MIN_VOTES) return { pct: null, votes }
-  const same = rows.filter(
+  const winnerVotes = rows.filter(
     (r) => (JSON.parse(r.payload) as { winnerId: string }).winnerId === winnerId,
   ).length
-  return { pct: Math.round((100 * same) / votes), votes }
+  // The raw count drives the "you + N agree / first to pick this" line; the
+  // percentage stays gated until the matchup has enough votes to be meaningful.
+  const pct =
+    votes < AGREEMENT_MIN_VOTES ? null : Math.round((100 * winnerVotes) / votes)
+  return { pct, votes, winnerVotes }
 }

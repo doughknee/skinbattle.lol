@@ -16,6 +16,7 @@ import type {
   StreakInfo,
 } from '../types'
 import { appendEvent, DATA_DIR, getDb } from './db'
+import { skinGuessCounts } from './consensus'
 import { MAX_GUESSES, puzzleNumber, seedFloats, utcToday } from './daily'
 import { allCatalogSkins, ensureCatalog, getCatalogSkin } from './catalog'
 import { skinSets } from './facts'
@@ -228,6 +229,12 @@ async function assembleState(
     maxGuesses: MAX_GUESSES,
     status: result.status,
     guesses: result.guesses,
+    guessCounts: skinGuessCounts(
+      db,
+      GAME,
+      date,
+      result.guesses.map((g) => g.skinId),
+    ),
     image: '',
     zoomLevel,
     totalLevels: LEVELS.length,

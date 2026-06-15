@@ -13,6 +13,7 @@
 import type { DatabaseSync } from 'node:sqlite'
 import type { PriceCheckState, PriceRoundResult, StreakInfo } from '../types'
 import { appendEvent, getDb } from './db'
+import { tierGuessCount } from './consensus'
 import { puzzleNumber, seedFloats, utcToday } from './daily'
 import { allCatalogSkins, ensureCatalog, type CatalogSkin } from './catalog'
 import { ensureUser, peekUser, type GameUser } from './guests'
@@ -113,7 +114,12 @@ function readResult(
 
 // ─── scoring ────────────────────────────────────────────────────────────────
 
-function gradeGuess(skinId: string, guess: number, db: DatabaseSync) {
+function gradeGuess(
+  skinId: string,
+  guess: number,
+  db: DatabaseSync,
+  date: string,
+) {
   const facts = factsFor(skinId)
   const skin = db
     .prepare(
@@ -135,12 +141,19 @@ function gradeGuess(skinId: string, guess: number, db: DatabaseSync) {
     correct: guess === actual,
     oneOff: guess !== actual && gi >= 0 && ai >= 0 && Math.abs(gi - ai) === 1,
     legacy: facts?.availability === 'Legacy',
+    guessedBy: tierGuessCount(db, GAME, date, skinId, guess),
   }
   return result
 }
 
 const scoreOf = (results: PriceRoundResult[]) =>
   results.filter((r) => r.correct).length
+
+// Exact-hit count straight from the facts, skipping gradeGuess (and its
+// per-tier consensus count) - for the score-only paths: submit win/loss and
+// the hub card, which loads on every game page.
+const exactScore = (gs: { skinId: string; guess: number }[]) =>
+  gs.filter((g) => factsFor(g.skinId)?.cost === g.guess).length
 
 // ─── share text ─────────────────────────────────────────────────────────────
 
@@ -171,7 +184,9 @@ function assembleState(
   puzzle: PuzzleRow,
   result: ResultRow,
 ): PriceCheckState {
-  const results = result.guesses.map((g) => gradeGuess(g.skinId, g.guess, db))
+  const results = result.guesses.map((g) =>
+    gradeGuess(g.skinId, g.guess, db, date),
+  )
   const finished = result.status !== 'in_progress'
   const streakRow = getStreak(db, user.id, GAME)
   const streak = { current: streakRow.current, best: streakRow.best }
@@ -264,10 +279,10 @@ export async function submitPriceGuess(
   }
 
   const skinId = puzzle.skinIds[result.guesses.length]
-  const graded = gradeGuess(skinId, tier, db)
+  const graded = gradeGuess(skinId, tier, db, date)
   const guesses = [...result.guesses, { skinId, guess: tier }]
   const finished = guesses.length >= ROUNDS
-  const score = scoreOf(guesses.map((g) => gradeGuess(g.skinId, g.guess, db)))
+  const score = exactScore(guesses)
   const status: ResultRow['status'] = finished
     ? score >= WIN_SCORE
       ? 'won'
@@ -334,6 +349,6 @@ export function priceCheckHubInfo(
   return {
     status: result.status,
     rounds: result.guesses.length,
-    score: scoreOf(result.guesses.map((g) => gradeGuess(g.skinId, g.guess, getDb()))),
+    score: exactScore(result.guesses),
   }
 }

@@ -1,9 +1,10 @@
 import { createFileRoute, Link } from '@tanstack/react-router'
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
 import { motion, useAnimate, useReducedMotion } from 'motion/react'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import {
   faArrowTrendUp,
+  faBolt,
   faCompress,
   faExpand,
   faFire,
@@ -220,6 +221,56 @@ function AnimatedCount({ value }: { value: number }) {
   return <AnimatedNumber value={value} />
 }
 
+// A standalone "fun bonus stat": how the rest of the room voted on this exact
+// matchup, off the pair's real vote log. Its own pilled callout below the beat
+// (not crammed onto the feedback line) - being first or a contrarian is a win
+// too, so each case gets its own icon + tone. Pops in keyed per pick.
+function ConsensusCallout({ feedback }: { feedback: BattleFeedback | null }) {
+  if (!feedback) return null
+  const others = feedback.pairVotes - 1 // everyone else ever served this matchup
+  const agree = feedback.pairWinnerVotes - 1 // ...who picked your side
+  const pct = feedback.agreementPct
+  const minority = pct !== null && pct < 50
+  const gold = 'bg-gold5/20 text-gold1 outline-gold2/40'
+  const blue = 'bg-blue5/30 text-blue1 outline-blue3/50'
+
+  const wrap = (tone: string, icon: typeof faUsers, body: ReactNode) => (
+    <div className="mt-1 flex justify-center pb-1">
+      <span
+        key={feedback.winnerSkinId}
+        className={`animate-feedback-pop inline-flex items-center gap-1.5 px-3 py-1 text-sm font-bold outline -outline-offset-1 ${tone}`}
+      >
+        <FontAwesomeIcon icon={icon} className="h-3.5" />
+        {body}
+      </span>
+    </div>
+  )
+
+  if (others <= 0) {
+    return wrap(gold, faBolt, <>First to pick this matchup</>)
+  }
+  if (agree <= 0) {
+    return wrap(blue, faFire, <>Bold — you're the only one so far</>)
+  }
+  return wrap(
+    minority ? blue : gold,
+    minority ? faFire : faUsers,
+    <span>
+      {minority && 'Rare take · '}
+      <b className="tabular-nums">
+        <AnimatedNumber value={agree} />
+      </b>{' '}
+      {agree === 1 ? 'player agrees' : 'players agree'}
+      {pct !== null && (
+        <>
+          {' · '}
+          <AnimatedNumber value={pct} />%
+        </>
+      )}
+    </span>,
+  )
+}
+
 // Fixed-height by design: the bar exists from first paint and only its
 // CONTENT swaps, so answering back never reflows the arena above it.
 function FeedbackBar({ feedback }: { feedback: BattleFeedback | null }) {
@@ -261,15 +312,6 @@ function FeedbackBar({ feedback }: { feedback: BattleFeedback | null }) {
             <b className="text-gold1">{feedback.battles.toLocaleString()}</b>{' '}
             {feedback.battles === 1 ? 'battle' : 'battles'} and counting
           </span>
-          {feedback.agreementPct !== null && (
-            <span className="text-grey1">
-              ·{' '}
-              <b className="text-gold1">
-                <AnimatedNumber value={feedback.agreementPct} />%
-              </b>{' '}
-              agree with you
-            </span>
-          )}
         </p>
       ) : (
         <p className="text-sm text-grey1">
@@ -918,6 +960,7 @@ function BattlePage() {
           {arena}
           <FeedbackBar feedback={feedback} />
           <Standing feedback={feedback} />
+          <ConsensusCallout feedback={feedback} />
         </>
       )}
 

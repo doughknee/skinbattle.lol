@@ -52,6 +52,10 @@ CREATE INDEX IF NOT EXISTS idx_game_events_user ON game_events (user_id, game, p
 -- by matchup, so index the pair key straight out of the JSON payload.
 CREATE INDEX IF NOT EXISTS idx_game_events_battle_pair
   ON game_events (game, type, json_extract(payload, '$.pairKey'));
+-- Puzzle guess consensus ("N others also guessed this skin today") counts
+-- guess_submitted rows by the guessed skin for a given game + day.
+CREATE INDEX IF NOT EXISTS idx_game_events_guess
+  ON game_events (game, type, puzzle_date, json_extract(payload, '$.skinId'));
 
 -- The day's puzzle, frozen on first request so a mid-day catalog refresh
 -- can never change the answer under players.

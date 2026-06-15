@@ -237,6 +237,7 @@ function ChromaVisionPage() {
               pending={pending}
               maxGuesses={state.maxGuesses}
               animateFrom={animateFrom}
+              counts={state.guessCounts}
             />
           </>
         ) : (
@@ -255,6 +256,7 @@ function ChromaVisionPage() {
               guesses={state.guesses}
               maxGuesses={state.maxGuesses}
               animateFrom={animateFrom}
+              counts={state.guessCounts}
             />
           </>
         )}
