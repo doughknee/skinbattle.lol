@@ -1,8 +1,7 @@
-import { createFileRoute, Link } from '@tanstack/react-router'
+import { createFileRoute } from '@tanstack/react-router'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import {
-  faArrowLeft,
   faCoins,
   faFire,
   faShareNodes,
@@ -10,7 +9,7 @@ import {
 import { usePostHog } from 'posthog-js/react'
 import ErrorState from '~/components/ErrorState'
 import { toast } from '~/components/Toaster'
-import { btnPrimarySm, btnSecondarySm } from '~/lib/ui'
+import { btnPrimarySm } from '~/lib/ui'
 import {
   fetchDailyHub,
   fetchPriceCheck,
@@ -164,6 +163,16 @@ function PriceCheckPage() {
   const busyRef = useRef(false)
   const playedRef = useRef(false)
 
+  // One-time entrance: content cascades up on mount, then we drop the
+  // `stagger` class so the cascade only ever fires once per visit. Replays on
+  // every navigation since the page remounts, so swapping games feels
+  // deliberate.
+  const [entering, setEntering] = useState(true)
+  useEffect(() => {
+    const t = window.setTimeout(() => setEntering(false), 800)
+    return () => window.clearTimeout(t)
+  }, [])
+
   useEffect(() => {
     rememberGuestToken(state.guestToken)
   }, [state.guestToken])
@@ -224,8 +233,12 @@ function PriceCheckPage() {
   const shown = state.current ?? last
 
   return (
-    <div className="container mx-auto max-w-3xl px-6 pt-28 pb-16">
-      <header className="animate-fade-up mb-6">
+    // Content cascades up on mount (see `entering`); the class drops once the
+    // cascade finishes so it only plays once per visit, not on every re-render.
+    <div
+      className={`${entering ? 'stagger ' : ''}container mx-auto max-w-3xl px-6 pt-28 pb-16`}
+    >
+      <header className="mb-6">
         <p className="mb-2 text-sm font-semibold uppercase tracking-[0.3em] text-gold2">
           Daily · what did it cost?
         </p>
@@ -299,10 +312,6 @@ function PriceCheckPage() {
             Share result
           </button>
         )}
-        <Link to="/battle" className={btnSecondarySm}>
-          <FontAwesomeIcon icon={faArrowLeft} className="h-4" />
-          Back to the battle
-        </Link>
         {state.streak.current > 0 && (
           <span className="flex items-center gap-1.5 text-sm font-bold text-gold2">
             <FontAwesomeIcon icon={faFire} className="h-3.5" />

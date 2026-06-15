@@ -73,6 +73,17 @@ function ChromaVisionPage() {
   const shakeTimer = useRef<number | undefined>(undefined)
   useEffect(() => () => window.clearTimeout(shakeTimer.current), [])
 
+  // One-time entrance: content cascades up on mount, then we drop the
+  // `stagger` class once the cascade is done. Without this, nodes that mount
+  // later (the result panel on finish) would inherit a fresh cascade animation
+  // that never starts - leaving them stuck invisible. Replays on every
+  // navigation since the page remounts, so swapping games feels deliberate.
+  const [entering, setEntering] = useState(true)
+  useEffect(() => {
+    const t = window.setTimeout(() => setEntering(false), 800)
+    return () => window.clearTimeout(t)
+  }, [])
+
   // What the board looked like on the page's first paint - that content
   // renders settled; only post-load guesses play game animations.
   const loadedWith = useRef({
@@ -176,20 +187,25 @@ function ChromaVisionPage() {
         </div>
       </header>
 
-      <div className="flex flex-col gap-6">
+      {/* Content cascades up on mount (see `entering`); the class drops once
+          the cascade finishes so the result panel can mount cleanly later. */}
+      <div className={`${entering ? 'stagger ' : ''}flex flex-col gap-6`}>
         {/* The mosaic: pure color composition at first, the silhouette
-            emerging block by block with each miss; the full reveal at the
-            end. */}
-        <GuessViewport
-          image={state.image}
-          levelKey={`${state.status}-${state.zoomLevel}`}
-          playing={playing}
-          shake={shake}
-          soft={atLoadState}
-          caption={`Mosaic ${state.zoomLevel + 1}/${state.totalLevels}`}
-          playingAlt="A color mosaic of a mystery skin splash"
-          answerName={state.answer?.name}
-        />
+            emerging block by block with each miss; the full reveal at the end.
+            Wrapped so the cascade's fade-up lands on this div, not the figure
+            (whose own shake/reveal animations would collide). */}
+        <div>
+          <GuessViewport
+            image={state.image}
+            levelKey={`${state.status}-${state.zoomLevel}`}
+            playing={playing}
+            shake={shake}
+            soft={atLoadState}
+            caption={`Mosaic ${state.zoomLevel + 1}/${state.totalLevels}`}
+            playingAlt="A color mosaic of a mystery skin splash"
+            answerName={state.answer?.name}
+          />
+        </div>
 
         {playing ? (
           <>

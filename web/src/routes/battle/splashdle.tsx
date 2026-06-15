@@ -73,6 +73,17 @@ function SplashdlePage() {
   const shakeTimer = useRef<number | undefined>(undefined)
   useEffect(() => () => window.clearTimeout(shakeTimer.current), [])
 
+  // One-time entrance: content cascades up on mount, then we drop the
+  // `stagger` class once the cascade is done. Without this, nodes that mount
+  // later (the result panel on finish) would inherit a fresh cascade animation
+  // that never starts - leaving them stuck invisible. Replays on every
+  // navigation since the page remounts, so swapping games feels deliberate.
+  const [entering, setEntering] = useState(true)
+  useEffect(() => {
+    const t = window.setTimeout(() => setEntering(false), 800)
+    return () => window.clearTimeout(t)
+  }, [])
+
   // What the board looked like on the page's first paint. That content is
   // part of the page entrance, so it renders settled - only things that
   // happen after load (new guesses, the live win) play game animations.
@@ -178,19 +189,25 @@ function SplashdlePage() {
         </div>
       </header>
 
-      <div className="flex flex-col gap-6">
+      {/* Content cascades up on mount (see `entering`); the class drops once
+          the cascade finishes so the result panel can mount cleanly later. */}
+      <div className={`${entering ? 'stagger ' : ''}flex flex-col gap-6`}>
         {/* The splash. While playing this is a server-cropped sliver that
-            pulls back with every miss; on completion it's the full reveal. */}
-        <GuessViewport
-          image={state.image}
-          levelKey={`${state.status}-${state.zoomLevel}`}
-          playing={playing}
-          shake={shake}
-          soft={atLoadState}
-          caption={`Zoom ${state.zoomLevel + 1}/${state.totalLevels}`}
-          playingAlt="A cropped sliver of a mystery skin splash"
-          answerName={state.answer?.name}
-        />
+            pulls back with every miss; on completion it's the full reveal.
+            Wrapped so the cascade's fade-up lands on this div, not the figure
+            (whose own shake/reveal animations would collide). */}
+        <div>
+          <GuessViewport
+            image={state.image}
+            levelKey={`${state.status}-${state.zoomLevel}`}
+            playing={playing}
+            shake={shake}
+            soft={atLoadState}
+            caption={`Zoom ${state.zoomLevel + 1}/${state.totalLevels}`}
+            playingAlt="A cropped sliver of a mystery skin splash"
+            answerName={state.answer?.name}
+          />
+        </div>
 
         {playing ? (
           <>
