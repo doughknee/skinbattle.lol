@@ -91,7 +91,7 @@ export function resolveBoard(db: DatabaseSync, boardId: string): BoardScope | nu
     return {
       boardId: `champion:${champ[1]}`,
       title: `Rank ${skins[0].championName}'s skins`,
-      subtitle: 'Drag each skin into a tier — no wrong answers, just your taste.',
+      subtitle: 'Sort each skin into a tier — no wrong answers, just your taste.',
       skins,
     }
   }
