@@ -73,6 +73,10 @@ export interface HubGame {
   // Price Check: exact hits so far (its win condition is score, not guesses).
   score?: number
   streak: StreakInfo
+  // True only when the current streak is genuinely still running into today
+  // (last result was today or yesterday). Gates the honest "keep your streak
+  // alive" nudge so it can never show for a stale/dead streak.
+  streakAlive: boolean
 }
 
 export interface DailyHubState {
@@ -88,18 +92,6 @@ export interface DailyHubState {
   mirror: {
     skinsRated: number
   }
-  // "New this patch" strip - skins released in the last ~3 weeks plus
-  // Upcoming ones already in the live catalog. Empty outside drop windows;
-  // the section hides itself.
-  newSkins: {
-    skinId: string
-    slug: string
-    name: string
-    championName: string
-    splashUrl: string
-    release: string | null // null = Upcoming
-    upcoming: boolean
-  }[]
   guestToken: string
 }
 
@@ -143,6 +135,17 @@ export interface BattleFeedback {
   rankBefore: number | null // null = this was the skin's placement battle
   agreementPct: number | null // null until the matchup has enough votes
   pairVotes: number
+  // Located standing - the winner's place in the whole rated field plus its
+  // named neighbours. The wordless "needle" the rest of the line narrates:
+  // felt weight from a real, named position, not from faked per-pick motion.
+  ratedCount: number // the denominator for "#789 of 1,420" (0 if unknown)
+  neighborAbove: RankNeighbor | null // the skin one rung higher, or null at #1
+  neighborBelow: RankNeighbor | null // the skin one rung lower, or null at last
+}
+
+export interface RankNeighbor {
+  name: string
+  rank: number
 }
 
 export interface RefitSummary {
@@ -165,6 +168,12 @@ export interface BattleVoteResult {
   nextPair: BattlePair
   stats: BattleStats
   guestToken: string
+}
+
+export interface BattleUndoResult {
+  // The exact matchup of the undone pick, freshly tokenised to decide again.
+  pair: BattlePair
+  stats: BattleStats
 }
 
 // ─── Price Check ────────────────────────────────────────────────────────────

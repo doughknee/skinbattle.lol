@@ -96,7 +96,8 @@ const fmtDate = (iso: string) =>
     timeZone: 'UTC',
   })
 
-// Same window as the hub's "New this patch" strip.
+// "New this patch" badge window: League patches land ~biweekly, so three
+// weeks catches the current drop plus stragglers.
 const isNew = (release: string | null | undefined) =>
   !!release && Date.now() - Date.parse(`${release}T00:00:00Z`) < 21 * 86_400_000
 

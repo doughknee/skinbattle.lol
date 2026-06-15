@@ -24,6 +24,10 @@
 .DS_Store
 *.pem
 
+# npm auth (e.g. Motion+ private-registry token) - never commit
+.npmrc
+**/.npmrc
+
 # debug
 npm-debug.log*
 yarn-debug.log*

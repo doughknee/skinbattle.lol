@@ -113,6 +113,19 @@ CREATE TABLE IF NOT EXISTS user_skin_ratings (
   PRIMARY KEY (user_id, skin_id)
 );
 
+-- The single most-recent undoable vote per user, overwritten on each vote and
+-- cleared on undo. Holds the pre-vote rating snapshots so an undo restores both
+-- caches (community + personal) in O(1) without a refit. quickbattle.undoLastVote
+-- is the ONLY path that deletes from game_events - a deliberate, contained
+-- exception to the append-only rule, scoped to a player retracting their own
+-- last pick before the next refit folds it in.
+CREATE TABLE IF NOT EXISTS battle_undo (
+  user_id    TEXT PRIMARY KEY,
+  event_id   INTEGER NOT NULL,
+  snapshot   TEXT NOT NULL,        -- JSON: ids + pre-vote community & personal ratings
+  created_at TEXT NOT NULL
+);
+
 -- Replay guard for signed battle-pair tokens: each issued pair may be voted
 -- on exactly once. Rows are pruned shortly after the token's own expiry.
 CREATE TABLE IF NOT EXISTS battle_nonces (
@@ -179,21 +192,26 @@ export interface GameEvent {
   trustTier: 'guest' | 'member'
 }
 
-// The only write path for game_events - inserts only, by design.
-export function appendEvent(d: DatabaseSync, e: GameEvent): void {
-  d.prepare(
-    `INSERT INTO game_events
+// The append path for game_events - inserts only (the lone delete is the
+// scoped vote-undo in quickbattle). Returns the new row id so a vote can record
+// it for a possible undo.
+export function appendEvent(d: DatabaseSync, e: GameEvent): number {
+  const info = d
+    .prepare(
+      `INSERT INTO game_events
        (user_id, game, puzzle_date, type, payload, question_asked, asset_version, trust_tier, created_at)
      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-  ).run(
-    e.userId,
-    e.game,
-    e.puzzleDate,
-    e.type,
-    JSON.stringify(e.payload),
-    e.questionAsked,
-    e.assetVersion,
-    e.trustTier,
-    new Date().toISOString(),
-  )
+    )
+    .run(
+      e.userId,
+      e.game,
+      e.puzzleDate,
+      e.type,
+      JSON.stringify(e.payload),
+      e.questionAsked,
+      e.assetVersion,
+      e.trustTier,
+      new Date().toISOString(),
+    )
+  return Number(info.lastInsertRowid)
 }

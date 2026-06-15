@@ -106,9 +106,11 @@ function decayUncertainty(uncertainty: number, weight: number): number {
 
 export interface LiveUpdate {
   winnerBefore: SkinRating
+  loserBefore: SkinRating
   winner: SkinRating
   loser: SkinRating
   winnerDelta: number
+  loserDelta: number
 }
 
 // One pick: winner gains, loser pays, both tighten their uncertainty.
@@ -122,6 +124,7 @@ export function applyLiveUpdate(
   const w = getSkinRating(db, winnerId)
   const l = getSkinRating(db, loserId)
   const winnerBefore = { ...w }
+  const loserBefore = { ...l }
 
   const eWin = expectedScore(w.rating, l.rating)
   const winnerDelta = kFor(w.uncertainty) * weight * (1 - eWin)
@@ -141,18 +144,87 @@ export function applyLiveUpdate(
   }
   putSkinRating(db, winnerId, winner)
   putSkinRating(db, loserId, loser)
-  return { winnerBefore, winner, loser, winnerDelta }
+  return { winnerBefore, loserBefore, winner, loser, winnerDelta, loserDelta }
+}
+
+// Reverse a single live update on the CURRENT community rows (vote undo). We
+// apply the inverse of THIS vote's effect - subtract its rating deltas, undo
+// one battle/win, re-inflate the uncertainty by this vote's decay factor -
+// rather than overwriting with an absolute pre-vote snapshot. That's what lets
+// the undo compose with any concurrent votes or a refit that touched these two
+// shared rows in between. A row whose battle count returns to 0 is dropped
+// (the skin had no rating before its placement battle).
+export function reverseLiveUpdate(
+  db: DatabaseSync,
+  winnerId: string,
+  loserId: string,
+  winnerDelta: number,
+  loserDelta: number,
+  weight: number,
+): void {
+  // decayUncertainty multiplied (u - MIN) by (1 - DECAY*weight); divide it back.
+  const inflate = (u: number) =>
+    MIN_UNCERTAINTY + (u - MIN_UNCERTAINTY) / (1 - UNCERTAINTY_DECAY * weight)
+  const w = getSkinRating(db, winnerId)
+  const l = getSkinRating(db, loserId)
+  const winner: SkinRating = {
+    rating: w.rating - winnerDelta,
+    uncertainty: inflate(w.uncertainty),
+    battles: w.battles - 1,
+    wins: Math.max(0, w.wins - 1),
+  }
+  const loser: SkinRating = {
+    rating: l.rating - loserDelta,
+    uncertainty: inflate(l.uncertainty),
+    battles: l.battles - 1,
+    wins: l.wins,
+  }
+  if (winner.battles <= 0)
+    db.prepare('DELETE FROM skin_ratings WHERE skin_id = ?').run(winnerId)
+  else putSkinRating(db, winnerId, winner)
+  if (loser.battles <= 0)
+    db.prepare('DELETE FROM skin_ratings WHERE skin_id = ?').run(loserId)
+  else putSkinRating(db, loserId, loser)
+}
+
+// Restore one skin's PERSONAL rating to a pre-vote snapshot. battles <= 0 means
+// the user had never judged this skin, so the row is removed.
+export function restorePersonalRating(
+  db: DatabaseSync,
+  userId: string,
+  skinId: string,
+  before: { rating: number; battles: number },
+): void {
+  if (before.battles <= 0) {
+    db.prepare(
+      'DELETE FROM user_skin_ratings WHERE user_id = ? AND skin_id = ?',
+    ).run(userId, skinId)
+    return
+  }
+  db.prepare(
+    `INSERT INTO user_skin_ratings (user_id, skin_id, rating, battles, updated_at)
+     VALUES (?, ?, ?, ?, ?)
+     ON CONFLICT (user_id, skin_id) DO UPDATE SET
+       rating = excluded.rating,
+       battles = excluded.battles,
+       updated_at = excluded.updated_at`,
+  ).run(userId, skinId, before.rating, before.battles, new Date().toISOString())
 }
 
 // The same pick, applied to the user's own taste model (the mirror's data
 // source). Unweighted - trust tiers protect the COMMUNITY ranking; a user's
 // personal list is theirs.
+export interface PersonalBefore {
+  rating: number
+  battles: number
+}
+
 export function applyPersonalUpdate(
   db: DatabaseSync,
   userId: string,
   winnerId: string,
   loserId: string,
-): void {
+): { winnerBefore: PersonalBefore; loserBefore: PersonalBefore } {
   const read = (skinId: string) =>
     (db
       .prepare(
@@ -178,6 +250,7 @@ export function applyPersonalUpdate(
   const now = new Date().toISOString()
   put.run(userId, winnerId, w.rating + delta, w.battles + 1, now)
   put.run(userId, loserId, l.rating - delta, l.battles + 1, now)
+  return { winnerBefore: w, loserBefore: l }
 }
 
 // Rank among skins that have actually fought (battles > 0). ~2k rows - a
@@ -189,6 +262,51 @@ export function globalRank(db: DatabaseSync, rating: number): number {
     )
     .get(rating) as { c: number }
   return row.c + 1
+}
+
+// The denominator for "#789 of 1,420": how many skins have a real ranking
+// (have fought at least one battle). Cheap COUNT over ~2k rows.
+export function ratedCount(db: DatabaseSync): number {
+  const row = db
+    .prepare('SELECT COUNT(*) AS c FROM skin_ratings WHERE battles > 0')
+    .get() as { c: number }
+  return row.c
+}
+
+export interface RankNeighbor {
+  name: string
+  rank: number
+}
+
+// The named skins one rung above and below a given rating - what turns a bare
+// "#789" into "just behind X, just ahead of Y". The winner's own row is
+// excluded by the strict inequality (its rating equals `rating`); ranks are
+// the winner's rank ±1 rather than two more COUNT scans.
+export function rankNeighbors(
+  db: DatabaseSync,
+  rating: number,
+  rank: number,
+): { above: RankNeighbor | null; below: RankNeighbor | null } {
+  const above = db
+    .prepare(
+      `SELECT c.name AS name FROM skin_ratings r
+       JOIN catalog_skins c ON c.id = r.skin_id
+       WHERE r.battles > 0 AND r.rating > ?
+       ORDER BY r.rating ASC LIMIT 1`,
+    )
+    .get(rating) as { name: string } | undefined
+  const below = db
+    .prepare(
+      `SELECT c.name AS name FROM skin_ratings r
+       JOIN catalog_skins c ON c.id = r.skin_id
+       WHERE r.battles > 0 AND r.rating < ?
+       ORDER BY r.rating DESC LIMIT 1`,
+    )
+    .get(rating) as { name: string } | undefined
+  return {
+    above: above ? { name: above.name, rank: rank - 1 } : null,
+    below: below ? { name: below.name, rank: rank + 1 } : null,
+  }
 }
 
 // ─── Bradley-Terry refit ────────────────────────────────────────────────────

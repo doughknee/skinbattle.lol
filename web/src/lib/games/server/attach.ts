@@ -183,6 +183,10 @@ function mergeInto(db: DatabaseSync, guestId: string, accountId: string): void {
     }
     db.prepare('DELETE FROM streaks WHERE user_id = ?').run(guestId)
     db.prepare('DELETE FROM user_skin_ratings WHERE user_id = ?').run(guestId)
+    // Drop the guest's pending undo: its event row is being reassigned to the
+    // account, so the guest-keyed snapshot would be orphaned. Undo doesn't
+    // survive sign-in (a session boundary); the next pick re-arms it.
+    db.prepare('DELETE FROM battle_undo WHERE user_id = ?').run(guestId)
 
     db.prepare(
       'UPDATE game_users SET merged_into = ?, guest_token = NULL, last_seen_at = ? WHERE id = ?',

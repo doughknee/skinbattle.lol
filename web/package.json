@@ -7,7 +7,8 @@
     "dev": "vite dev",
     "build": "vite build",
     "start": "node server.mjs",
-    "test": "vitest run"
+    "test": "vitest run",
+    "motion-plus": "node scripts/install-motion-plus.mjs"
   },
   "dependencies": {
     "@fortawesome/fontawesome-svg-core": "^6.7.2",
@@ -23,6 +24,7 @@
     "fuse.js": "^7.4.2",
     "jimp": "^1.6.1",
     "jose": "^6.2.3",
+    "motion": "^12.40.0",
     "posthog-js": "^1.386.6",
     "posthog-node": "^5.37.0",
     "react": "^19.0.0",
