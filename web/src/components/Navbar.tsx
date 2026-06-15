@@ -120,6 +120,7 @@ function NavItem({ section }: { section: SiteSection }) {
           {hero && (
             <Link
               to={hero.to}
+              search={hero.linkSearch}
               onClick={dismissMenu}
               className="group/hero flex items-center gap-3 border-b border-icon/20 bg-gold5/10 px-4 py-4 transition duration-150 hover:bg-gold5/20"
             >
@@ -147,6 +148,7 @@ function NavItem({ section }: { section: SiteSection }) {
               )}
               <Link
                 to={c.to}
+                search={c.linkSearch}
                 onClick={dismissMenu}
                 className="group/row flex items-center gap-3 px-4 py-2.5 transition duration-150 hover:bg-gold5/15"
               >

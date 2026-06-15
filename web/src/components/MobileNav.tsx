@@ -5,8 +5,8 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faBars, faChevronRight, faXmark } from '@fortawesome/free-solid-svg-icons'
 import { CrownMark, Wordmark } from './Brand'
 import {
+  CHAMPIONS,
   HOME,
-  PROFILE,
   SECONDARY_PAGES,
   SITE_SECTIONS,
   type SiteSection,
@@ -30,7 +30,11 @@ function DoorTile({
   pathname: string
 }) {
   const active = isActive(section.to, section.match, pathname)
-  const children = (section.children ?? []).filter((c) => c.to !== section.to)
+  // Drop the child that just repeats the landing page (a dropdown's hero), but
+  // keep tab-links that share the path yet target a distinct view (?tab=votes).
+  const children = (section.children ?? []).filter(
+    (c) => c.to !== section.to || c.linkSearch,
+  )
 
   return (
     <li className="flex flex-col gap-2">
@@ -75,8 +79,9 @@ function DoorTile({
         <div className="flex flex-wrap gap-1.5 pl-2">
           {children.map((c) => (
             <Link
-              key={c.to}
+              key={`${c.to}-${c.label}`}
               to={c.to}
+              search={c.linkSearch}
               className="flex h-9 items-center gap-2 bg-hextech-black/40 px-3 text-sm font-bold text-gold1 outline outline-icon/25 -outline-offset-1 transition duration-150 hover:bg-gold5/25 hover:outline-gold2/70"
             >
               <FontAwesomeIcon icon={c.icon} className="h-3.5 text-gold2" />
@@ -112,7 +117,7 @@ export default function MobileNav() {
     }
   }, [open])
 
-  const footerLinks = [HOME, PROFILE, ...SECONDARY_PAGES]
+  const footerLinks = [HOME, CHAMPIONS, ...SECONDARY_PAGES]
 
   return (
     <>

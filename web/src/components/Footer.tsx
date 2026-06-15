@@ -1,11 +1,10 @@
+import type { ReactNode } from 'react'
 import { Link } from '@tanstack/react-router'
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { faMagnifyingGlass } from '@fortawesome/free-solid-svg-icons'
 import { CrownMark, Wordmark } from './Brand'
-import {
-  PROFILE_PAGES,
-  SECONDARY_PAGES,
-  SITE_SECTIONS,
-  type SitePage,
-} from '~/lib/siteMap'
+import { openCommandPalette } from './CommandPalette'
+import { FOOTER_COLUMNS, type SitePage } from '~/lib/siteMap'
 import { SUPPORT_URL } from '~/lib/support'
 
 // The honeyfruit: League's healing fruit, standing in for "buy me a coffee"
@@ -20,10 +19,18 @@ function HoneyfruitIcon({ className = '' }: { className?: string }) {
   )
 }
 
-// The footer is the full sitemap, rendered from the site-map registry - one
-// column per top-level section. New registry entries appear here for free.
+// The footer is the full sitemap, curated into intent columns (siteMap.ts).
+// Everything the lean three-door navbar leaves out lives here.
 
-function Column({ title, pages }: { title: string; pages: SitePage[] }) {
+function Column({
+  title,
+  pages,
+  extra,
+}: {
+  title: string
+  pages: SitePage[]
+  extra?: ReactNode
+}) {
   return (
     <nav aria-label={`Footer: ${title}`}>
       <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-gold2">
@@ -42,42 +49,51 @@ function Column({ title, pages }: { title: string; pages: SitePage[] }) {
             </Link>
           </li>
         ))}
+        {extra}
       </ul>
     </nav>
   )
 }
 
 export default function Footer() {
-  // Every top-level section gets its own column: a dropdown section lists its
-  // children beneath the landing link; a plain link (Champions) stands alone.
-  // The profile tabs (mirror, votes, account) get the "You" column.
-  const columns = SITE_SECTIONS.map((s) => ({
-    to: s.to,
-    title: s.label,
-    // Landing first, children after - minus any child pointing back at the
-    // landing page (e.g. a dropdown's hero row).
-    pages: [s, ...(s.children ?? []).filter((c) => c.to !== s.to)],
-  }))
-
   return (
     <footer className="mt-24 border-t border-icon/20 bg-hextech-black/40">
-      <div className="container mx-auto grid gap-10 px-6 py-12 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-[1.5fr_1fr_1fr_1fr_0.9fr_0.9fr]">
+      <div className="container mx-auto grid gap-10 px-6 py-12 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-[1.6fr_1fr_1fr_1fr_1fr_1fr]">
         <div>
           <p className="flex items-center gap-2.5">
             <CrownMark className="h-9 w-9" />
             <Wordmark className="text-lg" />
           </p>
           <p className="mt-3 max-w-xs text-sm text-grey1">
-            Community-built rankings for every League of Legends skin. Battle,
-            star, and ban your way to the definitive list.
+            Vote, rank, and find your taste in League of Legends skins.
           </p>
         </div>
 
-        {columns.map((col) => (
-          <Column key={col.to} title={col.title} pages={col.pages} />
+        {FOOTER_COLUMNS.map((col) => (
+          <Column
+            key={col.title}
+            title={col.title}
+            pages={col.pages}
+            // Search is a ⌘K action, not a page - it rides in the Explore column.
+            extra={
+              col.title === 'Explore' ? (
+                <li>
+                  <button
+                    type="button"
+                    onClick={openCommandPalette}
+                    className="flex items-center gap-2 text-grey1 transition duration-150 hover:text-gold1"
+                  >
+                    <FontAwesomeIcon
+                      icon={faMagnifyingGlass}
+                      className="h-3 text-gold2"
+                    />
+                    Search
+                  </button>
+                </li>
+              ) : undefined
+            }
+          />
         ))}
-        <Column title="You" pages={PROFILE_PAGES} />
-        <Column title="The Site" pages={SECONDARY_PAGES} />
       </div>
 
       <div className="container mx-auto px-6 pb-8">
@@ -92,6 +108,8 @@ export default function Footer() {
       <div className="border-t border-icon/10 py-4 text-center text-xs text-grey1/70">
         <p className="flex flex-wrap items-center justify-center gap-x-2 gap-y-1 px-6">
           <span>© {new Date().getFullYear()} skinbattle.lol</span>
+          <span aria-hidden>·</span>
+          <span>not affiliated with or endorsed by Riot Games</span>
           <span aria-hidden>·</span>
           <a
             href={SUPPORT_URL}

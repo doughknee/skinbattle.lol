@@ -1,14 +1,15 @@
 // The site map - the single source of truth for where everything lives.
 //
-// The navbar, footer, command palette, 404 page, and /sitemap.xml all render
-// from this registry. To add a page to the site: create the route file, then
-// add one entry here - it shows up in every navigation surface at once.
-// Nothing should hand-roll its own list of site links.
+// The navbar, mobile nav, footer, command palette, 404 page, and /sitemap.xml
+// all render from this registry. To add a page to the site: create the route
+// file, then add one entry here - it shows up in every navigation surface at
+// once. Nothing should hand-roll its own list of site links.
 //
-// The model (see ROUTES.md): three doors, three verbs.
-//   Battle = do. Champions = find. Rankings = see. Plus You behind the account
-//   button. Leaf content (champion/skin detail pages, slices) never appears in
-//   nav.
+// The model (see ROUTES.md): the top nav is a growth instrument, not a filing
+// cabinet. Three doors - Play (do), Rankings (see), Mirror (your taste) - plus
+// Search and the account avatar on the right. Everything else (Champions,
+// search, the legal/utility pages) lives in the footer, which is the full
+// sitemap. Leaf content (champion/skin detail pages, slices) never appears.
 
 import {
   faChartLine,
@@ -69,156 +70,198 @@ export const HOME: SitePage = {
   search: 'start front page',
 }
 
-export const PROFILE: SitePage = {
-  to: '/profile',
-  label: 'Your Mirror',
-  blurb: 'The tier list your battles build, plus your votes and account.',
-  icon: faScaleUnbalanced,
-  search: 'profile account settings my votes mirror tier list taste sign in',
+// ─── Individual pages, defined once and reused across nav + footer ──────────
+
+// Play
+const HEAD_TO_HEAD: SitePage = {
+  to: '/battle',
+  label: 'Head-to-Head',
+  blurb: 'Two skins, pick one. Endless. Jump straight in.',
+  icon: faShuffle,
+  search: 'versus quick battle head to head 1v1 swipe endless vs',
+  hero: true,
+}
+const TIER_DROP: SitePage = {
+  to: '/battle/tiers',
+  label: 'Tier Drop',
+  blurb: "Rank a champion's skins S to D - dozens of verdicts in one go.",
+  icon: faLayerGroup,
+  search: 'tier drop tier list rank s a b c d champion skins drag tierlist',
+  group: 'Battles',
+}
+const SPLASHDLE: SitePage = {
+  to: '/battle/splashdle',
+  label: 'Splashdle',
+  blurb: 'Name the skin from a sliver of its splash.',
+  icon: faImage,
+  search: 'wordle guess splash daily',
+  group: 'Puzzles',
+}
+const PRICE_POINT: SitePage = {
+  to: '/battle/price-point',
+  label: 'Price Point',
+  blurb: 'Guess what each skin cost in RP.',
+  icon: faCoins,
+  search: 'rp cost price point check guess daily',
+  group: 'Puzzles',
+}
+const CHROMA_VISION: SitePage = {
+  to: '/battle/chroma-vision',
+  label: 'Chroma Vision',
+  blurb: 'Name the skin from its colors alone.',
+  icon: faPalette,
+  search: 'colors mosaic hard mode daily',
+  group: 'Puzzles',
 }
 
-// The profile's tabs, for surfaces that link straight into them (the
-// footer's You column). Not part of allSitePages - they share /profile.
-export const PROFILE_PAGES: SitePage[] = [
-  PROFILE,
-  {
-    to: '/profile',
-    linkSearch: { tab: 'votes' },
-    label: 'My Votes',
-    blurb: 'Your stars and bans, in one place.',
-    icon: faCheckToSlot,
-  },
-  {
-    to: '/profile',
-    linkSearch: { tab: 'account' },
-    label: 'Account',
-    blurb: 'Username, avatar, and sign-in settings.',
-    icon: faUser,
-  },
-]
+// Rankings
+const ALL_SKINS: SitePage = {
+  to: '/rankings/all',
+  label: 'All skins',
+  blurb: 'Every skin, one list - slice it by price, line, champion, year.',
+  icon: faListOl,
+  search: 'best skins overall top list full ranking all',
+}
+const DROUGHT: SitePage = {
+  to: '/rankings/drought',
+  label: 'Drought Index',
+  blurb: "Days since every champion's last skin, ranked.",
+  icon: faHourglassHalf,
+  search: 'insights days since last skin waiting forgotten',
+}
+const LEADERBOARDS: SitePage = {
+  to: '/battle/leaderboards',
+  label: 'Leaderboards',
+  blurb: 'Streaks, fastest solves, and battle volume.',
+  icon: faTrophy,
+  search: 'top players streaks ranks community leaderboards',
+}
+const HOW_RANKINGS_WORK: SitePage = {
+  to: '/rankings/elo',
+  label: 'How Rankings Work',
+  blurb: 'The rating system behind the lists, explained for humans.',
+  icon: faChartLine,
+  search:
+    'elo rating explainer how it works bradley terry calibrating uncertainty mmr math',
+}
+// Reachable by URL, the home page, the roadmap, and Search - just not the
+// navbar or footer columns (kept deliberately lean).
+const AWARDS: SitePage = {
+  to: '/rankings/awards',
+  label: 'Awards',
+  blurb: 'Most starred, most banned: community superlatives.',
+  icon: faCrown,
+  search: 'best worst starred banned superlatives awards',
+}
+
+// Explore (footer)
+export const CHAMPIONS: SitePage = {
+  to: '/champions',
+  label: 'Champions',
+  blurb: 'Every champion and their wardrobe. Star and ban skin by skin.',
+  icon: faUsers,
+  search:
+    'catalog browse champions roster splash art collection wardrobe skins',
+}
+
+// Mirror tabs. Account lives in the avatar menu and the footer (not the nav
+// dropdown), so the Mirror door stays focused on your taste artifacts.
+const YOUR_TIER_LIST: SitePage = {
+  to: '/profile',
+  label: 'Your tier list',
+  blurb: 'The ranking your battles build, plus your contrarian takes.',
+  icon: faLayerGroup,
+  search: 'mirror tier list taste my ranking stats',
+  hero: true,
+}
+const MY_VOTES: SitePage = {
+  to: '/profile',
+  linkSearch: { tab: 'votes' },
+  label: 'My Votes',
+  blurb: 'Your stars and bans, in one place.',
+  icon: faCheckToSlot,
+  search: 'my votes stars bans record',
+}
+export const ACCOUNT: SitePage = {
+  to: '/profile',
+  linkSearch: { tab: 'account' },
+  label: 'Account',
+  blurb: 'Username, avatar, and sign-in settings.',
+  icon: faUser,
+  search: 'account settings username avatar sign in out profile',
+}
+
+// ─── The three doors (navbar) ───────────────────────────────────────────────
 
 export const SITE_SECTIONS: SiteSection[] = [
   {
     to: '/battle',
-    label: 'Battle',
-    blurb: 'Two skins. Pick one. Every vote builds the rankings.',
+    label: 'Play',
+    blurb: 'Battles and daily puzzles. Jump in.',
     icon: faShuffle,
     // Carries the head-to-head terms too: the palette dedupes the child that
     // points at this same path, so its keywords must live here.
     search:
-      'play quick battle versus head to head 1v1 swipe endless vote tier list',
+      'play games quick battle versus head to head 1v1 swipe endless vote tier list puzzles daily',
     accent: true,
-    children: [
-      {
-        to: '/battle',
-        label: 'Head-to-Head',
-        blurb: 'Two skins, pick one. Endless. Jump straight in.',
-        icon: faShuffle,
-        search: 'versus quick battle head to head 1v1 swipe endless vs',
-        hero: true,
-      },
-      {
-        to: '/battle/tiers',
-        label: 'Tier Drop',
-        blurb: "Rank a champion's skins S to D - dozens of verdicts in one go.",
-        icon: faLayerGroup,
-        search: 'tier drop tier list rank s a b c d champion skins drag tierlist',
-      },
-      {
-        to: '/battle/splashdle',
-        label: 'Splashdle',
-        blurb: 'Name the skin from a sliver of its splash.',
-        icon: faImage,
-        search: 'wordle guess splash daily',
-        group: 'Daily challenges',
-      },
-      {
-        to: '/battle/price-point',
-        label: 'Price Point',
-        blurb: 'Guess what each skin cost in RP.',
-        icon: faCoins,
-        search: 'rp cost price point check guess daily',
-        group: 'Daily challenges',
-      },
-      {
-        to: '/battle/chroma-vision',
-        label: 'Chroma Vision',
-        blurb: 'Name the skin from its colors alone.',
-        icon: faPalette,
-        search: 'colors mosaic hard mode daily',
-        group: 'Daily challenges',
-      },
-      {
-        to: '/battle/leaderboards',
-        label: 'Leaderboards',
-        blurb: 'Streaks, fastest solves, and battle volume.',
-        icon: faTrophy,
-        search: 'top players streaks ranks community',
-        group: 'Community',
-      },
-    ],
+    children: [HEAD_TO_HEAD, TIER_DROP, SPLASHDLE, PRICE_POINT, CHROMA_VISION],
   },
   {
-    // The section lands on the full ranking - the list IS the product, and
-    // its slice bar handles price/line/champion/year discovery in-page
-    // (the old slice hub redirects here).
+    // The section lands on the full ranking - the list IS the product, and its
+    // slice bar handles price/line/champion/year discovery in-page. A plain
+    // link, no dropdown: the deeper rankings views live in the footer.
     to: '/rankings/all',
     match: '/rankings',
     label: 'Rankings',
     blurb: 'The community verdict, sliced every way an argument needs.',
     icon: faRankingStar,
     search:
-      'best worst top tier list insights skins overall price tier skin line year champion slice',
-    children: [
-      {
-        to: '/rankings/all',
-        label: 'The Full Ranking',
-        blurb: 'Every skin, one list - slice it by price, line, champion, year.',
-        icon: faListOl,
-        search: 'best skins overall top list',
-        hero: true,
-      },
-      {
-        to: '/rankings/awards',
-        label: 'Awards',
-        blurb: 'Most starred, most banned: community superlatives.',
-        icon: faCrown,
-        search: 'best worst starred banned superlatives awards',
-        group: 'More ways to settle it',
-      },
-      {
-        to: '/rankings/drought',
-        label: 'Drought Index',
-        blurb: "Days since every champion's last skin, ranked.",
-        icon: faHourglassHalf,
-        search: 'insights days since last skin waiting forgotten',
-        group: 'More ways to settle it',
-      },
-    ],
+      'best worst top tier list insights skins overall price tier skin line year champion slice rankings',
   },
   {
-    // The catalog door. Browsing by champion is the most natural axis for a
-    // League audience; dive into any wardrobe to star or ban skin by skin. A
-    // plain link, no dropdown - there's one way in, the roster.
-    to: '/champions',
-    label: 'Champions',
-    blurb: 'Every champion and their wardrobe. Star and ban skin by skin.',
-    icon: faUsers,
+    // The personal door: the tier list your battles build, your voting record.
+    // Account/sign-in stay in the avatar menu. Guest-capable, so even a
+    // signed-out visitor has a Mirror (which makes it the sign-up pitch).
+    to: '/profile',
+    label: 'Mirror',
+    blurb: 'The tier list your battles build, plus your record.',
+    icon: faScaleUnbalanced,
     search:
-      'catalog browse champions roster splash art collection wardrobe skins',
+      'profile mirror tier list taste my votes stars bans record stats history you',
+    children: [YOUR_TIER_LIST, MY_VOTES],
   },
 ]
 
-// Secondary pages: real destinations that aren't one of the three doors.
-// They live in the footer, the command palette, and the sitemap - never in
-// the navbar (the doors stay three).
+// ─── Footer columns - the full sitemap, curated by intent ───────────────────
+// Rendered by Footer.tsx. The Explore column also gets a Search button (a ⌘K
+// action, not a page), appended in the component.
+
+export const FOOTER_COLUMNS: { title: string; pages: SitePage[] }[] = [
+  {
+    title: 'Play',
+    pages: [HEAD_TO_HEAD, TIER_DROP, SPLASHDLE, PRICE_POINT, CHROMA_VISION],
+  },
+  {
+    title: 'Rankings',
+    pages: [ALL_SKINS, DROUGHT, LEADERBOARDS, HOW_RANKINGS_WORK],
+  },
+  { title: 'Explore', pages: [CHAMPIONS] },
+  { title: 'Mirror', pages: [YOUR_TIER_LIST, MY_VOTES, ACCOUNT] },
+  // Filled from SECONDARY_PAGES below so the palette and footer never drift.
+  { title: 'More', pages: [] },
+]
+
+// Secondary pages: real destinations that aren't one of the three doors. They
+// live in the footer's "More" column, the command palette, and the sitemap -
+// never in the navbar.
 export const SECONDARY_PAGES: SitePage[] = [
   {
     to: '/roadmap',
     label: 'Roadmap',
     blurb: 'What is live, what is next, and the milestones that unlock it.',
     icon: faRoad,
-    search: 'roadmap upcoming future plans skin cup hot takes milestones progress eras',
+    search:
+      'roadmap upcoming future plans skin cup hot takes milestones progress eras wardrobe gauntlet',
   },
   {
     to: '/releases',
@@ -226,13 +269,6 @@ export const SECONDARY_PAGES: SitePage[] = [
     blurb: 'What just shipped, in plain language.',
     icon: faRocket,
     search: 'releases changelog updates news whats new patch notes shipped',
-  },
-  {
-    to: '/rankings/elo',
-    label: 'How Rankings Work',
-    blurb: 'The rating system behind the lists, explained for humans.',
-    icon: faChartLine,
-    search: 'elo rating explainer how it works bradley terry calibrating uncertainty mmr math',
   },
   {
     to: '/privacy',
@@ -249,35 +285,41 @@ export const SECONDARY_PAGES: SitePage[] = [
     search: 'terms of use service legal rules riot disclaimer',
   },
 ]
+FOOTER_COLUMNS[FOOTER_COLUMNS.length - 1].pages = SECONDARY_PAGES
 
-// Flat, deduped list of every navigable page - powers the command palette.
+// Flat, deduped list of every navigable page - powers the command palette and
+// the sitemap. Includes pages that aren't in the navbar (Champions, the deeper
+// rankings views, Awards) so Search and crawlers still reach them.
 export function allSitePages(): SitePage[] {
   const seen = new Set<string>()
   const out: SitePage[] = []
-  for (const p of [HOME, ...SITE_SECTIONS, PROFILE, ...SECONDARY_PAGES]) {
-    if (!seen.has(p.to)) {
-      seen.add(p.to)
-      out.push(p)
-    }
-    if ('children' in p) {
-      for (const c of (p as SiteSection).children ?? []) {
-        if (seen.has(c.to)) continue
-        seen.add(c.to)
-        out.push(c)
-      }
-    }
+  const push = (p: SitePage) => {
+    if (seen.has(p.to)) return
+    seen.add(p.to)
+    out.push(p)
   }
+  push(HOME)
+  for (const s of SITE_SECTIONS) {
+    push(s)
+    for (const c of s.children ?? []) push(c)
+  }
+  push(CHAMPIONS)
+  for (const p of [ALL_SKINS, DROUGHT, LEADERBOARDS, HOW_RANKINGS_WORK, AWARDS]) {
+    push(p)
+  }
+  for (const p of SECONDARY_PAGES) push(p)
   return out
 }
 
-// The curated short list shown before the user types anything.
+// The curated short list shown before the user types anything. Champions left
+// the navbar, so it earns a spot here to stay one keystroke away.
 export function quickNavPages(): SitePage[] {
-  return [HOME, ...SITE_SECTIONS, PROFILE]
+  return [HOME, ...SITE_SECTIONS, CHAMPIONS]
 }
 
 // Public, crawlable paths for /sitemap.xml (profile is personal - excluded).
 export function indexablePaths(): string[] {
   return allSitePages()
     .map((p) => p.to)
-    .filter((to) => to !== PROFILE.to)
+    .filter((to) => to !== '/profile')
 }
