@@ -19,6 +19,7 @@ import {
   faHourglassHalf,
   faHouse,
   faImage,
+  faLayerGroup,
   faListOl,
   faPalette,
   faRankingStar,
@@ -104,7 +105,8 @@ export const SITE_SECTIONS: SiteSection[] = [
     icon: faShuffle,
     // Carries the head-to-head terms too: the palette dedupes the child that
     // points at this same path, so its keywords must live here.
-    search: 'play quick battle versus head to head 1v1 swipe endless vote',
+    search:
+      'play quick battle versus head to head 1v1 swipe endless vote tier list',
     accent: true,
     children: [
       {
@@ -114,6 +116,13 @@ export const SITE_SECTIONS: SiteSection[] = [
         icon: faShuffle,
         search: 'versus quick battle head to head 1v1 swipe endless vs',
         hero: true,
+      },
+      {
+        to: '/battle/tiers',
+        label: 'Tier List',
+        blurb: "Rank a champion's skins S to D - dozens of verdicts in one go.",
+        icon: faLayerGroup,
+        search: 'tier list rank s a b c d champion skins drag tierlist',
       },
       {
         to: '/battle/splashdle',
