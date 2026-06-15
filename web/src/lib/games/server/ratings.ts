@@ -32,6 +32,17 @@ const K_MAX = 64
 // the floor - roughly ±90 after 25 full-weight battles.
 const UNCERTAINTY_DECAY = 0.1
 
+// Time-based re-inflation of uncertainty (Glicko's "RD grows during periods of
+// inactivity"): a settled skin's confidence should widen as it sits unbattled,
+// so the matchmaker eventually revisits it and the rankings keep breathing as
+// the voter pool changes underneath them. c² is set so a fully-settled skin
+// (±60) drifts back to the fresh band (±350) after RE_INFLATE_FULL_DAYS of
+// total inactivity; partial idleness widens proportionally (sqrt law).
+const RE_INFLATE_FULL_DAYS = 180
+const RE_INFLATE_C2 =
+  (START_UNCERTAINTY ** 2 - MIN_UNCERTAINTY ** 2) / RE_INFLATE_FULL_DAYS
+const DAY_MS = 24 * 60 * 60 * 1000
+
 // Personal ratings are sparse by nature (most skins are seen a handful of
 // times per user), so a high fixed K converges in a few picks.
 const K_PERSONAL = 48
@@ -52,6 +63,7 @@ export interface SkinRating {
   uncertainty: number
   battles: number
   wins: number
+  lastBattleAt: string | null
 }
 
 const FRESH: SkinRating = {
@@ -59,12 +71,30 @@ const FRESH: SkinRating = {
   uncertainty: START_UNCERTAINTY,
   battles: 0,
   wins: 0,
+  lastBattleAt: null,
+}
+
+// Uncertainty widened for time elapsed since a skin's last real battle (Glicko:
+// RD' = min(START, √(RD² + c²·Δt_days))). Monotonic, capped at the fresh band.
+// A skin that has never fought (lastBattleAt null) is already at START.
+export function inflateUncertainty(
+  uncertainty: number,
+  lastBattleAt: string | null,
+  now: number = Date.now(),
+): number {
+  if (!lastBattleAt) return uncertainty
+  const days = (now - Date.parse(lastBattleAt)) / DAY_MS
+  if (!(days > 0)) return uncertainty
+  return Math.min(
+    START_UNCERTAINTY,
+    Math.sqrt(uncertainty ** 2 + RE_INFLATE_C2 * days),
+  )
 }
 
 export function getSkinRating(db: DatabaseSync, skinId: string): SkinRating {
   const row = db
     .prepare(
-      'SELECT rating, uncertainty, battles, wins FROM skin_ratings WHERE skin_id = ?',
+      'SELECT rating, uncertainty, battles, wins, last_battle_at AS lastBattleAt FROM skin_ratings WHERE skin_id = ?',
     )
     .get(skinId) as unknown as SkinRating | undefined
   return row ?? { ...FRESH }
@@ -72,15 +102,24 @@ export function getSkinRating(db: DatabaseSync, skinId: string): SkinRating {
 
 function putSkinRating(db: DatabaseSync, skinId: string, r: SkinRating): void {
   db.prepare(
-    `INSERT INTO skin_ratings (skin_id, rating, uncertainty, battles, wins, updated_at)
-     VALUES (?, ?, ?, ?, ?, ?)
+    `INSERT INTO skin_ratings (skin_id, rating, uncertainty, battles, wins, updated_at, last_battle_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?)
      ON CONFLICT (skin_id) DO UPDATE SET
        rating = excluded.rating,
        uncertainty = excluded.uncertainty,
        battles = excluded.battles,
        wins = excluded.wins,
-       updated_at = excluded.updated_at`,
-  ).run(skinId, r.rating, r.uncertainty, r.battles, r.wins, new Date().toISOString())
+       updated_at = excluded.updated_at,
+       last_battle_at = excluded.last_battle_at`,
+  ).run(
+    skinId,
+    r.rating,
+    r.uncertainty,
+    r.battles,
+    r.wins,
+    new Date().toISOString(),
+    r.lastBattleAt,
+  )
 }
 
 export function expectedScore(ra: number, rb: number): number {
@@ -126,21 +165,32 @@ export function applyLiveUpdate(
   const winnerBefore = { ...w }
   const loserBefore = { ...l }
 
+  // Re-inflate for idle time before this battle (Glicko opens a new rating
+  // period): an idled skin returns less certain, so it moves at a larger K and
+  // its decay starts from the widened value - then persists, so the widening
+  // sticks instead of being a read-only overlay.
+  const nowMs = Date.now()
+  const wUnc = inflateUncertainty(w.uncertainty, w.lastBattleAt, nowMs)
+  const lUnc = inflateUncertainty(l.uncertainty, l.lastBattleAt, nowMs)
+  const nowIso = new Date(nowMs).toISOString()
+
   const eWin = expectedScore(w.rating, l.rating)
-  const winnerDelta = kFor(w.uncertainty) * weight * (1 - eWin)
-  const loserDelta = kFor(l.uncertainty) * weight * (0 - (1 - eWin))
+  const winnerDelta = kFor(wUnc) * weight * (1 - eWin)
+  const loserDelta = kFor(lUnc) * weight * (0 - (1 - eWin))
 
   const winner: SkinRating = {
     rating: w.rating + winnerDelta,
-    uncertainty: decayUncertainty(w.uncertainty, weight),
+    uncertainty: decayUncertainty(wUnc, weight),
     battles: w.battles + 1,
     wins: w.wins + 1,
+    lastBattleAt: nowIso,
   }
   const loser: SkinRating = {
     rating: l.rating + loserDelta,
-    uncertainty: decayUncertainty(l.uncertainty, weight),
+    uncertainty: decayUncertainty(lUnc, weight),
     battles: l.battles + 1,
     wins: l.wins,
+    lastBattleAt: nowIso,
   }
   putSkinRating(db, winnerId, winner)
   putSkinRating(db, loserId, loser)
@@ -330,20 +380,29 @@ export function runRefit(db: DatabaseSync): RefitSummary {
   // time - this is what makes guest→member conversion retroactive.
   const rows = db
     .prepare(
-      `SELECT e.payload AS payload, u.logto_sub AS logtoSub
+      `SELECT e.payload AS payload, u.logto_sub AS logtoSub, e.created_at AS createdAt
        FROM game_events e
        LEFT JOIN game_users u ON u.id = e.user_id
        WHERE e.game = 'quick-battle' AND e.type = 'battle_voted'`,
     )
-    .all() as unknown as { payload: string; logtoSub: string | null }[]
+    .all() as unknown as {
+    payload: string
+    logtoSub: string | null
+    createdAt: string
+  }[]
 
   const wins = new Map<string, number>() // weighted win totals
   const games = new Map<string, number>() // weighted match totals
   const rawBattles = new Map<string, number>()
   const rawWins = new Map<string, number>()
+  const lastAt = new Map<string, string>() // skin → most-recent battle ISO time
   const pairs = new Map<string, number>() // "lo|hi" → weighted match count
   const bump = (m: Map<string, number>, k: string, v: number) =>
     m.set(k, (m.get(k) ?? 0) + v)
+  const seen = (k: string, ts: string) => {
+    const cur = lastAt.get(k)
+    if (!cur || ts > cur) lastAt.set(k, ts) // ISO strings sort chronologically
+  }
 
   for (const row of rows) {
     const p = JSON.parse(row.payload) as { winnerId: string; loserId: string }
@@ -354,6 +413,8 @@ export function runRefit(db: DatabaseSync): RefitSummary {
     bump(rawBattles, p.winnerId, 1)
     bump(rawBattles, p.loserId, 1)
     bump(rawWins, p.winnerId, 1)
+    seen(p.winnerId, row.createdAt)
+    seen(p.loserId, row.createdAt)
     const key =
       p.winnerId < p.loserId
         ? `${p.winnerId}|${p.loserId}`
@@ -409,6 +470,7 @@ export function runRefit(db: DatabaseSync): RefitSummary {
         ),
         battles: rawBattles.get(id) ?? 0,
         wins: rawWins.get(id) ?? 0,
+        lastBattleAt: lastAt.get(id) ?? null,
       })
     }
     setMeta(db, 'refit_at', new Date().toISOString())
