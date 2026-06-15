@@ -13,19 +13,28 @@ import {
 } from '~/components/games/GuessKit'
 import {
   fetchChromaVision,
+  fetchDailyHub,
   fetchSplashdleOptions,
   submitChromaGuess,
 } from '~/lib/games/serverFns'
 import { guestRestoreToken, rememberGuestToken } from '~/lib/games/client'
 import { ogMeta } from '~/lib/games/ogMeta'
+import TodayStrip from '~/components/games/TodayStrip'
 import type { ChromaVisionState, GuessOption } from '~/lib/games/types'
 
 export const Route = createFileRoute('/battle/chroma-vision')({
   // Data loads BEFORE the route renders (SSR on first visit, prefetched on
   // navigation), and the mosaic ships inside the payload as a data URL -
-  // the page arrives complete in one paint, no loading states.
-  loader: () =>
-    fetchChromaVision({ data: { restoreToken: guestRestoreToken() } }),
+  // the page arrives complete in one paint, no loading states. The modes
+  // strip loads alongside so it's part of the same first paint.
+  loader: async () => {
+    const restoreToken = guestRestoreToken()
+    const [state, hub] = await Promise.all([
+      fetchChromaVision({ data: { restoreToken } }),
+      fetchDailyHub({ data: { restoreToken } }),
+    ])
+    return { state, hub }
+  },
   head: () => ({
     meta: [
       { title: 'Chroma Vision · Skin Battle' },
@@ -54,7 +63,7 @@ export const Route = createFileRoute('/battle/chroma-vision')({
 })
 
 function ChromaVisionPage() {
-  const initial = Route.useLoaderData()
+  const { state: initial, hub } = Route.useLoaderData()
   const posthog = usePostHog()
   const [state, setState] = useState<ChromaVisionState>(initial)
   const [options, setOptions] = useState<GuessOption[]>([])
@@ -234,6 +243,8 @@ function ChromaVisionPage() {
           </>
         )}
       </div>
+
+      <TodayStrip hub={hub} current="chroma-vision" />
     </div>
   )
 }

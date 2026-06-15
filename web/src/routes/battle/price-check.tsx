@@ -11,15 +11,28 @@ import { usePostHog } from 'posthog-js/react'
 import ErrorState from '~/components/ErrorState'
 import { toast } from '~/components/Toaster'
 import { btnPrimarySm, btnSecondarySm } from '~/lib/ui'
-import { fetchPriceCheck, submitPriceGuess } from '~/lib/games/serverFns'
+import {
+  fetchDailyHub,
+  fetchPriceCheck,
+  submitPriceGuess,
+} from '~/lib/games/serverFns'
 import { guestRestoreToken, rememberGuestToken } from '~/lib/games/client'
 import { ogMeta } from '~/lib/games/ogMeta'
+import TodayStrip from '~/components/games/TodayStrip'
 import type { PriceCheckState, PriceRoundResult } from '~/lib/games/types'
 
 export const Route = createFileRoute('/battle/price-check')({
   // Data loads BEFORE the route renders (SSR on first visit, prefetched on
-  // navigation) - the page arrives complete, no loading states.
-  loader: () => fetchPriceCheck({ data: { restoreToken: guestRestoreToken() } }),
+  // navigation) - the page arrives complete, no loading states. The modes
+  // strip loads alongside so it's part of the same first paint.
+  loader: async () => {
+    const restoreToken = guestRestoreToken()
+    const [state, hub] = await Promise.all([
+      fetchPriceCheck({ data: { restoreToken } }),
+      fetchDailyHub({ data: { restoreToken } }),
+    ])
+    return { state, hub }
+  },
   head: () => ({
     meta: [
       { title: 'Price Check · Skin Battle' },
@@ -145,7 +158,7 @@ function FeedbackBar({
 // ─── page ───────────────────────────────────────────────────────────────────
 
 function PriceCheckPage() {
-  const initial = Route.useLoaderData()
+  const { state: initial, hub } = Route.useLoaderData()
   const posthog = usePostHog()
   const [state, setState] = useState<PriceCheckState>(initial)
   const busyRef = useRef(false)
@@ -306,6 +319,8 @@ function PriceCheckPage() {
           </span>
         )}
       </div>
+
+      <TodayStrip hub={hub} current="price-check" />
     </div>
   )
 }

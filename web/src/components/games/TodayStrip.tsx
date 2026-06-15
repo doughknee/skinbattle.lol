@@ -1,10 +1,16 @@
-import { useEffect, useState, type CSSProperties } from 'react'
+import {
+  useEffect,
+  useState,
+  type CSSProperties,
+  type ReactNode,
+} from 'react'
 import { Link } from '@tanstack/react-router'
 import { AnimatedNumber } from './AnimatedNumber'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import type { IconDefinition } from '@fortawesome/fontawesome-svg-core'
 import {
   faArrowRight,
+  faBolt,
   faCheck,
   faCoins,
   faFire,
@@ -13,9 +19,14 @@ import {
 } from '@fortawesome/free-solid-svg-icons'
 import type { DailyHubState, HubGame } from '~/lib/games/types'
 
-// The daily-challenges strip that lives below the Quick Battle arena on
-// /battle - the old games hub, compacted. Battle is the door; this is the
-// "also today" shelf: the three daily puzzles.
+// The "more ways to play" strip that lives at the bottom of every game page -
+// the old games hub, compacted into a mode switcher. Head-to-Head (endless)
+// leads as the flagship; the three daily puzzles follow. Whatever page the
+// strip is on, that mode shows a quiet "You're here" marker instead of a
+// link to itself, so the row reads the same everywhere.
+
+// Every mode the strip can show; `current` names the one we're on (if any).
+type ModeId = 'head-to-head' | HubGame['id']
 
 // Per-game card copy. Win/loss chip labels differ: Splashdle is
 // guess-counted, Price Check is score-counted.
@@ -54,6 +65,169 @@ const GAME_CARDS: Record<
     wonLabel: (g) => `Solved ${g.guessesUsed}/${g.maxGuesses}`,
     lostLabel: 'Out of guesses',
   },
+}
+
+// ── Shared card shell ─────────────────────────────────────────────────────
+// One banner for every mode, so an endless card and a daily card line up
+// structurally even though their right-hand content differs. `tone` drives
+// the loudness; 'current' makes it a flat, non-link "you're here" marker.
+type Tone = 'flagship' | 'fresh' | 'active' | 'done' | 'current'
+
+function ModeCard({
+  to,
+  icon,
+  name,
+  blurb,
+  index,
+  tone,
+  right,
+  badge,
+}: {
+  to: string
+  icon: IconDefinition
+  name: string
+  blurb: string
+  index: number
+  tone: Tone
+  right: ReactNode
+  badge?: ReactNode
+}) {
+  const lit = tone === 'flagship' || tone === 'fresh' || tone === 'active'
+  // Ember bed only on the always-open, untouched cards - the "come play me"
+  // energy, kept off in-progress/done/current so the eye lands on what's open.
+  const embers = tone === 'flagship' || tone === 'fresh'
+  const shell =
+    tone === 'flagship'
+      ? 'card-sheen-host battle-idle border-l-4 border-l-gold5 bg-hextech-black/50 outline-gold2/50 hover:-translate-y-0.5 hover:bg-hextech-black/60 hover:outline-gold2 hover:shadow-glow'
+      : tone === 'fresh'
+        ? 'card-sheen-host battle-idle border-l-2 border-l-gold5 bg-hextech-black/40 outline-gold2/40 hover:-translate-y-0.5 hover:bg-hextech-black/55 hover:outline-gold2 hover:shadow-glow'
+        : tone === 'active'
+          ? 'card-sheen-host border-l-2 border-l-blue3 bg-hextech-black/40 outline-blue3/40 hover:-translate-y-0.5 hover:outline-blue3 hover:shadow-glow'
+          : tone === 'current'
+            ? 'border-l-2 border-l-icon/30 bg-hextech-black/30 outline-icon/15'
+            : 'bg-hextech-black/20 outline-icon/15'
+
+  const body = (
+    <>
+      {embers && (
+        // Offset the whole ember bed per card so two or three open cards don't
+        // rise in lockstep - negative net delays start each mid-cycle.
+        <span
+          className="battle-embers"
+          aria-hidden
+          style={
+            { '--ember-card-delay': `${0.5 + index * 1.2}s` } as CSSProperties
+          }
+        >
+          <i />
+          <i />
+          <i />
+          <i />
+          <i />
+          <i />
+        </span>
+      )}
+      {lit && <span className="card-sheen" aria-hidden />}
+      <div
+        className={`relative flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-hextech-black/60 outline -outline-offset-2 ${
+          lit ? 'outline-gold5/60' : 'outline-icon/25'
+        }`}
+      >
+        <FontAwesomeIcon
+          icon={icon}
+          className={`h-6 ${lit ? 'text-gold2' : 'text-grey1'}`}
+        />
+        {badge}
+      </div>
+      <div className="relative min-w-0 flex-1">
+        <h3
+          className={`font-serif text-xl font-bold transition duration-150 md:text-2xl ${
+            lit ? 'text-gold1 group-hover:text-gold2' : 'text-grey1'
+          }`}
+        >
+          {name}
+        </h3>
+        <p className="truncate text-sm text-grey1">{blurb}</p>
+      </div>
+      <div className="relative flex shrink-0 flex-col items-end gap-2 text-right">
+        {right}
+      </div>
+    </>
+  )
+
+  const base =
+    'group relative flex items-center gap-4 overflow-hidden p-5 outline -outline-offset-2 transition duration-200'
+
+  // "You're here": no link to the page we're already on, just a dim marker.
+  if (tone === 'current') {
+    return (
+      <div className={`${base} ${shell} opacity-80`} aria-current="page">
+        {body}
+      </div>
+    )
+  }
+  // exact match so the Head-to-Head card (to="/battle") isn't marked active on
+  // the /battle/* daily sub-routes - only the real current card says so.
+  return (
+    <Link to={to} activeOptions={{ exact: true }} className={`${base} ${shell}`}>
+      {body}
+    </Link>
+  )
+}
+
+// The marker shown on whichever card is the page you're currently on.
+function HereChip() {
+  return (
+    <span className="inline-flex items-center gap-1.5 bg-hextech-black/60 px-2.5 py-1 text-xs font-bold text-grey1 outline outline-icon/30 -outline-offset-1">
+      <span className="h-1.5 w-1.5 rounded-full bg-gold2" aria-hidden />
+      You're here
+    </span>
+  )
+}
+
+// ── Head-to-Head (endless) ────────────────────────────────────────────────
+// Not a daily: no streak, no countdown, never "done". Its right side carries
+// social-proof volume + a persistent Play CTA instead.
+function HeadToHeadCard({
+  quickBattle,
+  index,
+  current,
+}: {
+  quickBattle: DailyHubState['quickBattle']
+  index: number
+  current: boolean
+}) {
+  return (
+    <ModeCard
+      to="/battle"
+      icon={faBolt}
+      name="Head-to-Head"
+      blurb="Two skins, one pick. Endless."
+      index={index}
+      tone={current ? 'current' : 'flagship'}
+      right={
+        current ? (
+          <HereChip />
+        ) : (
+          <>
+            <p className="flex items-center gap-1.5 text-sm font-bold text-gold1">
+              <FontAwesomeIcon icon={faBolt} className="h-3.5 text-gold2" />
+              {quickBattle.communityBattles > 0
+                ? `${quickBattle.communityBattles.toLocaleString('en-US')} battles & counting`
+                : 'Quick, endless, no signup'}
+            </p>
+            <span className="inline-flex items-center gap-2 bg-gold5/30 px-3 py-1.5 text-sm font-bold text-gold1 outline outline-gold2 -outline-offset-1 transition duration-150 group-hover:bg-gold5/45">
+              Play
+              <FontAwesomeIcon
+                icon={faArrowRight}
+                className="h-3.5 transition-transform duration-150 group-hover:translate-x-0.5"
+              />
+            </span>
+          </>
+        )
+      }
+    />
+  )
 }
 
 // The streak hook - the honest motivation line. "Keep your N-day streak alive"
@@ -156,80 +330,57 @@ function ActionChip({
   }
 }
 
-// Full-width banner; loudness driven by status. A fresh daily is a lit,
-// ember-bedded card that rakes gold on hover and lifts; one in progress is a
-// warm blue "resume"; a finished one drops to a flat, glow-less receipt (and is
-// sorted to the bottom by the strip). Each gets room to breathe in one column.
-function DailyCard({ game, index }: { game: HubGame; index: number }) {
+function DailyCard({
+  game,
+  index,
+  current,
+}: {
+  game: HubGame
+  index: number
+  current: boolean
+}) {
   const card = GAME_CARDS[game.id]
   const done = game.status === 'won' || game.status === 'lost'
   const won = game.status === 'won'
-  const fresh = game.status === 'not_started'
-  const shell = fresh
-    ? 'card-sheen-host battle-idle border-l-2 border-l-gold5 bg-hextech-black/40 outline-gold2/40 hover:-translate-y-0.5 hover:bg-hextech-black/55 hover:outline-gold2 hover:shadow-glow'
-    : game.status === 'in_progress'
-      ? 'card-sheen-host border-l-2 border-l-blue3 bg-hextech-black/40 outline-blue3/40 hover:-translate-y-0.5 hover:outline-blue3 hover:shadow-glow'
-      : 'bg-hextech-black/20 outline-icon/15'
-  return (
-    <Link
-      to={card.to}
-      className={`group relative flex items-center gap-4 overflow-hidden p-5 outline -outline-offset-2 transition duration-200 ${shell}`}
-    >
-      {/* Always-on ember bed only on fresh dailies - the "come play me" energy,
-          kept off in-progress/done so the eye lands on what's untouched. */}
-      {fresh && (
-        // Offset the whole ember bed per card so two or three open dailies
-        // don't rise in lockstep - negative net delays start each mid-cycle.
-        <span
-          className="battle-embers"
-          aria-hidden
-          style={{ '--ember-card-delay': `${0.5 + index * 1.2}s` } as CSSProperties}
-        >
-          <i />
-          <i />
-          <i />
-          <i />
-          <i />
-          <i />
-        </span>
-      )}
-      {!done && <span className="card-sheen" aria-hidden />}
-      <div
-        className={`relative flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-hextech-black/60 outline -outline-offset-2 ${
-          done ? 'outline-icon/25' : 'outline-gold5/60'
+  const tone: Tone = current
+    ? 'current'
+    : game.status === 'not_started'
+      ? 'fresh'
+      : game.status === 'in_progress'
+        ? 'active'
+        : 'done'
+  // Unmistakable "you finished today's" mark - gold for a win, muted for a
+  // loss (still done, just not a win). Hidden on the "you're here" card.
+  const badge =
+    done && !current ? (
+      <span
+        className={`absolute -bottom-1 -right-1 flex h-6 w-6 items-center justify-center rounded-full bg-hextech-black outline outline-2 -outline-offset-1 ${
+          won ? 'text-gold1 outline-gold2' : 'text-grey1 outline-icon/40'
         }`}
       >
-        <FontAwesomeIcon
-          icon={card.icon}
-          className={`h-6 ${done ? 'text-grey1' : 'text-gold2'}`}
-        />
-        {/* Unmistakable "you finished today's" mark on completed cards - gold
-            for a win, muted for a loss (still done, just not a win). */}
-        {done && (
-          <span
-            className={`absolute -bottom-1 -right-1 flex h-6 w-6 items-center justify-center rounded-full bg-hextech-black outline outline-2 -outline-offset-1 ${
-              won ? 'text-gold1 outline-gold2' : 'text-grey1 outline-icon/40'
-            }`}
-          >
-            <FontAwesomeIcon icon={faCheck} className="h-3" />
-          </span>
-        )}
-      </div>
-      <div className="relative min-w-0 flex-1">
-        <h3
-          className={`font-serif text-xl font-bold transition duration-150 md:text-2xl ${
-            done ? 'text-grey1' : 'text-gold1 group-hover:text-gold2'
-          }`}
-        >
-          {card.name}
-        </h3>
-        <p className="truncate text-sm text-grey1">{card.blurb}</p>
-      </div>
-      <div className="relative flex shrink-0 flex-col items-end gap-2 text-right">
-        <StreakHook game={game} />
-        <ActionChip game={game} card={card} />
-      </div>
-    </Link>
+        <FontAwesomeIcon icon={faCheck} className="h-3" />
+      </span>
+    ) : null
+  return (
+    <ModeCard
+      to={card.to}
+      icon={card.icon}
+      name={card.name}
+      blurb={card.blurb}
+      index={index}
+      tone={tone}
+      badge={badge}
+      right={
+        current ? (
+          <HereChip />
+        ) : (
+          <>
+            <StreakHook game={game} />
+            <ActionChip game={game} card={card} />
+          </>
+        )
+      }
+    />
   )
 }
 
@@ -275,7 +426,13 @@ function Countdown() {
   )
 }
 
-export default function TodayStrip({ hub }: { hub: DailyHubState }) {
+export default function TodayStrip({
+  hub,
+  current,
+}: {
+  hub: DailyHubState
+  current?: ModeId
+}) {
   const done = hub.games.filter(
     (g) => g.status === 'won' || g.status === 'lost',
   ).length
@@ -292,7 +449,7 @@ export default function TodayStrip({ hub }: { hub: DailyHubState }) {
     <section className="mt-16">
       <div className="mb-5 flex flex-wrap items-center justify-between gap-x-4 gap-y-1">
         <h2 className="font-serif text-2xl font-bold text-gold2">
-          Today's battles
+          More ways to play
         </h2>
         <p className="flex items-center gap-2 text-sm font-bold text-grey1">
           {done > 0 && (
@@ -305,13 +462,24 @@ export default function TodayStrip({ hub }: { hub: DailyHubState }) {
               </span>
             </>
           )}
-          <span>Next puzzles in</span>
+          <span>Daily puzzles reset in</span>
           <Countdown />
         </p>
       </div>
       <div className="stagger flex flex-col gap-3">
+        {/* Flagship first: the endless mode leads, the dailies follow. */}
+        <HeadToHeadCard
+          quickBattle={hub.quickBattle}
+          index={0}
+          current={current === 'head-to-head'}
+        />
         {orderedGames.map((g, i) => (
-          <DailyCard key={g.id} game={g} index={i} />
+          <DailyCard
+            key={g.id}
+            game={g}
+            index={i + 1}
+            current={current === g.id}
+          />
         ))}
       </div>
     </section>

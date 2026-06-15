@@ -12,20 +12,29 @@ import {
   ResultPanel,
 } from '~/components/games/GuessKit'
 import {
+  fetchDailyHub,
   fetchSplashdleOptions,
   fetchSplashdleState,
   submitSplashdleGuess,
 } from '~/lib/games/serverFns'
 import { guestRestoreToken, rememberGuestToken } from '~/lib/games/client'
 import { ogMeta } from '~/lib/games/ogMeta'
+import TodayStrip from '~/components/games/TodayStrip'
 import type { GuessOption, SplashdleState } from '~/lib/games/types'
 
 export const Route = createFileRoute('/battle/splashdle')({
   // Data loads BEFORE the route renders (SSR on first visit, prefetched on
   // navigation), and the crop ships inside the payload as a data URL - the
-  // page arrives complete in one paint, so there are no loading states.
-  loader: () =>
-    fetchSplashdleState({ data: { restoreToken: guestRestoreToken() } }),
+  // page arrives complete in one paint, so there are no loading states. The
+  // modes strip loads alongside so it's part of the same first paint.
+  loader: async () => {
+    const restoreToken = guestRestoreToken()
+    const [state, hub] = await Promise.all([
+      fetchSplashdleState({ data: { restoreToken } }),
+      fetchDailyHub({ data: { restoreToken } }),
+    ])
+    return { state, hub }
+  },
   head: () => ({
     meta: [
       { title: 'Splashdle · Skin Battle' },
@@ -54,7 +63,7 @@ export const Route = createFileRoute('/battle/splashdle')({
 })
 
 function SplashdlePage() {
-  const initial = Route.useLoaderData()
+  const { state: initial, hub } = Route.useLoaderData()
   const posthog = usePostHog()
   const [state, setState] = useState<SplashdleState>(initial)
   const [options, setOptions] = useState<GuessOption[]>([])
@@ -235,6 +244,8 @@ function SplashdlePage() {
           </>
         )}
       </div>
+
+      <TodayStrip hub={hub} current="splashdle" />
     </div>
   )
 }

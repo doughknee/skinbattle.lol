@@ -950,7 +950,7 @@ function BattlePage() {
 
       {/* The rest of the door: today's daily puzzles - the old games hub,
           living under the arena. */}
-      <TodayStrip hub={hub} />
+      <TodayStrip hub={hub} current="head-to-head" />
 
       {/* Preload the next pair's splashes while the current one is on screen
           - by the time it's dealt in, both images are already decoded. A
