@@ -23,7 +23,7 @@ const flattenScopes = (s: TierScopeCatalog): ScopeOption[] => [
   ...s.rarities.map((o) => ({ ...o, axis: 'rarity' })),
 ]
 
-export const Route = createFileRoute('/battle/tiers_/browse')({
+export const Route = createFileRoute('/battle/tier-drop_/browse')({
   loader: async () => ({ feed: await fetchTierFeed({ data: {} }) }),
   head: () => {
     const title = 'Community Tier Lists · Skin Battle'
@@ -33,7 +33,7 @@ export const Route = createFileRoute('/battle/tiers_/browse')({
       meta: [
         { title },
         { name: 'description', content: description },
-        ...ogMeta({ title, description, path: '/battle/tiers/browse', card: 'tier-list' as const }),
+        ...ogMeta({ title, description, path: '/battle/tier-drop/browse', card: 'tier-list' as const }),
       ],
     }
   },
@@ -41,7 +41,7 @@ export const Route = createFileRoute('/battle/tiers_/browse')({
     <ErrorState
       title="Couldn't load tier lists"
       message={error.message}
-      back={{ to: '/battle/tiers', label: 'Back to Tier Drop' }}
+      back={{ to: '/battle/tier-drop', label: 'Back to Tier Drop' }}
     />
   ),
   pendingComponent: () => <TierListSkeleton />,
@@ -86,7 +86,7 @@ function FeedRow({ row }: { row: TierFeedRow }) {
   const tone = AXIS_TONE[row.boardType] ?? AXIS_TONE.champion
   return (
     <Link
-      to="/battle/tiers"
+      to="/battle/tier-drop"
       search={{ set: row.boardId }}
       className="group flex flex-col gap-2 bg-hextech-black/30 p-4 outline outline-icon/15 -outline-offset-1 transition duration-150 hover:bg-hextech-black/50 hover:outline-gold2/50 sm:flex-row sm:items-center"
     >
@@ -232,7 +232,7 @@ function BrowsePage() {
           Battle
         </Link>
         <span className="text-icon/40">/</span>
-        <Link to="/battle/tiers" className="transition-colors hover:text-gold1">
+        <Link to="/battle/tier-drop" className="transition-colors hover:text-gold1">
           Tier Drop
         </Link>
         <span className="text-icon/40">/</span>

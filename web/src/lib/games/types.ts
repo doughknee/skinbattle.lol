@@ -289,7 +289,7 @@ export interface TierScopeCatalog {
   rarities: TierScopeOption[]
 }
 
-// What a shared link (/battle/tiers?s=<id>) resolves to for the recipient.
+// What a shared link (/battle/tier-drop?s=<id>) resolves to for the recipient.
 export interface SharedTierListState {
   found: boolean // false = unknown/expired id (board is then a fresh fallback)
   shareId: string

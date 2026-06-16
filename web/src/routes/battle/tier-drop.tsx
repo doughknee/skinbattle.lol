@@ -7,6 +7,7 @@ import {
   useMemo,
   useRef,
   useState,
+  type PointerEvent as ReactPointerEvent,
   type ReactNode,
 } from 'react'
 import { createPortal } from 'react-dom'
@@ -16,6 +17,7 @@ import {
   LayoutGroup,
   motion,
   useReducedMotion,
+  useSpring,
   type DOMKeyframesDefinition,
 } from 'motion/react'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
@@ -42,7 +44,6 @@ import {
 } from '@fortawesome/free-solid-svg-icons'
 import ErrorState from '~/components/ErrorState'
 import TodayStrip from '~/components/games/TodayStrip'
-import { TierListSkeleton } from '~/components/Skeletons'
 import { toast } from '~/components/Toaster'
 import { openLightbox } from '~/components/Lightbox'
 import { AnimatedNumber } from '~/components/games/AnimatedNumber'
@@ -78,7 +79,7 @@ import type {
   TierScopeOption,
 } from '~/lib/games/types'
 
-export const Route = createFileRoute('/battle/tiers')({
+export const Route = createFileRoute('/battle/tier-drop')({
   validateSearch: (s: Record<string, unknown>): { s?: string; set?: string } => ({
     ...(typeof s.s === 'string' ? { s: s.s } : {}),
     ...(typeof s.set === 'string' ? { set: s.set } : {}),
@@ -118,7 +119,9 @@ export const Route = createFileRoute('/battle/tiers')({
         ...ogMeta({
           title,
           description,
-          path: hasImage ? `/battle/tiers?s=${shared!.shareId}` : '/battle/tiers',
+          path: hasImage
+            ? `/battle/tier-drop?s=${shared!.shareId}`
+            : '/battle/tier-drop',
           ...(hasImage
             ? { imagePath: `/og/tierlist/${shared!.shareId}` }
             : { card: 'tier-list' as const }),
@@ -133,7 +136,6 @@ export const Route = createFileRoute('/battle/tiers')({
       back={{ to: '/battle', label: 'Back to Battle' }}
     />
   ),
-  pendingComponent: () => <TierListSkeleton />,
   component: TierListPage,
 })
 
@@ -316,7 +318,7 @@ function TierBreadcrumb({ current }: { current?: string }) {
       <span className="text-icon/40">/</span>
       {current ? (
         <Link
-          to="/battle/tiers"
+          to="/battle/tier-drop"
           className="transition-colors hover:text-gold1"
         >
           Tier Drop
@@ -381,6 +383,27 @@ function TierListLanding({
     scopes: TierScopeCatalog
   } | null>(null)
 
+  // Pointer-driven 3D tilt for the hero daily card (off under reduced motion).
+  const reduce = useReducedMotion()
+  const dailyRef = useRef<HTMLButtonElement>(null)
+  const tiltX = useSpring(0, { stiffness: 200, damping: 22 })
+  const tiltY = useSpring(0, { stiffness: 200, damping: 22 })
+  const onDailyTilt = useCallback(
+    (e: ReactPointerEvent<HTMLButtonElement>) => {
+      const el = dailyRef.current
+      if (reduce || !el) return
+      const r = el.getBoundingClientRect()
+      const TILT = 6 // degrees — subtle on a wide, short card
+      tiltX.set(TILT * (0.5 - (e.clientY - r.top) / r.height))
+      tiltY.set(TILT * ((e.clientX - r.left) / r.width - 0.5))
+    },
+    [reduce, tiltX, tiltY],
+  )
+  const resetDailyTilt = useCallback(() => {
+    tiltX.set(0)
+    tiltY.set(0)
+  }, [tiltX, tiltY])
+
   const ensureScopes = useCallback(async (): Promise<TierScopeCatalog | null> => {
     if (scopes) return scopes
     setScopesLoading(true)
@@ -399,7 +422,7 @@ function TierListLanding({
   const go = useCallback(
     (boardId: string) => {
       setNavigating(true)
-      void navigate({ to: '/battle/tiers', search: { set: boardId } })
+      void navigate({ to: '/battle/tier-drop', search: { set: boardId } })
     },
     [navigate],
   )
@@ -445,14 +468,26 @@ function TierListLanding({
 
       {/* Today's set — the hero pick */}
       <motion.button
+        ref={dailyRef}
         onClick={() => go(state.board.boardId)}
+        onPointerMove={onDailyTilt}
+        onPointerLeave={resetDailyTilt}
         disabled={navigating}
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.08, duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
-        whileHover={{ scale: 1.01 }}
-        whileTap={{ scale: 0.99 }}
-        className="group relative mb-3 flex min-h-[8.5rem] w-full items-end overflow-hidden bg-hextech-black/60 p-5 text-left disabled:opacity-60"
+        style={
+          reduce
+            ? undefined
+            : { rotateX: tiltX, rotateY: tiltY, transformPerspective: 800 }
+        }
+        whileHover={
+          reduce
+            ? undefined
+            : { scale: 1.01, transition: { duration: 0.18, ease: [0.22, 1, 0.36, 1] } }
+        }
+        whileTap={reduce ? undefined : { scale: 0.99, transition: { duration: 0.08 } }}
+        className="card-sheen-host group relative mb-3 flex min-h-[8.5rem] w-full items-end overflow-hidden bg-hextech-black/60 p-5 text-left will-change-transform disabled:opacity-60"
       >
         {splash && (
           <img
@@ -463,6 +498,7 @@ function TierListLanding({
           />
         )}
         <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-hextech-black via-hextech-black/75 to-hextech-black/20" />
+        <span aria-hidden className="card-sheen" />
         <div className="relative z-10">
           <p
             className={`flex items-center gap-1.5 text-xs font-semibold uppercase tracking-[0.25em] ${done ? 'text-gold1' : 'text-gold2'}`}
@@ -504,8 +540,12 @@ function TierListLanding({
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.16, duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
-          whileHover={{ scale: 1.02 }}
-          whileTap={{ scale: 0.98 }}
+          whileHover={
+            reduce
+              ? undefined
+              : { scale: 1.02, transition: { duration: 0.18, ease: [0.22, 1, 0.36, 1] } }
+          }
+          whileTap={reduce ? undefined : { scale: 0.98, transition: { duration: 0.08 } }}
           className="flex items-center gap-3 bg-hextech-black/40 p-4 text-left outline outline-icon/20 -outline-offset-1 transition-colors hover:outline-gold2/60 disabled:opacity-50"
         >
           <FontAwesomeIcon icon={faLayerGroup} className="h-5 shrink-0 text-gold2" />
@@ -524,8 +564,12 @@ function TierListLanding({
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.22, duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
-          whileHover={{ scale: 1.02 }}
-          whileTap={{ scale: 0.98 }}
+          whileHover={
+            reduce
+              ? undefined
+              : { scale: 1.02, transition: { duration: 0.18, ease: [0.22, 1, 0.36, 1] } }
+          }
+          whileTap={reduce ? undefined : { scale: 0.98, transition: { duration: 0.08 } }}
           className="flex items-center gap-3 bg-hextech-black/40 p-4 text-left outline outline-icon/20 -outline-offset-1 transition-colors hover:outline-gold2/60 disabled:opacity-50"
         >
           <FontAwesomeIcon icon={faDice} className="h-5 shrink-0 text-gold2" />
@@ -548,7 +592,7 @@ function TierListLanding({
           transition={{ delay: 0.3, duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
         >
           <Link
-            to="/battle/tiers/browse"
+            to="/battle/tier-drop/browse"
             className="group inline-flex items-center gap-1.5 text-xs text-grey1/70 transition-colors hover:text-gold1"
           >
             <FontAwesomeIcon icon={faUsers} className="h-3 text-gold2/60" />
@@ -2024,7 +2068,7 @@ function SharePanel({
   }
   const shareLink = run(async () => {
     const id = await mint(linkCache, linkInput)
-    const url = `${origin}/battle/tiers?s=${id}`
+    const url = `${origin}/battle/tier-drop?s=${id}`
     try {
       if (canShare) await navigator.share({ title: 'My tier list', url })
       else {
