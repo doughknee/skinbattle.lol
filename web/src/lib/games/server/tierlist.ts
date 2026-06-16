@@ -60,7 +60,12 @@ const QUESTION = 'which-tier'
 const BOARD_TTL_MS = 60 * 60 * 1000
 const MIN_PLACED = 4 // a submission must place at least this many skins
 const MIN_BOARD = 4 // skip scopes thinner than this (not worth ranking)
-const MAX_BOARD = 15 // cap a served board; keep the most data-hungry skins
+// Cap a served board so it stays rankable. 30 covers every champion's full set
+// (the biggest is ~24 incl. the base skin) while still bounding the huge
+// cross-cutting scopes - a single year or rarity:Epic can be 100+ skins, which
+// is not a tier list anyone finishes. Oversized scopes keep the most data-hungry
+// skins (see buildBoard).
+const MAX_BOARD = 30
 const RESERVE_COOLDOWN_MS = 30 * 24 * 60 * 60 * 1000 // re-serve a done board after this
 const AGREEMENT_MIN = 5 // "% placed it in your tier" gates until this many
 const HOT_TAKE_GAP = 2 // tiers apart from consensus to flag a hot take

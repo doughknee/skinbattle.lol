@@ -6,6 +6,7 @@ import {
   ratingEventCount,
   runRefit,
   START_RATING,
+  TIER_SKIN_CAP,
   tierComparisons,
   tierDownweight,
 } from './ratings'
@@ -96,6 +97,18 @@ describe('applyTierListUpdate', () => {
     // delta = 64 × (1×0.5) × (4 − 2) = 64; undiscounted it would be 128.
     expect(getSkinRating(db, 'a').rating).toBeCloseTo(1564, 4)
     expect(getSkinRating(db, 'e').rating).toBeCloseTo(1436, 4)
+  })
+
+  it('caps one skin\'s swing on a lopsided board (per-skin budget)', () => {
+    const db = makeDb()
+    const bottom = Array.from({ length: 14 }, (_, i) => `b${i}`)
+    applyTierListUpdate(db, 'u1', [['top'], bottom], 1) // 1 over 14, member
+    // Uncapped, the lone top skin would gain ~+256 from a single submission.
+    // Capped at TIER_SKIN_CAP effective comparisons (fresh K=64, ½ expected each)
+    // it gains exactly K_MAX × TIER_SKIN_CAP × 0.5 = 32 × CAP.
+    expect(getSkinRating(db, 'top').rating - START_RATING).toBeCloseTo(32 * TIER_SKIN_CAP, 6)
+    // A bottom skin is in just one comparison → under budget → unchanged.
+    expect(getSkinRating(db, 'b0').rating).toBeLessThan(START_RATING)
   })
 
   it('updates the personal mirror too', () => {

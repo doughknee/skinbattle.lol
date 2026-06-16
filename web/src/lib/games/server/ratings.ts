@@ -318,6 +318,16 @@ export const TIER_ORDER = ['S', 'A', 'B', 'C', 'D'] as const
 // independent losses).
 export const TIER_EFFECTIVE_CAP = 8
 
+// Within one submission, no single skin may absorb more than this many effective
+// comparisons. The board-level downweight caps the TOTAL evidence, but a skin at
+// the extreme of a lopsided board (one S pick over a stack of D's) could still
+// hog most of it - one rater swinging one skin far. A ranking of n items really
+// carries ~n-1 order constraints (~2 per item, its neighbours), so a small
+// per-skin budget is the honest reading. On live data real boards top out ~3.5
+// effective comparisons on a skin, so 3 barely clips today while bounding the
+// future lopsided case (a fresh skin then moves at most ~K_MAX*3*0.5 per list).
+export const TIER_SKIN_CAP = 3
+
 export interface TierComparison {
   winnerId: string
   loserId: string
@@ -393,10 +403,15 @@ export function applyTierListUpdate(
   for (const id of placed) {
     const r = cur.get(id)!
     const unc = inflateUncertainty(r.uncertainty, r.lastBattleAt, nowMs)
-    const delta = kFor(unc) * effW * ((actual.get(id) ?? 0) - (expected.get(id) ?? 0))
-    // Total tightening weight for this skin, clamped so the decay factor stays
-    // positive even on a huge board.
-    const decayWeight = Math.min(effW * (count.get(id) ?? 0), 9)
+    // Per-skin cap: a skin sitting in many of this board's comparisons absorbs at
+    // most TIER_SKIN_CAP effective comparisons, so one lopsided submission can't
+    // swing a single skin out of proportion (board-level dw only caps the total).
+    const c = count.get(id) ?? 0
+    const skinW = effW * c > TIER_SKIN_CAP ? TIER_SKIN_CAP / c : effW
+    const delta = kFor(unc) * skinW * ((actual.get(id) ?? 0) - (expected.get(id) ?? 0))
+    // Tighten uncertainty by the same (capped) evidence, clamped so the decay
+    // factor stays positive even on a huge board.
+    const decayWeight = Math.min(skinW * c, 9)
     putSkinRating(db, id, {
       rating: r.rating + delta,
       uncertainty: decayUncertainty(unc, decayWeight),
