@@ -17,6 +17,20 @@ export interface ReleaseEntry {
 export const RELEASES: ReleaseEntry[] = [
   {
     date: '2026-06-16',
+    title: 'Tier Drop now hands you the whole set',
+    highlights: [
+      "Tier Drop now deals a champion's entire skin set instead of just a slice of it. The biggest wardrobes, Lux, Miss Fortune, Ezreal, all twenty-plus skins, come complete, so you can rank the whole thing in one sitting.",
+      'The daily set card came alive: it tilts toward your cursor in 3D with a sweep of gold light as you move across it.',
+    ],
+    fixes: [
+      'The Tier Drop menu cards now respond the instant you hover them, instead of easing in a beat late.',
+      "The Tier Drop page drops straight into its content on load, instead of flashing a placeholder that didn't match it.",
+      'Tier Drop now lives at skinbattle.lol/battle/tier-drop to match its name. Old links and shared tier-list cards redirect automatically.',
+      'Behind the scenes: a tier list now feeds the live rankings on the same schedule as battles, and no single submission can swing one skin out of proportion, so the rankings stay honest as Tier Drop grows.',
+    ],
+  },
+  {
+    date: '2026-06-16',
     title: 'Daily puzzles now reset at midnight Central',
     highlights: [
       'The daily puzzles, Splashdle, Chroma Vision, and Price Point, now refresh at midnight US Central time instead of midnight UTC. A fresh puzzle lands first thing in the morning for North America instead of mid-afternoon. The countdown on every game points at the new moment, and it follows daylight saving, so midnight always means midnight.',
