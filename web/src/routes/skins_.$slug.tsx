@@ -14,7 +14,7 @@ import JsonLd from '~/components/JsonLd'
 import { btnPrimarySm, btnSecondarySm } from '~/lib/ui'
 import { fetchSkinPage } from '~/lib/games/serverFns'
 import { guestRestoreToken, rememberGuestToken } from '~/lib/games/client'
-import { ogMeta } from '~/lib/games/ogMeta'
+import { canonicalLink, ogMeta } from '~/lib/games/ogMeta'
 import { breadcrumbJsonLd } from '~/lib/games/jsonLd'
 import { robotsMeta, skinIsIndexable } from '~/lib/games/seo'
 import { kebab } from '~/lib/games/slug'
@@ -56,6 +56,9 @@ export const Route = createFileRoute('/skins_/$slug')({
           }),
         ]
       : [{ title: 'Skin · Skin Battle' }],
+    links: loaderData
+      ? [canonicalLink(`/skins/${loaderData.slug}`)]
+      : [],
   }),
   notFoundComponent: () => (
     <ErrorState

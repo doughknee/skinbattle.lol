@@ -10,7 +10,7 @@ import PageHeader from '~/components/PageHeader'
 import ErrorState from '~/components/ErrorState'
 import { btnSecondarySm } from '~/lib/ui'
 import { fetchDrought } from '~/lib/games/serverFns'
-import { ogMeta } from '~/lib/games/ogMeta'
+import { canonicalLink, ogMeta } from '~/lib/games/ogMeta'
 import { createSearcher } from '~/lib/search'
 import type { DroughtRow } from '~/lib/games/types'
 
@@ -34,6 +34,7 @@ export const Route = createFileRoute('/rankings/drought')({
         path: '/rankings/drought',
       }),
     ],
+    links: [canonicalLink('/rankings/drought')],
   }),
   errorComponent: ({ error }) => (
     <ErrorState title="Couldn't load the Drought Index" message={error.message} />

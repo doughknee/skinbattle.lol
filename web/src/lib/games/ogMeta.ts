@@ -43,3 +43,10 @@ export function ogMeta(opts: {
     { name: 'twitter:image', content: image },
   ]
 }
+
+// Canonical <link> for a page's head(). Pairs with og:url (same URL) so the
+// two never drift; pass the same `path` you give ogMeta. Returned shape slots
+// straight into head()'s `links` array.
+export function canonicalLink(path: string): { rel: string; href: string } {
+  return { rel: 'canonical', href: `${ORIGIN}${path}` }
+}

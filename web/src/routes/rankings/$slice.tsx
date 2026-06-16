@@ -15,7 +15,7 @@ import ErrorState from '~/components/ErrorState'
 import JsonLd from '~/components/JsonLd'
 import { btnChip, btnPrimarySm, btnSecondarySm } from '~/lib/ui'
 import { fetchRankings, fetchRankingsIndex } from '~/lib/games/serverFns'
-import { ogMeta } from '~/lib/games/ogMeta'
+import { canonicalLink, ogMeta } from '~/lib/games/ogMeta'
 import { breadcrumbJsonLd, itemListJsonLd } from '~/lib/games/jsonLd'
 import { robotsMeta, sliceIsIndexable } from '~/lib/games/seo'
 import { createSearcher } from '~/lib/search'
@@ -50,6 +50,9 @@ export const Route = createFileRoute('/rankings/$slice')({
           }),
         ]
       : [{ title: 'Rankings · Skin Battle' }],
+    links: loaderData
+      ? [canonicalLink(`/rankings/${loaderData.state.slice}`)]
+      : [],
   }),
   notFoundComponent: () => (
     <ErrorState
