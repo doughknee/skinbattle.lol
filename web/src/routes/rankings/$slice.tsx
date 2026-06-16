@@ -12,9 +12,12 @@ import {
 } from '@fortawesome/free-solid-svg-icons'
 import EmptyState from '~/components/EmptyState'
 import ErrorState from '~/components/ErrorState'
+import JsonLd from '~/components/JsonLd'
 import { btnChip, btnPrimarySm, btnSecondarySm } from '~/lib/ui'
 import { fetchRankings, fetchRankingsIndex } from '~/lib/games/serverFns'
-import { ogMeta } from '~/lib/games/ogMeta'
+import { canonicalLink, ogMeta } from '~/lib/games/ogMeta'
+import { breadcrumbJsonLd, itemListJsonLd } from '~/lib/games/jsonLd'
+import { robotsMeta, sliceIsIndexable } from '~/lib/games/seo'
 import { createSearcher } from '~/lib/search'
 import type { RankingRow, RankingsIndex, SliceLink } from '~/lib/games/types'
 
@@ -37,6 +40,8 @@ export const Route = createFileRoute('/rankings/$slice')({
             name: 'description',
             content: `${loaderData.state.subtitle} ${loaderData.state.ratedCount} of ${loaderData.state.totalCount} rated so far.`,
           },
+          // Keep near-empty slices out of the index until they hold real data.
+          ...robotsMeta(sliceIsIndexable(loaderData.state.ratedCount)),
           ...ogMeta({
             title: `${loaderData.state.title} · Skin Battle`,
             description: loaderData.state.subtitle,
@@ -45,6 +50,9 @@ export const Route = createFileRoute('/rankings/$slice')({
           }),
         ]
       : [{ title: 'Rankings · Skin Battle' }],
+    links: loaderData
+      ? [canonicalLink(`/rankings/${loaderData.state.slice}`)]
+      : [],
   }),
   notFoundComponent: () => (
     <ErrorState
@@ -473,6 +481,78 @@ function SliceBar({
 
 // ─── page ───────────────────────────────────────────────────────────────────
 
+// A crawlable directory of every ranking slice, rendered server-side so search
+// engines (and no-JS users) can walk the whole slice graph from descriptive
+// anchor text. The interactive SliceBar up top is JS-gated - its slice links
+// only exist after a click - so without this the price/line/champion/year
+// slices are orphaned (sitemap-only: no internal links, no anchor signal).
+// Native <details> keeps the ~200 links present in the DOM (Google crawls
+// inside closed <details>) without a wall of text. The group holding the
+// current slice opens by default.
+function SliceDirectory({
+  index,
+  current,
+}: {
+  index: RankingsIndex
+  current: string
+}) {
+  return (
+    <nav
+      aria-label="All rankings"
+      className="mt-12 border-t border-icon/15 pt-6"
+    >
+      <h2 className="mb-3 font-serif text-lg font-bold text-gold1">
+        Explore every ranking
+      </h2>
+      <div className="flex flex-col gap-2">
+        {SLICE_GROUPS.map((g) => {
+          const links = index[g.key]
+          if (!links.length) return null
+          const hasCurrent = links.some((l) => l.slice === current)
+          return (
+            <details
+              key={g.key}
+              open={hasCurrent}
+              className="bg-hextech-black/30 px-4 py-2.5 outline outline-icon/15 -outline-offset-1"
+            >
+              <summary className="cursor-pointer select-none text-sm font-bold text-gold1 marker:text-gold2">
+                {g.name}
+                <span className="ml-1.5 font-normal text-grey1">
+                  {links.length}
+                </span>
+              </summary>
+              <ul className="mt-3 flex flex-wrap gap-1.5">
+                {links.map((link) => {
+                  const active = link.slice === current
+                  return (
+                    <li key={link.slice}>
+                      <Link
+                        to="/rankings/$slice"
+                        params={{ slice: link.slice }}
+                        aria-current={active ? 'page' : undefined}
+                        className={`flex items-center gap-1 px-2 py-1 text-xs outline -outline-offset-1 transition duration-150 ${
+                          active
+                            ? 'bg-gold5/40 text-gold1 outline-gold2'
+                            : 'text-grey1 outline-icon/20 hover:bg-gold5/20 hover:text-gold1 hover:outline-gold2/60'
+                        }`}
+                      >
+                        {link.label}
+                        {link.count > 0 && (
+                          <span className="text-grey1/60">{link.count}</span>
+                        )}
+                      </Link>
+                    </li>
+                  )
+                })}
+              </ul>
+            </details>
+          )
+        })}
+      </div>
+    </nav>
+  )
+}
+
 function RankingSlicePage() {
   const { state, index } = Route.useLoaderData()
 
@@ -521,8 +601,26 @@ function RankingSlicePage() {
   const fullyLoaded =
     remaining <= 0 && extra.slice === state.slice && extra.rows.length > 0
 
+  // Crawlers see the SSR set (state.rows); capped so the markup stays lean.
+  const listItems = state.rows.slice(0, 50).map((r) => ({
+    name: `${r.name} (${r.championName})`,
+    path: `/skins/${r.slug}`,
+  }))
+
   return (
     <div className="container mx-auto max-w-5xl px-6 pt-28 pb-16">
+      <JsonLd
+        data={[
+          breadcrumbJsonLd([
+            { name: 'Home', path: '/' },
+            { name: 'Rankings', path: '/rankings/all' },
+            { name: state.title, path: `/rankings/${state.slice}` },
+          ]),
+          ...(listItems.length
+            ? [itemListJsonLd({ name: state.title, items: listItems })]
+            : []),
+        ]}
+      />
       <header className="animate-fade-up mb-5">
         <p className="mb-2 text-sm font-semibold uppercase tracking-[0.3em] text-gold2">
           Rankings
@@ -655,6 +753,8 @@ function RankingSlicePage() {
           Drought Index
         </Link>
       </div>
+
+      <SliceDirectory index={index} current={state.slice} />
     </div>
   )
 }
