@@ -22,7 +22,7 @@ import type {
 import { appendEvent, getDb } from './db'
 import { allCatalogSkins, ensureCatalog, getMeta, setMeta } from './catalog'
 import { ensureUser, peekUser, type GameUser } from './guests'
-import { utcToday } from './daily'
+import { puzzleDay } from './daily'
 import {
   applyLiveUpdate,
   applyPersonalUpdate,
@@ -373,7 +373,7 @@ function enforceRateLimit(db: DatabaseSync, user: GameUser): void {
         .get(user.id, GAME, ...params) as { c: number }
     ).c
 
-  if (count('AND puzzle_date = ?', [utcToday()]) >= limits.perDay) {
+  if (count('AND puzzle_date = ?', [puzzleDay()]) >= limits.perDay) {
     throw new Error(
       "You've hit today's battle limit. The rankings thank you. Come back tomorrow!",
     )
@@ -398,7 +398,7 @@ export function userBattleCounts(
        FROM game_events
        WHERE user_id = ? AND game = ? AND type = 'battle_voted'`,
     )
-    .get(utcToday(), userId, GAME) as { total: number; today: number | null }
+    .get(puzzleDay(), userId, GAME) as { total: number; today: number | null }
   return { total: row.total, today: row.today ?? 0 }
 }
 
@@ -478,7 +478,7 @@ export async function submitBattleVote(
   burnNonce(db, claim.n)
 
   const weight = user.trustTier === 'member' ? MEMBER_WEIGHT : GUEST_WEIGHT
-  const date = utcToday()
+  const date = puzzleDay()
   const pairKey =
     claim.a < claim.b ? `${claim.a}|${claim.b}` : `${claim.b}|${claim.a}`
 

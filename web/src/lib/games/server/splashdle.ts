@@ -17,7 +17,7 @@ import type {
 } from '../types'
 import { appendEvent, DATA_DIR, getDb } from './db'
 import { skinGuessCounts } from './consensus'
-import { MAX_GUESSES, puzzleNumber, seedFloats, utcToday } from './daily'
+import { MAX_GUESSES, puzzleNumber, seedFloats, puzzleDay } from './daily'
 import { allCatalogSkins, ensureCatalog, getCatalogSkin } from './catalog'
 import { skinSets } from './facts'
 import { ensureUser, peekUser, type GameUser } from './guests'
@@ -270,7 +270,7 @@ export async function splashdleState(
   restoreToken?: string | null,
 ): Promise<SplashdleState> {
   const db = getDb()
-  const date = utcToday()
+  const date = puzzleDay()
   const puzzle = await getOrCreatePuzzle(db, date)
 
   const known = peekUser(db, restoreToken)
@@ -288,7 +288,7 @@ export async function submitSplashdleGuess(
   restoreToken?: string | null,
 ): Promise<SplashdleState> {
   const db = getDb()
-  const date = utcToday()
+  const date = puzzleDay()
   const { user, token } = ensureUser(db, restoreToken)
   const puzzle = await getOrCreatePuzzle(db, date)
 
@@ -394,7 +394,7 @@ export async function splashdleOgInfo(): Promise<{
   crop: string
 }> {
   const db = getDb()
-  const date = utcToday()
+  const date = puzzleDay()
   const puzzle = await getOrCreatePuzzle(db, date)
   return {
     puzzleNumber: puzzleNumber(date),
@@ -422,7 +422,7 @@ export async function dailyHub(
   restoreToken?: string | null,
 ): Promise<DailyHubState> {
   const db = getDb()
-  const date = utcToday()
+  const date = puzzleDay()
   const known = peekUser(db, restoreToken)
   const user = known?.user ?? { id: '', trustTier: 'guest' as const }
   const result = known ? readResult(db, user.id, date) : null

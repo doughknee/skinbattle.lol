@@ -38,7 +38,7 @@ import {
 import { factsFor, PRICE_TIERS } from './facts'
 import { kebab } from '../slug'
 import { ensureUser, peekUser, type GameUser } from './guests'
-import { utcToday } from './daily'
+import { puzzleDay } from './daily'
 import {
   applyTierListUpdate,
   GUEST_WEIGHT,
@@ -481,7 +481,7 @@ function enforceRateLimit(db: DatabaseSync, user: GameUser): void {
         )
         .get(user.id, GAME, ...params) as { c: number }
     ).c
-  if (count('AND puzzle_date = ?', [utcToday()]) >= limits.perDay) {
+  if (count('AND puzzle_date = ?', [puzzleDay()]) >= limits.perDay) {
     throw new Error("You've hit today's tier-list limit. Come back tomorrow!")
   }
   const minuteAgo = new Date(Date.now() - 60_000).toISOString()
@@ -711,7 +711,7 @@ export async function tierListState(
   let daily = false
   if (!scope) {
     const dailyScope = (() => {
-      const id = dailyBoardId(db, utcToday())
+      const id = dailyBoardId(db, puzzleDay())
       return id ? resolveBoard(db, id) : null
     })()
     if (dailyScope) {
@@ -868,7 +868,7 @@ export async function submitTierList(
     appendEvent(db, {
       userId: user.id,
       game: GAME,
-      puzzleDate: utcToday(),
+      puzzleDate: puzzleDay(),
       type: 'tier_submitted',
       payload: {
         boardId: claim.b,

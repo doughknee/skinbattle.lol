@@ -12,7 +12,7 @@ import type { HomeSlide, HomeState } from '../types'
 import { getDb } from './db'
 import { allCatalogSkins, ensureCatalog, type CatalogSkin } from './catalog'
 import { factsFor } from './facts'
-import { seedFloats, utcToday } from './daily'
+import { seedFloats, puzzleDay } from './daily'
 import { getSkinRating, globalRank } from './ratings'
 import { communityBattleCount } from './quickbattle'
 import { droughtIndex } from './insights'
@@ -84,7 +84,7 @@ function pickSlides(db: DatabaseSync, date: string): CatalogSkin[] {
 export async function homeState(): Promise<HomeState> {
   const db = getDb()
   await ensureCatalog(db)
-  const date = utcToday()
+  const date = puzzleDay()
 
   const slides: HomeSlide[] = pickSlides(db, date).map((s) => {
     const r = getSkinRating(db, s.id)

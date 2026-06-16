@@ -9,7 +9,7 @@ import type { DroughtRow, DroughtState } from '../types'
 import { getDb } from './db'
 import { allCatalogSkins, ensureCatalog } from './catalog'
 import { factsFor } from './facts'
-import { utcToday } from './daily'
+import { puzzleDay } from './daily'
 import { skinSlug } from '../slug'
 
 const DAY_MS = 86_400_000
@@ -17,7 +17,7 @@ const DAY_MS = 86_400_000
 export async function droughtIndex(): Promise<DroughtState> {
   const db: DatabaseSync = getDb()
   await ensureCatalog(db)
-  const date = utcToday()
+  const date = puzzleDay()
   const todayMs = Date.parse(`${date}T00:00:00Z`)
 
   interface Acc {

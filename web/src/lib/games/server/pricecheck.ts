@@ -14,7 +14,7 @@ import type { DatabaseSync } from 'node:sqlite'
 import type { PriceCheckState, PriceRoundResult, StreakInfo } from '../types'
 import { appendEvent, getDb } from './db'
 import { tierGuessCount } from './consensus'
-import { puzzleNumber, seedFloats, utcToday } from './daily'
+import { puzzleNumber, seedFloats, puzzleDay } from './daily'
 import { allCatalogSkins, ensureCatalog, type CatalogSkin } from './catalog'
 import { ensureUser, peekUser, type GameUser } from './guests'
 import { getStreak, recordCompletion } from './streaks'
@@ -232,7 +232,7 @@ export async function priceCheckState(
   restoreToken?: string | null,
 ): Promise<PriceCheckState> {
   const db = getDb()
-  const date = utcToday()
+  const date = puzzleDay()
   const puzzle = await getOrCreatePuzzle(db, date)
 
   const known = peekUser(db, restoreToken)
@@ -249,7 +249,7 @@ export async function submitPriceGuess(
   restoreToken?: string | null,
 ): Promise<PriceCheckState> {
   const db = getDb()
-  const date = utcToday()
+  const date = puzzleDay()
   const { user, token } = ensureUser(db, restoreToken)
   const puzzle = await getOrCreatePuzzle(db, date)
 

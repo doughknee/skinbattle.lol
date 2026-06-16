@@ -1,16 +1,16 @@
 // Daily seed system: the same puzzle for everyone, deterministic from the
-// UTC date, resets at midnight UTC.
+// puzzle date, resets at midnight US Central (see dailyTz).
 
 import { createHash } from 'node:crypto'
+
+// The current puzzle date and timezone live in dailyTz (isomorphic, so the
+// reset countdown in client components shares one source of truth).
+export { PUZZLE_TZ, puzzleDay } from '../dailyTz'
 
 export const MAX_GUESSES = 6
 
 // Puzzle #1's date. Counting in days from here gives the share-text number.
 export const SPLASHDLE_EPOCH = '2026-06-11'
-
-export function utcToday(): string {
-  return new Date().toISOString().slice(0, 10)
-}
 
 export function puzzleNumber(date: string, epoch = SPLASHDLE_EPOCH): number {
   const ms = Date.parse(`${date}T00:00:00Z`) - Date.parse(`${epoch}T00:00:00Z`)

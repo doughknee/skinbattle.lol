@@ -17,6 +17,7 @@ import {
 } from '@fortawesome/free-solid-svg-icons'
 import { toast } from '~/components/Toaster'
 import { btnPrimarySm, btnSecondarySm } from '~/lib/ui'
+import { msToNextReset } from '~/lib/games/dailyTz'
 import { skinSlug } from '~/lib/games/slug'
 import { createSearcher, norm } from '~/lib/search'
 import type {
@@ -521,13 +522,7 @@ export function GuessBoard({
 // ─── result panel ───────────────────────────────────────────────────────────
 
 function nextPuzzleCountdown(): string {
-  const now = new Date()
-  const next = Date.UTC(
-    now.getUTCFullYear(),
-    now.getUTCMonth(),
-    now.getUTCDate() + 1,
-  )
-  const mins = Math.max(0, Math.floor((next - now.getTime()) / 60_000))
+  const mins = Math.max(0, Math.floor(msToNextReset(Date.now()) / 60_000))
   return `${Math.floor(mins / 60)}h ${mins % 60}m`
 }
 
