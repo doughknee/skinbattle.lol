@@ -481,6 +481,78 @@ function SliceBar({
 
 // ─── page ───────────────────────────────────────────────────────────────────
 
+// A crawlable directory of every ranking slice, rendered server-side so search
+// engines (and no-JS users) can walk the whole slice graph from descriptive
+// anchor text. The interactive SliceBar up top is JS-gated - its slice links
+// only exist after a click - so without this the price/line/champion/year
+// slices are orphaned (sitemap-only: no internal links, no anchor signal).
+// Native <details> keeps the ~200 links present in the DOM (Google crawls
+// inside closed <details>) without a wall of text. The group holding the
+// current slice opens by default.
+function SliceDirectory({
+  index,
+  current,
+}: {
+  index: RankingsIndex
+  current: string
+}) {
+  return (
+    <nav
+      aria-label="All rankings"
+      className="mt-12 border-t border-icon/15 pt-6"
+    >
+      <h2 className="mb-3 font-serif text-lg font-bold text-gold1">
+        Explore every ranking
+      </h2>
+      <div className="flex flex-col gap-2">
+        {SLICE_GROUPS.map((g) => {
+          const links = index[g.key]
+          if (!links.length) return null
+          const hasCurrent = links.some((l) => l.slice === current)
+          return (
+            <details
+              key={g.key}
+              open={hasCurrent}
+              className="bg-hextech-black/30 px-4 py-2.5 outline outline-icon/15 -outline-offset-1"
+            >
+              <summary className="cursor-pointer select-none text-sm font-bold text-gold1 marker:text-gold2">
+                {g.name}
+                <span className="ml-1.5 font-normal text-grey1">
+                  {links.length}
+                </span>
+              </summary>
+              <ul className="mt-3 flex flex-wrap gap-1.5">
+                {links.map((link) => {
+                  const active = link.slice === current
+                  return (
+                    <li key={link.slice}>
+                      <Link
+                        to="/rankings/$slice"
+                        params={{ slice: link.slice }}
+                        aria-current={active ? 'page' : undefined}
+                        className={`flex items-center gap-1 px-2 py-1 text-xs outline -outline-offset-1 transition duration-150 ${
+                          active
+                            ? 'bg-gold5/40 text-gold1 outline-gold2'
+                            : 'text-grey1 outline-icon/20 hover:bg-gold5/20 hover:text-gold1 hover:outline-gold2/60'
+                        }`}
+                      >
+                        {link.label}
+                        {link.count > 0 && (
+                          <span className="text-grey1/60">{link.count}</span>
+                        )}
+                      </Link>
+                    </li>
+                  )
+                })}
+              </ul>
+            </details>
+          )
+        })}
+      </div>
+    </nav>
+  )
+}
+
 function RankingSlicePage() {
   const { state, index } = Route.useLoaderData()
 
@@ -681,6 +753,8 @@ function RankingSlicePage() {
           Drought Index
         </Link>
       </div>
+
+      <SliceDirectory index={index} current={state.slice} />
     </div>
   )
 }
