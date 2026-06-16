@@ -17,6 +17,15 @@ export interface ReleaseEntry {
 export const RELEASES: ReleaseEntry[] = [
   {
     date: '2026-06-16',
+    title: 'Head-to-Head cards come alive',
+    highlights: [
+      'The two battle cards now tilt toward your cursor in 3D as you move across them, with a sweep of gold light over the splash, the same life the Tier Drop daily card has. Picking one squares the whole card up with a satisfying shrink before the next pair steps in.',
+      'Want a closer look before you commit? Hover either card and a magnifier appears in the corner. Tap it to blow the splash art up full-screen, no vote spent.',
+    ],
+    fixes: [],
+  },
+  {
+    date: '2026-06-16',
     title: 'Tier Drop now hands you the whole set',
     highlights: [
       "Tier Drop now deals a champion's entire skin set instead of just a slice of it. The biggest wardrobes, Lux, Miss Fortune, Ezreal, all twenty-plus skins, come complete, so you can rank the whole thing in one sitting.",

@@ -1,6 +1,13 @@
 import { createFileRoute, Link } from '@tanstack/react-router'
-import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
-import { motion, useAnimate, useReducedMotion } from 'motion/react'
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type PointerEvent as ReactPointerEvent,
+  type ReactNode,
+} from 'react'
+import { motion, useAnimate, useReducedMotion, useSpring } from 'motion/react'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import {
   faArrowTrendUp,
@@ -9,6 +16,7 @@ import {
   faExpand,
   faFire,
   faKeyboard,
+  faMagnifyingGlassPlus,
   faRotateLeft,
   faShuffle,
   faUser,
@@ -17,6 +25,7 @@ import {
 import { usePostHog } from 'posthog-js/react'
 import ErrorState from '~/components/ErrorState'
 import { toast } from '~/components/Toaster'
+import { openLightbox } from '~/components/Lightbox'
 import TodayStrip from '~/components/games/TodayStrip'
 import { AnimatedNumber } from '~/components/games/AnimatedNumber'
 import {
@@ -116,6 +125,19 @@ const PICK_HOLD_MS = 280
 // immediately and each splash blur-ups into place as it decodes.
 type Entrance = 'reveal' | 'round' | 'settled'
 
+// The zoom affordance, revealed on hover (touch devices: always shown, since
+// there's no :hover). Same magnifier the Tier Drop tiles and rankings cards use.
+const zoomReveal =
+  'opacity-0 pointer-events-none transition-opacity duration-200 group-hover:opacity-100 group-hover:pointer-events-auto [@media(hover:none)]:opacity-100 [@media(hover:none)]:pointer-events-auto'
+
+// Pointer-tracked 3D tilt (mouse only): the splash leans toward the cursor and
+// settles back on a spring — the card catching the light as you move over it.
+// TILT_MAX is the lean in degrees at the card's edge; PERSPECTIVE sets how
+// pronounced the 3D feels (smaller = more dramatic).
+const TILT_MAX = 12
+const TILT_PERSPECTIVE = 1000
+const TILT_SPRING = { stiffness: 200, damping: 20 }
+
 function BattleCard({
   skin,
   side,
@@ -140,6 +162,36 @@ function BattleCard({
   useEffect(() => {
     if (imgRef.current?.complete) setImgLoaded(true)
   }, [])
+
+  // 3D tilt: springs stay neutral until a mouse moves across the card. They live
+  // on a dedicated inner layer (below), separate from the entrance/verdict CSS
+  // animations on the root — two transforms on one element would fight.
+  const reduce = useReducedMotion()
+  const tiltRef = useRef<HTMLDivElement>(null)
+  const rotateX = useSpring(0, TILT_SPRING)
+  const rotateY = useSpring(0, TILT_SPRING)
+  const z = useSpring(0, TILT_SPRING)
+  // Lean toward the cursor. Mouse only (a touch tap shouldn't tilt), off under
+  // reduced motion, and frozen during the win/lose beat so the flourish reads.
+  const onTilt = (e: ReactPointerEvent<HTMLDivElement>) => {
+    if (reduce || verdict || e.pointerType !== 'mouse' || !tiltRef.current) return
+    const r = tiltRef.current.getBoundingClientRect()
+    const px = (e.clientX - r.left) / r.width
+    const py = (e.clientY - r.top) / r.height
+    rotateX.set(TILT_MAX * (0.5 - py))
+    rotateY.set(TILT_MAX * (px - 0.5))
+  }
+  const restTilt = useCallback(() => {
+    rotateX.set(0)
+    rotateY.set(0)
+    z.set(0)
+  }, [rotateX, rotateY, z])
+  // The verdict beat scales/rotates the whole card via CSS; drop any lean so the
+  // two never compound.
+  useEffect(() => {
+    if (verdict) restTilt()
+  }, [verdict, restTilt])
+
   const verdictAnim =
     verdict === 'winner'
       ? 'animate-battle-win z-10'
@@ -165,14 +217,30 @@ function BattleCard({
           : 'animate-battle-in-b'
         : ''
   return (
-    <div
-      className={`card-sheen-host group relative aspect-video w-full overflow-hidden bg-hextech-black/60 transition duration-200 hover:shadow-glow ${entranceAnim} ${verdictAnim}`}
-    >
+    // Layer 1 — sizing + the entrance/verdict CSS animations (which drive their
+    // own transform). Deliberately NOT overflow-hidden, so the tilted inner
+    // layer is never clipped by its own container.
+    <div className={`relative aspect-video w-full ${entranceAnim} ${verdictAnim}`}>
+      {/* Layer 2 — the pointer-tracked 3D tilt, carrying the whole visual card.
+          transformPerspective lives on this element so its rotate reads as 3D. */}
+      <motion.div
+        ref={tiltRef}
+        onPointerMove={onTilt}
+        onPointerEnter={(e) => {
+          if (!reduce && !verdict && e.pointerType === 'mouse') z.set(-12)
+        }}
+        onPointerLeave={restTilt}
+        whileTap={reduce ? undefined : { scale: 0.94 }}
+        style={{ rotateX, rotateY, z, transformPerspective: TILT_PERSPECTIVE }}
+        transition={{ type: 'spring', stiffness: 800, damping: 26 }}
+        className="card-sheen-host group relative h-full w-full overflow-hidden bg-hextech-black/60 transition-shadow duration-200 hover:shadow-glow"
+      >
+      {/* The press-shrink lives on the whole card (the tilt layer above), not
+          here — scaling just the button would shrink only the splash and leave
+          the frame/background behind it, which reads as "only the image moved". */}
       <motion.button
         onClick={() => onPick(skin.skinId)}
         aria-label={`Pick ${skin.name}`}
-        whileTap={{ scale: 0.94 }}
-        transition={{ type: 'spring', stiffness: 800, damping: 26 }}
         className="block h-full w-full cursor-pointer text-left"
       >
         <img
@@ -203,12 +271,31 @@ function BattleCard({
           <span className="text-sm text-grey1">{skin.championName}</span>
         </span>
       </motion.button>
+      {/* Zoom to the full splash — revealed on hover, exactly like the Tier
+          Drop tiles. A sibling of the vote button (not nested inside it), so
+          zooming the art never casts a vote. */}
+      <button
+        type="button"
+        onClick={() =>
+          openLightbox({
+            url: skin.splashUrl,
+            title: skin.name,
+            subtitle: skin.championName,
+          })
+        }
+        aria-label={`View ${skin.name} splash art full screen`}
+        title="View full splash art"
+        className={`absolute right-2 top-2 z-20 flex h-8 w-8 cursor-zoom-in items-center justify-center bg-hextech-black/75 text-grey1 outline outline-icon/30 -outline-offset-1 backdrop-blur-sm transition hover:text-gold1 hover:outline-gold2 ${zoomReveal}`}
+      >
+        <FontAwesomeIcon icon={faMagnifyingGlassPlus} className="h-3.5" />
+      </button>
       {/* Frame overlay: always painted above the splash so the hover transform
           can never cover it. -outline-offset keeps it inside the card edge. */}
       <span
         aria-hidden
         className={`pointer-events-none absolute inset-0 z-10 outline -outline-offset-2 transition duration-200 ${frameTone}`}
       />
+      </motion.div>
     </div>
   )
 }
