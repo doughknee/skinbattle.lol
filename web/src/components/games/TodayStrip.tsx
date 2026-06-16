@@ -237,7 +237,7 @@ function HeadToHeadCard({
 function TierListCard({ index, current }: { index: number; current: boolean }) {
   return (
     <ModeCard
-      to="/battle/tiers"
+      to="/battle/tier-drop"
       icon={faLayerGroup}
       name="Tier Drop"
       blurb="Sort a set S to D. See how the crowd ranks it."

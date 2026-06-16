@@ -34,6 +34,7 @@ import {
   MEMBER_WEIGHT,
   rankNeighbors,
   ratedCount,
+  ratingEventCount,
   restorePersonalRating,
   reverseLiveUpdate,
   runRefit,
@@ -574,7 +575,7 @@ export async function submitBattleVote(
   )
   const nextPair = dealPair(db, skins, exclude)
 
-  maybeAutoRefit(db, communityBattleCount(db))
+  maybeAutoRefit(db, ratingEventCount(db))
 
   return {
     feedback,

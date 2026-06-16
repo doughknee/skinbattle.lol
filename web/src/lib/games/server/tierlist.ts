@@ -43,7 +43,9 @@ import {
   applyTierListUpdate,
   GUEST_WEIGHT,
   inflateUncertainty,
+  maybeAutoRefit,
   MEMBER_WEIGHT,
+  ratingEventCount,
   START_UNCERTAINTY,
   tierComparisons,
   TIER_ORDER,
@@ -58,7 +60,12 @@ const QUESTION = 'which-tier'
 const BOARD_TTL_MS = 60 * 60 * 1000
 const MIN_PLACED = 4 // a submission must place at least this many skins
 const MIN_BOARD = 4 // skip scopes thinner than this (not worth ranking)
-const MAX_BOARD = 15 // cap a served board; keep the most data-hungry skins
+// Cap a served board so it stays rankable. 30 covers every champion's full set
+// (the biggest is ~24 incl. the base skin) while still bounding the huge
+// cross-cutting scopes - a single year or rarity:Epic can be 100+ skins, which
+// is not a tier list anyone finishes. Oversized scopes keep the most data-hungry
+// skins (see buildBoard).
+const MAX_BOARD = 30
 const RESERVE_COOLDOWN_MS = 30 * 24 * 60 * 60 * 1000 // re-serve a done board after this
 const AGREEMENT_MIN = 5 // "% placed it in your tier" gates until this many
 const HOT_TAKE_GAP = 2 // tiers apart from consensus to flag a hot take
@@ -889,6 +896,11 @@ export async function submitTierList(
     throw err
   }
 
+  // Fold this submission into the canonical Bradley-Terry fit on the usual
+  // cadence — Tier Drop volume now advances the refit too, not just 1v1 votes.
+  // Deferred off the request path (setImmediate inside maybeAutoRefit).
+  maybeAutoRefit(db, ratingEventCount(db))
+
   const after = new Map(results.map((r) => [r.skinId, r]))
   const rows = buildCompare(db, claim.b, ordered, (id) => ({
     rating: after.get(id)?.after ?? 0,
@@ -911,7 +923,7 @@ export async function submitTierList(
 const SHARE_ID = /^[A-Za-z0-9_-]{6,16}$/
 
 // Store a share payload, return its short id. Minted on demand when a player
-// shares, so links stay short (/battle/tiers?s=<id>) and the image endpoint +
+// shares, so links stay short (/battle/tier-drop?s=<id>) and the image endpoint +
 // recipient view resolve by id. Validates the (client-supplied) input first.
 export function createTierShare(input: unknown): { id: string } {
   const payload = sanitizeSharePayload(input)

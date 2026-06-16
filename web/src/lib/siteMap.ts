@@ -80,7 +80,7 @@ const HEAD_TO_HEAD: SitePage = {
   hero: true,
 }
 const TIER_DROP: SitePage = {
-  to: '/battle/tiers',
+  to: '/battle/tier-drop',
   label: 'Tier Drop',
   blurb: "Rank a champion's skins S to D - dozens of verdicts in one go.",
   icon: faLayerGroup,

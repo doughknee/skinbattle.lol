@@ -318,6 +318,16 @@ export const TIER_ORDER = ['S', 'A', 'B', 'C', 'D'] as const
 // independent losses).
 export const TIER_EFFECTIVE_CAP = 8
 
+// Within one submission, no single skin may absorb more than this many effective
+// comparisons. The board-level downweight caps the TOTAL evidence, but a skin at
+// the extreme of a lopsided board (one S pick over a stack of D's) could still
+// hog most of it - one rater swinging one skin far. A ranking of n items really
+// carries ~n-1 order constraints (~2 per item, its neighbours), so a small
+// per-skin budget is the honest reading. On live data real boards top out ~3.5
+// effective comparisons on a skin, so 3 barely clips today while bounding the
+// future lopsided case (a fresh skin then moves at most ~K_MAX*3*0.5 per list).
+export const TIER_SKIN_CAP = 3
+
 export interface TierComparison {
   winnerId: string
   loserId: string
@@ -393,10 +403,15 @@ export function applyTierListUpdate(
   for (const id of placed) {
     const r = cur.get(id)!
     const unc = inflateUncertainty(r.uncertainty, r.lastBattleAt, nowMs)
-    const delta = kFor(unc) * effW * ((actual.get(id) ?? 0) - (expected.get(id) ?? 0))
-    // Total tightening weight for this skin, clamped so the decay factor stays
-    // positive even on a huge board.
-    const decayWeight = Math.min(effW * (count.get(id) ?? 0), 9)
+    // Per-skin cap: a skin sitting in many of this board's comparisons absorbs at
+    // most TIER_SKIN_CAP effective comparisons, so one lopsided submission can't
+    // swing a single skin out of proportion (board-level dw only caps the total).
+    const c = count.get(id) ?? 0
+    const skinW = effW * c > TIER_SKIN_CAP ? TIER_SKIN_CAP / c : effW
+    const delta = kFor(unc) * skinW * ((actual.get(id) ?? 0) - (expected.get(id) ?? 0))
+    // Tighten uncertainty by the same (capped) evidence, clamped so the decay
+    // factor stays positive even on a huge board.
+    const decayWeight = Math.min(skinW * c, 9)
     putSkinRating(db, id, {
       rating: r.rating + delta,
       uncertainty: decayUncertainty(unc, decayWeight),
@@ -665,7 +680,8 @@ export function runRefit(db: DatabaseSync): RefitSummary {
       })
     }
     setMeta(db, 'refit_at', new Date().toISOString())
-    setMeta(db, 'refit_events', String(rows.length))
+    // Baseline must match ratingEventCount (both modes) or the cadence delta drifts.
+    setMeta(db, 'refit_events', String(rows.length + tierRows.length))
     db.exec('COMMIT')
   } catch (err) {
     db.exec('ROLLBACK')
@@ -674,7 +690,7 @@ export function runRefit(db: DatabaseSync): RefitSummary {
 
   return {
     skins: ids.length,
-    events: rows.length,
+    events: rows.length + tierRows.length,
     iterations,
     tookMs: Date.now() - t0,
   }
@@ -685,6 +701,20 @@ export function runRefit(db: DatabaseSync): RefitSummary {
 const REFIT_EVENT_INTERVAL = 500
 const REFIT_TIME_INTERVAL_MS = 6 * 60 * 60 * 1000
 const REFIT_TIME_MIN_EVENTS = 50
+
+// Every event that feeds the refit, across both battle modes. The auto-refit
+// cadence keys off this so Tier Drop submissions advance it too — it used to
+// count only quick-battle votes, so a tier-only stretch would never refit and
+// the rough live-only tier math would stand uncorrected on the rankings.
+export function ratingEventCount(db: DatabaseSync): number {
+  const row = db
+    .prepare(
+      `SELECT COUNT(*) AS c FROM game_events
+       WHERE type IN ('battle_voted', 'tier_submitted')`,
+    )
+    .get() as { c: number }
+  return row.c
+}
 
 export function maybeAutoRefit(db: DatabaseSync, totalEvents: number): void {
   const lastN = Number(getMeta(db, 'refit_events') ?? '0')
