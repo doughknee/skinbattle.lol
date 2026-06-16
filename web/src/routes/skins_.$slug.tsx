@@ -10,10 +10,12 @@ import {
   faShuffle,
 } from '@fortawesome/free-solid-svg-icons'
 import ErrorState from '~/components/ErrorState'
+import JsonLd from '~/components/JsonLd'
 import { btnPrimarySm, btnSecondarySm } from '~/lib/ui'
 import { fetchSkinPage } from '~/lib/games/serverFns'
 import { guestRestoreToken, rememberGuestToken } from '~/lib/games/client'
 import { ogMeta } from '~/lib/games/ogMeta'
+import { breadcrumbJsonLd } from '~/lib/games/jsonLd'
 import { kebab } from '~/lib/games/slug'
 
 export const Route = createFileRoute('/skins_/$slug')({
@@ -109,6 +111,13 @@ function SkinPage() {
 
   return (
     <div className="container mx-auto max-w-4xl px-6 pt-28 pb-16">
+      <JsonLd
+        data={breadcrumbJsonLd([
+          { name: 'Home', path: '/' },
+          { name: state.championName, path: `/champions/${state.championId}` },
+          { name: state.name, path: `/skins/${state.slug}` },
+        ])}
+      />
       <header className="animate-fade-up mb-6">
         <p className="mb-2 text-sm font-semibold uppercase tracking-[0.3em] text-gold2">
           <Link

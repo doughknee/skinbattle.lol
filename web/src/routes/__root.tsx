@@ -16,7 +16,9 @@ import Toaster from '~/components/Toaster'
 import Lightbox from '~/components/Lightbox'
 import GuestAttachment from '~/components/GuestAttachment'
 import Footer from '~/components/Footer'
+import JsonLd from '~/components/JsonLd'
 import { readServerConfig, type PublicConfig } from '~/lib/config'
+import { siteJsonLd } from '~/lib/games/jsonLd'
 import { PALETTE } from '~/lib/brand'
 
 const SITE_URL = 'https://skinbattle.lol'
@@ -79,6 +81,7 @@ function RootComponent() {
   return (
     <RootDocument config={config}>
       <ClientProviders config={config}>
+        <JsonLd data={siteJsonLd()} />
         <RouteProgress />
         <NavBar />
         <main className="flex-1">

@@ -12,9 +12,11 @@ import {
 } from '@fortawesome/free-solid-svg-icons'
 import EmptyState from '~/components/EmptyState'
 import ErrorState from '~/components/ErrorState'
+import JsonLd from '~/components/JsonLd'
 import { btnChip, btnPrimarySm, btnSecondarySm } from '~/lib/ui'
 import { fetchRankings, fetchRankingsIndex } from '~/lib/games/serverFns'
 import { ogMeta } from '~/lib/games/ogMeta'
+import { breadcrumbJsonLd, itemListJsonLd } from '~/lib/games/jsonLd'
 import { createSearcher } from '~/lib/search'
 import type { RankingRow, RankingsIndex, SliceLink } from '~/lib/games/types'
 
@@ -521,8 +523,26 @@ function RankingSlicePage() {
   const fullyLoaded =
     remaining <= 0 && extra.slice === state.slice && extra.rows.length > 0
 
+  // Crawlers see the SSR set (state.rows); capped so the markup stays lean.
+  const listItems = state.rows.slice(0, 50).map((r) => ({
+    name: `${r.name} (${r.championName})`,
+    path: `/skins/${r.slug}`,
+  }))
+
   return (
     <div className="container mx-auto max-w-5xl px-6 pt-28 pb-16">
+      <JsonLd
+        data={[
+          breadcrumbJsonLd([
+            { name: 'Home', path: '/' },
+            { name: 'Rankings', path: '/rankings/all' },
+            { name: state.title, path: `/rankings/${state.slice}` },
+          ]),
+          ...(listItems.length
+            ? [itemListJsonLd({ name: state.title, items: listItems })]
+            : []),
+        ]}
+      />
       <header className="animate-fade-up mb-5">
         <p className="mb-2 text-sm font-semibold uppercase tracking-[0.3em] text-gold2">
           Rankings
