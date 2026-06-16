@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest'
 import {
   applyTierListUpdate,
   getSkinRating,
+  ratingEventCount,
   runRefit,
   START_RATING,
   tierComparisons,
@@ -134,5 +135,32 @@ describe('runRefit ingests tier-list submissions', () => {
     expect(a.rating).toBeGreaterThan(getSkinRating(db, 'b').rating)
     expect(a.battles).toBe(2) // one 1v1 + one tier-list appearance
     expect(a.wins).toBe(1) // head-to-head win only; tier list doesn't bump wins
+  })
+})
+
+describe('refit cadence counts both battle modes', () => {
+  it('ratingEventCount sums quick-battle votes and tier-list submissions', () => {
+    const db = makeDb()
+    db.prepare('INSERT INTO game_users (id, logto_sub) VALUES (?, ?)').run('u1', 'sub1')
+    expect(ratingEventCount(db)).toBe(0)
+    event(db, 'quick-battle', 'battle_voted', { winnerId: 'a', loserId: 'b' }, '2026-06-15T00:00:00.000Z')
+    event(db, 'tier-list', 'tier_submitted', { tiers: { S: ['a'], A: ['b'] } }, '2026-06-15T00:00:01.000Z')
+    event(db, 'tier-list', 'tier_submitted', { tiers: { S: ['c'], A: ['d'] } }, '2026-06-15T00:00:02.000Z')
+    expect(ratingEventCount(db)).toBe(3)
+  })
+
+  it('runRefit records the COMBINED event count as the cadence baseline', () => {
+    // Regression guard: the baseline must match ratingEventCount, else a
+    // tier-only stretch never makes `fresh` cross the threshold and never refits.
+    const db = makeDb()
+    db.prepare('INSERT INTO game_users (id, logto_sub) VALUES (?, ?)').run('u1', 'sub1')
+    event(db, 'quick-battle', 'battle_voted', { winnerId: 'a', loserId: 'b' }, '2026-06-15T00:00:00.000Z')
+    event(db, 'tier-list', 'tier_submitted', { tiers: { S: ['a'], A: ['b'] } }, '2026-06-15T00:00:01.000Z')
+    const summary = runRefit(db)
+    expect(summary.events).toBe(2)
+    const meta = db
+      .prepare("SELECT v FROM catalog_meta WHERE k = 'refit_events'")
+      .get() as { v: string } | undefined
+    expect(meta?.v).toBe(String(ratingEventCount(db)))
   })
 })

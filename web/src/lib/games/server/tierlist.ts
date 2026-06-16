@@ -43,7 +43,9 @@ import {
   applyTierListUpdate,
   GUEST_WEIGHT,
   inflateUncertainty,
+  maybeAutoRefit,
   MEMBER_WEIGHT,
+  ratingEventCount,
   START_UNCERTAINTY,
   tierComparisons,
   TIER_ORDER,
@@ -889,6 +891,11 @@ export async function submitTierList(
     throw err
   }
 
+  // Fold this submission into the canonical Bradley-Terry fit on the usual
+  // cadence — Tier Drop volume now advances the refit too, not just 1v1 votes.
+  // Deferred off the request path (setImmediate inside maybeAutoRefit).
+  maybeAutoRefit(db, ratingEventCount(db))
+
   const after = new Map(results.map((r) => [r.skinId, r]))
   const rows = buildCompare(db, claim.b, ordered, (id) => ({
     rating: after.get(id)?.after ?? 0,
@@ -911,7 +918,7 @@ export async function submitTierList(
 const SHARE_ID = /^[A-Za-z0-9_-]{6,16}$/
 
 // Store a share payload, return its short id. Minted on demand when a player
-// shares, so links stay short (/battle/tiers?s=<id>) and the image endpoint +
+// shares, so links stay short (/battle/tier-drop?s=<id>) and the image endpoint +
 // recipient view resolve by id. Validates the (client-supplied) input first.
 export function createTierShare(input: unknown): { id: string } {
   const payload = sanitizeSharePayload(input)

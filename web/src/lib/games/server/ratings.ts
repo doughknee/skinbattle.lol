@@ -665,7 +665,8 @@ export function runRefit(db: DatabaseSync): RefitSummary {
       })
     }
     setMeta(db, 'refit_at', new Date().toISOString())
-    setMeta(db, 'refit_events', String(rows.length))
+    // Baseline must match ratingEventCount (both modes) or the cadence delta drifts.
+    setMeta(db, 'refit_events', String(rows.length + tierRows.length))
     db.exec('COMMIT')
   } catch (err) {
     db.exec('ROLLBACK')
@@ -674,7 +675,7 @@ export function runRefit(db: DatabaseSync): RefitSummary {
 
   return {
     skins: ids.length,
-    events: rows.length,
+    events: rows.length + tierRows.length,
     iterations,
     tookMs: Date.now() - t0,
   }
@@ -685,6 +686,20 @@ export function runRefit(db: DatabaseSync): RefitSummary {
 const REFIT_EVENT_INTERVAL = 500
 const REFIT_TIME_INTERVAL_MS = 6 * 60 * 60 * 1000
 const REFIT_TIME_MIN_EVENTS = 50
+
+// Every event that feeds the refit, across both battle modes. The auto-refit
+// cadence keys off this so Tier Drop submissions advance it too — it used to
+// count only quick-battle votes, so a tier-only stretch would never refit and
+// the rough live-only tier math would stand uncorrected on the rankings.
+export function ratingEventCount(db: DatabaseSync): number {
+  const row = db
+    .prepare(
+      `SELECT COUNT(*) AS c FROM game_events
+       WHERE type IN ('battle_voted', 'tier_submitted')`,
+    )
+    .get() as { c: number }
+  return row.c
+}
 
 export function maybeAutoRefit(db: DatabaseSync, totalEvents: number): void {
   const lastN = Number(getMeta(db, 'refit_events') ?? '0')
