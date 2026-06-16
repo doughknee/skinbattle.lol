@@ -16,7 +16,7 @@ import type { DatabaseSync } from 'node:sqlite'
 import type { ChromaVisionState, SplashdleGuess, StreakInfo } from '../types'
 import { appendEvent, DATA_DIR, getDb } from './db'
 import { skinGuessCounts } from './consensus'
-import { MAX_GUESSES, puzzleNumber, seedFloats, utcToday } from './daily'
+import { MAX_GUESSES, puzzleNumber, seedFloats, puzzleDay } from './daily'
 import { allCatalogSkins, ensureCatalog, getCatalogSkin } from './catalog'
 import { ensureUser, peekUser, type GameUser } from './guests'
 import { getStreak, recordCompletion } from './streaks'
@@ -244,7 +244,7 @@ export async function chromaVisionState(
   restoreToken?: string | null,
 ): Promise<ChromaVisionState> {
   const db = getDb()
-  const date = utcToday()
+  const date = puzzleDay()
   const puzzle = await getOrCreatePuzzle(db, date)
 
   const known = peekUser(db, restoreToken)
@@ -261,7 +261,7 @@ export async function submitChromaGuess(
   restoreToken?: string | null,
 ): Promise<ChromaVisionState> {
   const db = getDb()
-  const date = utcToday()
+  const date = puzzleDay()
   const { user, token } = ensureUser(db, restoreToken)
   const puzzle = await getOrCreatePuzzle(db, date)
 
@@ -375,7 +375,7 @@ export async function chromaOgInfo(): Promise<{
   mosaic: string
 }> {
   const db = getDb()
-  const date = utcToday()
+  const date = puzzleDay()
   const puzzle = await getOrCreatePuzzle(db, date)
   return {
     puzzleNumber: puzzleNumber(date, EPOCH),

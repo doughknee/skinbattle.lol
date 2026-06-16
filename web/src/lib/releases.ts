@@ -16,6 +16,59 @@ export interface ReleaseEntry {
 // Newest first. The page renders this array top to bottom.
 export const RELEASES: ReleaseEntry[] = [
   {
+    date: '2026-06-16',
+    title: 'Daily puzzles now reset at midnight Central',
+    highlights: [
+      'The daily puzzles, Splashdle, Chroma Vision, and Price Point, now refresh at midnight US Central time instead of midnight UTC. A fresh puzzle lands first thing in the morning for North America instead of mid-afternoon. The countdown on every game points at the new moment, and it follows daylight saving, so midnight always means midnight.',
+    ],
+    fixes: [],
+  },
+  {
+    date: '2026-06-16',
+    title: 'Battles decide the rankings',
+    highlights: [
+      "Stars and bans are gone. The skins you pick in battle now decide the rankings outright, instead of a separate 'spend your 10 stars and 10 bans' vote running alongside them. One ranking, and every pick you make feeds it.",
+    ],
+    fixes: [
+      'The Awards and My Votes pages retired along with the old voting. Their links now take you straight to the full ranking.',
+      'Your battles, your Mirror tier list, and your stats are all untouched.',
+    ],
+  },
+  {
+    date: '2026-06-15',
+    title: 'Tier Drop: rank any set you want',
+    highlights: [
+      "Build a tier list for any set you can think of. Pick a champion, a skin line, a release year, a price tier, or a rarity, and sort it from S all the way down to D. Can't decide where to start? Hit Surprise Me for a case-opening style spin that drops you on a random set.",
+      'See how everyone else ranked it. A new community page shows the tier lists players are making, filterable by champion, skin line, year, price, or rarity. Tap any one to rank the same set yourself.',
+    ],
+    fixes: [
+      'Tier List is now Tier Drop. Same game, sharper name.',
+      "Submitting a board animates straight into your results, your finished board comes back if you've already ranked it, and your 'how you compare to the crowd' stats now sit right on top of it.",
+      'The top nav slimmed to three doors, Play, Rankings, and your Mirror, and the footer became a full map of the site, so Champions, search, and the deeper rankings are always a click away.',
+      'Fixed the gold community-ranking border getting clipped when you hovered a skin on your board.',
+    ],
+  },
+  {
+    date: '2026-06-15',
+    title: 'Tier Lists arrive',
+    highlights: [
+      "Sort a champion's entire wardrobe into S, A, B, C, and D tiers in one sitting, then see how your take stacks up against everyone else's, hot takes and all. One tier list moves the rankings as much as dozens of head-to-head battles. Find it alongside Head-to-Head.",
+    ],
+    fixes: [
+      'Tier list links now unfurl with a proper share card on Discord, Twitter, and Reddit, so sharing a board actually looks like an invitation.',
+      'Fixed a crash that could hit when you undid your most recent battle vote.',
+    ],
+  },
+  {
+    date: '2026-06-15',
+    title: 'Every skin gets its turn',
+    highlights: [
+      "The arena now spreads battles across the whole roster. Matchmaking gives priority to skins that haven't fought yet, so the rankings fill in across every champion instead of fixating on a popular few, and brand-new skins get worked into the rotation automatically.",
+      "Rankings stay alive. A skin's standing can keep shifting over time instead of freezing once it settles, so as more people vote the rankings keep reflecting the community rather than the first handful of votes.",
+    ],
+    fixes: [],
+  },
+  {
     date: '2026-06-15',
     title: 'Head-to-Head answers back',
     highlights: [

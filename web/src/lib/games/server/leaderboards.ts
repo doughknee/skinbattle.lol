@@ -6,7 +6,7 @@
 import type { DatabaseSync } from 'node:sqlite'
 import type { GameId, LeaderboardsState } from '../types'
 import { getDb } from './db'
-import { utcToday } from './daily'
+import { puzzleDay } from './daily'
 
 const TOP = 10
 
@@ -29,7 +29,7 @@ function members(db: DatabaseSync): Map<string, string> {
 
 export async function leaderboardsState(): Promise<LeaderboardsState> {
   const db = getDb()
-  const date = utcToday()
+  const date = puzzleDay()
   const named = members(db)
   const ids = [...named.keys()]
 

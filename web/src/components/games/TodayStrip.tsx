@@ -18,6 +18,7 @@ import {
   faLayerGroup,
   faPalette,
 } from '@fortawesome/free-solid-svg-icons'
+import { msToNextReset } from '~/lib/games/dailyTz'
 import type { DailyHubState, HubGame } from '~/lib/games/types'
 
 // The "more ways to play" strip that lives at the bottom of every game page -
@@ -419,13 +420,6 @@ function DailyCard({
   )
 }
 
-// ── Live countdown to the next daily drop (midnight UTC) ──────────────────
-function msToNextUtcMidnight(now: number): number {
-  const d = new Date(now)
-  const next = Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate() + 1)
-  return Math.max(0, next - now)
-}
-
 // Two-digit, zero-padded animated unit (Motion+ AnimateNumber rolls each digit
 // on change). format keeps it to "07" rather than "7".
 function Unit({ value }: { value: number }) {
@@ -435,7 +429,7 @@ function Unit({ value }: { value: number }) {
 // Client-only + SSR-safe: a static placeholder until mounted (so the server and
 // first client paint match), then ticks every second. AnimateNumber is a
 // client-only Motion+ component, so it never renders during SSR. The reset is
-// midnight UTC (matches utcToday on the server).
+// midnight US Central (matches puzzleDay on the server).
 function Countdown() {
   const [now, setNow] = useState<number | null>(null)
   useEffect(() => {
@@ -446,7 +440,7 @@ function Countdown() {
   if (now === null) {
     return <span className="tabular-nums text-gold1">--:--:--</span>
   }
-  const total = Math.floor(msToNextUtcMidnight(now) / 1000)
+  const total = Math.floor(Math.max(0, msToNextReset(now)) / 1000)
   const h = Math.floor(total / 3600)
   const m = Math.floor((total % 3600) / 60)
   const s = total % 60

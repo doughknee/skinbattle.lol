@@ -15,7 +15,7 @@ import satori from 'satori'
 import { Resvg } from '@resvg/resvg-js'
 import { DATA_DIR, getDb } from './db'
 import { ensureCatalog } from './catalog'
-import { utcToday } from './daily'
+import { puzzleDay } from './daily'
 import { communityBattleCount } from './quickbattle'
 import { splashdleOgInfo } from './splashdle'
 import { PALETTE, OG_RED } from '~/lib/brand'
@@ -428,7 +428,7 @@ async function buildCard(card: OgCard): Promise<Node> {
           'div',
           { flexDirection: 'column', gap: 18, justifyContent: 'center', flexGrow: 1 },
           eyebrow('Daily · what did it cost?'),
-          title(`Price Point #${priceCheckPuzzleNumber(utcToday())}`, 76),
+          title(`Price Point #${priceCheckPuzzleNumber(puzzleDay())}`, 76),
           body('Five skins. Guess what each cost in RP. Legacy relics included.'),
           el(
             'div',
@@ -540,7 +540,7 @@ async function buildCard(card: OgCard): Promise<Node> {
 async function renderCard(card: OgCard): Promise<Buffer> {
   const dir = join(DATA_DIR, 'cache')
   mkdirSync(dir, { recursive: true })
-  const path = join(dir, `og-${card}-${utcToday()}.png`)
+  const path = join(dir, `og-${card}-${puzzleDay()}.png`)
   if (existsSync(path)) return readFileSync(path)
 
   const node = await buildCard(card)
@@ -570,7 +570,7 @@ export async function skinOgResponse(skinId: string): Promise<Response> {
   try {
     const dir = join(DATA_DIR, 'cache')
     mkdirSync(dir, { recursive: true })
-    const path = join(dir, `og-skin-${skinId}-${utcToday()}.png`)
+    const path = join(dir, `og-skin-${skinId}-${puzzleDay()}.png`)
     let png: Buffer
     if (existsSync(path)) {
       png = readFileSync(path)
@@ -639,7 +639,7 @@ export async function rankingsOgResponse(slice: string): Promise<Response> {
   try {
     const dir = join(DATA_DIR, 'cache')
     mkdirSync(dir, { recursive: true })
-    const path = join(dir, `og-rankings-${slice}-${utcToday()}.png`)
+    const path = join(dir, `og-rankings-${slice}-${puzzleDay()}.png`)
     let png: Buffer
     if (existsSync(path)) {
       png = readFileSync(path)
@@ -814,7 +814,7 @@ export async function tierShareImageResponse(id: string): Promise<Response> {
     const dir = join(DATA_DIR, 'cache')
     mkdirSync(dir, { recursive: true })
     const key = createHash('sha1').update(data).digest('hex').slice(0, 16)
-    const path = join(dir, `og-tier-${key}-${utcToday()}.png`)
+    const path = join(dir, `og-tier-${key}-${puzzleDay()}.png`)
     let png: Buffer
     if (existsSync(path)) {
       png = readFileSync(path)
