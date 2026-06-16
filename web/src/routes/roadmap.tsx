@@ -152,7 +152,6 @@ const LIVE_NOW: { label: string; to: string; params?: object }[] = [
     to: '/rankings/$slice',
     params: { slice: 'all' },
   },
-  { label: 'Awards', to: '/rankings/awards' },
   { label: 'The Drought Index', to: '/rankings/drought' },
 ]
 
@@ -188,7 +187,7 @@ const RANKED_ERA = [
     icon: faMedal,
     name: 'Ranked divisions',
     blurb:
-      'Climb from Iron to Challenger on your weekly performance. Seasons reset the ladder, never your identity: your tier list, stars, and completion are permanent.',
+      'Climb from Iron to Challenger on your weekly performance. Seasons reset the ladder, never your identity: your tier list and completion are permanent.',
   },
   {
     icon: faAward,
@@ -227,19 +226,13 @@ function RoadmapPage() {
 
       <section
         aria-label="Live community totals"
-        className="animate-fade-up grid grid-cols-2 gap-3 sm:grid-cols-4"
+        className="animate-fade-up grid grid-cols-2 gap-3"
       >
         <StatChip label="Battles fought" value={n(stats.battles)} />
         <StatChip
           label="Skins rated"
           value={`${n(stats.ratedSkins)} / ${n(stats.totalSkins)}`}
         />
-        {stats.starsGiven !== null && (
-          <StatChip label="Stars given" value={n(stats.starsGiven)} />
-        )}
-        {stats.bansCast !== null && (
-          <StatChip label="Bans cast" value={n(stats.bansCast)} />
-        )}
       </section>
 
       <section className="animate-fade-up mt-14">

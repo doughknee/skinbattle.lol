@@ -8,17 +8,7 @@
 // Authenticated calls receive a Logto access token (audience = the API
 // resource) which is attached as `Authorization: Bearer <token>`.
 
-import type {
-  AwardsResponse,
-  Champion,
-  Me,
-  Skin,
-  UpdateMeRequest,
-  UserStats,
-  UserVotesResponse,
-  VoteRequest,
-  VoteResponse,
-} from './types'
+import type { Champion, Me, Skin, UpdateMeRequest } from './types'
 import { getPublicConfig } from './config'
 
 const isServer = typeof window === 'undefined'
@@ -91,18 +81,7 @@ export const api = {
 
   skins: (token?: string | null) => request<Skin[]>('/skins', { token }),
 
-  awards: (token?: string | null) =>
-    request<AwardsResponse>('/awards', { token }),
-
   // ── Authenticated ───────────────────────────────────────────────
-  vote: (body: VoteRequest, token: string) =>
-    request<VoteResponse>('/votes', { method: 'POST', token, body }),
-
-  userStats: (token: string) => request<UserStats>('/user/stats', { token }),
-
-  userVotes: (token: string) =>
-    request<UserVotesResponse>('/user/votes', { token }),
-
   me: (token: string) => request<Me>('/me', { token }),
 
   updateMe: (body: UpdateMeRequest, token: string) =>

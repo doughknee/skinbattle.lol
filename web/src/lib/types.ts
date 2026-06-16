@@ -7,11 +7,6 @@ export interface Skin {
   name: string
   chromas: boolean
   splash_url: string
-  total_stars: number
-  total_x: number
-  // present only when the request is authenticated:
-  user_star?: boolean
-  user_x?: boolean
 }
 
 export interface Champion {
@@ -20,37 +15,6 @@ export interface Champion {
   title: string
   blurb: string
   lore: string
-  skins: Skin[]
-}
-
-export interface AwardsResponse {
-  topStarred: Skin[]
-  topXed: Skin[]
-  allSkins: Skin[]
-}
-
-export interface VoteRequest {
-  skinId: string
-  star: boolean
-  x: boolean
-}
-
-export interface VoteTotals {
-  total_stars: number
-  total_x: number
-}
-
-export interface VoteResponse {
-  message: string
-  totals: VoteTotals
-}
-
-export interface UserStats {
-  usedStars: number
-  usedX: number
-}
-
-export interface UserVotesResponse {
   skins: Skin[]
 }
 

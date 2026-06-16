@@ -1,13 +1,7 @@
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import {
-  faBan,
-  faMagnifyingGlassPlus,
-  faStar,
-} from '@fortawesome/free-solid-svg-icons'
+import { faMagnifyingGlassPlus } from '@fortawesome/free-solid-svg-icons'
 import { Link } from '@tanstack/react-router'
 import { openLightbox } from '~/components/Lightbox'
-import { useSkinVote } from '~/lib/useSkinVote'
-import { MAX_STARS, MAX_X } from '~/lib/userStatsStore'
 import { championDisplayName, displaySkinName } from '~/lib/skinName'
 import { skinSlug } from '~/lib/games/slug'
 import type { Skin } from '~/lib/types'
@@ -15,10 +9,8 @@ import type { Skin } from '~/lib/types'
 interface SkinCardProps {
   skin: Skin
   championId: string
-  initialStar?: boolean
-  initialX?: boolean
   // Show the champion name above the skin name - used on pages that mix
-  // skins from many champions (home, awards, my votes).
+  // skins from many champions (home, rankings).
   showChampion?: boolean
   // Leaderboard position badge overlaid on the splash (#1, #2, ...).
   rank?: number
@@ -26,14 +18,8 @@ interface SkinCardProps {
   rankContext?: string
 }
 
-// The card reads like a rankings tile at rest - splash, name, quiet tallies -
-// and only reveals its controls on hover (or always, on touch, where there's
-// no hover). One overlaid language, shared with the rankings page.
-const chip =
-  'flex h-8 min-w-0 flex-1 cursor-pointer items-center justify-center gap-1.5 bg-hextech-black/75 text-sm font-bold outline -outline-offset-1 backdrop-blur-sm transition duration-150 active:scale-[0.96] disabled:cursor-not-allowed disabled:opacity-50'
-const chipIdle = 'text-gold1 outline-icon/40 hover:bg-hextech-black/90 hover:outline-gold2'
-const chipStarOn = 'bg-gold5/50 text-gold1 outline-gold2'
-const chipBanOn = 'bg-danger-surface/60 text-danger outline-danger-border/80'
+// A rankings tile: splash, optional rank badge, name. The splash leads to the
+// skin's page; a hover-revealed button zooms the full art.
 
 // Reveal-on-hover, with a touch fallback (no :hover → show always).
 const reveal =
@@ -42,8 +28,6 @@ const reveal =
 export default function SkinCard({
   skin,
   championId,
-  initialStar,
-  initialX,
   showChampion = false,
   rank,
   rankContext,
@@ -51,19 +35,6 @@ export default function SkinCard({
   const skinName = displaySkinName(skin.name, championId)
   const championName = championDisplayName(championId)
   const slug = skinSlug(skin.name, skin.id)
-
-  const { totals, userStar, userX, pending, handleStar, handleX } = useSkinVote(
-    {
-      skinId: skin.id,
-      championId,
-      skinName,
-      baseStars: skin.total_stars,
-      baseBans: skin.total_x,
-      initialStar,
-      initialX,
-      source: 'skin_card',
-    },
-  )
 
   return (
     <div className="card-sheen-host group relative aspect-video overflow-hidden bg-hextech-black/40 transition duration-300 hover:shadow-glow">
@@ -123,7 +94,7 @@ export default function SkinCard({
         <FontAwesomeIcon icon={faMagnifyingGlassPlus} className="h-3.5" />
       </button>
 
-      {/* Bottom plate: name (always), tallies at rest swapping to live controls. */}
+      {/* Bottom plate: champion (optional) + name. */}
       <div className="pointer-events-none absolute inset-x-0 bottom-0 z-20 p-2.5">
         {showChampion && (
           <Link
@@ -137,54 +108,6 @@ export default function SkinCard({
         <p className="text-shadow-hero truncate font-serif text-base font-bold text-gold1">
           {skinName}
         </p>
-
-        <div className="relative mt-1.5 h-8">
-          {/* Resting state: quiet community tallies. */}
-          <div className="pointer-events-none absolute inset-0 flex items-center gap-3 text-sm tabular-nums text-gold1/90 transition-opacity duration-200 group-hover:opacity-0 [@media(hover:none)]:hidden">
-            <span className="text-shadow-hero" title="Stars">
-              <FontAwesomeIcon icon={faStar} className="mr-1 h-3 text-gold2" />
-              {totals.total_stars}
-            </span>
-            <span className="text-shadow-hero" title="Bans">
-              <FontAwesomeIcon icon={faBan} className="mr-1 h-3 text-danger" />
-              {totals.total_x}
-            </span>
-          </div>
-
-          {/* Hover/touch: the live star + ban controls. */}
-          <div className={`absolute inset-0 flex gap-1.5 ${reveal}`}>
-            <button
-              onClick={handleStar}
-              disabled={pending}
-              aria-label={
-                userStar
-                  ? `Unstar ${skinName}`
-                  : `Star ${skinName} (${MAX_STARS} max)`
-              }
-              aria-pressed={userStar}
-              title={
-                userStar ? 'Remove star' : `Star this skin. You only get ${MAX_STARS}`
-              }
-              className={`${chip} ${userStar ? chipStarOn : chipIdle}`}
-            >
-              <FontAwesomeIcon icon={faStar} className="h-3.5" />
-              <span className="tabular-nums">{totals.total_stars}</span>
-            </button>
-            <button
-              onClick={handleX}
-              disabled={pending}
-              aria-label={
-                userX ? `Unban ${skinName}` : `Ban ${skinName} (${MAX_X} max)`
-              }
-              aria-pressed={userX}
-              title={userX ? 'Remove ban' : `Ban this skin. You only get ${MAX_X}`}
-              className={`${chip} ${userX ? chipBanOn : chipIdle}`}
-            >
-              <FontAwesomeIcon icon={faBan} className="h-3.5" />
-              <span className="tabular-nums">{totals.total_x}</span>
-            </button>
-          </div>
-        </div>
       </div>
     </div>
   )

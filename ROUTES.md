@@ -36,14 +36,13 @@ Route count is not a smell; door count is.
   /skins/$slug           Leaf: skin dossier (see display rules)
 /champions               The catalog's "By Champion" lens (keeps its URL;
                          lives under the Skins door in every nav surface)
-  /champions/$id         Leaf: champion dossier — wardrobe, lore, voting.
+  /champions/$id         Leaf: champion dossier — wardrobe, lore.
 /rankings                Every verdict surface (redirects to /rankings/all;
                          slice discovery is the slice bar on the page itself)
   /rankings/$slice       Leaf: all | price-* | line-* | champion-* | year-*
   /rankings/drought      Days since each champion's last skin
-  /rankings/awards       Community Awards — the star & ban superlatives
 /profile                 YOU = the Mirror (PR 4): your tier list, hot takes,
-                         wardrobe, completion. Votes & settings are quiet tabs.
+                         wardrobe, completion. Account is a quiet tab.
                          Works for guests (guests battle too) → doubles as the
                          sign-up pitch: "this is your page — sign in to keep it."
 ```
@@ -65,23 +64,17 @@ beats an overview page; the strip below the game and the Battle ▾ dropdown are
 the overview). If it ever feels wrong, insert a hub at /battle and shift the
 game down one level — a redirect, not a rebuild.
 
-## Display rules — two currencies, one job each (PR 3)
+## Display rules — one rating system
 
-The site has two rating systems: battle Elo and community votes
-(10 stars + 10 bans per player; up/down voting is retired). They stop being
-confusing when each surface picks one job:
+Battle Elo is the sole rating system. Catalog voting (stars, bans, and the
+older up/down vote) has been removed entirely.
 
 - **Elo is the rank.** Anywhere skins are ordered (#N, rankings, sorts), it is
   battle-driven.
-- **Stars/bans are the superlatives.** Scarce and emotional. Shown as badges
-  (★ 214 · ⛔ 12), never as a competing rank. They power /rankings/awards.
-- **Skin pages show everything** — the dossier: Elo ± uncertainty, rank, win%,
-  battle count, stars, bans, price, facts, release.
-- Champion pages surface Elo rank badges; net-vote framing is gone with
-  up/down voting — star/ban counts remain as unranked sort options.
-
-Later phase (gated on real player density + Go API work): Elo becomes the only
-canonical rank everywhere; stars/bans remain engagement + superlative currency.
+- **Skin pages show the dossier** — Elo ± uncertainty, rank, win%, battle
+  count, price, facts, release.
+- Champion pages surface Elo rank badges and sort by release order or battle
+  rating.
 
 ## Migration map (every old URL gets a redirect stub; no chains)
 
@@ -97,7 +90,8 @@ canonical rank everywhere; stars/bans remain engagement + superlative currency.
 | /battle/price-check   | /battle/price-point    |
 | /battle/mirror        | /profile (brief interim home during the move) |
 | /leaderboards         | /battle/leaderboards (retargeted stub) |
-| /awards               | /rankings/awards       |
+| /awards               | /rankings/all (Awards retired with star/ban voting) |
+| /rankings/awards      | /rankings/all (Awards retired with star/ban voting) |
 | /insights/drought     | /rankings/drought (existing stub) |
 | /champions (index)    | stays — it IS the "By champion" lens of the Skins door (PR 2; no redirect needed, both pages share the catalog tab bar) |
 | /account, /user/votes | /profile (existing stubs) |
@@ -109,9 +103,9 @@ the "By champion" lens (two views, one door — not a redesign).
 ## Navbar
 
 **Battle · Skins · Rankings** (+ Champions until PR 2 lands) + search (Ctrl+K)
-+ quota + account. Battle styled as the accent item — it's the brand verb.
++ account. Battle styled as the accent item — it's the brand verb.
 Dropdowns stay registry-driven: Battle ▾ (dailies, leaderboards), Rankings ▾
-(full ranking, drought, awards). Account menu owns the profile/Mirror.
+(full ranking, drought). Account menu owns the profile/Mirror.
 
 ## Home page funnel
 

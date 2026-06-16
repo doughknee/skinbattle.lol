@@ -1,16 +1,14 @@
 import { createFileRoute, Link } from '@tanstack/react-router'
-import { useEffect, useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faArrowLeft } from '@fortawesome/free-solid-svg-icons'
 import { api } from '~/lib/api'
-import { useAuth } from '~/lib/useAuth'
 import { fetchRankings } from '~/lib/games/serverFns'
 import SkinCard from '~/components/SkinCard'
 import Dropdown from '~/components/Dropdown'
 import ErrorState from '~/components/ErrorState'
 import { ChampionDetailSkeleton } from '~/components/Skeletons'
 import { championDisplayName } from '~/lib/skinName'
-import type { Champion } from '~/lib/types'
 
 export const Route = createFileRoute('/champions/$id')({
   loader: async ({ params }) => {
@@ -59,18 +57,13 @@ export const Route = createFileRoute('/champions/$id')({
 })
 
 function ChampionPage() {
-  const { id } = Route.useParams()
-  const { champion: baseChampion, elo } = Route.useLoaderData()
-  const { isAuthenticated, getApiToken } = useAuth()
-  const [champion, setChampion] = useState<Champion>(baseChampion)
+  const { champion, elo } = Route.useLoaderData()
   const [loreExpanded, setLoreExpanded] = useState(false)
   const [sortBy, setSortBy] = useState('release')
 
   const skinSortOptions = [
     { value: 'release', label: 'Release Order' },
     { value: 'rating', label: 'Battle Rating' },
-    { value: 'stars', label: 'Most Starred' },
-    { value: 'x', label: 'Most Banned' },
   ]
 
   // The rank badge is the battle-Elo rank within this wardrobe (from the
@@ -94,40 +87,11 @@ function ChampionPage() {
             a.num - b.num,
         )
         break
-      case 'stars':
-        skins.sort((a, b) => (b.total_stars || 0) - (a.total_stars || 0))
-        break
-      case 'x':
-        skins.sort((a, b) => (b.total_x || 0) - (a.total_x || 0))
-        break
       default:
         skins.sort((a, b) => a.num - b.num)
     }
     return skins
   }, [champion.skins, sortBy, elo])
-
-  // Re-fetch with the access token so the user's own votes are reflected.
-  useEffect(() => {
-    let cancelled = false
-    async function enrich() {
-      if (!isAuthenticated) {
-        setChampion(baseChampion)
-        return
-      }
-      const token = await getApiToken()
-      if (!token) return
-      try {
-        const data = await api.champion(id, token)
-        if (!cancelled) setChampion(data)
-      } catch {
-        /* keep base data on failure */
-      }
-    }
-    enrich()
-    return () => {
-      cancelled = true
-    }
-  }, [id, isAuthenticated, getApiToken, baseChampion])
 
   const splash =
     champion.skins.find((s) => s.num === 0)?.splash_url ??
@@ -196,7 +160,7 @@ function ChampionPage() {
               </span>
             </h2>
             <p className="text-grey1">
-              Star or ban each skin to crown the community favorites.
+              Ranked by head-to-head battles. Tap any skin for its dossier.
             </p>
           </div>
           <div className="w-44">
@@ -217,8 +181,6 @@ function ChampionPage() {
               key={skin.id}
               skin={skin}
               championId={champion.id}
-              initialStar={skin.user_star ?? false}
-              initialX={skin.user_x ?? false}
               rank={ranks.get(skin.id)}
               rankContext="in this wardrobe by battle rating"
             />

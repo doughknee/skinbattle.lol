@@ -31,7 +31,7 @@ function DoorTile({
 }) {
   const active = isActive(section.to, section.match, pathname)
   // Drop the child that just repeats the landing page (a dropdown's hero), but
-  // keep tab-links that share the path yet target a distinct view (?tab=votes).
+  // keep tab-links that share the path yet target a distinct view (?tab=...).
   const children = (section.children ?? []).filter(
     (c) => c.to !== section.to || c.linkSearch,
   )

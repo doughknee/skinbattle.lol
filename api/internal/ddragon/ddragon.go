@@ -197,14 +197,11 @@ func Sync(ctx context.Context, pool *pgxpool.Pool, pinnedVersion string) error {
 	}
 
 	// Reconcile against Community Dragon's authoritative set: drop leftover
-	// Data Dragon rows it no longer lists (old chromas/phantoms) UNLESS they
-	// carry votes - those are kept so no vote is ever lost. Without this, a
-	// stale row with a now-dead Data Dragon splash would render broken (the
+	// Data Dragon rows it no longer lists (old chromas/phantoms). Without this,
+	// a stale row with a now-dead Data Dragon splash would render broken (the
 	// old splash-sweep that hid those is gone).
 	if tag, err := tx.Exec(ctx,
-		`DELETE FROM skins s
-		   WHERE s.id <> ALL($1)
-		     AND NOT EXISTS (SELECT 1 FROM user_skin_votes v WHERE v.skin_id = s.id)`,
+		`DELETE FROM skins s WHERE s.id <> ALL($1)`,
 		present,
 	); err != nil {
 		return fmt.Errorf("reconcile skins: %w", err)

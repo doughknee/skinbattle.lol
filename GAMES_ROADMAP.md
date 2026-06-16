@@ -213,11 +213,11 @@ against these, in priority order:
    themselves: an auto-built personal tier list, "your most contrarian takes,"
    "you over-index on Coven." Every battle sharpens *your* profile, not just the
    global ranking. Protect this above all other features.
-3. **Scarce choices stay sacred.** 10 stars and 10 bans among ~1,600 skins is
-   still a costly choice, and the cost is the fun: decisions feel meaningful in
-   proportion to what they cost. The budget moved from 3 to 10 (2026-06) to give
-   people room to express taste; it stays scarce relative to the catalog.
-   Ritualize changes ("you're dethroning Elementalist Lux?").
+3. **Every choice is a real one.** A head-to-head pick costs something — you
+   commit to one skin over another — and that cost is the fun: decisions feel
+   meaningful, and each one moves the rankings. Catalog voting (stars, bans, and
+   the older up/down vote) was removed (2026-06); the battle is now the whole
+   expression, so there's no separate budget to spend or manage.
 4. **Completion is always visible.** League players are collectors. Per-champion
    wardrobe completion ("rated 82/170 champions") satisfies the collector itch and
    organically pushes users into the unexposed corners of the catalog — the
@@ -249,8 +249,8 @@ against these, in priority order:
 Every interaction serves one of two purposes, and the architecture keeps them
 distinct:
 
-- **Expression layer** (the engagement job): up/down, stars, bans, your personal
-  tier list. This is the user's *identity* — their takes, their profile.
+- **Expression layer** (the engagement job): your battle picks and the personal
+  tier list they build. This is the user's *identity* — their takes, their profile.
 - **Measurement layer** (the informational job): pairwise battles feeding a
   rating model. This is the *instrument* that produces the trustworthy community
   ranking.
@@ -268,12 +268,12 @@ Pairwise comparison fixes all four: self-calibrating, exposure controlled by the
 matchmaker, information-dense (each result propagates through the comparison
 graph), and infinite resolution at the top.
 
-### Role of each mechanic (nothing deleted — recast)
+### Role of each mechanic (catalog voting retired)
 
 | Mechanic | Role |
 |---|---|
-| Up/down | **Retired (2026-06).** It was a redundant, weaker ranking signal competing with Elo; pairwise battles carry that job. Postgres columns remain but are frozen. |
-| Star ×10 / Ban ×10 | Strongest preference signal we have (choosing 10 of 1,600 is costly = informative). Profile centerpiece ("signature skins"). Scarcity is permanent; budget raised from 3 (2026-06). |
+| Up/down | **Retired (2026-06).** It was a redundant, weaker ranking signal competing with Elo; pairwise battles carry that job. The legacy `skins.total_votes` column remains but is frozen. |
+| Star ×10 / Ban ×10 | **Retired (2026-06).** A parallel preference signal with its own budget to manage; head-to-head battles now carry the whole expression + measurement job. The `user_skin_votes` table and `skins.total_stars`/`total_x` columns were dropped (migration 0008). |
 | Pairwise battle | Measurement backbone. Feeds global rating + personal rating simultaneously. |
 
 ### Model decisions (design-level)
@@ -377,18 +377,15 @@ swipes wastes the data engine) and anti-abuse needs server visibility. So:
   churn landmine.
 - **Permission split** (falls out of the principles): anything that's *playing*
   is guest-open — all dailies, Quick Battle, viewing rankings, own tier list.
-  Anything *scarce, public, or social* needs an account:
-  - Stars/bans: scarcity is meaningless if clearing cookies grants 10 fresh
-    stars; this is also the obvious abuse vector.
+  Anything *public or social* needs an account:
   - Named leaderboard placement (guests can see boards, not occupy them).
   - Daily Draft submissions & comments — moderation needs accountability.
 - **Trust weighting**: guest battles count toward global ratings at reduced
   weight and tighter rate limits; weight upgrades retroactively when the guest
   converts (raw events are kept forever, so the refit just re-weights).
 - **Conversion prompts fire when value exists, never before play** (principle 9):
-  end of first daily ("save your streak"), ~20 battles ("your tier list is
-  taking shape — keep it"), and the moment a guest taps a star — the highest-
-  intent moment on the site, because they're already committed to a specific skin.
+  end of first daily ("save your streak") and ~20 battles ("your tier list is
+  taking shape — keep it") — fired only once real value exists.
 - Honest pitch when localStorage is the only tether: "your progress lives on
   this device until you create an account."
 
@@ -428,7 +425,7 @@ badly is a citation lost.
 | Champion wardrobe | `/champions/<id>` | Skin grid, best/worst, completion stats |
 | Ranking slice | `/rankings/<slice>` (per line, price tier, year…) | Top 3 podium + slice title |
 | Matchup result | `/battles/<a>-vs-<b>` | Both splashes, win % split |
-| Personal tier list | `/u/<name>` | Tier strip + signature (starred) skins |
+| Personal tier list | `/u/<name>` | Tier strip + signature (top-rated) skins |
 | Daily result | `/daily/<game>/<date>` | Emoji grid + streak (no spoilers pre-completion) |
 | Insight pages | `/insights/<slug>` | Headline stat (e.g., drought leader + days) |
 
@@ -507,8 +504,8 @@ Unlock when: rankings are stable enough that predictions and comparisons feel fa
 - **Release Day Predictions** — predict where a new skin line settles after 2
   weeks. Ties the site to the live game's news cadence; forecaster leaderboard.
 - **Ranked divisions** — Iron → Challenger from weekly game performance, seasonal
-  resets. (Seasons reset *competitive* standings only — personal tier lists,
-  stars, and completion never reset; identity is permanent, competition is
+  resets. (Seasons reset *competitive* standings only — personal tier lists
+  and completion never reset; identity is permanent, competition is
   seasonal.)
 - **Season Awards** — the season finale. Categories (Best Splash, Biggest Cash
   Grab, Most Improved Wardrobe…), a live-voted ceremony week, then archive the
