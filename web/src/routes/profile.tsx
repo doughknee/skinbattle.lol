@@ -2,20 +2,12 @@ import { createFileRoute, Link } from '@tanstack/react-router'
 import { useEffect, useState } from 'react'
 import { usePostHog } from 'posthog-js/react'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import {
-  faStar,
-  faBan,
-  faCheckToSlot,
-  faScaleUnbalanced,
-  faUser,
-} from '@fortawesome/free-solid-svg-icons'
+import { faScaleUnbalanced, faUser } from '@fortawesome/free-solid-svg-icons'
 import type { IconDefinition } from '@fortawesome/fontawesome-svg-core'
-import SkinCard from '~/components/SkinCard'
-import EmptyState from '~/components/EmptyState'
 import ErrorState from '~/components/ErrorState'
 import AccountSettings from '~/components/AccountSettings'
 import MirrorView from '~/components/MirrorView'
-import { AccountTabSkeleton, VotesTabSkeleton } from '~/components/Skeletons'
+import { AccountTabSkeleton } from '~/components/Skeletons'
 import { api } from '~/lib/api'
 import { useAuth } from '~/lib/useAuth'
 import { championIconUrl, useDDragonVersion } from '~/lib/ddragon'
@@ -28,13 +20,9 @@ import { btnPrimarySm } from '~/lib/ui'
 import { fetchMirror } from '~/lib/games/serverFns'
 import { guestRestoreToken, rememberGuestToken } from '~/lib/games/client'
 import { ogMeta } from '~/lib/games/ogMeta'
-import type { Me, Skin } from '~/lib/types'
+import type { Me } from '~/lib/types'
 
-// Per-user quota, mirrored from CONTRACT.md (max 10 stars / 10 bans).
-const MAX_STARS = 10
-const MAX_X = 10
-
-type Tab = 'mirror' | 'votes' | 'account'
+type Tab = 'mirror' | 'account'
 
 // The profile IS the Mirror (ROUTES.md): the tier list your battles build is
 // the page's centerpiece, with the voting record and account settings as
@@ -42,7 +30,7 @@ type Tab = 'mirror' | 'votes' | 'account'
 // makes this page itself the sign-up pitch.
 export const Route = createFileRoute('/profile')({
   validateSearch: (s: Record<string, unknown>): { tab?: Tab } =>
-    s.tab === 'votes' || s.tab === 'account' ? { tab: s.tab } : {},
+    s.tab === 'account' ? { tab: s.tab } : {},
   // The Mirror loads before render (SSR-complete, read-only - viewing mints
   // nothing). Votes/account are auth-only; the page prefetches both payloads
   // in the background once auth resolves, so tab switches are instant.
@@ -93,121 +81,6 @@ function SignInGate({ message }: { message: string }) {
   )
 }
 
-// ─── votes tab ──────────────────────────────────────────────────────────────
-
-function StatTile({
-  icon,
-  value,
-  label,
-}: {
-  icon: IconDefinition
-  value: string
-  label: string
-}) {
-  return (
-    <div className="flex items-center gap-4 bg-hextech-black/30 p-5 outline outline-icon/20 -outline-offset-2">
-      <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-hextech-black/60 outline outline-gold5/60 -outline-offset-2">
-        <FontAwesomeIcon icon={icon} className="h-5 text-gold2" />
-      </div>
-      <div>
-        <div className="font-serif text-2xl font-bold text-gold1 tabular-nums">
-          {value}
-        </div>
-        <div className="text-xs uppercase tracking-widest text-grey1">
-          {label}
-        </div>
-      </div>
-    </div>
-  )
-}
-
-function VoteSection({ title, skins }: { title: string; skins: Skin[] }) {
-  return (
-    <section className="animate-fade-up mb-20">
-      <h2 className="font-serif text-3xl md:text-4xl font-bold mb-2 text-gold2">
-        {title}
-        <span className="ml-3 text-lg font-normal text-grey1">
-          {skins.length}
-        </span>
-      </h2>
-      <div className="stagger mt-8 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-5 gap-4">
-        {skins.map((skin) => (
-          <SkinCard
-            key={skin.id}
-            skin={skin}
-            championId={skin.champion_id}
-            initialStar={skin.user_star}
-            initialX={skin.user_x}
-            showChampion
-          />
-        ))}
-      </div>
-    </section>
-  )
-}
-
-// Renders the prefetched voting record (fetched by ProfilePage the moment
-// auth resolves); `skins` is null while the background fetch is in flight.
-function VotesTab({
-  skins,
-  error,
-}: {
-  skins: Skin[] | null
-  error: string | null
-}) {
-  const { isAuthenticated, isLoading } = useAuth()
-
-  if (!isLoading && !isAuthenticated)
-    return (
-      <SignInGate message="Stars and bans belong to your account. Sign in to see your voting record." />
-    )
-  if (error)
-    return <ErrorState title="Couldn't load your votes" message={error} />
-  if (isLoading || !skins) return <VotesTabSkeleton />
-
-  const starred = skins.filter((skin) => skin.user_star)
-  const xed = skins.filter((skin) => skin.user_x)
-
-  // Only sections with content render - the stat strip already accounts for
-  // both buckets, so empty grids would just repeat "0".
-  const voteSections = [
-    { title: 'Starred Skins', skins: starred },
-    { title: 'Banned Skins', skins: xed },
-  ].filter((s) => s.skins.length > 0)
-
-  return (
-    <>
-      <div className="stagger mb-20 grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <StatTile
-          icon={faStar}
-          value={`${starred.length}/${MAX_STARS}`}
-          label="Stars spent"
-        />
-        <StatTile
-          icon={faBan}
-          value={`${xed.length}/${MAX_X}`}
-          label="Bans used"
-        />
-      </div>
-
-      {voteSections.length === 0 ? (
-        <div className="mb-20">
-          <EmptyState
-            icon={faCheckToSlot}
-            title="You haven't voted yet"
-            message="Browse the champions, pick your favorites, and your record will show up here."
-            cta={{ to: '/champions', label: 'Start Voting' }}
-          />
-        </div>
-      ) : (
-        voteSections.map((s) => (
-          <VoteSection key={s.title} title={s.title} skins={s.skins} />
-        ))
-      )}
-    </>
-  )
-}
-
 // ─── account tab ────────────────────────────────────────────────────────────
 
 // Renders the prefetched account payload; `settled` flips once the background
@@ -236,7 +109,6 @@ function AccountTab({
 
 const TABS: { id: Tab; label: string; icon: IconDefinition }[] = [
   { id: 'mirror', label: 'The Mirror', icon: faScaleUnbalanced },
-  { id: 'votes', label: 'My Votes', icon: faCheckToSlot },
   { id: 'account', label: 'Account', icon: faUser },
 ]
 
@@ -244,7 +116,6 @@ const TABS: { id: Tab; label: string; icon: IconDefinition }[] = [
 // username (when known), and only the eyebrow follows the active tab.
 const TAB_EYEBROWS: Record<Tab, string> = {
   mirror: 'Your taste, reflected',
-  votes: 'Your stars and bans',
   account: 'Your settings',
 }
 
@@ -287,28 +158,14 @@ function ProfilePage() {
     return () => window.removeEventListener(PROFILE_UPDATED_EVENT, onUpdate)
   }, [])
 
-  // Prefetch both auth-only tabs' payloads as soon as auth resolves, so
-  // switching to Votes or Account renders cached data instead of refetching.
-  const [votes, setVotes] = useState<Skin[] | null>(null)
-  const [votesError, setVotesError] = useState<string | null>(null)
+  // Prefetch the Account payload as soon as auth resolves, so switching to
+  // Account renders cached data instead of refetching.
   const [me, setMe] = useState<Me | null>(null)
   const [meSettled, setMeSettled] = useState(false)
 
   useEffect(() => {
     if (isLoading || !isAuthenticated) return
     let cancelled = false
-    withApiToken((token) => api.userVotes(token))
-      .then((votesData) => {
-        if (cancelled) return
-        setVotes(votesData.skins || [])
-        setVotesError(null)
-      })
-      .catch((err) => {
-        if (cancelled) return
-        setVotesError(
-          err instanceof Error ? err.message : 'Failed to load your votes',
-        )
-      })
     withApiToken((token) => api.me(token))
       .then((meData) => {
         if (cancelled) return
@@ -369,7 +226,6 @@ function ProfilePage() {
       </div>
 
       {active === 'mirror' && <MirrorView state={mirror} />}
-      {active === 'votes' && <VotesTab skins={votes} error={votesError} />}
       {active === 'account' && (
         <AccountTab me={me} settled={meSettled} onChange={setMe} />
       )}

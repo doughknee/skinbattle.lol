@@ -1,71 +1,47 @@
 import { createFileRoute, Link } from '@tanstack/react-router'
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import {
   faArrowRight,
-  faBan,
   faHourglassHalf,
   faScaleUnbalanced,
-  faStar,
 } from '@fortawesome/free-solid-svg-icons'
-import { usePostHog } from 'posthog-js/react'
-import SkinCard from '~/components/SkinCard'
-import EmptyState from '~/components/EmptyState'
 import { HomeSkeleton } from '~/components/Skeletons'
-import { toast } from '~/components/Toaster'
 import { api } from '~/lib/api'
-import { useAuth } from '~/lib/useAuth'
 import { fetchHome } from '~/lib/games/serverFns'
 import { SITE_SECTIONS } from '~/lib/siteMap'
-import { btnPrimary, btnSecondary, btnSecondarySm } from '~/lib/ui'
-import { userStatsStore, MAX_STARS, MAX_X } from '~/lib/userStatsStore'
-import { captureSkinVote } from '~/lib/analytics'
+import {
+  btnPrimary,
+  btnPrimarySm,
+  btnSecondary,
+  btnSecondarySm,
+} from '~/lib/ui'
 import type { HomeSlide, HomeState } from '~/lib/games/types'
-import type { Skin } from '~/lib/types'
 
 // A guaranteed-valid base splash used if the games catalog has nothing yet.
 const FALLBACK_SPLASH =
   'https://ddragon.leagueoflegends.com/cdn/img/champion/splash/Jhin_0.jpg'
 
-// One hero slide plus its community star/ban totals from the Go API.
-type Slide = HomeSlide & { totalStars: number; totalX: number }
-
 export const Route = createFileRoute('/')({
   loader: async () => {
-    // Three independent sources; each degrades on its own so the page
-    // always renders. The hero set comes from the games catalog, the vote
-    // totals and trending grid from the Go API.
-    const [homeRes, championsRes, awardsRes] = await Promise.allSettled([
+    // Two independent sources; each degrades on its own so the page always
+    // renders. The hero set and community totals come from the games catalog,
+    // the catalog counts from the Go API.
+    const [homeRes, championsRes] = await Promise.allSettled([
       fetchHome(),
       api.champions(),
-      api.awards(),
     ])
     const home: HomeState | null =
       homeRes.status === 'fulfilled' ? homeRes.value : null
     const champions =
       championsRes.status === 'fulfilled' ? championsRes.value : null
-    const awards = awardsRes.status === 'fulfilled' ? awardsRes.value : null
-
-    const totalsBySkin = new Map((awards?.allSkins ?? []).map((s) => [s.id, s]))
-    const slides: Slide[] = (home?.slides ?? []).map((s) => ({
-      ...s,
-      totalStars: totalsBySkin.get(s.skinId)?.total_stars ?? 0,
-      totalX: totalsBySkin.get(s.skinId)?.total_x ?? 0,
-    }))
-
-    // Only feature skins that actually have stars - on a cold start the
-    // "top starred" list is just arbitrary skins with zero votes.
-    const starred = (awards?.topStarred ?? []).filter(
-      (s) => (s.total_stars ?? 0) > 0,
-    )
 
     return {
-      slides,
+      slides: home?.slides ?? [],
       championCount: champions?.length ?? 170,
       skinCount: champions
         ? champions.reduce((n, c) => n + (c.skins?.length ?? 0), 0)
         : (home?.community.catalog ?? 0),
-      trending: starred.slice(0, 4),
       community: home?.community ?? null,
       drought: home?.drought ?? null,
     }
@@ -75,7 +51,7 @@ export const Route = createFileRoute('/')({
       {
         name: 'description',
         content:
-          'Every League of Legends skin, ranked by head-to-head community battles. Star your favorites, ban the misses, settle the debate.',
+          'Every League of Legends skin, ranked by head-to-head community battles. Pick a winner and settle the debate.',
       },
     ],
   }),
@@ -102,48 +78,19 @@ function formatMonth(iso: string): string {
 }
 
 function HomePage() {
-  const { slides, championCount, skinCount, trending, community, drought } =
+  const { slides, championCount, skinCount, community, drought } =
     Route.useLoaderData()
-  const { isAuthenticated, getApiToken } = useAuth()
-
-  // Signed in: one /user/votes call enriches both the hero plate and the
-  // trending grid with the user's own stars/bans. (The awards endpoint only
-  // carries user flags on its top lists, not on allSkins.)
-  const [mine, setMine] = useState<Map<string, Skin> | null>(null)
-  useEffect(() => {
-    let cancelled = false
-    async function enrich() {
-      if (!isAuthenticated) {
-        setMine(null)
-        return
-      }
-      const token = await getApiToken()
-      if (!token) return
-      try {
-        const data = await api.userVotes(token)
-        if (!cancelled) setMine(new Map(data.skins.map((s) => [s.id, s])))
-      } catch {
-        /* keep public data */
-      }
-    }
-    enrich()
-    return () => {
-      cancelled = true
-    }
-  }, [isAuthenticated, getApiToken])
 
   return (
     <>
       <Hero
         slides={slides}
-        mine={mine}
         championCount={championCount}
         skinCount={skinCount}
         battleCount={community?.battles ?? 0}
       />
       <BattleTeaser community={community} />
       <DailyChallenges />
-      <MostLoved trending={trending} mine={mine} />
       <div className="container mx-auto grid grid-cols-1 gap-6 px-6 py-12 lg:grid-cols-2">
         <DroughtHook drought={drought} />
         <MirrorPitch />
@@ -153,17 +100,15 @@ function HomePage() {
   )
 }
 
-/* ── Hero: full-bleed daily slideshow with inline star/ban ─────────────── */
+/* ── Hero: full-bleed daily slideshow ──────────────────────────────────── */
 
 function Hero({
   slides,
-  mine,
   championCount,
   skinCount,
   battleCount,
 }: {
-  slides: Slide[]
-  mine: Map<string, Skin> | null
+  slides: HomeSlide[]
   championCount: number
   skinCount: number
   battleCount: number
@@ -229,8 +174,8 @@ function Hero({
             className="animate-fade-up text-shadow-hero mt-6 max-w-xl text-lg text-grey1 md:text-xl"
             style={{ animationDelay: '200ms' }}
           >
-            Every League skin, ranked by head-to-head battles. Pick winners,
-            star your favorites, ban the misses. The community decides.
+            Every League skin, ranked by head-to-head battles. Pick a winner,
+            watch the rankings move. The community decides.
           </p>
 
           <div
@@ -278,7 +223,6 @@ function Hero({
           >
             <SlidePlate
               slide={current}
-              mine={mine}
               index={index}
               count={count}
               onJump={setIndex}
@@ -290,137 +234,19 @@ function Hero({
   )
 }
 
-interface SlideVote {
-  star: boolean
-  x: boolean
-  totalStars: number
-  totalX: number
-}
-
-const plateChip =
-  'flex h-10 flex-1 cursor-pointer items-center justify-center gap-2 text-sm font-bold outline -outline-offset-1 transition duration-150 active:scale-[0.96] disabled:cursor-not-allowed disabled:opacity-50'
-const plateChipIdle =
-  'bg-hextech-black/40 text-grey1 outline-icon/30 hover:text-gold1 hover:outline-icon'
-const plateChipGold = 'bg-gold5/30 text-gold1 outline-gold2'
-const plateChipRed = 'bg-danger-surface/50 text-danger outline-danger-border/70'
-
-// The featured skin's info + inline star/ban. This is the site's voting
-// model in miniature: act on it here and you've learned the whole system.
+// The featured skin's info, with a path into the loop: read the dossier or
+// jump straight into a battle.
 function SlidePlate({
   slide,
-  mine,
   index,
   count,
   onJump,
 }: {
-  slide: Slide
-  mine: Map<string, Skin> | null
+  slide: HomeSlide
   index: number
   count: number
   onJump: (i: number) => void
 }) {
-  const { isAuthenticated, withApiToken, login } = useAuth()
-  const posthog = usePostHog()
-  const [pending, setPending] = useState(false)
-  // Optimistic per-skin overrides on top of loader totals + auth enrichment.
-  const [votes, setVotes] = useState<Record<string, SlideVote>>({})
-  useEffect(() => setVotes({}), [mine])
-
-  const enriched = mine?.get(slide.skinId)
-  const v: SlideVote = votes[slide.skinId] ?? {
-    star: enriched?.user_star ?? false,
-    x: enriched?.user_x ?? false,
-    totalStars: enriched?.total_stars ?? slide.totalStars,
-    totalX: enriched?.total_x ?? slide.totalX,
-  }
-
-  const cast = async (next: { star: boolean; x: boolean }) => {
-    if (!isAuthenticated) {
-      // Guest tried to vote from the home hero - record the sign-in intent
-      // (the activation funnel's missing first step) before redirecting.
-      posthog.capture('auth_prompt_clicked', {
-        trigger: 'star_ban_gate',
-        source: 'home_hero',
-        skin_id: slide.skinId,
-      })
-      login()
-      return
-    }
-    if (next.star && !v.star && userStatsStore.get().usedStars >= MAX_STARS) {
-      toast(`All ${MAX_STARS} stars used. Unstar another skin first.`, 'error')
-      return
-    }
-    if (next.x && !v.x && userStatsStore.get().usedX >= MAX_X) {
-      toast(`All ${MAX_X} bans used. Unban another skin first.`, 'error')
-      return
-    }
-    const prev = v
-    const optimistic: SlideVote = {
-      ...next,
-      totalStars: prev.totalStars + (next.star ? 1 : 0) - (prev.star ? 1 : 0),
-      totalX: prev.totalX + (next.x ? 1 : 0) - (prev.x ? 1 : 0),
-    }
-    setVotes((m) => ({ ...m, [slide.skinId]: optimistic }))
-    setPending(true)
-    try {
-      const data = await withApiToken(
-        (token) => api.vote({ skinId: slide.skinId, star: next.star, x: next.x }, token),
-        'Please sign in to vote.',
-      )
-      if (data.totals) {
-        setVotes((m) => ({
-          ...m,
-          [slide.skinId]: {
-            ...next,
-            totalStars: data.totals.total_stars,
-            totalX: data.totals.total_x,
-          },
-        }))
-      }
-      userStatsStore.adjust({
-        stars: next.star === prev.star ? 0 : next.star ? 1 : -1,
-        x: next.x === prev.x ? 0 : next.x ? 1 : -1,
-      })
-      const used = userStatsStore.get()
-      if (next.star !== prev.star) {
-        captureSkinVote(posthog, next.star ? 'star' : 'unstar', {
-          skinId: slide.skinId,
-          skinName: slide.name,
-          championId: slide.championId,
-          used: used.usedStars,
-          source: 'home_hero',
-        })
-        toast(
-          next.star
-            ? `Star ${used.usedStars}/${MAX_STARS} used`
-            : `Star removed. ${used.usedStars}/${MAX_STARS} used`,
-          'success',
-        )
-      }
-      if (next.x !== prev.x) {
-        captureSkinVote(posthog, next.x ? 'ban' : 'unban', {
-          skinId: slide.skinId,
-          skinName: slide.name,
-          championId: slide.championId,
-          used: used.usedX,
-          source: 'home_hero',
-        })
-        toast(
-          next.x
-            ? `Ban ${used.usedX}/${MAX_X} used`
-            : `Ban removed. ${used.usedX}/${MAX_X} used`,
-          'success',
-        )
-      }
-      window.dispatchEvent(new CustomEvent('updateUserStats'))
-    } catch (err) {
-      setVotes((m) => ({ ...m, [slide.skinId]: prev }))
-      toast(err instanceof Error ? err.message : 'Vote failed', 'error')
-    } finally {
-      setPending(false)
-    }
-  }
-
   return (
     <div className="border-t-2 border-t-gold5 bg-hextech-black/70 p-5 outline outline-icon/30 -outline-offset-1 backdrop-blur-md">
       <div className="mb-1 flex items-baseline justify-between gap-3">
@@ -450,37 +276,21 @@ function SlidePlate({
       </p>
 
       <div className="mt-4 flex gap-2">
-        <button
-          onClick={() => cast({ star: !v.star, x: v.x })}
-          disabled={pending}
-          aria-pressed={v.star}
-          aria-label={v.star ? `Unstar ${slide.name}` : `Star ${slide.name}`}
-          title={v.star ? 'Remove star' : `Star this skin (${MAX_STARS} max)`}
-          className={`${plateChip} ${v.star ? plateChipGold : plateChipIdle}`}
+        <Link
+          to="/skins/$slug"
+          params={{ slug: slide.slug }}
+          className={`flex-1 ${btnSecondarySm}`}
         >
-          <FontAwesomeIcon icon={faStar} className="h-3.5" />
-          <span className="tabular-nums">{v.totalStars}</span>
-          {v.star ? 'Starred' : 'Star'}
-        </button>
-        <button
-          onClick={() => cast({ star: v.star, x: !v.x })}
-          disabled={pending}
-          aria-pressed={v.x}
-          aria-label={v.x ? `Unban ${slide.name}` : `Ban ${slide.name}`}
-          title={v.x ? 'Remove ban' : `Ban this skin (${MAX_X} max)`}
-          className={`${plateChip} ${v.x ? plateChipRed : plateChipIdle}`}
-        >
-          <FontAwesomeIcon icon={faBan} className="h-3.5" />
-          <span className="tabular-nums">{v.totalX}</span>
-          {v.x ? 'Banned' : 'Ban'}
-        </button>
+          View skin
+        </Link>
+        <Link to="/battle" className={`group flex-1 ${btnPrimarySm}`}>
+          Battle now
+          <FontAwesomeIcon
+            icon={faArrowRight}
+            className="h-4 transition-transform duration-150 group-hover:translate-x-1"
+          />
+        </Link>
       </div>
-
-      <p className="mt-3 text-xs text-grey1/80">
-        {isAuthenticated
-          ? `You get ${MAX_STARS} stars and ${MAX_X} bans. Spend them with conviction.`
-          : `Sign in to spend your ${MAX_STARS} stars and ${MAX_X} bans.`}
-      </p>
 
       {count > 1 && (
         <div className="mt-4 flex items-center gap-2">
@@ -597,65 +407,6 @@ function DailyChallenges() {
           </Link>
         ))}
       </div>
-    </section>
-  )
-}
-
-/* ── Most loved (live, auth-enriched) ──────────────────────────────────── */
-
-function MostLoved({
-  trending,
-  mine,
-}: {
-  trending: Skin[]
-  mine: Map<string, Skin> | null
-}) {
-  const skins = useMemo(
-    () => trending.map((s) => mine?.get(s.id) ?? s),
-    [trending, mine],
-  )
-  return (
-    <section className="container mx-auto px-6 py-12">
-      <div className="mb-10 flex items-end justify-between gap-4">
-        <div>
-          <h2 className="font-serif text-3xl font-bold text-gold2 md:text-4xl">
-            Most Loved Right Now
-          </h2>
-          <p className="mt-2 text-lg text-grey1">
-            The skins collecting the most stars. Yours count the moment you
-            cast them.
-          </p>
-        </div>
-        <Link
-          to="/rankings/awards"
-          className="hidden whitespace-nowrap items-center gap-2 font-serif font-bold text-grey1 transition duration-150 hover:text-gold1 sm:inline-flex"
-        >
-          View all awards
-          <FontAwesomeIcon icon={faArrowRight} className="h-4" />
-        </Link>
-      </div>
-      {skins.length === 0 ? (
-        <EmptyState
-          icon={faStar}
-          title="No stars awarded yet"
-          message={`The throne is empty. Be the first to crown a favorite: every player gets ${MAX_STARS} stars to spend.`}
-          cta={{ to: '/champions', label: 'Start Voting' }}
-          compact
-        />
-      ) : (
-        <div className="stagger grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {skins.map((skin) => (
-            <SkinCard
-              key={skin.id}
-              skin={skin}
-              championId={skin.champion_id}
-              initialStar={skin.user_star ?? false}
-              initialX={skin.user_x ?? false}
-              showChampion
-            />
-          ))}
-        </div>
-      )}
     </section>
   )
 }

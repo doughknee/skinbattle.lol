@@ -650,10 +650,6 @@ function RankingSlicePage() {
           <FontAwesomeIcon icon={faShuffle} className="h-4" />
           Battle to sharpen this list
         </Link>
-        <Link to="/rankings/awards" className={btnSecondarySm}>
-          <FontAwesomeIcon icon={faCrown} className="h-4" />
-          Awards
-        </Link>
         <Link to="/rankings/drought" className={btnSecondarySm}>
           <FontAwesomeIcon icon={faHourglassHalf} className="h-4" />
           Drought Index

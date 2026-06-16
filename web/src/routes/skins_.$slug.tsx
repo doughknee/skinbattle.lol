@@ -10,8 +10,6 @@ import {
   faShuffle,
 } from '@fortawesome/free-solid-svg-icons'
 import ErrorState from '~/components/ErrorState'
-import SkinVoteBar from '~/components/SkinVoteBar'
-import { api } from '~/lib/api'
 import { btnPrimarySm, btnSecondarySm } from '~/lib/ui'
 import { fetchSkinPage } from '~/lib/games/serverFns'
 import { guestRestoreToken, rememberGuestToken } from '~/lib/games/client'
@@ -33,24 +31,7 @@ export const Route = createFileRoute('/skins_/$slug')({
         statusCode: 301,
       })
     }
-    // Star/ban totals come from the Go API. Display rule: these are the
-    // SUPERLATIVE currency (badges), never a competing rank - Elo above
-    // is the rank. Non-fatal: the dossier must not break when the API is
-    // unreachable; the badges just hide.
-    let votes: { stars: number; bans: number } | null = null
-    try {
-      const champ = await api.champion(state.championId)
-      const s = champ.skins.find((sk) => sk.id === state.skinId)
-      if (s) {
-        votes = {
-          stars: s.total_stars || 0,
-          bans: s.total_x || 0,
-        }
-      }
-    } catch {
-      /* badges hide */
-    }
-    return { ...state, votes }
+    return state
   },
   head: ({ loaderData }) => ({
     meta: loaderData
@@ -288,14 +269,6 @@ function SkinPage() {
           )}
         </div>
       </section>
-
-      <SkinVoteBar
-        skinId={state.skinId}
-        championId={state.championId}
-        skinName={state.name}
-        baseStars={state.votes?.stars ?? 0}
-        baseBans={state.votes?.bans ?? 0}
-      />
 
       <div className="mt-8 flex flex-wrap items-center gap-3">
         <Link to="/battle" className={btnPrimarySm}>

@@ -40,21 +40,12 @@ func NewRouter(
 
 	// Public routes.
 	r.Get("/api/champions", h.listChampions)
+	r.Get("/api/champions/{id}", h.getChampion)
 	r.Get("/api/skins", h.listSkins)
-
-	// Auth-optional routes.
-	r.Group(func(r chi.Router) {
-		r.Use(authMW.OptionalAuth)
-		r.Get("/api/champions/{id}", h.getChampion)
-		r.Get("/api/awards", h.getAwards)
-	})
 
 	// Authenticated routes.
 	r.Group(func(r chi.Router) {
 		r.Use(authMW.RequireAuth)
-		r.Post("/api/votes", h.postVote)
-		r.Get("/api/user/stats", h.getUserStats)
-		r.Get("/api/user/votes", h.getUserVotes)
 		r.Get("/api/me", h.getMe)
 		r.Patch("/api/me", h.patchMe)
 		r.Delete("/api/user", h.deleteUser)

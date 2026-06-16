@@ -582,6 +582,4 @@ export interface RoadmapState {
   ratedSkins: number // skins with at least one battle
   totalSkins: number // full catalog size
   medianBattles: number // median battles among rated skins
-  starsGiven: number | null
-  bansCast: number | null
 }

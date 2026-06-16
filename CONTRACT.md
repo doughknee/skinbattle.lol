@@ -6,56 +6,36 @@ The Go service serves all routes; in deployment the frontend reverse-proxies `/a
 ## Auth model
 - Auth is via **Logto** (OIDC). The frontend obtains a Logto **access token** (audience = the API resource) and sends it as `Authorization: Bearer <token>`.
 - The Go API validates the JWT against Logto's JWKS (`{LOGTO_ENDPOINT}/oidc/jwks`), checking `iss` and `aud`.
-- **JIT provisioning:** on any authenticated request, the API upserts a local `users` row keyed by `logto_id` (the token `sub`), capturing `email`/`username` claims. The local `users.id` (bigint) is the FK used by `user_skin_votes`.
-- Endpoints marked **(auth optional)** work logged-out (no user-vote columns) and enriched when a valid token is present.
+- **JIT provisioning:** on any authenticated request, the API upserts a local `users` row keyed by `logto_id` (the token `sub`), capturing `email`/`username` claims. The local `users.id` (bigint) is the canonical local identity.
 
 ## Types
 ```
 Champion { id: string, key: string, title: string, blurb: string, lore: string, skins: Skin[] }
-Skin {
-  id: string, champion_id: string, num: int, name: string, chromas: bool, splash_url: string,
-  total_stars: int, total_x: int,
-  // present only when request is authenticated:
-  user_star?: bool, user_x?: bool
-}
+Skin { id: string, champion_id: string, num: int, name: string, chromas: bool, splash_url: string }
 ```
-Up/down voting is retired: the legacy `vote`/`total_votes` columns still exist
-in Postgres (data preserved, frozen) but are never written or served anymore.
-Stars and bans are the only catalog-voting currency; battle Elo is the rank
-(see ROUTES.md "Display rules").
+Catalog voting (stars, bans, and the older up/down vote) has been removed —
+head-to-head battle Elo is the sole ranking (see ROUTES.md "Display rules").
+Migration 0008 dropped the `user_skin_votes` table and the
+`skins.total_stars`/`total_x` columns; the legacy `skins.total_votes` column
+still exists in Postgres (frozen, never read or written).
 
 ## Endpoints
 | Method | Path | Auth | Request | Response |
 |---|---|---|---|---|
 | GET | `/healthz` | none | — | `{status:"ok"}` |
 | GET | `/api/champions` | none | — | `Champion[]` (each with `skins`) |
-| GET | `/api/champions/{id}` | optional | id case-insensitive | `Champion` with `skins` (skins ordered by `num`, include user vote cols if auth) |
+| GET | `/api/champions/{id}` | none | id case-insensitive | `Champion` with `skins` (ordered by `num`) |
 | GET | `/api/skins` | none | — | `Skin[]` |
-| GET | `/api/awards` | optional | — | `{ topStarred: Skin[10], topXed: Skin[10], allSkins: Skin[] }` |
-| POST | `/api/votes` | required | `{ skinId: string, star: bool, x: bool }` (legacy `vote` field is ignored if sent) | `{ message, totals: {total_stars,total_x} }` |
-| GET | `/api/user/stats` | required | — | `{ usedStars: int, usedX: int }` |
-<<<<<<< HEAD
-| GET | `/api/user/votes` | required | — | `{ skins: Skin[] }` (only skins where vote!=0 or star or x) |
 | GET | `/api/me` | required | — | `{ id, email, username, avatar_champion_id }` (`avatar_champion_id` nullable) |
 | PATCH | `/api/me` | required | `{ username?: string, avatarChampionId?: string }` (partial; `avatarChampionId: ""` clears the avatar) | updated `{ id, email, username, avatar_champion_id }` |
-=======
-| GET | `/api/user/votes` | required | — | `{ skins: Skin[] }` (only skins where star or x) |
-| GET | `/api/me` | required | — | `{ id, email, username }` |
->>>>>>> origin/claude/stars-bans-only-voting
 | DELETE | `/api/user` | required | — | `{ message }` (deletes local rows; deletes Logto user via Management API if configured) |
 
 ### PATCH /api/me rules
 - `username`: 3–30 chars matching `^[A-Za-z_][A-Za-z0-9_]*$` (Logto's username alphabet) → else 400. Renames are synced to Logto **first** (the JIT provisioner re-syncs the local row from the Logto profile, so a local-only rename would be reverted): 409 if taken (locally or in Logto), **503 if Logto M2M creds are not configured**, 502 if Logto errors. Legacy rows without a `logto_id` update locally only.
 - `avatarChampionId`: must be a `champions.id` from the catalog → else 400. Stored locally only (`users.avatar_champion_id`); the frontend renders it as the Data Dragon champion square icon.
 
-## Business rules (must preserve exactly)
-- `star`/`x` must be booleans → else 400. A legacy `vote` field in the body is silently ignored (stale clients must not 500).
-- Per user: **max 10 `star`** and **max 10 `x`** across all skins. Exceeding → 400, transaction rolled back.
-- A vote write upserts the row in `user_skin_votes` (the legacy `vote` column is left untouched; zero on new rows), then recomputes and persists `skins.total_stars` (COUNT star=true) and `skins.total_x` (COUNT x=true) for that skin, all in one transaction. `skins.total_votes` is frozen at its legacy value.
-
 ## Caching (Redis)
-- Cache base champion list and per-champion base data (no user votes) with a short TTL; invalidate the affected champion + lists on vote write.
-- Maintain leaderboard sorted sets `lb:stars` and `lb:x` (member=skin_id, score=total). The awards top-10s read from these; fall back to SQL on miss.
+- Cache the base champion list and per-champion data with a short TTL.
 
 ## Error shape
 `{ error: string }` with appropriate HTTP status (400/401/404/500).

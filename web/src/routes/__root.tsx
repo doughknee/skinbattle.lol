@@ -14,7 +14,6 @@ import CommandPalette from '~/components/CommandPalette'
 import RouteProgress from '~/components/RouteProgress'
 import Toaster from '~/components/Toaster'
 import Lightbox from '~/components/Lightbox'
-import LoginPrompt from '~/components/LoginPrompt'
 import GuestAttachment from '~/components/GuestAttachment'
 import Footer from '~/components/Footer'
 import { readServerConfig, type PublicConfig } from '~/lib/config'
@@ -23,7 +22,7 @@ import { PALETTE } from '~/lib/brand'
 const SITE_URL = 'https://skinbattle.lol'
 const SITE_TITLE = 'SKINBATTLE.LOL · League of Legends Skin Rankings'
 const SITE_DESCRIPTION =
-  'Community-built rankings for every League of Legends skin. Battle, star, and ban your way to the definitive list.'
+  'Community-built rankings for every League of Legends skin. Battle your way to the definitive list.'
 
 export const Route = createRootRoute({
   // Runs on the server during SSR; the result is serialized to the client.
@@ -88,7 +87,6 @@ function RootComponent() {
         <Footer />
         <CommandPalette />
         <Lightbox />
-        <LoginPrompt />
         <Toaster />
         <GuestAttachment />
       </ClientProviders>

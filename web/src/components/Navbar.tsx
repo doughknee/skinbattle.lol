@@ -8,7 +8,6 @@ import {
 } from '@fortawesome/free-solid-svg-icons'
 import AccountButton from './AccountButton'
 import MobileNav from './MobileNav'
-import QuotaChip from './QuotaChip'
 import { CrownMark, Wordmark } from './Brand'
 import { openCommandPalette } from './CommandPalette'
 import { SITE_SECTIONS, type SiteSection } from '~/lib/siteMap'
@@ -192,7 +191,7 @@ export default function NavBar() {
           ))}
         </div>
 
-        {/* Right cluster: search, quota, account */}
+        {/* Right cluster: search, account */}
         <div className="ml-auto flex shrink-0 items-center gap-2">
           <button
             onClick={openCommandPalette}
@@ -207,7 +206,6 @@ export default function NavBar() {
               Ctrl K
             </kbd>
           </button>
-          <QuotaChip />
           <AccountButton />
           <MobileNav />
         </div>

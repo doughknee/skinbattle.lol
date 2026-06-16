@@ -78,36 +78,6 @@ func (c *Client) Delete(ctx context.Context, keys ...string) error {
 	return nil
 }
 
-// ZAddSkin updates both lb:stars and lb:x sorted sets for a skin.
-func (c *Client) ZAddSkin(ctx context.Context, skinID string, totalStars, totalX int64) error {
-	pipe := c.rdb.Pipeline()
-	pipe.ZAdd(ctx, "lb:stars", redis.Z{Score: float64(totalStars), Member: skinID})
-	pipe.ZAdd(ctx, "lb:x", redis.Z{Score: float64(totalX), Member: skinID})
-	_, err := pipe.Exec(ctx)
-	if err != nil {
-		return fmt.Errorf("redis ZADD leaderboards: %w", err)
-	}
-	return nil
-}
-
-// ZTopN returns the top-N skin IDs (by descending score) from a sorted set.
-// Returns an empty slice if the key does not exist.
-func (c *Client) ZTopN(ctx context.Context, key string, n int64) ([]string, error) {
-	results, err := c.rdb.ZRevRangeByScore(ctx, key, &redis.ZRangeBy{
-		Min:    "-inf",
-		Max:    "+inf",
-		Offset: 0,
-		Count:  n,
-	}).Result()
-	if err == redis.Nil || len(results) == 0 {
-		return nil, nil
-	}
-	if err != nil {
-		return nil, fmt.Errorf("redis ZREVRANGEBYSCORE %s: %w", key, err)
-	}
-	return results, nil
-}
-
 // KeyChampionList is the cache key for the full champion list.
 const KeyChampionList = "champions:list"
 

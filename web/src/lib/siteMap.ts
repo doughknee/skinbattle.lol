@@ -13,9 +13,7 @@
 
 import {
   faChartLine,
-  faCheckToSlot,
   faCoins,
-  faCrown,
   faFileContract,
   faHourglassHalf,
   faHouse,
@@ -37,7 +35,7 @@ import type { IconDefinition } from '@fortawesome/fontawesome-svg-core'
 
 export interface SitePage {
   to: string
-  // Search params for links that target a tab of a page (/profile?tab=votes).
+  // Search params for links that target a tab of a page (/profile?tab=account).
   linkSearch?: Record<string, string>
   label: string
   // One-line description - shown in nav dropdowns and the command palette.
@@ -144,21 +142,12 @@ const HOW_RANKINGS_WORK: SitePage = {
   search:
     'elo rating explainer how it works bradley terry calibrating uncertainty mmr math',
 }
-// Reachable by URL, the home page, the roadmap, and Search - just not the
-// navbar or footer columns (kept deliberately lean).
-const AWARDS: SitePage = {
-  to: '/rankings/awards',
-  label: 'Awards',
-  blurb: 'Most starred, most banned: community superlatives.',
-  icon: faCrown,
-  search: 'best worst starred banned superlatives awards',
-}
 
 // Explore (footer)
 export const CHAMPIONS: SitePage = {
   to: '/champions',
   label: 'Champions',
-  blurb: 'Every champion and their wardrobe. Star and ban skin by skin.',
+  blurb: 'Every champion and their wardrobe, ranked skin by skin.',
   icon: faUsers,
   search:
     'catalog browse champions roster splash art collection wardrobe skins',
@@ -173,14 +162,6 @@ const YOUR_TIER_LIST: SitePage = {
   icon: faLayerGroup,
   search: 'mirror tier list taste my ranking stats',
   hero: true,
-}
-const MY_VOTES: SitePage = {
-  to: '/profile',
-  linkSearch: { tab: 'votes' },
-  label: 'My Votes',
-  blurb: 'Your stars and bans, in one place.',
-  icon: faCheckToSlot,
-  search: 'my votes stars bans record',
 }
 export const ACCOUNT: SitePage = {
   to: '/profile',
@@ -219,16 +200,15 @@ export const SITE_SECTIONS: SiteSection[] = [
       'best worst top tier list insights skins overall price tier skin line year champion slice rankings',
   },
   {
-    // The personal door: the tier list your battles build, your voting record.
-    // Account/sign-in stay in the avatar menu. Guest-capable, so even a
-    // signed-out visitor has a Mirror (which makes it the sign-up pitch).
+    // The personal door: the tier list your battles build. Account/sign-in
+    // stay in the avatar menu. Guest-capable, so even a signed-out visitor has
+    // a Mirror (which makes it the sign-up pitch). A plain link, no dropdown -
+    // the door and its one child (the tier list) point at the same page.
     to: '/profile',
     label: 'Mirror',
-    blurb: 'The tier list your battles build, plus your record.',
+    blurb: 'The tier list your battles build.',
     icon: faScaleUnbalanced,
-    search:
-      'profile mirror tier list taste my votes stars bans record stats history you',
-    children: [YOUR_TIER_LIST, MY_VOTES],
+    search: 'profile mirror tier list taste my ranking stats history you',
   },
 ]
 
@@ -246,7 +226,7 @@ export const FOOTER_COLUMNS: { title: string; pages: SitePage[] }[] = [
     pages: [ALL_SKINS, DROUGHT, LEADERBOARDS, HOW_RANKINGS_WORK],
   },
   { title: 'Explore', pages: [CHAMPIONS] },
-  { title: 'Mirror', pages: [YOUR_TIER_LIST, MY_VOTES, ACCOUNT] },
+  { title: 'Mirror', pages: [YOUR_TIER_LIST, ACCOUNT] },
   // Filled from SECONDARY_PAGES below so the palette and footer never drift.
   { title: 'More', pages: [] },
 ]
@@ -289,7 +269,7 @@ FOOTER_COLUMNS[FOOTER_COLUMNS.length - 1].pages = SECONDARY_PAGES
 
 // Flat, deduped list of every navigable page - powers the command palette and
 // the sitemap. Includes pages that aren't in the navbar (Champions, the deeper
-// rankings views, Awards) so Search and crawlers still reach them.
+// rankings views) so Search and crawlers still reach them.
 export function allSitePages(): SitePage[] {
   const seen = new Set<string>()
   const out: SitePage[] = []
@@ -304,7 +284,7 @@ export function allSitePages(): SitePage[] {
     for (const c of s.children ?? []) push(c)
   }
   push(CHAMPIONS)
-  for (const p of [ALL_SKINS, DROUGHT, LEADERBOARDS, HOW_RANKINGS_WORK, AWARDS]) {
+  for (const p of [ALL_SKINS, DROUGHT, LEADERBOARDS, HOW_RANKINGS_WORK]) {
     push(p)
   }
   for (const p of SECONDARY_PAGES) push(p)
