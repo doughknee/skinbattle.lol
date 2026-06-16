@@ -17,6 +17,7 @@ import { btnChip, btnPrimarySm, btnSecondarySm } from '~/lib/ui'
 import { fetchRankings, fetchRankingsIndex } from '~/lib/games/serverFns'
 import { ogMeta } from '~/lib/games/ogMeta'
 import { breadcrumbJsonLd, itemListJsonLd } from '~/lib/games/jsonLd'
+import { robotsMeta, sliceIsIndexable } from '~/lib/games/seo'
 import { createSearcher } from '~/lib/search'
 import type { RankingRow, RankingsIndex, SliceLink } from '~/lib/games/types'
 
@@ -39,6 +40,8 @@ export const Route = createFileRoute('/rankings/$slice')({
             name: 'description',
             content: `${loaderData.state.subtitle} ${loaderData.state.ratedCount} of ${loaderData.state.totalCount} rated so far.`,
           },
+          // Keep near-empty slices out of the index until they hold real data.
+          ...robotsMeta(sliceIsIndexable(loaderData.state.ratedCount)),
           ...ogMeta({
             title: `${loaderData.state.title} · Skin Battle`,
             description: loaderData.state.subtitle,

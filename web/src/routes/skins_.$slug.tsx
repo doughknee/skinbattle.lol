@@ -16,6 +16,7 @@ import { fetchSkinPage } from '~/lib/games/serverFns'
 import { guestRestoreToken, rememberGuestToken } from '~/lib/games/client'
 import { ogMeta } from '~/lib/games/ogMeta'
 import { breadcrumbJsonLd } from '~/lib/games/jsonLd'
+import { robotsMeta, skinIsIndexable } from '~/lib/games/seo'
 import { kebab } from '~/lib/games/slug'
 
 export const Route = createFileRoute('/skins_/$slug')({
@@ -43,6 +44,8 @@ export const Route = createFileRoute('/skins_/$slug')({
             name: 'description',
             content: `${loaderData.name} (${loaderData.championName}): community rating, rank, and price facts on Skin Battle.`,
           },
+          // Never-battled skins are thin/near-duplicate; index once they fight.
+          ...robotsMeta(skinIsIndexable(loaderData.community?.battles)),
           ...ogMeta({
             title: `${loaderData.name} · Skin Battle`,
             description: loaderData.community
