@@ -17,6 +17,15 @@ export interface ReleaseEntry {
 export const RELEASES: ReleaseEntry[] = [
   {
     date: '2026-06-17',
+    title: 'Splashdle & Chroma Vision: a second kind of hint',
+    highlights: [
+      "Splashdle and Chroma Vision now give you a second warm hint. Guess a skin from the same skin line as the answer, even a different champion, and it lights up blue with the line named, sitting right next to the gold 'right champion' hint. One more nudge toward the answer, and it shows up in your shared result grid too.",
+      "It pays off most in Chroma Vision: a skin line shares a color palette, so a blue hint is a sign you're reading the colors right.",
+    ],
+    fixes: [],
+  },
+  {
+    date: '2026-06-17',
     title: 'Head-to-Head: crown a champion',
     highlights: [
       "A whole new way to play Head-to-Head: Champion mode. Instead of a fresh pair every round, the skin you pick stays on and takes on a new challenger, so you're defending a favorite for as long as it can keep winning. Flip between Shuffle and Champion right above the cards.",

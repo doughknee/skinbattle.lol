@@ -133,6 +133,7 @@ function SplashdlePage() {
         guess_number: next.guesses.length,
         correct: last?.correct ?? false,
         champion_match: last?.championMatch ?? false,
+        line_match: last?.lineMatch ?? false,
         guessed_skin_id: opt.skinId,
       })
       if (next.status !== 'in_progress') {
@@ -144,10 +145,10 @@ function SplashdlePage() {
           streak: next.streak.current,
         })
       }
-      // A full miss jolts the splash; a near-miss (right champion) doesn't -
-      // warm should never feel like rejection. Cleared on a timer rather
-      // than animationend, which never fires in a backgrounded tab.
-      if (last && !last.correct && !last.championMatch) {
+      // A full miss jolts the splash; a near-miss (right champion or right
+      // skin line) doesn't - warm should never feel like rejection. Cleared on
+      // a timer rather than animationend, which never fires in a backgrounded tab.
+      if (last && !last.correct && !last.championMatch && !last.lineMatch) {
         setShake(true)
         window.clearTimeout(shakeTimer.current)
         shakeTimer.current = window.setTimeout(() => setShake(false), 600)
@@ -226,8 +227,8 @@ function SplashdlePage() {
                   icon={faCheck}
                   className="mr-1.5 h-3 text-gold2"
                 />
-                Wrong guesses zoom the splash out. A gold square means you
-                named the right champion's wrong skin.
+                Wrong guesses zoom the splash out. Gold means right champion,
+                wrong skin; blue means the right skin line.
               </span>
               {state.streak.current > 0 && (
                 <span className="flex items-center gap-1.5 font-bold text-gold2">

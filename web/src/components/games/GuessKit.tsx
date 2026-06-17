@@ -131,6 +131,8 @@ export function GuessViewport({
 function guessTone(g: SplashdleGuess): string {
   if (g.correct) return 'bg-success/80 outline-success-border/70'
   if (g.championMatch) return 'bg-gold4/70 outline-gold2/80'
+  // Same skin line: a hextech-teal warm, distinct from the gold champion hint.
+  if (g.lineMatch) return 'bg-blue3/70 outline-blue2/80'
   return 'bg-danger-surface/70 outline-danger-border/50'
 }
 
@@ -478,6 +480,10 @@ export function GuessBoard({
                     {g.championMatch ? (
                       <span className="font-bold text-gold2">
                         Right champion, wrong skin
+                      </span>
+                    ) : g.lineMatch ? (
+                      <span className="font-bold text-blue2">
+                        Same skin line{g.lineName ? `: ${g.lineName}` : ''}
                       </span>
                     ) : (
                       g.championName

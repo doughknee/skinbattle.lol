@@ -198,7 +198,9 @@ function buildShareText(
   const score =
     result.status === 'won' ? `${result.guesses.length}/${MAX_GUESSES}` : `X/${MAX_GUESSES}`
   const grid = result.guesses
-    .map((g) => (g.correct ? '🟩' : g.championMatch ? '🟨' : '🟥'))
+    .map((g) =>
+      g.correct ? '🟩' : g.championMatch ? '🟨' : g.lineMatch ? '🟦' : '🟥',
+    )
     .join('')
   const lines = [`Splashdle #${puzzleNumber(date)} ${score}`, grid]
   if (result.status === 'won' && streak.current > 1) {
@@ -327,12 +329,22 @@ export async function submitSplashdleGuess(
   if (!answer) throw new Error(`puzzle skin ${puzzle.skinId} missing from catalog`)
 
   const correct = guessed.id === answer.id
+  const championMatch = !correct && guessed.championId === answer.championId
+  // Right theme but wrong character: shares a skin line with the answer.
+  // Only meaningful when it's not already the right champion (that hint wins).
+  const answerSets = skinSets(answer.id)
+  const sharedLine =
+    !correct && !championMatch
+      ? skinSets(guessed.id).find((s) => answerSets.includes(s))
+      : undefined
   const guess: SplashdleGuess = {
     skinId: guessed.id,
     name: guessed.name,
     championId: guessed.championId,
     championName: guessed.championName,
-    championMatch: !correct && guessed.championId === answer.championId,
+    championMatch,
+    lineMatch: sharedLine != null,
+    ...(sharedLine ? { lineName: sharedLine } : {}),
     correct,
   }
   const guesses = [...result.guesses, guess]
@@ -364,6 +376,7 @@ export async function submitSplashdleGuess(
       skinId: guessed.id,
       correct,
       championMatch: guess.championMatch,
+      lineMatch: guess.lineMatch,
     },
     questionAsked: QUESTION,
     assetVersion: puzzle.assetVersion,

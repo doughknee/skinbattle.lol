@@ -132,6 +132,7 @@ function ChromaVisionPage() {
         guess_number: next.guesses.length,
         correct: last?.correct ?? false,
         champion_match: last?.championMatch ?? false,
+        line_match: last?.lineMatch ?? false,
         guessed_skin_id: opt.skinId,
       })
       if (next.status !== 'in_progress') {
@@ -143,9 +144,9 @@ function ChromaVisionPage() {
           streak: next.streak.current,
         })
       }
-      // Full miss jolts the mosaic; a right-champion near-miss doesn't.
-      // Cleared on a timer, never animationend (backgrounded tabs).
-      if (last && !last.correct && !last.championMatch) {
+      // Full miss jolts the mosaic; a near-miss (right champion or right skin
+      // line) doesn't. Cleared on a timer, never animationend (backgrounded tabs).
+      if (last && !last.correct && !last.championMatch && !last.lineMatch) {
         setShake(true)
         window.clearTimeout(shakeTimer.current)
         shakeTimer.current = window.setTimeout(() => setShake(false), 600)
@@ -224,8 +225,8 @@ function ChromaVisionPage() {
                   icon={faPalette}
                   className="mr-1.5 h-3 text-gold2"
                 />
-                It's all in the palette. Wrong guesses sharpen the mosaic: a
-                gold square means right champion, wrong skin.
+                It's all in the palette. Wrong guesses sharpen the mosaic: gold
+                means right champion, wrong skin; blue means the right skin line.
               </span>
               {state.streak.current > 0 && (
                 <span className="flex items-center gap-1.5 font-bold text-gold2">

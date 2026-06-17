@@ -17,6 +17,13 @@ export interface SplashdleGuess {
   championName: string
   // Wrong skin, right champion - the "warm" hint (🟨 in the share grid).
   championMatch: boolean
+  // Wrong champion, but shares a skin line with the answer (same theme, and
+  // so a shared palette) - the secondary "warm" hint (🟦 in the share grid).
+  // Suppressed when championMatch is true: the right champion is the stronger
+  // tell, so a guess is shown as one or the other, never both.
+  lineMatch: boolean
+  // The shared skin line to name in the hint ("Coven"); set only on lineMatch.
+  lineName?: string
   correct: boolean
 }
 
