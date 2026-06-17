@@ -12,6 +12,7 @@ import { createHmac, randomBytes, timingSafeEqual } from 'node:crypto'
 import type { DatabaseSync } from 'node:sqlite'
 import type {
   BattleFeedback,
+  BattleMode,
   BattlePair,
   BattleSkin,
   BattleStats,
@@ -278,6 +279,86 @@ function dealPair(
   }
 }
 
+// King-of-the-hill: pick a CHALLENGER for a fixed champion, using the same
+// coverage-driven mix as dealPair but with one side pinned. Anchoring on the
+// champion's rating keeps each pair-type meaningful (informative = a close
+// fight, dunk = a clear underdog, marquee = another heavyweight) while
+// placement still channels under-sampled skins through the champion, so
+// catalog coverage is preserved on the rotating side.
+function pickChallenger(
+  pool: RatedSkin[],
+  champ: RatedSkin,
+  type: PairType,
+): RatedSkin | null {
+  if (pool.length === 0) return null
+  switch (type) {
+    case 'placement': {
+      const fresh = pool.filter((s) => s.battles < PLACEMENT_BATTLES)
+      if (fresh.length === 0) return closeOpponent(pool, champ, 250)
+      const least = [...fresh].sort((x, y) => x.battles - y.battles)
+      return sample(least.slice(0, Math.min(50, least.length)))
+    }
+    case 'dunk': {
+      // A clear underdog the champion should comfortably beat (either side of
+      // the gap, so a low-rated champion still gets an easy defence).
+      const under = pool.filter((s) => Math.abs(champ.rating - s.rating) >= 200)
+      return under.length > 0 ? sample(under) : closeOpponent(pool, champ, 250)
+    }
+    case 'marquee': {
+      const heavies = pool
+        .filter((s) => s.battles >= 5)
+        .sort((x, y) => y.rating - x.rating)
+        .slice(0, 30)
+      return heavies.length > 0 ? sample(heavies) : closeOpponent(pool, champ, 250)
+    }
+    case 'informative':
+    default:
+      return closeOpponent(pool, champ, 150)
+  }
+}
+
+// Deal the next champion-mode pair: the reigning `championId` vs a freshly
+// matchmade challenger. `exclude` carries the recent + just-voted skins so the
+// challenger never repeats; the champion is always excluded from the challenger
+// pool (it can't fight itself). Falls back to a normal pair if the champion has
+// somehow left the catalog. The champion is placed in slot `a`; the client maps
+// it back into the winner's on-screen slot, so position carries no data signal
+// (pairKey is order-independent anyway).
+function dealChallengerPair(
+  db: DatabaseSync,
+  skins: RatedSkin[],
+  championId: string,
+  exclude: Set<string>,
+): BattlePair {
+  // Normalize: a deep-link ?vs= arrives JSON-parsed (a numeric id like "1002"
+  // becomes the number 1002), while catalog ids are strings — compare as strings.
+  const id = String(championId)
+  const champ = skins.find((s) => s.id === id)
+  if (!champ) return dealPair(db, skins, exclude)
+
+  let pool = skins.filter((s) => s.id !== id && !exclude.has(s.id))
+  if (pool.length === 0) pool = skins.filter((s) => s.id !== id)
+  if (pool.length === 0) return dealPair(db, skins, exclude)
+
+  const roll = Math.random()
+  let type: PairType = 'informative'
+  for (const [t, cut] of dealMix(skins)) {
+    if (roll < cut) {
+      type = t
+      break
+    }
+  }
+
+  const challenger =
+    pickChallenger(pool, champ, type) ?? closeOpponent(pool, champ, 3200) ?? sample(pool)
+
+  return {
+    token: signPair(db, champ.id, challenger.id, type),
+    a: toBattleSkin(champ),
+    b: toBattleSkin(challenger),
+  }
+}
+
 // Ratings are deliberately NOT sent with the pair - seeing the numbers
 // before picking would bias the vote. They come back in the feedback.
 function toBattleSkin(s: RatedSkin): BattleSkin {
@@ -364,12 +445,15 @@ function burnNonce(db: DatabaseSync, nonce: string): void {
 
 function enforceRateLimit(db: DatabaseSync, user: GameUser): void {
   const limits = LIMITS[user.trustTier]
+  // Count undos too: an undo deletes its battle_voted row, so without counting
+  // the battle_undone marker a vote→undo→vote loop would never advance the cap.
   const count = (extra: string, params: string[]) =>
     (
       db
         .prepare(
           `SELECT COUNT(*) AS c FROM game_events
-           WHERE user_id = ? AND game = ? AND type = 'battle_voted' ${extra}`,
+           WHERE user_id = ? AND game = ?
+             AND type IN ('battle_voted', 'battle_undone') ${extra}`,
         )
         .get(user.id, GAME, ...params) as { c: number }
     ).c
@@ -463,6 +547,10 @@ export async function submitBattleVote(
   winnerId: string,
   recent: string[] | undefined,
   restoreToken?: string | null,
+  // 'champion' anchors the NEXT pair on the winner (king-of-the-hill); the vote
+  // just recorded is identical either way — a normal signed pick — so the
+  // ranking never sees the mode. Defaults to shuffle.
+  mode?: BattleMode,
 ): Promise<BattleVoteResult> {
   const db = getDb()
   const assetVersion = await ensureCatalog(db)
@@ -573,7 +661,11 @@ export async function submitBattleVote(
   const exclude = new Set(
     [...(recent ?? []).slice(-16), claim.a, claim.b].filter(Boolean),
   )
-  const nextPair = dealPair(db, skins, exclude)
+  // In champion mode the winner stays on: deal the next challenger against it.
+  const nextPair =
+    mode === 'champion'
+      ? dealChallengerPair(db, skins, winnerId, exclude)
+      : dealPair(db, skins, exclude)
 
   maybeAutoRefit(db, ratingEventCount(db))
 
@@ -594,7 +686,7 @@ export async function undoLastVote(
   restoreToken?: string | null,
 ): Promise<BattleUndoResult | null> {
   const db = getDb()
-  await ensureCatalog(db)
+  const assetVersion = await ensureCatalog(db)
   const known = peekUser(db, restoreToken)
   if (!known?.user) return null
   const user = known.user
@@ -652,6 +744,19 @@ export async function undoLastVote(
       user.id,
     )
     db.prepare('DELETE FROM battle_undo WHERE user_id = ?').run(user.id)
+    // Marker so the day's rate-limit count doesn't drop when the vote row is
+    // deleted — otherwise undo→re-vote loops would bypass the daily cap. The
+    // refit and battle counts ignore this type (they filter on battle_voted).
+    appendEvent(db, {
+      userId: user.id,
+      game: GAME,
+      puzzleDate: puzzleDay(),
+      type: 'battle_undone',
+      payload: { undoneEventId: row.eventId },
+      questionAsked: QUESTION,
+      assetVersion,
+      trustTier: user.trustTier,
+    })
     db.exec('COMMIT')
   } catch (err) {
     db.exec('ROLLBACK')

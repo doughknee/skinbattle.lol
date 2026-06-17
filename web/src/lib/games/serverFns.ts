@@ -7,6 +7,7 @@
 
 import { createServerFn } from '@tanstack/react-start'
 import type {
+  BattleMode,
   BattleUndoResult,
   BattleVoteResult,
   ChromaVisionState,
@@ -179,11 +180,26 @@ export const fetchMirror = createServerFn({ method: 'POST' })
 
 export const submitBattleVote = createServerFn({ method: 'POST' })
   .inputValidator(
-    (d: GuestInput & { pairToken: string; winnerId: string; recent?: string[] }) => d,
+    (
+      d: GuestInput & {
+        pairToken: string
+        winnerId: string
+        recent?: string[]
+        // 'champion' = king-of-the-hill: the next pair is anchored on the
+        // winner. Omitted/`shuffle` keeps today's fresh-pair behavior.
+        mode?: BattleMode
+      },
+    ) => d,
   )
   .handler(async ({ data }): Promise<BattleVoteResult> => {
     const { submitBattleVote: submit } = await import('./server/quickbattle')
-    return submit(data.pairToken, data.winnerId, data.recent, data.restoreToken)
+    return submit(
+      data.pairToken,
+      data.winnerId,
+      data.recent,
+      data.restoreToken,
+      data.mode,
+    )
   })
 
 // Undo the player's most recent pick: reverses the rating updates and returns

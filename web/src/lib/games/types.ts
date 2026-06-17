@@ -100,6 +100,13 @@ export interface DailyHubState {
 
 // ─── Quick Battle ───────────────────────────────────────────────────────────
 
+// How the loop deals pairs. 'shuffle': a fresh matchmade pair every round
+// (the default). 'champion': king-of-the-hill — the winner stays as the
+// reigning champion and only the challenger is replaced. The mode only changes
+// which pair is dealt NEXT; every pick is still an ordinary, server-minted,
+// signed vote, so the ranking is identical across modes.
+export type BattleMode = 'shuffle' | 'champion'
+
 export interface BattleSkin {
   skinId: string
   name: string
@@ -157,6 +164,8 @@ export interface RefitSummary {
   events: number
   iterations: number
   tookMs: number
+  // Skins flagged for vote concentration (one voter dominating their wins).
+  flagged?: number
 }
 
 export interface QuickBattleState {

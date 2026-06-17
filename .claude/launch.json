@@ -13,8 +13,11 @@
     },
     {
       "name": "web-mac",
-      "runtimeExecutable": "npm",
-      "runtimeArgs": ["run", "dev", "--prefix", "web"],
+      "runtimeExecutable": "sh",
+      "runtimeArgs": [
+        "-c",
+        "NODE_OPTIONS=--experimental-sqlite npm run dev --prefix web"
+      ],
       "port": 3000,
       "autoPort": true
     }

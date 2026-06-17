@@ -16,6 +16,21 @@ export interface ReleaseEntry {
 // Newest first. The page renders this array top to bottom.
 export const RELEASES: ReleaseEntry[] = [
   {
+    date: '2026-06-17',
+    title: 'Head-to-Head: crown a champion',
+    highlights: [
+      "A whole new way to play Head-to-Head: Champion mode. Instead of a fresh pair every round, the skin you pick stays on and takes on a new challenger, so you're defending a favorite for as long as it can keep winning. Flip between Shuffle and Champion right above the cards.",
+      "Go on a run and your champion catches fire. Every defence stacks a streak, and once it hits six in a row the card ignites: a crown, a lit frame, and a flaming border that keeps growing thicker, faster, and more colorful the longer the reign lasts, with embers, a jolt on every pick, and sound to match (mute it anytime). There's no ceiling, a thirty-streak blazes harder than a fifteen.",
+      'Your best reign is saved, so there is always a record to chase.',
+    ],
+    fixes: [
+      'Picking too fast no longer ends your reign. The game just tells you to ease off, and your champion keeps standing.',
+      'The battle toolbar was reorganized: the Shuffle/Champion toggle sits right above the matchup, with your stats and controls tucked alongside.',
+      'Fixed a rare hiccup where a slow-loading splash could move the crown onto the wrong skin.',
+      'Behind the scenes: one person can no longer push a single skin up the rankings by voting it over and over, their sway over any one skin is now capped, while every battle still counts.',
+    ],
+  },
+  {
     date: '2026-06-16',
     title: 'Head-to-Head cards come alive',
     highlights: [

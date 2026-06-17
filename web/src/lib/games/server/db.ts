@@ -216,6 +216,11 @@ export interface GameEvent {
     | 'guess_submitted'
     | 'puzzle_completed'
     | 'battle_voted'
+    // A taken-back vote. The battle_voted row is deleted on undo (so ratings
+    // never see it), but this marker stays so undo→re-vote loops can't bypass
+    // the daily rate limit. Ignored by the refit / counts (they filter on
+    // battle_voted); only enforceRateLimit counts it.
+    | 'battle_undone'
     | 'tier_submitted'
   payload: Record<string, unknown>
   questionAsked: string
