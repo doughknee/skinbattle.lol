@@ -330,11 +330,14 @@ function dealChallengerPair(
   championId: string,
   exclude: Set<string>,
 ): BattlePair {
-  const champ = skins.find((s) => s.id === championId)
+  // Normalize: a deep-link ?vs= arrives JSON-parsed (a numeric id like "1002"
+  // becomes the number 1002), while catalog ids are strings — compare as strings.
+  const id = String(championId)
+  const champ = skins.find((s) => s.id === id)
   if (!champ) return dealPair(db, skins, exclude)
 
-  let pool = skins.filter((s) => s.id !== championId && !exclude.has(s.id))
-  if (pool.length === 0) pool = skins.filter((s) => s.id !== championId)
+  let pool = skins.filter((s) => s.id !== id && !exclude.has(s.id))
+  if (pool.length === 0) pool = skins.filter((s) => s.id !== id)
   if (pool.length === 0) return dealPair(db, skins, exclude)
 
   const roll = Math.random()
@@ -442,12 +445,15 @@ function burnNonce(db: DatabaseSync, nonce: string): void {
 
 function enforceRateLimit(db: DatabaseSync, user: GameUser): void {
   const limits = LIMITS[user.trustTier]
+  // Count undos too: an undo deletes its battle_voted row, so without counting
+  // the battle_undone marker a vote→undo→vote loop would never advance the cap.
   const count = (extra: string, params: string[]) =>
     (
       db
         .prepare(
           `SELECT COUNT(*) AS c FROM game_events
-           WHERE user_id = ? AND game = ? AND type = 'battle_voted' ${extra}`,
+           WHERE user_id = ? AND game = ?
+             AND type IN ('battle_voted', 'battle_undone') ${extra}`,
         )
         .get(user.id, GAME, ...params) as { c: number }
     ).c
@@ -680,7 +686,7 @@ export async function undoLastVote(
   restoreToken?: string | null,
 ): Promise<BattleUndoResult | null> {
   const db = getDb()
-  await ensureCatalog(db)
+  const assetVersion = await ensureCatalog(db)
   const known = peekUser(db, restoreToken)
   if (!known?.user) return null
   const user = known.user
@@ -738,6 +744,19 @@ export async function undoLastVote(
       user.id,
     )
     db.prepare('DELETE FROM battle_undo WHERE user_id = ?').run(user.id)
+    // Marker so the day's rate-limit count doesn't drop when the vote row is
+    // deleted — otherwise undo→re-vote loops would bypass the daily cap. The
+    // refit and battle counts ignore this type (they filter on battle_voted).
+    appendEvent(db, {
+      userId: user.id,
+      game: GAME,
+      puzzleDate: puzzleDay(),
+      type: 'battle_undone',
+      payload: { undoneEventId: row.eventId },
+      questionAsked: QUESTION,
+      assetVersion,
+      trustTier: user.trustTier,
+    })
     db.exec('COMMIT')
   } catch (err) {
     db.exec('ROLLBACK')

@@ -164,6 +164,8 @@ export interface RefitSummary {
   events: number
   iterations: number
   tookMs: number
+  // Skins flagged for vote concentration (one voter dominating their wins).
+  flagged?: number
 }
 
 export interface QuickBattleState {

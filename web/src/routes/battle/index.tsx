@@ -21,6 +21,7 @@ import {
   faMagnifyingGlassPlus,
   faRotateLeft,
   faShuffle,
+  faTrophy,
   faUser,
   faUsers,
   faVolumeHigh,
@@ -130,6 +131,10 @@ export const Route = createFileRoute('/battle/')({
 // runs concurrently with the network - it costs nothing.
 const PICK_HOLD_MS = 280
 
+// Champion mode's best reign survives reloads here (per-device). The live run is
+// still in-memory, but the record to chase persists. localStorage key.
+const BEST_REIGN_KEY = 'sb_battle_best_reign'
+
 // ─── battle cards ───────────────────────────────────────────────────────────
 
 // How a pair arrives on stage. 'reveal': the one-time first-load ceremony.
@@ -153,42 +158,77 @@ const TILT_SPRING = { stiffness: 200, damping: 20 }
 
 // ─── champion fire border ─────────────────────────────────────────────────────
 
-// A deep reign rings the king's card in fire. It ignites at a 6-win streak and
-// steps up every 3 defences after (6 → tier 1, 9 → 2, 12 → 3, 15+ → 4): the
-// flaming border thickens, heats up, crawls faster, throws more embers, and
-// turns colorful — gold → orange → red → a violet/cyan blaze. Streak reward.
+// A deep reign rings the king's card in fire — and it never stops escalating.
+// Instead of discrete tiers, a continuous "heat" curve of the streak ASYMPTOTES
+// toward 1, so the flames keep thickening, brightening, speeding up, throwing
+// more embers, and shifting toward a colorful white-hot blaze forever. Bounded
+// (never breaks layout or perf) but always nudging; the crown's streak number
+// is the literal infinite counter.
 const FIRE_START_STREAK = 6
-const MAX_FIRE_TIER = 4
 
-function fireTierForStreak(streak: number): number {
+// 0 at the ignition streak, ~0.45 by 12, ~0.67 by 15, ~0.9 by 26, approaching
+// (never reaching) 1. Past the old tier-4 ceiling it simply keeps creeping up.
+function fireHeat(streak: number): number {
   if (streak < FIRE_START_STREAK) return 0
-  return Math.min(
-    Math.floor((streak - FIRE_START_STREAK) / 3) + 1,
-    MAX_FIRE_TIER,
+  return 1 - Math.exp(-(streak - (FIRE_START_STREAK - 1)) / 9)
+}
+
+// Palette stops along heat: gold → amber/orange → red → a colorful white-hot/
+// violet/cyan blaze. Interpolated continuously — there are no tiers.
+const FIRE_STOPS: {
+  at: number
+  colors: [string, string, string]
+  glow: string
+}[] = [
+  { at: 0, colors: ['#c8aa6e', '#e0a23c', '#ffe6a8'], glow: '#c8aa6e' },
+  { at: 0.4, colors: ['#e08a2c', '#ff7a1a', '#ffd27a'], glow: '#ff8a2c' },
+  { at: 0.72, colors: ['#ff5a1a', '#e01e1e', '#ffb347'], glow: '#ff4d1a' },
+  { at: 1, colors: ['#ff6320', '#a855f7', '#0ac8b9'], glow: '#ff5a2a' },
+]
+
+const hexLerp = (a: string, b: string, t: number): string => {
+  const pa = parseInt(a.slice(1), 16)
+  const pb = parseInt(b.slice(1), 16)
+  const ch = (shift: number) => {
+    const av = (pa >> shift) & 255
+    const bv = (pb >> shift) & 255
+    return Math.round(av + (bv - av) * t)
+  }
+  return (
+    '#' +
+    ((1 << 24) | (ch(16) << 16) | (ch(8) << 8) | ch(0)).toString(16).slice(1)
   )
 }
 
-// Per-tier fire: ring thickness (px) + cast-glow radius (px)/color, crawl &
-// flicker speed (s), the conic band colors [c1, c2, c3], and the ember bed
-// (count + colors). Hotter, thicker, and more colorful as the reign deepens.
-const FIRE_TIERS: Record<
-  number,
-  {
-    inset: number
-    glow: number
-    spin: number
-    flick: number
-    blur: number
-    colors: [string, string, string]
-    glowColor: string
-    sparks: number
-    sparkColors: string[]
+// Continuous fire parameters for a streak — no tiers, asymptotic in every axis.
+function fireParams(streak: number) {
+  const heat = fireHeat(streak)
+  let lo = FIRE_STOPS[0]
+  let hi = FIRE_STOPS[FIRE_STOPS.length - 1]
+  for (let i = 0; i < FIRE_STOPS.length - 1; i++) {
+    if (heat >= FIRE_STOPS[i].at && heat <= FIRE_STOPS[i + 1].at) {
+      lo = FIRE_STOPS[i]
+      hi = FIRE_STOPS[i + 1]
+      break
+    }
   }
-> = {
-  1: { inset: 3, glow: 16, spin: 20, flick: 1.7, blur: 3, colors: ['#c8aa6e', '#e0a23c', '#ffe6a8'], glowColor: '#c8aa6e', sparks: 0, sparkColors: ['#ffd27a'] },
-  2: { inset: 4, glow: 24, spin: 16, flick: 1.5, blur: 4, colors: ['#e08a2c', '#ff7a1a', '#ffd27a'], glowColor: '#ff8a2c', sparks: 3, sparkColors: ['#ffd27a', '#ff9a3c'] },
-  3: { inset: 6, glow: 34, spin: 13, flick: 1.3, blur: 5, colors: ['#ff6a1a', '#e01e1e', '#ffb347'], glowColor: '#ff4d1a', sparks: 5, sparkColors: ['#ff9a3c', '#ff5a3c', '#ffd27a'] },
-  4: { inset: 8, glow: 48, spin: 10, flick: 1.1, blur: 7, colors: ['#ff6320', '#a855f7', '#0ac8b9'], glowColor: '#ff5a2a', sparks: 8, sparkColors: ['#ffd27a', '#ff5a3c', '#7fe9ff', '#d8b4fe'] },
+  const t = (heat - lo.at) / (hi.at - lo.at || 1)
+  const colors: [string, string, string] = [
+    hexLerp(lo.colors[0], hi.colors[0], t),
+    hexLerp(lo.colors[1], hi.colors[1], t),
+    hexLerp(lo.colors[2], hi.colors[2], t),
+  ]
+  return {
+    heat,
+    inset: 3 + heat * 5, // 3 → 8 px
+    glow: 12 + heat * 36, // 12 → 48 px
+    spin: 20 - heat * 11, // 20 → 9 s (crawl speeds up)
+    flick: 1.8 - heat * 0.85, // 1.8 → ~0.95 s
+    blur: 3 + heat * 4, // 3 → 7 px
+    sparks: Math.round(heat * 9), // 0 → 9 embers
+    colors,
+    glowColor: hexLerp(lo.glow, hi.glow, t),
+  }
 }
 
 // Stable per-index pseudo-random so each ember keeps its lane/tempo across
@@ -198,8 +238,14 @@ const flameHash = (i: number, salt: number) => {
   return x - Math.floor(x)
 }
 
-function ChampionFire({ tier, reduce }: { tier: number; reduce: boolean | null }) {
-  const cfg = FIRE_TIERS[Math.min(tier, MAX_FIRE_TIER)] ?? FIRE_TIERS[1]
+function ChampionFire({
+  streak,
+  reduce,
+}: {
+  streak: number
+  reduce: boolean | null
+}) {
+  const cfg = fireParams(streak)
   return (
     <>
       {/* The flaming border: a conic gradient of flame colors crawling around
@@ -210,19 +256,19 @@ function ChampionFire({ tier, reduce }: { tier: number; reduce: boolean | null }
         className="champ-fireborder pointer-events-none"
         style={
           {
-            inset: `-${cfg.inset}px`,
-            boxShadow: `0 0 ${cfg.glow}px ${Math.round(cfg.glow * 0.4)}px color-mix(in srgb, ${cfg.glowColor} 55%, transparent)`,
-            '--fb-blur': `${cfg.blur}px`,
+            inset: `-${cfg.inset.toFixed(1)}px`,
+            boxShadow: `0 0 ${cfg.glow.toFixed(0)}px ${Math.round(cfg.glow * 0.4)}px color-mix(in srgb, ${cfg.glowColor} 55%, transparent)`,
+            '--fb-blur': `${cfg.blur.toFixed(1)}px`,
             '--fb-c1': cfg.colors[0],
             '--fb-c2': cfg.colors[1],
             '--fb-c3': cfg.colors[2],
-            '--fb-spin': `${cfg.spin}s`,
-            '--fb-flick': `${cfg.flick}s`,
+            '--fb-spin': `${cfg.spin.toFixed(1)}s`,
+            '--fb-flick': `${cfg.flick.toFixed(2)}s`,
           } as CSSProperties
         }
       />
-      {/* Embers spat off the top of the blaze (tier 2+). Behind the toolbar
-          (z-20), so they wink out cleanly as they rise past the card. */}
+      {/* Embers spat off the top of the blaze (more as heat climbs). Behind the
+          toolbar (z-20), so they wink out cleanly as they rise past the card. */}
       {!reduce && cfg.sparks > 0 && (
         <div
           aria-hidden
@@ -232,7 +278,7 @@ function ChampionFire({ tier, reduce }: { tier: number; reduce: boolean | null }
             const r = flameHash(i, 1)
             const r2 = flameHash(i, 2)
             const r3 = flameHash(i, 3)
-            const color = cfg.sparkColors[i % cfg.sparkColors.length]
+            const color = cfg.colors[i % cfg.colors.length]
             return (
               <span
                 key={i}
@@ -339,8 +385,8 @@ function BattleCard({
   // The crown stays on the king through its winning jab/bloom — it only leaves
   // the card when this card is actually dethroned (verdict === 'loser').
   const showCrown = isChampion && verdict !== 'loser'
-  // A long reign catches fire (streak ≥ 6), escalating every 3 defences.
-  const fireTier = showCrown ? fireTierForStreak(streak) : 0
+  // A long reign catches fire (streak ≥ 6), escalating continuously forever.
+  const showFire = showCrown && streak >= FIRE_START_STREAK
   const glowOpacity = verdict === 'winner' ? 1 : championGlow
   const glowScale = verdict === 'winner' ? 1 : championGlow > 0 ? 0.97 : 0.9
 
@@ -462,8 +508,8 @@ function BattleCard({
             }}
           />
           {/* Champion fire border — rings the whole card once the reign runs
-              long, escalating every 3 defences. */}
-          {fireTier > 0 && <ChampionFire tier={fireTier} reduce={reduce} />}
+              long, escalating continuously with the streak (no ceiling). */}
+          {showFire && <ChampionFire streak={streak} reduce={reduce} />}
         </motion.div>
         {/* Layer 3 — the pointer-tracked 3D tilt, carrying the visual card.
             transformPerspective lives on this element so its rotate reads as 3D. */}
@@ -888,6 +934,8 @@ function BattlePage() {
   // reigning champion, and its run of consecutive defences.
   const [championSide, setChampionSide] = useState<'a' | 'b' | null>(null)
   const [streak, setStreak] = useState(0)
+  // Best reign ever on this device (persisted) — the record to chase.
+  const [bestReign, setBestReign] = useState(0)
   // Bumped on every 3rd defence to replay the milestone gold-wash overlay.
   const [flash, setFlash] = useState(0)
   // Sound is on by default; the toggle persists the choice across visits.
@@ -905,6 +953,12 @@ function BattlePage() {
   championSideRef.current = championSide
   const streakRef = useRef(streak)
   streakRef.current = streak
+  // Best reign authoritative live value (read+written synchronously in pick());
+  // `bestReign` state mirrors it for display. Plus the best as it stood when the
+  // current reign began + whether the one-shot "new best" beat already fired.
+  const bestReignRef = useRef(0)
+  const reignStartBestRef = useRef(0)
+  const recordBeatenRef = useRef(false)
   // Skins shown recently in this session - the matchmaker avoids re-serving
   // them. Variety only; the server never trusts this list for anything else.
   const recentRef = useRef<string[]>([])
@@ -921,6 +975,15 @@ function BattlePage() {
   // Restore the saved mute preference once on the client.
   useEffect(() => {
     if (localStorage.getItem('sb_battle_muted') === '1') setMuted(true)
+  }, [])
+
+  // Restore the best reign (per-device record) once on the client.
+  useEffect(() => {
+    const v = Number(localStorage.getItem(BEST_REIGN_KEY))
+    if (Number.isFinite(v) && v > 0) {
+      bestReignRef.current = v
+      setBestReign(v)
+    }
   }, [])
 
   // Keep the (module-level) sound engine in sync with the toggle.
@@ -968,6 +1031,13 @@ function BattlePage() {
       })
       rememberGuestToken(s.guestToken)
       setView((v) => ({ ...v, current: s.pair, next: s.next, stats: s.stats }))
+      // The recovery pair is a fresh, non-anchored shuffle pair, so any reign
+      // ends here — otherwise the stale championSide would paint the crown/fire
+      // onto a skin that never won.
+      if (modeRef.current === 'champion') {
+        setChampionSide(null)
+        setStreak(0)
+      }
     } catch {
       toast("Couldn't fetch a new matchup. Try refreshing.", 'error')
     }
@@ -1002,14 +1072,15 @@ function BattlePage() {
       const prevStreak = streakRef.current
       const prevChampionSide = championSideRef.current
       const champBeforeId = prevChampionSide ? voted[prevChampionSide].skinId : null
+      // Compute the prospective streak now (the shake scales with it), but DON'T
+      // commit the reign yet — that happens only once the vote actually lands
+      // (champion success path below), so a throttled/failed pick can't end a
+      // reign it never recorded.
       let newStreak = 0
       let milestone = false
       if (m === 'champion') {
         newStreak = prevChampionSide === winnerSide ? prevStreak + 1 : 1
         milestone = newStreak >= 3 && newStreak % 3 === 0
-        setStreak(newStreak)
-        setChampionSide(winnerSide)
-        if (milestone && !reduceMotion) setFlash((f) => f + 1)
       }
 
       // The hit: a short, decaying jolt of the whole arena, scaled by the
@@ -1026,12 +1097,11 @@ function BattlePage() {
           { duration: 0.26, ease: 'easeOut' },
         )
       }
-      // Sound (self-gates when muted): the percussive pick + the win flourish,
-      // plus the triumphant fanfare on a streak milestone.
+      // Sound (self-gates when muted): the percussive pick + the win flourish.
+      // The milestone fanfare fires on success (with the reign commit) below.
       initAudio()
       playPick()
       playWin()
-      if (milestone) playMilestone()
 
       // The vote is in flight DURING the acknowledgment beat, so the hold
       // costs nothing - by the time the next pair steps in, the feedback is
@@ -1121,10 +1191,9 @@ function BattlePage() {
           onVoted(res)
         } catch (err) {
           setSession((s) => s - 1)
-          toast(
-            err instanceof Error ? err.message : "That pick didn't count. Try again.",
-            'error',
-          )
+          const msg =
+            err instanceof Error ? err.message : "That pick didn't count. Try again."
+          toast(msg, /slow down|battle limit/i.test(msg) ? 'info' : 'error')
           await resync()
         } finally {
           busyRef.current = false
@@ -1139,6 +1208,43 @@ function BattlePage() {
       try {
         await sleep(PICK_HOLD_MS)
         const res = await votePromise
+
+        // The defence COUNTED — only now commit the reign (so a throttled/failed
+        // pick never touches it). A fresh reign (round 1 / dethrone) re-arms the
+        // one-shot record celebration; then persist a new personal best.
+        if (newStreak === 1) {
+          reignStartBestRef.current = bestReignRef.current
+          recordBeatenRef.current = false
+        }
+        setStreak(newStreak)
+        setChampionSide(winnerSide)
+        let newBest = false
+        if (newStreak > bestReignRef.current) {
+          bestReignRef.current = newStreak
+          setBestReign(newStreak)
+          try {
+            localStorage.setItem(BEST_REIGN_KEY, String(newStreak))
+          } catch {
+            /* private mode / storage disabled */
+          }
+        }
+        if (
+          !recordBeatenRef.current &&
+          reignStartBestRef.current >= 3 &&
+          newStreak > reignStartBestRef.current
+        ) {
+          recordBeatenRef.current = true
+          newBest = true
+        }
+        if (milestone || newBest) {
+          if (!reduceMotion) setFlash((f) => f + 1)
+          playMilestone()
+        }
+        if (newBest) {
+          toast(`New best reign — ${newStreak} straight! 🔥`, 'info')
+          posthog.capture('battle_reign_best', { streak: newStreak })
+        }
+
         const np = res.nextPair
         const champSkin = np.a.skinId === winnerId ? np.a : np.b
         const challenger = np.a.skinId === winnerId ? np.b : np.a
@@ -1156,16 +1262,27 @@ function BattlePage() {
         setPickedSide(null)
         onVoted(res)
       } catch (err) {
-        // A failed defence ends the reign: drop back to a fresh round-1 pair.
+        // The reign is committed only on success (above), so a failed pick never
+        // touched it — keep it. Only a genuinely DEAD matchup (expired / already
+        // counted / invalid token) forces a re-deal, which ends the reign; every
+        // other failure — rate limit, a flaky network blip, a timeout from
+        // mashing a side — is transient, so keep the reign AND the live matchup
+        // (its nonce wasn't burned) and just nudge them to ease off, then let
+        // them re-pick.
         setSession((s) => s - 1)
         setPickedSide(null)
-        setStreak(0)
-        setChampionSide(null)
-        toast(
-          err instanceof Error ? err.message : "That pick didn't count. Try again.",
-          'error',
-        )
-        await resync()
+        const msg = err instanceof Error ? err.message : ''
+        if (/expired|already counted|refresh|not part of|malformed/i.test(msg)) {
+          toast(msg || 'That matchup expired — here come fresh ones.', 'error')
+          await resync()
+        } else {
+          toast(
+            /slow down|limit/i.test(msg)
+              ? msg
+              : "Whoa there, buckaroo — easy on the trigger. Your reign's safe.",
+            'info',
+          )
+        }
       } finally {
         busyRef.current = false
       }
@@ -1371,6 +1488,20 @@ function BattlePage() {
           <FontAwesomeIcon icon={faFire} className="h-3.5" />
           <span className="tabular-nums">
             <AnimatedCount value={session} /> this session
+          </span>
+        </span>
+      )}
+      {mode === 'champion' && bestReign > 0 && (
+        <span
+          className="flex items-center gap-1.5"
+          title="Your longest reign (saved on this device)"
+        >
+          <FontAwesomeIcon icon={faTrophy} className="h-3.5 text-gold2" />
+          <span className="tabular-nums">
+            <b className="text-gold1">
+              <AnimatedCount value={bestReign} />
+            </b>{' '}
+            best reign
           </span>
         </span>
       )}
@@ -1622,13 +1753,14 @@ function BattlePage() {
 
       {/* Milestone gold wash: a brief screen-wide bloom on every 3rd defence
           (champion mode). Above the theater overlay (z-85); keyed on `flash`
-          so it replays. Opacity-only fade, gated by reduced motion at trigger. */}
+          so it replays. Its peak opacity scales with the streak so deeper
+          milestones land bigger. Opacity-only fade, gated by reduced motion. */}
       {flash > 0 && !reduceMotion && (
         <motion.div
           key={flash}
           aria-hidden
           className="pointer-events-none fixed inset-0 z-[90]"
-          initial={{ opacity: 0.55 }}
+          initial={{ opacity: 0.42 + Math.min(streak, 30) * 0.009 }}
           animate={{ opacity: 0 }}
           transition={{ duration: 0.55, ease: 'easeOut' }}
           style={{

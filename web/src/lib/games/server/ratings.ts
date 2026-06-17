@@ -328,6 +328,16 @@ export const TIER_EFFECTIVE_CAP = 8
 // future lopsided case (a fresh skin then moves at most ~K_MAX*3*0.5 per list).
 export const TIER_SKIN_CAP = 3
 
+// Quick Battle's analogue: in the refit, one voter's WEIGHTED pull on any single
+// skin is capped at this many effective comparisons. Champion mode lets a player
+// park on a favorite and beat a stream of challengers, so without this a single
+// person could farm one skin up the rankings (the project's #1 risk is voter
+// concentration). Every vote still counts as a battle for volume — only its
+// influence on the community rating is bounded. A member hits the cap at ~6
+// votes on the same skin, a guest at ~12 (half weight); normal matchmaking
+// rarely serves one player the same skin that often, so legit play is untouched.
+export const BATTLE_VOTER_SKIN_CAP = 6
+
 export interface TierComparison {
   winnerId: string
   loserId: string
@@ -534,6 +544,8 @@ export interface RefitSummary {
   events: number
   iterations: number
   tookMs: number
+  // Skins flagged for vote concentration (one voter dominating their wins).
+  flagged?: number
 }
 
 // Recompute every rated skin from the raw match log via the standard MM
@@ -548,12 +560,13 @@ export function runRefit(db: DatabaseSync): RefitSummary {
   // time - this is what makes guest→member conversion retroactive.
   const rows = db
     .prepare(
-      `SELECT e.payload AS payload, u.logto_sub AS logtoSub, e.created_at AS createdAt
+      `SELECT e.user_id AS userId, e.payload AS payload, u.logto_sub AS logtoSub, e.created_at AS createdAt
        FROM game_events e
        LEFT JOIN game_users u ON u.id = e.user_id
        WHERE e.game = 'quick-battle' AND e.type = 'battle_voted'`,
     )
     .all() as unknown as {
+    userId: string
     payload: string
     logtoSub: string | null
     createdAt: string
@@ -572,22 +585,71 @@ export function runRefit(db: DatabaseSync): RefitSummary {
     if (!cur || ts > cur) lastAt.set(k, ts) // ISO strings sort chronologically
   }
 
-  for (const row of rows) {
-    const p = JSON.parse(row.payload) as { winnerId: string; loserId: string }
-    const weight = row.logtoSub ? MEMBER_WEIGHT : GUEST_WEIGHT
-    bump(wins, p.winnerId, weight)
-    bump(games, p.winnerId, weight)
-    bump(games, p.loserId, weight)
-    bump(rawBattles, p.winnerId, 1)
-    bump(rawBattles, p.loserId, 1)
-    bump(rawWins, p.winnerId, 1)
-    seen(p.winnerId, row.createdAt)
-    seen(p.loserId, row.createdAt)
-    const key =
-      p.winnerId < p.loserId
-        ? `${p.winnerId}|${p.loserId}`
-        : `${p.loserId}|${p.winnerId}`
-    bump(pairs, key, weight)
+  const pairKey = (a: string, b: string) => (a < b ? `${a}|${b}` : `${b}|${a}`)
+
+  // Parse the votes once. Raw counts (battles/wins, below) stay UNCAPPED — every
+  // vote is real volume — but a single voter's WEIGHTED pull on any one skin is
+  // capped (BATTLE_VOTER_SKIN_CAP), so one person can't farm a skin up the
+  // rankings. See the cap's rationale above; mirrors Tier Drop's TIER_SKIN_CAP.
+  const battles = rows.map((row) => {
+    const pl = JSON.parse(row.payload) as { winnerId: string; loserId: string }
+    return {
+      winnerId: pl.winnerId,
+      loserId: pl.loserId,
+      weight: row.logtoSub ? MEMBER_WEIGHT : GUEST_WEIGHT,
+      voter: row.userId,
+      createdAt: row.createdAt,
+    }
+  })
+
+  // Pass 1: each voter's weighted appearances + raw wins per skin.
+  const voterSkinW = new Map<string, number>() // "voter|skin" → weighted games
+  const voterSkinWins = new Map<string, number>() // "voter|skin" → raw wins
+  for (const b of battles) {
+    bump(voterSkinW, `${b.voter}|${b.winnerId}`, b.weight)
+    bump(voterSkinW, `${b.voter}|${b.loserId}`, b.weight)
+    bump(voterSkinWins, `${b.voter}|${b.winnerId}`, 1)
+  }
+  const skinScale = (voter: string, skin: string) => {
+    const g = voterSkinW.get(`${voter}|${skin}`) ?? 0
+    return g > BATTLE_VOTER_SKIN_CAP ? BATTLE_VOTER_SKIN_CAP / g : 1
+  }
+
+  // Pass 2: raw counts uncapped; the weighted pull on the BT fit is scaled down
+  // by the more-constrained of the two skins, bounding any one voter's influence.
+  for (const b of battles) {
+    const eff =
+      b.weight *
+      Math.min(skinScale(b.voter, b.winnerId), skinScale(b.voter, b.loserId))
+    bump(wins, b.winnerId, eff)
+    bump(games, b.winnerId, eff)
+    bump(games, b.loserId, eff)
+    bump(pairs, pairKey(b.winnerId, b.loserId), eff)
+    bump(rawBattles, b.winnerId, 1)
+    bump(rawBattles, b.loserId, 1)
+    bump(rawWins, b.winnerId, 1)
+    seen(b.winnerId, b.createdAt)
+    seen(b.loserId, b.createdAt)
+  }
+
+  // Concentration monitor: flag any skin whose wins are dominated by one voter
+  // (the cap blunts the rating impact, but surfacing it lets us spot a farm).
+  const skinTopVoterWins = new Map<string, number>()
+  for (const [vk, w] of voterSkinWins) {
+    const skin = vk.slice(vk.indexOf('|') + 1)
+    if (w > (skinTopVoterWins.get(skin) ?? 0)) skinTopVoterWins.set(skin, w)
+  }
+  let flagged = 0
+  for (const [skin, top] of skinTopVoterWins) {
+    const total = rawWins.get(skin) ?? 0
+    if (total >= 8 && top / total >= 0.6) {
+      flagged++
+      console.warn(
+        `[quick-battle concentration] skin ${skin}: ${top}/${total} wins (${Math.round(
+          (100 * top) / total,
+        )}%) from a single voter`,
+      )
+    }
   }
 
   // Tier-list submissions feed the same tallies: explode each into
@@ -630,7 +692,7 @@ export function runRefit(db: DatabaseSync): RefitSummary {
 
   const ids = [...games.keys()]
   if (ids.length === 0) {
-    return { skins: 0, events: 0, iterations: 0, tookMs: Date.now() - t0 }
+    return { skins: 0, events: 0, iterations: 0, tookMs: Date.now() - t0, flagged }
   }
 
   const p = new Map(ids.map((id) => [id, 1]))
@@ -693,6 +755,7 @@ export function runRefit(db: DatabaseSync): RefitSummary {
     events: rows.length + tierRows.length,
     iterations,
     tookMs: Date.now() - t0,
+    flagged,
   }
 }
 
