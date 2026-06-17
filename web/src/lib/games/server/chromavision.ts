@@ -18,6 +18,7 @@ import { appendEvent, DATA_DIR, getDb } from './db'
 import { skinGuessCounts } from './consensus'
 import { MAX_GUESSES, puzzleNumber, seedFloats, puzzleDay } from './daily'
 import { allCatalogSkins, ensureCatalog, getCatalogSkin } from './catalog'
+import { skinSets } from './facts'
 import { ensureUser, peekUser, type GameUser } from './guests'
 import { getStreak, recordCompletion } from './streaks'
 
@@ -174,7 +175,9 @@ function buildShareText(
       ? `${result.guesses.length}/${MAX_GUESSES}`
       : `X/${MAX_GUESSES}`
   const grid = result.guesses
-    .map((g) => (g.correct ? '🟩' : g.championMatch ? '🟨' : '🟥'))
+    .map((g) =>
+      g.correct ? '🟩' : g.championMatch ? '🟨' : g.lineMatch ? '🟦' : '🟥',
+    )
     .join('')
   const lines = [`Chroma Vision #${puzzleNumber(date, EPOCH)} ${score}`, grid]
   if (result.status === 'won' && streak.current > 1) {
@@ -298,12 +301,23 @@ export async function submitChromaGuess(
   if (!answer) throw new Error(`puzzle skin ${puzzle.skinId} missing from catalog`)
 
   const correct = guessed.id === answer.id
+  const championMatch = !correct && guessed.championId === answer.championId
+  // Right theme but wrong character: shares a skin line - so a shared palette,
+  // the very thing this game reads. Suppressed when the champion already
+  // matched (that's the stronger tell).
+  const answerSets = skinSets(answer.id)
+  const sharedLine =
+    !correct && !championMatch
+      ? skinSets(guessed.id).find((s) => answerSets.includes(s))
+      : undefined
   const guess: SplashdleGuess = {
     skinId: guessed.id,
     name: guessed.name,
     championId: guessed.championId,
     championName: guessed.championName,
-    championMatch: !correct && guessed.championId === answer.championId,
+    championMatch,
+    lineMatch: sharedLine != null,
+    ...(sharedLine ? { lineName: sharedLine } : {}),
     correct,
   }
   const guesses = [...result.guesses, guess]
@@ -335,6 +349,7 @@ export async function submitChromaGuess(
       skinId: guessed.id,
       correct,
       championMatch: guess.championMatch,
+      lineMatch: guess.lineMatch,
     },
     questionAsked: QUESTION,
     assetVersion: puzzle.assetVersion,
