@@ -177,6 +177,7 @@ type ShareInput = {
 function DraggableTile({
   skin,
   onZoom,
+  onPickUp,
   onDrag,
   onDrop,
   locked = false,
@@ -184,6 +185,7 @@ function DraggableTile({
 }: {
   skin: TierListSkin
   onZoom: () => void
+  onPickUp?: () => void
   onDrag: (point: { x: number; y: number }) => void
   onDrop: (point: { x: number; y: number }) => void
   locked?: boolean
@@ -217,6 +219,10 @@ function DraggableTile({
       dragElastic={0.12}
       onDragStart={locked ? undefined : () => {
         draggedRef.current = true
+        // Measure the drop zones once, now — they don't move during a drag, so
+        // the per-move hit-test reads from the cache instead of re-measuring
+        // every zone each frame.
+        onPickUp?.()
       }}
       onDrag={locked ? undefined : (_, info) => onDrag(info.point)}
       onDragEnd={
@@ -753,7 +759,7 @@ function RandomCase({
               <div
                 key={i}
                 style={{ width: CARD_W }}
-                className={`flex h-32 shrink-0 flex-col items-center justify-center gap-2 border bg-hextech-black/60 px-2 text-center transition-all duration-300 ${AXIS_TONE[item.axis]} ${
+                className={`flex h-32 shrink-0 flex-col items-center justify-center gap-2 border bg-hextech-black/60 px-2 text-center transition-[transform,box-shadow,opacity] duration-300 ${AXIS_TONE[item.axis]} ${
                   landed && i === TARGET_INDEX
                     ? 'scale-110 shadow-[0_0_28px_rgba(214,170,74,0.55)]'
                     : landed
@@ -887,24 +893,43 @@ function Builder({
     }
   }, [])
 
-  // Which drop zone (if any) contains the dragged pointer. motion's drag
-  // info.point is in PAGE coordinates (event.pageX/Y), but getBoundingClientRect
-  // is viewport-relative — so add the scroll offset, or a scrolled page reads a
-  // tier below where the cursor actually is.
+  // Drop-zone geometry in PAGE coords (motion's drag info.point is page-based,
+  // i.e. event.pageX/Y, so the scroll offset is baked in here once). Captured at
+  // drag start by measureZones — the zones don't move while a tile is in hand
+  // (placement happens on drop), so re-reading every zone's rect on every drag
+  // frame was pure waste. Measure once, hit-test against the cache.
+  const zoneRectsRef = useRef<
+    { zone: TierName | 'tray'; left: number; top: number; right: number; bottom: number }[]
+  >([])
+  const measureZones = useCallback(() => {
+    const sx = window.scrollX
+    const sy = window.scrollY
+    const rects: typeof zoneRectsRef.current = []
+    for (const [zone, el] of zonesRef.current) {
+      if (!el) continue
+      const r = el.getBoundingClientRect()
+      rects.push({
+        zone,
+        left: r.left + sx,
+        top: r.top + sy,
+        right: r.right + sx,
+        bottom: r.bottom + sy,
+      })
+    }
+    zoneRectsRef.current = rects
+  }, [])
+  // Which drop zone (if any) contains the dragged pointer. Reads the cache that
+  // measureZones populated on pickup — no layout reads on the drag hot path.
   const zoneAt = useCallback(
     (point: { x: number; y: number }): TierName | 'tray' | null => {
-      const sx = window.scrollX
-      const sy = window.scrollY
-      for (const [zone, el] of zonesRef.current) {
-        if (!el) continue
-        const r = el.getBoundingClientRect()
+      for (const r of zoneRectsRef.current) {
         if (
-          point.x >= r.left + sx &&
-          point.x <= r.right + sx &&
-          point.y >= r.top + sy &&
-          point.y <= r.bottom + sy
+          point.x >= r.left &&
+          point.x <= r.right &&
+          point.y >= r.top &&
+          point.y <= r.bottom
         ) {
-          return zone
+          return r.zone
         }
       }
       return null
@@ -1134,6 +1159,7 @@ function Builder({
                       locked={locked}
                       compare={resultMap.get(id)}
                       onZoom={() => setZoom(s)}
+                      onPickUp={measureZones}
                       onDrag={onTileDrag}
                       onDrop={(p) => onTileDrop(id, p)}
                     />
@@ -1175,6 +1201,7 @@ function Builder({
                 key={s.skinId}
                 skin={s}
                 onZoom={() => setZoom(s)}
+                onPickUp={measureZones}
                 onDrag={onTileDrag}
                 onDrop={(p) => onTileDrop(s.skinId, p)}
               />

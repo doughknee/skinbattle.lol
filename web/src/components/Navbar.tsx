@@ -112,7 +112,7 @@ function NavItem({ section }: { section: SiteSection }) {
       <div
         className={`${
           menuDismissed ? 'hidden' : 'hidden md:block'
-        } pointer-events-none absolute left-0 top-full w-[22rem] -translate-y-1 opacity-0 transition-all duration-150 group-focus-within:pointer-events-auto group-focus-within:translate-y-0 group-focus-within:opacity-100 group-hover:pointer-events-auto group-hover:translate-y-0 group-hover:opacity-100`}
+        } pointer-events-none absolute left-0 top-full w-[22rem] -translate-y-1 opacity-0 transition-[opacity,transform] duration-150 group-focus-within:pointer-events-auto group-focus-within:translate-y-0 group-focus-within:opacity-100 group-hover:pointer-events-auto group-hover:translate-y-0 group-hover:opacity-100`}
       >
         <div className="border-t-2 border-t-gold5 bg-hextech-black/95 pb-2 shadow-2xl outline outline-icon/30 -outline-offset-1 backdrop-blur-2xl">
           {/* The featured destination - the menu leads with what to do. */}

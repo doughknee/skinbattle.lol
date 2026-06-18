@@ -300,12 +300,23 @@ function SlidePlate({
               onClick={() => onJump(i)}
               aria-label={`Show slide ${i + 1}`}
               aria-current={i === index}
-              className={`h-1.5 cursor-pointer transition-all duration-300 ${
-                i === index
-                  ? 'w-8 bg-gold2'
-                  : 'w-4 bg-icon/40 hover:bg-icon'
-              }`}
-            />
+              className="group flex h-3 w-8 cursor-pointer items-center justify-center"
+            >
+              {/* The active dot widens by scaling an inner pill on the
+                  compositor (transform) rather than animating width — switching
+                  slides never relayouts the row. Fixed-width slots keep the
+                  rhythm steady so the active pill grows in place. We set the
+                  `transform` property directly instead of Tailwind's scale-x-*
+                  (which drives the `scale` property via a custom prop that
+                  doesn't interpolate reliably under transition). */}
+              <span
+                className={`h-1.5 w-8 transition-[transform,background-color] duration-300 ${
+                  i === index
+                    ? '[transform:scaleX(1)] bg-gold2'
+                    : '[transform:scaleX(0.5)] bg-icon/40 group-hover:bg-icon'
+                }`}
+              />
+            </button>
           ))}
         </div>
       )}
