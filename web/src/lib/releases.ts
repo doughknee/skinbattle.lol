@@ -16,6 +16,20 @@ export interface ReleaseEntry {
 // Newest first. The page renders this array top to bottom.
 export const RELEASES: ReleaseEntry[] = [
   {
+    date: '2026-06-18',
+    title: 'Head-to-Head opens in Champion mode',
+    highlights: [
+      "Head-to-Head now starts in Champion mode. The king-of-the-hill loop, where the skin you pick stays on to face a fresh challenger, runs the moment you arrive, so you're defending a favorite right away. Shuffle is still one tap away, tucked in with the other controls.",
+      'Your champion lights up from the very first pick. The glow, and the color it burns, now builds with every single defence, warming from gold to amber to a full blaze, instead of only catching fire after a six-streak. You can feel the run growing from the start.',
+    ],
+    fixes: [
+      'The Head-to-Head header was tidied up: the title and controls share one row now, with a clean scoreboard underneath, your session, best reign, battles fought, and community totals, the numbers rolling as they climb.',
+      'Tooltips throughout Head-to-Head now match the rest of the site instead of the plain browser ones, crisp dark panels that are easy to read.',
+      'On a milestone streak, the celebratory sound now replaces the normal pick sound instead of playing on top of it.',
+      'Head-to-Head runs smoother, especially during short runs: the champion fire stays light on your device until a reign goes deep.',
+    ],
+  },
+  {
     date: '2026-06-17',
     title: 'Splashdle & Chroma Vision: a second kind of hint',
     highlights: [

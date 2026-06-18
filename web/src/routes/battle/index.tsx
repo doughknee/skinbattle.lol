@@ -31,6 +31,7 @@ import { usePostHog } from 'posthog-js/react'
 import ErrorState from '~/components/ErrorState'
 import { toast } from '~/components/Toaster'
 import { openLightbox } from '~/components/Lightbox'
+import { Tooltip } from '~/components/Tooltip'
 import TodayStrip from '~/components/games/TodayStrip'
 import { AnimatedNumber } from '~/components/games/AnimatedNumber'
 import {
@@ -135,6 +136,20 @@ const PICK_HOLD_MS = 280
 // still in-memory, but the record to chase persists. localStorage key.
 const BEST_REIGN_KEY = 'sb_battle_best_reign'
 
+// Read the saved best reign synchronously, for the useState initializer — so the
+// chip is present on the very first render alongside the loader-provided stats,
+// instead of popping in a beat later (it shifted the row). The page is
+// client-rendered, so there's no SSR hydration mismatch; guarded all the same.
+function readBestReign(): number {
+  if (typeof window === 'undefined') return 0
+  try {
+    const v = Number(localStorage.getItem(BEST_REIGN_KEY))
+    return Number.isFinite(v) && v > 0 ? v : 0
+  } catch {
+    return 0
+  }
+}
+
 // ─── battle cards ───────────────────────────────────────────────────────────
 
 // How a pair arrives on stage. 'reveal': the one-time first-load ceremony.
@@ -158,16 +173,18 @@ const TILT_SPRING = { stiffness: 200, damping: 20 }
 
 // ─── champion fire border ─────────────────────────────────────────────────────
 
-// A deep reign rings the king's card in fire — and it never stops escalating.
+// The king's card glows from the very first crowning and NEVER stops escalating.
 // Instead of discrete tiers, a continuous "heat" curve of the streak ASYMPTOTES
-// toward 1, so the flames keep thickening, brightening, speeding up, throwing
-// more embers, and shifting toward a colorful white-hot blaze forever. Bounded
-// (never breaks layout or perf) but always nudging; the crown's streak number
-// is the literal infinite counter.
-const FIRE_START_STREAK = 6
+// toward 1, so from click one the frame keeps thickening, brightening, speeding
+// up, throwing more embers, and shifting from a warm gold through amber/orange/
+// red into a colorful white-hot blaze forever. The point is teaching: a fresh
+// champion already glows, and every defence visibly grows it, so the
+// king-of-the-hill mechanic explains itself. Bounded (never breaks layout or
+// perf) but always nudging; the crown's streak number is the infinite counter.
+const FIRE_START_STREAK = 1
 
-// 0 at the ignition streak, ~0.45 by 12, ~0.67 by 15, ~0.9 by 26, approaching
-// (never reaching) 1. Past the old tier-4 ceiling it simply keeps creeping up.
+// Warm at streak 1 (~0.11), ~0.20 by 2, ~0.43 by 5, ~0.59 by 8, ~0.74 by 12,
+// ~0.9 by 22, approaching (never reaching) 1 — a glow that escalates every pick.
 function fireHeat(streak: number): number {
   if (streak < FIRE_START_STREAK) return 0
   return 1 - Math.exp(-(streak - (FIRE_START_STREAK - 1)) / 9)
@@ -246,11 +263,19 @@ function ChampionFire({
   reduce: boolean | null
 }) {
   const cfg = fireParams(streak)
+  // Below this heat the ring is STILL — a static colored glow that still grows
+  // and shifts hue with the streak, but never repaints. The crawling conic spin,
+  // the flicker, and the embers (the costly per-frame work) only switch on once a
+  // reign is deep enough to earn the spectacle. Champion is the default mode, so
+  // most play sits at low streaks — keeping that case paint-free is what keeps
+  // the whole page smooth. ~streak 4+ lights up.
+  const crawl = cfg.heat >= 0.33
   return (
     <>
-      {/* The flaming border: a conic gradient of flame colors crawling around
-          the whole frame (the card on top leaves only this margin ring visible)
-          plus a soft cast glow. The ring edge is crisp — no blur on it. */}
+      {/* The flaming border: a conic gradient of flame colors that crawls around
+          the whole frame once lit (the card on top leaves only this margin ring
+          visible), softened by a static blur plus a cast glow. Static below the
+          crawl threshold (`animation: none`, no layer) so it costs nothing. */}
       <div
         aria-hidden
         className="champ-fireborder pointer-events-none"
@@ -258,6 +283,8 @@ function ChampionFire({
           {
             inset: `-${cfg.inset.toFixed(1)}px`,
             boxShadow: `0 0 ${cfg.glow.toFixed(0)}px ${Math.round(cfg.glow * 0.4)}px color-mix(in srgb, ${cfg.glowColor} 55%, transparent)`,
+            animation: crawl ? undefined : 'none',
+            willChange: crawl ? 'opacity' : 'auto',
             '--fb-blur': `${cfg.blur.toFixed(1)}px`,
             '--fb-c1': cfg.colors[0],
             '--fb-c2': cfg.colors[1],
@@ -268,8 +295,10 @@ function ChampionFire({
         }
       />
       {/* Embers spat off the top of the blaze (more as heat climbs). Behind the
-          toolbar (z-20), so they wink out cleanly as they rise past the card. */}
-      {!reduce && cfg.sparks > 0 && (
+          toolbar (z-20), so they wink out cleanly as they rise past the card.
+          Only once the ring is crawling — a still ring throwing sparks looks off,
+          and it keeps the low-streak common case fully static. */}
+      {!reduce && crawl && cfg.sparks > 0 && (
         <div
           aria-hidden
           className="pointer-events-none absolute inset-x-[-4%] bottom-[calc(100%-6px)] h-12"
@@ -385,7 +414,8 @@ function BattleCard({
   // The crown stays on the king through its winning jab/bloom — it only leaves
   // the card when this card is actually dethroned (verdict === 'loser').
   const showCrown = isChampion && verdict !== 'loser'
-  // A long reign catches fire (streak ≥ 6), escalating continuously forever.
+  // The champion's frame glows from the first crowning (streak ≥ 1) and keeps
+  // escalating continuously forever — warm at first, white-hot deep into a reign.
   const showFire = showCrown && streak >= FIRE_START_STREAK
   const glowOpacity = verdict === 'winner' ? 1 : championGlow
   const glowScale = verdict === 'winner' ? 1 : championGlow > 0 ? 0.97 : 0.9
@@ -573,21 +603,22 @@ function BattleCard({
           {/* Zoom to the full splash — revealed on hover, exactly like the Tier
               Drop tiles. A sibling of the vote button (not nested inside it), so
               zooming the art never casts a vote. */}
-          <button
-            type="button"
-            onClick={() =>
-              openLightbox({
-                url: skin.splashUrl,
-                title: skin.name,
-                subtitle: skin.championName,
-              })
-            }
-            aria-label={`View ${skin.name} splash art full screen`}
-            title="View full splash art"
-            className={`absolute right-2 top-2 z-20 flex h-8 w-8 cursor-zoom-in items-center justify-center bg-hextech-black/75 text-grey1 outline outline-icon/30 -outline-offset-1 backdrop-blur-sm transition hover:text-gold1 hover:outline-gold2 ${zoomReveal}`}
-          >
-            <FontAwesomeIcon icon={faMagnifyingGlassPlus} className="h-3.5" />
-          </button>
+          <Tooltip label="View full splash art">
+            <button
+              type="button"
+              onClick={() =>
+                openLightbox({
+                  url: skin.splashUrl,
+                  title: skin.name,
+                  subtitle: skin.championName,
+                })
+              }
+              aria-label={`View ${skin.name} splash art full screen`}
+              className={`absolute right-2 top-2 z-20 flex h-8 w-8 cursor-zoom-in items-center justify-center bg-hextech-black/75 text-grey1 outline outline-icon/30 -outline-offset-1 backdrop-blur-sm transition hover:text-gold1 hover:outline-gold2 ${zoomReveal}`}
+            >
+              <FontAwesomeIcon icon={faMagnifyingGlassPlus} className="h-3.5" />
+            </button>
+          </Tooltip>
           {/* Champion crown — top-left while this card holds the crown, kept on
               through its winning animation so it never blinks mid-streak. */}
           {showCrown && (
@@ -864,15 +895,16 @@ function SessionHistory({
               )}
             </div>
             {i === 0 && canUndo && (
-              <button
-                onClick={onUndo}
-                disabled={undoing}
-                title="Undo this pick and decide the matchup again"
-                className="flex shrink-0 cursor-pointer items-center gap-1.5 self-stretch bg-hextech-black/60 px-2.5 text-xs font-bold text-grey1 outline outline-icon/30 -outline-offset-1 transition duration-150 hover:text-gold1 hover:outline-gold2 disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                <FontAwesomeIcon icon={faRotateLeft} className="h-3" />
-                Undo
-              </button>
+              <Tooltip label="Undo this pick and decide the matchup again">
+                <button
+                  onClick={onUndo}
+                  disabled={undoing}
+                  className="flex shrink-0 cursor-pointer items-center gap-1.5 self-stretch bg-hextech-black/60 px-2.5 text-xs font-bold text-grey1 outline outline-icon/30 -outline-offset-1 transition duration-150 hover:text-gold1 hover:outline-gold2 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  <FontAwesomeIcon icon={faRotateLeft} className="h-3" />
+                  Undo
+                </button>
+              </Tooltip>
             )}
           </li>
         ))}
@@ -927,17 +959,27 @@ function BattlePage() {
   const [pickedSide, setPickedSide] = useState<'a' | 'b' | null>(null)
   // Theater mode: the arena takes over the viewport in a fixed overlay.
   const [theater, setTheater] = useState(false)
-  // Loop mode. 'shuffle' (default) deals a fresh pair every round; 'champion'
-  // is king-of-the-hill — the winner stays on and only the challenger swaps.
-  const [mode, setMode] = useState<BattleMode>('shuffle')
+  // Loop mode. 'champion' (default) is king-of-the-hill — the winner stays on
+  // and only the challenger swaps; 'shuffle' deals a fresh pair every round.
+  const [mode, setMode] = useState<BattleMode>('champion')
   // King-of-the-hill bookkeeping (champion mode only): which slot holds the
   // reigning champion, and its run of consecutive defences.
   const [championSide, setChampionSide] = useState<'a' | 'b' | null>(null)
   const [streak, setStreak] = useState(0)
-  // Best reign ever on this device (persisted) — the record to chase.
+  // Best reign ever on this device (persisted) — the record to chase. Starts 0
+  // (matches the server render — localStorage is client-only) and is restored in
+  // an effect; the whole stat strip is client-only (statsReady) so this never
+  // causes a hydration mismatch or a late pop-in.
   const [bestReign, setBestReign] = useState(0)
-  // Bumped on every 3rd defence to replay the milestone gold-wash overlay.
-  const [flash, setFlash] = useState(0)
+  // The stat strip renders only after mount, so client-only values (best reign,
+  // session) appear together with the loader stats — never half on the server
+  // render and half after hydration.
+  const [statsReady, setStatsReady] = useState(false)
+  // Replays the gold-wash overlay on every defence. `big` picks the strength —
+  // a light wash on each step (so the reign visibly escalates pick to pick), or
+  // the full bloom on a big beat (a record, or every fifth defence). `n` just
+  // keys the element so it remounts and replays.
+  const [flash, setFlash] = useState<{ n: number; big: boolean } | null>(null)
   // Sound is on by default; the toggle persists the choice across visits.
   const [muted, setMuted] = useState(false)
   const viewRef = useRef(view)
@@ -954,8 +996,9 @@ function BattlePage() {
   const streakRef = useRef(streak)
   streakRef.current = streak
   // Best reign authoritative live value (read+written synchronously in pick());
-  // `bestReign` state mirrors it for display. Plus the best as it stood when the
-  // current reign began + whether the one-shot "new best" beat already fired.
+  // `bestReign` state mirrors it for display. Restored from localStorage in an
+  // effect (below). Plus the best as it stood when the current reign began +
+  // whether the one-shot "new best" beat already fired.
   const bestReignRef = useRef(0)
   const reignStartBestRef = useRef(0)
   const recordBeatenRef = useRef(false)
@@ -977,13 +1020,17 @@ function BattlePage() {
     if (localStorage.getItem('sb_battle_muted') === '1') setMuted(true)
   }, [])
 
-  // Restore the best reign (per-device record) once on the client.
+  // Restore the best reign and reveal the stat strip together, on mount. Both
+  // setState calls batch into one render, so when the strip first appears it
+  // already has best reign — nothing trails in, and there's no server/client
+  // mismatch (the server renders no strip).
   useEffect(() => {
-    const v = Number(localStorage.getItem(BEST_REIGN_KEY))
-    if (Number.isFinite(v) && v > 0) {
+    const v = readBestReign()
+    if (v > 0) {
       bestReignRef.current = v
       setBestReign(v)
     }
+    setStatsReady(true)
   }, [])
 
   // Keep the (module-level) sound engine in sync with the toggle.
@@ -1076,11 +1123,25 @@ function BattlePage() {
       // commit the reign yet — that happens only once the vote actually lands
       // (champion success path below), so a throttled/failed pick can't end a
       // reign it never recorded.
+      // Every defence from 2 up is a `stepPulse` — a light gold wash, so the
+      // reign escalates on EVERY pick. The loud beats (`bigBeat`: every fifth
+      // defence, plus a new personal record) get the full bloom + fanfare.
+      // `loudBeat` is decided NOW, at pick time, so the fanfare can REPLACE the
+      // win flourish rather than stacking on top of it after the vote lands —
+      // the record prediction reads the same reign-start refs the commit will.
       let newStreak = 0
-      let milestone = false
+      let stepPulse = false
+      let bigBeat = false
+      let loudBeat = false
       if (m === 'champion') {
         newStreak = prevChampionSide === winnerSide ? prevStreak + 1 : 1
-        milestone = newStreak >= 3 && newStreak % 3 === 0
+        stepPulse = newStreak >= 2
+        bigBeat = newStreak >= 5 && newStreak % 5 === 0
+        const willBeatRecord =
+          !recordBeatenRef.current &&
+          reignStartBestRef.current >= 3 &&
+          newStreak > reignStartBestRef.current
+        loudBeat = bigBeat || willBeatRecord
       }
 
       // The hit: a short, decaying jolt of the whole arena, scaled by the
@@ -1097,11 +1158,13 @@ function BattlePage() {
           { duration: 0.26, ease: 'easeOut' },
         )
       }
-      // Sound (self-gates when muted): the percussive pick + the win flourish.
-      // The milestone fanfare fires on success (with the reign commit) below.
+      // Sound (self-gates when muted): the percussive pick, then ONE flourish —
+      // the milestone fanfare on a loud beat, otherwise the ordinary win sting.
+      // The fanfare replaces (never stacks on) the win sound.
       initAudio()
       playPick()
-      playWin()
+      if (loudBeat) playMilestone()
+      else playWin()
 
       // The vote is in flight DURING the acknowledgment beat, so the hold
       // costs nothing - by the time the next pair steps in, the feedback is
@@ -1236,9 +1299,12 @@ function BattlePage() {
           recordBeatenRef.current = true
           newBest = true
         }
-        if (milestone || newBest) {
-          if (!reduceMotion) setFlash((f) => f + 1)
-          playMilestone()
+        // A record or a fifth-defence beat is the loud one — full bloom. Every
+        // other defence still washes, just lightly (the `big` flag). The fanfare
+        // already played at pick time (loudBeat), so don't replay it here.
+        const bigMoment = bigBeat || newBest
+        if (stepPulse && !reduceMotion) {
+          setFlash((f) => ({ n: (f?.n ?? 0) + 1, big: bigMoment }))
         }
         if (newBest) {
           toast(`New best reign — ${newStreak} straight! 🔥`, 'info')
@@ -1441,72 +1507,95 @@ function BattlePage() {
   }
 
   // Arena controls reused by both the page header and the theater header.
-  const modeToggle = (
-    <div className="flex shrink-0 items-center overflow-hidden bg-hextech-black/70 outline outline-icon/30 -outline-offset-1">
-      {(
-        [
-          ['shuffle', faShuffle, 'Shuffle', 'A fresh pair every round'],
-          ['champion', faCrown, 'Champion', 'The winner stays on — king of the hill'],
-        ] as const
-      ).map(([m, icon, label, title]) => (
-        <button
-          key={m}
-          type="button"
-          onClick={() => setBattleMode(m)}
-          aria-pressed={mode === m}
-          title={title}
-          className={`flex h-8 cursor-pointer items-center gap-1.5 px-2.5 text-xs font-bold uppercase tracking-[0.1em] transition duration-150 ${
-            mode === m ? 'bg-gold5/30 text-gold1' : 'text-grey1 hover:text-gold1'
-          }`}
-        >
-          <FontAwesomeIcon icon={icon} className="h-3.5" />
-          <span className="hidden sm:inline">{label}</span>
-        </button>
-      ))}
-    </div>
+  // Champion is the home mode (king-of-the-hill); this single toggle drops into
+  // Shuffle — a fresh pair every round — and lights gold while it's active. It
+  // rides with the utility icons next to mute/theater rather than as a prominent
+  // segmented switch: Champion just runs by default.
+  const shuffleActive = mode === 'shuffle'
+  const shuffleButton = (
+    <Tooltip
+      label={
+        shuffleActive
+          ? 'Shuffle is on — a fresh pair every round. Tap to return to Champion (the winner stays on).'
+          : 'Champion mode — the winner stays on, king of the hill. Tap to shuffle a fresh pair every round.'
+      }
+    >
+      <button
+        type="button"
+        onClick={() => setBattleMode(shuffleActive ? 'champion' : 'shuffle')}
+        aria-pressed={shuffleActive}
+        aria-label={
+          shuffleActive
+            ? 'Shuffle mode on — switch to Champion mode'
+            : 'Switch to Shuffle mode'
+        }
+        className={`flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center outline -outline-offset-1 transition duration-150 ${
+          shuffleActive
+            ? 'bg-gold5/30 text-gold1 outline-gold2'
+            : 'bg-hextech-black/70 text-grey1 outline-icon/30 hover:text-gold1 hover:outline-gold2'
+        }`}
+      >
+        <FontAwesomeIcon icon={faShuffle} className="h-3.5" />
+      </button>
+    </Tooltip>
   )
   const muteButton = (
-    <button
-      type="button"
-      onClick={toggleMute}
-      aria-label={muted ? 'Unmute sound' : 'Mute sound'}
-      title={muted ? 'Unmute' : 'Mute'}
-      className="flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center bg-hextech-black/70 text-grey1 outline outline-icon/30 -outline-offset-1 transition duration-150 hover:text-gold1 hover:outline-gold2"
-    >
-      <FontAwesomeIcon
-        icon={muted ? faVolumeXmark : faVolumeHigh}
-        className="h-3.5"
-      />
-    </button>
+    <Tooltip label={muted ? 'Unmute' : 'Mute'}>
+      <button
+        type="button"
+        onClick={toggleMute}
+        aria-label={muted ? 'Unmute sound' : 'Mute sound'}
+        className="flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center bg-hextech-black/70 text-grey1 outline outline-icon/30 -outline-offset-1 transition duration-150 hover:text-gold1 hover:outline-gold2"
+      >
+        <FontAwesomeIcon
+          icon={muted ? faVolumeXmark : faVolumeHigh}
+          className="h-3.5"
+        />
+      </button>
+    </Tooltip>
   )
-  // Your slice next to the room: session this visit, your lifetime, the
-  // community total. Sits inline on the toolbar, left of the utility icons.
+  // Your slice next to the room: session this visit, best reign, your lifetime,
+  // the community total. A centered scoreboard strip under the title; every
+  // figure reads the same — gold icon, bright value, muted label, and each rolls
+  // on change (the Motion+ odometer).
+  //
+  // The chip entrance is a plain CSS animation (`animate-stat-in`), NOT Motion.
+  // The Motion+ odometer inside each chip hijacks any Motion animation on its
+  // parent (the chip freezes at the start frame) and flakes AnimatePresence exit,
+  // so Motion enter/exit/layout is off the table here — CSS is independent of it
+  // and reliable. Chips unmount instantly (no exit tween); only best reign ever
+  // leaves, on a mode flip. The whole strip is gated on `statsReady` (client-only,
+  // post-mount), so the load-time set — loader stats plus the localStorage best
+  // reign — all fade in together once, with nothing trailing in behind the rest.
+  const statChipCls = reduceMotion ? '' : 'animate-stat-in'
   const statsLine = (
-    <p className="flex flex-wrap items-center justify-end gap-x-4 gap-y-1 text-sm text-grey1">
+    <p className="flex flex-wrap items-center justify-center gap-x-5 gap-y-1.5 text-sm text-grey1">
       {session > 0 && (
-        <span className="flex items-center gap-1.5 font-bold text-gold2">
-          <FontAwesomeIcon icon={faFire} className="h-3.5" />
+        <span className={`flex items-center gap-1.5 ${statChipCls}`}>
+          <FontAwesomeIcon icon={faFire} className="h-3.5 text-gold2" />
           <span className="tabular-nums">
-            <AnimatedCount value={session} /> this session
+            <b className="text-gold1">
+              <AnimatedCount value={session} />
+            </b>{' '}
+            this session
           </span>
         </span>
       )}
       {mode === 'champion' && bestReign > 0 && (
-        <span
-          className="flex items-center gap-1.5"
-          title="Your longest reign (saved on this device)"
-        >
-          <FontAwesomeIcon icon={faTrophy} className="h-3.5 text-gold2" />
-          <span className="tabular-nums">
-            <b className="text-gold1">
-              <AnimatedCount value={bestReign} />
-            </b>{' '}
-            best reign
+        <Tooltip label="Your longest reign (saved on this device)">
+          <span className={`flex cursor-help items-center gap-1.5 ${statChipCls}`}>
+            <FontAwesomeIcon icon={faTrophy} className="h-3.5 text-gold2" />
+            <span className="tabular-nums">
+              <b className="text-gold1">
+                <AnimatedCount value={bestReign} />
+              </b>{' '}
+              best reign
+            </span>
           </span>
-        </span>
+        </Tooltip>
       )}
       {stats.total > 0 && (
-        <span className="flex items-center gap-1.5">
+        <span className={`flex items-center gap-1.5 ${statChipCls}`}>
           <FontAwesomeIcon icon={faUser} className="h-3.5 text-gold2" />
           <span className="tabular-nums">
             <b className="text-gold1">
@@ -1517,7 +1606,7 @@ function BattlePage() {
         </span>
       )}
       {stats.community > 0 && (
-        <span className="flex items-center gap-1.5">
+        <span className={`flex items-center gap-1.5 ${statChipCls}`}>
           <FontAwesomeIcon icon={faUsers} className="h-3.5 text-gold2" />
           <span className="tabular-nums">
             <b className="text-gold1">
@@ -1528,6 +1617,34 @@ function BattlePage() {
         </span>
       )}
     </p>
+  )
+  const hasStats =
+    session > 0 || bestReign > 0 || stats.total > 0 || stats.community > 0
+  // The arena's utility cluster — keyboard hint, shuffle toggle, mute, theater.
+  // Lives top-right in the page header (aligned with the title) and is rebuilt
+  // inline in the theater header.
+  const controls = (
+    <div className="flex shrink-0 items-center gap-1.5">
+      <Tooltip label="← and → to vote">
+        <span
+          aria-label="Keyboard: left and right arrow keys vote"
+          className="hidden h-8 w-8 cursor-help items-center justify-center bg-hextech-black/70 text-grey1 outline outline-icon/30 -outline-offset-1 md:flex"
+        >
+          <FontAwesomeIcon icon={faKeyboard} className="h-3.5 text-gold2/80" />
+        </span>
+      </Tooltip>
+      {shuffleButton}
+      {muteButton}
+      <Tooltip label="Theater mode">
+        <button
+          onClick={() => setTheater(true)}
+          aria-label="Enter theater mode"
+          className="flex h-8 w-8 cursor-pointer items-center justify-center bg-hextech-black/70 text-grey1 outline outline-icon/30 -outline-offset-1 transition duration-150 hover:text-gold1 hover:outline-gold2"
+        >
+          <FontAwesomeIcon icon={faExpand} className="h-3.5" />
+        </button>
+      </Tooltip>
+    </div>
   )
 
   // One arena, two stages: the same cards render into the normal page flow or
@@ -1603,13 +1720,29 @@ function BattlePage() {
 
   return (
     <div className="container mx-auto max-w-5xl px-6 pt-28 pb-16">
-      <header className="animate-fade-up mb-5">
-        <p className="mb-2 text-sm font-semibold uppercase tracking-[0.3em] text-gold2">
-          Endless · which do you like more?
-        </p>
-        <h1 className="font-serif text-4xl md:text-5xl font-bold text-gold1">
-          Head-to-Head
-        </h1>
+      {/* Header doubles as the arena toolbar: title on the left, the utility
+          controls aligned with it on the right (same row, so they never read as
+          two stranded clusters), and a scoreboard strip spanning underneath.
+          z-20 + the bottom margin keep it all legible above a champion's flames. */}
+      <header className="animate-fade-up relative z-20 mb-7">
+        <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-3">
+          <div>
+            <p className="mb-1.5 text-sm font-semibold uppercase tracking-[0.3em] text-gold2">
+              Endless · which do you like more?
+            </p>
+            <h1 className="font-serif text-4xl md:text-5xl font-bold text-gold1">
+              Head-to-Head
+            </h1>
+          </div>
+          {controls}
+        </div>
+        {hasStats && (
+          // The strip's height is reserved (min-h) so the arena doesn't jump when
+          // the client-only contents (statsReady) fade in just after hydration.
+          <div className="mt-5 border-t border-gold5/15 pt-3.5">
+            <div className="min-h-[1.5rem]">{statsReady && statsLine}</div>
+          </div>
+        )}
       </header>
 
       {/* The arena. Stacked on mobile (thumb-first - share links open on
@@ -1636,16 +1769,17 @@ function BattlePage() {
               )}
             </p>
             <div className="flex shrink-0 items-center gap-1.5">
-              {modeToggle}
+              {shuffleButton}
               {muteButton}
-              <button
-                onClick={() => setTheater(false)}
-                aria-label="Exit theater mode"
-                title="Exit theater (Esc)"
-                className="flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center bg-hextech-black/60 text-grey1 outline outline-icon/30 -outline-offset-1 transition duration-150 hover:text-gold1 hover:outline-gold2"
-              >
-                <FontAwesomeIcon icon={faCompress} className="h-4" />
-              </button>
+              <Tooltip label="Exit theater (Esc)">
+                <button
+                  onClick={() => setTheater(false)}
+                  aria-label="Exit theater mode"
+                  className="flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center bg-hextech-black/60 text-grey1 outline outline-icon/30 -outline-offset-1 transition duration-150 hover:text-gold1 hover:outline-gold2"
+                >
+                  <FontAwesomeIcon icon={faCompress} className="h-4" />
+                </button>
+              </Tooltip>
             </div>
           </div>
           {/* m-auto centers the arena and degrades to scrolling on windows
@@ -1664,35 +1798,6 @@ function BattlePage() {
         </div>
       ) : (
         <>
-          {/* Arena toolbar: the mode choice sits on the left, right above the
-              matchup it governs; the stats line + utility controls (keyboard
-              hint, mute, theater) cluster on the right. The extra bottom margin
-              leaves headroom for a champion's flames to lick up; z-20 keeps the
-              controls legible in front of any flames that reach this high. */}
-          <div className="relative z-20 mb-7 flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
-            {modeToggle}
-            <div className="flex flex-1 flex-wrap items-center justify-end gap-x-4 gap-y-2">
-              {statsLine}
-              <div className="flex shrink-0 items-center gap-1.5">
-                <span
-                  title="← and → to vote"
-                  aria-label="Keyboard: left and right arrow keys vote"
-                  className="hidden h-8 w-8 cursor-help items-center justify-center bg-hextech-black/70 text-grey1 outline outline-icon/30 -outline-offset-1 md:flex"
-                >
-                  <FontAwesomeIcon icon={faKeyboard} className="h-3.5 text-gold2/80" />
-                </span>
-                {muteButton}
-                <button
-                  onClick={() => setTheater(true)}
-                  aria-label="Enter theater mode"
-                  title="Theater mode"
-                  className="flex h-8 w-8 cursor-pointer items-center justify-center bg-hextech-black/70 text-grey1 outline outline-icon/30 -outline-offset-1 transition duration-150 hover:text-gold1 hover:outline-gold2"
-                >
-                  <FontAwesomeIcon icon={faExpand} className="h-3.5" />
-                </button>
-              </div>
-            </div>
-          </div>
           {arena}
           <FeedbackBar feedback={feedback} />
           <Standing feedback={feedback} />
@@ -1751,18 +1856,23 @@ function BattlePage() {
         </div>
       )}
 
-      {/* Milestone gold wash: a brief screen-wide bloom on every 3rd defence
-          (champion mode). Above the theater overlay (z-85); keyed on `flash`
-          so it replays. Its peak opacity scales with the streak so deeper
-          milestones land bigger. Opacity-only fade, gated by reduced motion. */}
-      {flash > 0 && !reduceMotion && (
+      {/* Gold wash: a brief screen-wide bloom on every defence (champion mode).
+          Above the theater overlay (z-85); keyed on `flash.n` so it replays.
+          A `big` beat (record / every fifth) blooms full; every other step is a
+          light wash. Both peak harder the deeper the reign. Opacity-only fade,
+          gated by reduced motion. */}
+      {flash && !reduceMotion && (
         <motion.div
-          key={flash}
+          key={flash.n}
           aria-hidden
           className="pointer-events-none fixed inset-0 z-[90]"
-          initial={{ opacity: 0.42 + Math.min(streak, 30) * 0.009 }}
+          initial={{
+            opacity: flash.big
+              ? 0.42 + Math.min(streak, 30) * 0.009
+              : 0.13 + Math.min(streak, 30) * 0.006,
+          }}
           animate={{ opacity: 0 }}
-          transition={{ duration: 0.55, ease: 'easeOut' }}
+          transition={{ duration: flash.big ? 0.55 : 0.4, ease: 'easeOut' }}
           style={{
             background:
               'radial-gradient(circle at 50% 42%, color-mix(in srgb, var(--color-gold2) 40%, transparent), transparent 62%)',

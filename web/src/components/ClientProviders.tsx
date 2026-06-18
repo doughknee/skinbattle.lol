@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { LogtoProvider } from '@logto/react'
+import * as RadixTooltip from '@radix-ui/react-tooltip'
 import { PostHogProvider, usePostHog } from 'posthog-js/react'
 import type { ReactNode } from 'react'
 import type { PublicConfig } from '~/lib/config'
@@ -22,7 +23,11 @@ export default function ClientProviders({
   const app = (
     <LogtoProvider config={logtoConfig} LogtoClientClass={CrossTabLogtoClient}>
       <PostHogIdentitySync />
-      {children}
+      {/* One provider for every themed <Tooltip>: a short hover delay, but once
+          one tooltip is open, neighbors in the same cluster open instantly. */}
+      <RadixTooltip.Provider delayDuration={200} skipDelayDuration={300}>
+        {children}
+      </RadixTooltip.Provider>
     </LogtoProvider>
   )
   // No token (e.g. local dev without the key, or a preview env) → skip PostHog

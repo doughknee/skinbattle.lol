@@ -67,6 +67,11 @@
   --animate-fade-in: fade-in 0.5s ease-out both;
   /* Quick entrance for popups/trays (command palette, quota tray). */
   --animate-pop: pop 0.22s cubic-bezier(0.22, 1, 0.36, 1) both;
+  /* Themed tooltip bubble — a quick fade + small lift as it appears. */
+  --animate-tooltip-in: tooltip-in 0.14s cubic-bezier(0.22, 1, 0.36, 1) both;
+  /* A scoreboard stat chip arriving — fade + small rise/scale. CSS (not Motion)
+     so it never fights the Motion+ odometer inside the chip. */
+  --animate-stat-in: stat-in 0.3s cubic-bezier(0.22, 1, 0.36, 1) both;
 
   /* Game feedback motion (Splashdle & future dailies). */
   --animate-shake: shake 0.45s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
@@ -135,6 +140,30 @@
   from {
     opacity: 0;
     transform: translateY(-6px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* Tooltip bubble entrance — fade up into place. */
+@keyframes tooltip-in {
+  from {
+    opacity: 0;
+    transform: translateY(2px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* Scoreboard stat chip entrance. */
+@keyframes stat-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px) scale(0.85);
   }
   to {
     opacity: 1;
@@ -621,23 +650,28 @@
   animation:
     fireborder-spin var(--fb-spin, 7s) linear infinite,
     fireborder-flicker var(--fb-flick, 0.5s) ease-in-out infinite;
-  /* Soften the ring into a glowy band; the static value covers reduced motion,
-     the flicker keyframe carries it while animating. */
+  /* Soften the ring into a glowy band. Static — animating the blur (the old
+     flicker did) forced a full filter recompute every frame, the single biggest
+     cost now that the fire lights from streak 1. */
   filter: blur(var(--fb-blur, 4px));
-  will-change: filter;
+  /* We animate opacity now (compositor-cheap), not filter. React sets this to
+     `auto` while the ring is static (low streak) so it doesn't waste a layer. */
+  will-change: opacity;
 }
 @keyframes fireborder-spin {
   to {
     --fb-angle: 360deg;
   }
 }
+/* Flicker via opacity — composited on the GPU, no per-frame repaint — instead of
+   re-running a brightness/saturate/blur filter chain each frame. */
 @keyframes fireborder-flicker {
   0%,
   100% {
-    filter: brightness(0.97) saturate(1.03) blur(var(--fb-blur, 4px));
+    opacity: 0.85;
   }
   50% {
-    filter: brightness(1.16) saturate(1.12) blur(var(--fb-blur, 4px));
+    opacity: 1;
   }
 }
 
@@ -672,6 +706,8 @@
   .animate-fade-up,
   .animate-fade-in,
   .animate-pop,
+  .animate-tooltip-in,
+  .animate-stat-in,
   .animate-shake,
   .animate-tile-pop,
   .animate-zoom-step,
