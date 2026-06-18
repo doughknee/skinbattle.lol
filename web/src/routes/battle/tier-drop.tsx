@@ -1483,6 +1483,15 @@ function BoardPicker({
 }) {
   const [tab, setTab] = useState<PickerTab>('champions')
   const [q, setQ] = useState('')
+  // This portal renders into document.body, which doesn't exist during SSR.
+  // BoardPicker is always mounted (it's a controlled overlay), so an unguarded
+  // createPortal here evaluated `document.body` on the server and threw —
+  // aborting the route's streaming-SSR boundary (React #419), after which the
+  // client silently re-rendered. Gate on a client mount flag: render nothing
+  // until mounted, matching the server's null on first paint (no hydration
+  // mismatch). The picker starts closed, so the null first frame is invisible.
+  const [mounted, setMounted] = useState(false)
+  useEffect(() => setMounted(true), [])
 
   useEffect(() => {
     if (!open) return
@@ -1505,6 +1514,7 @@ function BoardPicker({
     : options
   const searchable = tab === 'champions' || tab === 'lines'
 
+  if (!mounted) return null
   return createPortal(
     <AnimatePresence>
       {open && (
