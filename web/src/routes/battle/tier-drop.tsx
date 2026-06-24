@@ -1,4 +1,5 @@
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
+import { fallbackToRaw, skinThumb } from '~/lib/img'
 import {
   forwardRef,
   useCallback,
@@ -262,7 +263,9 @@ function DraggableTile({
       }
     >
       <img
-        src={skin.splashUrl}
+        src={skinThumb(skin.splashUrl, 256)}
+        data-raw={skin.splashUrl}
+        onError={fallbackToRaw}
         alt={skin.name}
         loading="lazy"
         decoding="async"
@@ -1907,7 +1910,9 @@ function TierShowcase({ ranking }: { ranking: SharedRankingRow[] }) {
                   className="aspect-square w-14 shrink-0 cursor-zoom-in overflow-hidden outline outline-icon/25 -outline-offset-1 transition duration-150 hover:outline-gold2 md:w-16"
                 >
                   <img
-                    src={r.splashUrl}
+                    src={skinThumb(r.splashUrl, 160)}
+                    data-raw={r.splashUrl}
+                    onError={fallbackToRaw}
                     alt={r.name}
                     loading="lazy"
                     decoding="async"

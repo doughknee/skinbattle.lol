@@ -4,6 +4,7 @@ import { Link } from '@tanstack/react-router'
 import { openLightbox } from '~/components/Lightbox'
 import { championDisplayName, displaySkinName } from '~/lib/skinName'
 import { skinSlug } from '~/lib/games/slug'
+import { fallbackToRaw, skinThumb } from '~/lib/img'
 import type { Skin } from '~/lib/types'
 
 interface SkinCardProps {
@@ -46,7 +47,9 @@ export default function SkinCard({
         className="absolute inset-0 z-0 block"
       >
         <img
-          src={skin.splash_url}
+          src={skinThumb(skin.splash_url, 768)}
+          data-raw={skin.splash_url}
+          onError={fallbackToRaw}
           alt={`${skinName} splash art`}
           loading="lazy"
           decoding="async"

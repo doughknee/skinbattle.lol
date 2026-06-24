@@ -10,6 +10,7 @@ import PageHeader from '~/components/PageHeader'
 import ErrorState from '~/components/ErrorState'
 import { btnSecondarySm } from '~/lib/ui'
 import { fetchDrought } from '~/lib/games/serverFns'
+import { fallbackToRaw, skinThumb } from '~/lib/img'
 import { canonicalLink, ogMeta } from '~/lib/games/ogMeta'
 import { createSearcher } from '~/lib/search'
 import type { DroughtRow } from '~/lib/games/types'
@@ -72,7 +73,9 @@ function DroughtRowItem({ row, maxDays }: { row: DroughtRow; maxDays: number }) 
         title={row.lastSkinName}
       >
         <img
-          src={row.lastSkinSplashUrl}
+          src={skinThumb(row.lastSkinSplashUrl, 192)}
+          data-raw={row.lastSkinSplashUrl}
+          onError={fallbackToRaw}
           alt={row.lastSkinName}
           loading="lazy"
           decoding="async"

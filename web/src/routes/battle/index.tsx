@@ -41,6 +41,7 @@ import {
   submitBattleVote,
 } from '~/lib/games/serverFns'
 import { ogMeta } from '~/lib/games/ogMeta'
+import { fallbackToRaw, skinThumb } from '~/lib/img'
 import { guestRestoreToken, rememberGuestToken } from '~/lib/games/client'
 import {
   initAudio,
@@ -96,26 +97,21 @@ export const Route = createFileRoute('/battle/')({
     ],
     // Start the splash downloads from the <head>, before the body parses or
     // React hydrates: the visible pair at high priority, the on-deck pair at
-    // low. The preconnect saves the DNS+TLS round trip on the first one.
-    links: [
-      {
-        rel: 'preconnect',
-        href: 'https://ddragon.leagueoflegends.com',
-      },
-      ...(loaderData
-        ? [
-            { pair: loaderData.qb.pair, priority: 'high' as const },
-            { pair: loaderData.qb.next, priority: 'low' as const },
-          ].flatMap(({ pair, priority }) =>
-            [pair.a, pair.b].map((s) => ({
-              rel: 'preload',
-              as: 'image',
-              href: s.splashUrl,
-              fetchPriority: priority,
-            })),
-          )
-        : []),
-    ],
+    // low. (The CommunityDragon preconnect lives in the root document, so the
+    // socket is already warming by the time these preloads fire.)
+    links: loaderData
+      ? [
+          { pair: loaderData.qb.pair, priority: 'high' as const },
+          { pair: loaderData.qb.next, priority: 'low' as const },
+        ].flatMap(({ pair, priority }) =>
+          [pair.a, pair.b].map((s) => ({
+            rel: 'preload',
+            as: 'image',
+            href: s.splashUrl,
+            fetchPriority: priority,
+          })),
+        )
+      : [],
   }),
   errorComponent: ({ error }) => (
     <ErrorState
@@ -865,7 +861,9 @@ function SessionHistory({
             }`}
           >
             <img
-              src={e.winner.splashUrl}
+              src={skinThumb(e.winner.splashUrl, 160)}
+              data-raw={e.winner.splashUrl}
+              onError={fallbackToRaw}
               alt=""
               loading="lazy"
               decoding="async"
@@ -882,7 +880,9 @@ function SessionHistory({
               </p>
             </div>
             <img
-              src={e.loser.splashUrl}
+              src={skinThumb(e.loser.splashUrl, 160)}
+              data-raw={e.loser.splashUrl}
+              onError={fallbackToRaw}
               alt=""
               loading="lazy"
               decoding="async"

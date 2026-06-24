@@ -65,6 +65,12 @@ export const Route = createRootRoute({
         href: 'https://fonts.gstatic.com',
         crossOrigin: 'anonymous',
       },
+      // Every skin splash/tile loads from CommunityDragon. Warm the DNS+TLS
+      // handshake from the document <head> so the first image on any page
+      // (battle, rankings, champions, mirror) skips the cold-connection wait.
+      // No crossOrigin: <img> fetches are no-cors, so a CORS socket wouldn't
+      // be reused.
+      { rel: 'preconnect', href: 'https://raw.communitydragon.org' },
       {
         rel: 'stylesheet',
         href: 'https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600;700;800&family=Marcellus&display=swap',

@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link } from '@tanstack/react-router'
+import { fallbackToRaw, skinThumb } from '~/lib/img'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import {
   faCheck,
@@ -98,7 +99,9 @@ function SkinTile({
     >
       <Link to="/skins/$slug" params={{ slug: skin.slug }}>
         <img
-          src={skin.splashUrl}
+          src={skinThumb(skin.splashUrl, 224)}
+          data-raw={skin.splashUrl}
+          onError={fallbackToRaw}
           alt={skin.name}
           loading="lazy"
           decoding="async"
@@ -424,7 +427,9 @@ function TakeRow({ take }: { take: ContrarianTake }) {
   return (
     <li className="flex items-center gap-4 bg-hextech-black/30 p-3 outline outline-icon/10 -outline-offset-1">
       <img
-        src={take.splashUrl}
+        src={skinThumb(take.splashUrl, 256)}
+        data-raw={take.splashUrl}
+        onError={fallbackToRaw}
         alt={take.name}
         loading="lazy"
         decoding="async"
