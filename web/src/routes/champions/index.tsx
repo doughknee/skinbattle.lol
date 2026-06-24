@@ -7,6 +7,7 @@ import {
   faTableCellsLarge,
 } from '@fortawesome/free-solid-svg-icons'
 import { api } from '~/lib/api'
+import { fallbackToRaw, skinThumb } from '~/lib/img'
 import Dropdown from '~/components/Dropdown'
 import EmptyState from '~/components/EmptyState'
 import ErrorState from '~/components/ErrorState'
@@ -80,7 +81,9 @@ function ChampionCard({
         className="absolute inset-0 z-0 block"
       >
         <img
-          src={defaultSplash(champion)}
+          src={skinThumb(defaultSplash(champion), 768)}
+          data-raw={defaultSplash(champion)}
+          onError={fallbackToRaw}
           alt=""
           loading="lazy"
           decoding="async"

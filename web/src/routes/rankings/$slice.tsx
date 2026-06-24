@@ -1,4 +1,5 @@
 import { createFileRoute, Link, notFound } from '@tanstack/react-router'
+import { fallbackToRaw, skinThumb } from '~/lib/img'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import {
@@ -213,7 +214,9 @@ function MidRow({ row }: { row: RankingRow }) {
           {row.rank}
         </span>
         <img
-          src={row.splashUrl}
+          src={skinThumb(row.splashUrl, 320)}
+          data-raw={row.splashUrl}
+          onError={fallbackToRaw}
           alt=""
           loading="lazy"
           decoding="async"
@@ -253,7 +256,9 @@ function CompactRow({ row }: { row: RankingRow }) {
           {row.rank}
         </span>
         <img
-          src={row.splashUrl}
+          src={skinThumb(row.splashUrl, 192)}
+          data-raw={row.splashUrl}
+          onError={fallbackToRaw}
           alt=""
           loading="lazy"
           decoding="async"
