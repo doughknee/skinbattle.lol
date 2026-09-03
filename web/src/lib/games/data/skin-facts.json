@@ -1,6 +1,6 @@
 {
- "snapshotAt": "2026-06-12T05:48:42.800Z",
- "patch": "16.12.1",
+ "snapshotAt": "2026-09-03T06:13:39.890Z",
+ "patch": "16.17.1",
  "skins": {
   "1001": {
    "cost": null,
@@ -163,6 +163,15 @@
     "Pandemonium"
    ],
    "release": "2026-04-29"
+  },
+  "1060": {
+   "cost": null,
+   "rarity": null,
+   "availability": "Rare",
+   "sets": [
+    "Goth"
+   ],
+   "release": "2026-07-29"
   },
   "2001": {
    "cost": 520,
@@ -352,6 +361,15 @@
     "Aegis Frame"
    ],
    "release": "2026-01-22"
+  },
+  "3047": {
+   "cost": 1350,
+   "rarity": "Epic",
+   "availability": "Legacy",
+   "sets": [
+    "World Champions: 2025"
+   ],
+   "release": "2026-07-15"
   },
   "4001": {
    "cost": null,
@@ -596,6 +614,15 @@
    ],
    "release": "2025-10-08"
   },
+  "5053": {
+   "cost": 1350,
+   "rarity": "Epic",
+   "availability": "Legacy",
+   "sets": [
+    "World Champions: 2025"
+   ],
+   "release": "2026-07-15"
+  },
   "6001": {
    "cost": 520,
    "rarity": null,
@@ -688,7 +715,7 @@
   },
   "7004": {
    "cost": 1350,
-   "rarity": null,
+   "rarity": "Epic",
    "availability": "Legacy",
    "sets": [
     "Trick-or-Treat"
@@ -1172,6 +1199,15 @@
    ],
    "release": "2025-06-25"
   },
+  "10088": {
+   "cost": null,
+   "rarity": null,
+   "availability": "Rare",
+   "sets": [
+    "Collector's Edition"
+   ],
+   "release": null
+  },
   "11001": {
    "cost": 390,
    "rarity": null,
@@ -1469,6 +1505,15 @@
    ],
    "release": "2025-08-27"
   },
+  "12049": {
+   "cost": null,
+   "rarity": null,
+   "availability": "Rare",
+   "sets": [
+    "Collector's Edition"
+   ],
+   "release": "2026-07-29"
+  },
   "13001": {
    "cost": null,
    "rarity": null,
@@ -1759,7 +1804,7 @@
   },
   "15008": {
    "cost": null,
-   "rarity": null,
+   "rarity": "Rare",
    "availability": "Limited",
    "sets": [
     "Victorious"
@@ -2017,6 +2062,15 @@
     "Flora Fatalis"
    ],
    "release": "2025-10-08"
+  },
+  "16063": {
+   "cost": 1350,
+   "rarity": "Epic",
+   "availability": "Available",
+   "sets": [
+    "Ocean Song"
+   ],
+   "release": "2026-08-26"
   },
   "17001": {
    "cost": 750,
@@ -2296,6 +2350,24 @@
     "Rain Shepherd"
    ],
    "release": "2025-11-19"
+  },
+  "18079": {
+   "cost": null,
+   "rarity": null,
+   "availability": "Upcoming",
+   "sets": [
+    "Risen Legends"
+   ],
+   "release": null
+  },
+  "18080": {
+   "cost": null,
+   "rarity": null,
+   "availability": "Upcoming",
+   "sets": [
+    "Risen Legends"
+   ],
+   "release": null
   },
   "19001": {
    "cost": null,
@@ -2748,6 +2820,15 @@
    ],
    "release": "2024-08-28"
   },
+  "21069": {
+   "cost": null,
+   "rarity": "Mythic",
+   "availability": "Rare",
+   "sets": [
+    "World Champions: 2025"
+   ],
+   "release": "2026-07-15"
+  },
   "22001": {
    "cost": 520,
    "rarity": null,
@@ -3189,6 +3270,15 @@
    ],
    "release": "2024-03-06"
   },
+  "24042": {
+   "cost": null,
+   "rarity": "Mythic",
+   "availability": "Rare",
+   "sets": [
+    "Magma Chamber"
+   ],
+   "release": "2026-07-29"
+  },
   "25001": {
    "cost": 975,
    "rarity": null,
@@ -3236,7 +3326,7 @@
   },
   "25006": {
    "cost": null,
-   "rarity": null,
+   "rarity": "Rare",
    "availability": "Limited",
    "sets": [
     "Victorious"
@@ -4206,6 +4296,13 @@
    ],
    "release": "2024-04-03"
   },
+  "33035": {
+   "cost": null,
+   "rarity": null,
+   "availability": "Rare",
+   "sets": [],
+   "release": "2026-07-29"
+  },
   "34001": {
    "cost": 520,
    "rarity": null,
@@ -4955,7 +5052,7 @@
   },
   "40004": {
    "cost": null,
-   "rarity": null,
+   "rarity": "Rare",
    "availability": "Limited",
    "sets": [
     "Victorious"
@@ -5610,6 +5707,15 @@
    ],
    "release": "2024-09-25"
   },
+  "45067": {
+   "cost": null,
+   "rarity": "Mythic",
+   "availability": "Rare",
+   "sets": [
+    "Magma Chamber"
+   ],
+   "release": "2026-07-29"
+  },
   "48001": {
    "cost": 520,
    "rarity": null,
@@ -6062,7 +6168,7 @@
   },
   "53036": {
    "cost": null,
-   "rarity": null,
+   "rarity": "Rare",
    "availability": "Limited",
    "sets": [
     "Victorious"
@@ -6095,6 +6201,24 @@
     "Toy Box"
    ],
    "release": "2026-04-01"
+  },
+  "53075": {
+   "cost": null,
+   "rarity": null,
+   "availability": "Rare",
+   "sets": [
+    "Legacy"
+   ],
+   "release": "2026-07-29"
+  },
+  "53076": {
+   "cost": null,
+   "rarity": null,
+   "availability": "Rare",
+   "sets": [
+    "Legacy"
+   ],
+   "release": "2026-07-29"
   },
   "54001": {
    "cost": 520,
@@ -6541,7 +6665,7 @@
   },
   "57007": {
    "cost": null,
-   "rarity": null,
+   "rarity": "Rare",
    "availability": "Limited",
    "sets": [
     "Victorious"
@@ -6748,7 +6872,7 @@
   },
   "59004": {
    "cost": null,
-   "rarity": null,
+   "rarity": "Rare",
    "availability": "Limited",
    "sets": [
     "Victorious"
@@ -6865,7 +6989,7 @@
   },
   "60002": {
    "cost": null,
-   "rarity": null,
+   "rarity": "Rare",
    "availability": "Limited",
    "sets": [
     "Victorious"
@@ -7000,7 +7124,7 @@
   },
   "61008": {
    "cost": null,
-   "rarity": null,
+   "rarity": "Rare",
    "availability": "Limited",
    "sets": [
     "Victorious"
@@ -7042,6 +7166,15 @@
     "World Champions: 2023"
    ],
    "release": "2024-08-14"
+  },
+  "61040": {
+   "cost": null,
+   "rarity": null,
+   "availability": "Upcoming",
+   "sets": [
+    "Risen Legends"
+   ],
+   "release": null
   },
   "62001": {
    "cost": 975,
@@ -10124,8 +10257,8 @@
   },
   "98054": {
    "cost": 1350,
-   "rarity": null,
-   "availability": "Upcoming",
+   "rarity": "Epic",
+   "availability": "Available",
    "sets": [
     "Broken Covenant"
    ],
@@ -10734,7 +10867,7 @@
   },
   "104014": {
    "cost": null,
-   "rarity": null,
+   "rarity": "Rare",
    "availability": "Limited",
    "sets": [
     "Victorious"
@@ -11064,6 +11197,15 @@
     "Street Demons"
    ],
    "release": "2023-09-13"
+  },
+  "107049": {
+   "cost": null,
+   "rarity": null,
+   "availability": "Limited",
+   "sets": [
+    "Victorious"
+   ],
+   "release": "2026-07-15"
   },
   "110001": {
    "cost": 975,
@@ -11472,7 +11614,7 @@
   },
   "113036": {
    "cost": null,
-   "rarity": null,
+   "rarity": "Rare",
    "availability": "Limited",
    "sets": [
     "Victorious"
@@ -11856,6 +11998,15 @@
     "Arcana"
    ],
    "release": "2025-08-27"
+  },
+  "117056": {
+   "cost": 1350,
+   "rarity": "Epic",
+   "availability": "Available",
+   "sets": [
+    "Faerie Court"
+   ],
+   "release": "2026-08-12"
   },
   "119001": {
    "cost": 1350,
@@ -13351,6 +13502,24 @@
    ],
    "release": "2026-02-04"
   },
+  "147068": {
+   "cost": 1350,
+   "rarity": "Epic",
+   "availability": "Legacy",
+   "sets": [
+    "World Champions: 2025"
+   ],
+   "release": "2026-07-15"
+  },
+  "147069": {
+   "cost": 1820,
+   "rarity": "Legendary",
+   "availability": "Available",
+   "sets": [
+    "Heartsong"
+   ],
+   "release": "2026-08-26"
+  },
   "150001": {
    "cost": 975,
    "rarity": null,
@@ -13884,8 +14053,8 @@
   },
   "166021": {
    "cost": 1350,
-   "rarity": null,
-   "availability": "Upcoming",
+   "rarity": "Epic",
+   "availability": "Available",
    "sets": [
     "High Noon"
    ],
@@ -13917,6 +14086,15 @@
     "Primordian"
    ],
    "release": "2024-07-17"
+  },
+  "200029": {
+   "cost": 1350,
+   "rarity": "Epic",
+   "availability": "Available",
+   "sets": [
+    "Faerie Court"
+   ],
+   "release": "2026-08-12"
   },
   "201001": {
    "cost": 975,
@@ -14109,8 +14287,8 @@
   },
   "202064": {
    "cost": 1350,
-   "rarity": null,
-   "availability": "Upcoming",
+   "rarity": "Epic",
+   "availability": "Available",
    "sets": [
     "Broken Covenant"
    ],
@@ -14376,6 +14554,15 @@
     "World Champions: 2023"
    ],
    "release": "2024-08-14"
+  },
+  "222065": {
+   "cost": 1350,
+   "rarity": "Epic",
+   "availability": "Available",
+   "sets": [
+    "Ocean Song"
+   ],
+   "release": "2026-08-26"
   },
   "223001": {
    "cost": 975,
@@ -15270,7 +15457,7 @@
   },
   "266009": {
    "cost": null,
-   "rarity": null,
+   "rarity": "Rare",
    "availability": "Limited",
    "sets": [
     "Victorious"
@@ -16853,6 +17040,15 @@
    ],
    "release": "2024-11-06"
   },
+  "799008": {
+   "cost": 1350,
+   "rarity": "Epic",
+   "availability": "Legacy",
+   "sets": [
+    "World Champions: 2025"
+   ],
+   "release": "2026-07-15"
+  },
   "800001": {
    "cost": 1350,
    "rarity": "Epic",
@@ -16880,10 +17076,19 @@
    ],
    "release": "2025-07-16"
   },
+  "804010": {
+   "cost": 1350,
+   "rarity": "Epic",
+   "availability": "Legacy",
+   "sets": [
+    "World Champions: 2025"
+   ],
+   "release": "2026-07-15"
+  },
   "805001": {
    "cost": 1350,
-   "rarity": null,
-   "availability": "Upcoming",
+   "rarity": "Epic",
+   "availability": "Available",
    "sets": [
     "High Noon"
    ],
@@ -17078,6 +17283,15 @@
    ],
    "release": "2025-11-19"
   },
+  "887048": {
+   "cost": 1350,
+   "rarity": "Epic",
+   "availability": "Available",
+   "sets": [
+    "Faerie Court"
+   ],
+   "release": "2026-08-12"
+  },
   "888001": {
    "cost": 1350,
    "rarity": "Epic",
@@ -17143,8 +17357,8 @@
   },
   "893020": {
    "cost": 1350,
-   "rarity": null,
-   "availability": "Upcoming",
+   "rarity": "Epic",
+   "availability": "Available",
    "sets": [
     "Broken Covenant"
    ],
