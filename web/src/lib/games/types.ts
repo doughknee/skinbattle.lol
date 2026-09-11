@@ -1,6 +1,8 @@
 // Shared (client-safe) types for the games framework. Server-only logic
 // lives under ./server - never import that from components.
 
+import type { AnswerBlock } from './answer'
+
 export type GameId = 'splashdle' | 'price-check' | 'chroma-vision'
 
 export type DailyStatus = 'not_started' | 'in_progress' | 'won' | 'lost'
@@ -400,6 +402,7 @@ export interface RankingRow {
   uncertainty: number
   battles: number
   cost: number | null
+  release: string | null // ISO date, or null where the facts snapshot has none
 }
 
 export interface RankingsState {
@@ -414,6 +417,18 @@ export interface RankingsState {
   // "Early Rankings - still calibrating" banner (thin data is a call to
   // action, not an embarrassment).
   calibrating: boolean
+  // The verdict, built server-side from the slice leader so head() and the
+  // body quote the same sentence. Computed from the full rated set, not the
+  // page of rows, so a deep "Show more" page still carries the real leader.
+  answer: AnswerBlock
+  // When the ratings were last rebuilt (ISO, meta key refit_at). The page's
+  // freshness label reads this, never the render clock.
+  refitAt: string | null
+  // Recorded votes behind the ratings. Sitewide, so it is only meaningful -
+  // and only populated - on the catalog-wide slice: per-skin battle counts
+  // cannot be summed into a slice total without counting each head-to-head
+  // once per side. Same figure /methodology publishes.
+  totalVotes: number | null
 }
 
 export interface SliceLink {
