@@ -294,7 +294,8 @@ toggles above):
 
 The same sweep confirmed the rest of the crawl layer: every page self-canonical
 without query strings, UTM variants identical to the clean page, the legacy
-`/rankings/best-league-of-legends-skins` a 301 to `/rankings/all`, unknown
+`/rankings/best-league-of-legends-skins` a 301 to `/rankings/all` (query string
+intact since DONI-107 - it used to be dropped on the hop), unknown
 champion/skin/slice ids real 404s, OAI-SearchBot / Googlebot / bingbot served
 the full page, and a 2,365-URL sitemap with no UTM, stub, noindex or lastmod
 entries.

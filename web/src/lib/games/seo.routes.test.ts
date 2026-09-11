@@ -13,6 +13,7 @@
 
 import { readFileSync, readdirSync } from 'node:fs'
 import { join } from 'node:path'
+import { isRedirect } from '@tanstack/react-router'
 import { describe, expect, it } from 'vitest'
 
 const ROUTES = join(import.meta.dirname, '../../routes')
@@ -237,11 +238,37 @@ describe('search intent lands on stable titles', () => {
 })
 
 describe('the flagship slug is a permanent redirect, never a soft 404', () => {
-  it('sends /rankings/best-league-of-legends-skins to /rankings/all with a 301', () => {
-    const src = read('rankings/best-league-of-legends-skins.tsx')
-    expect(src).toContain("createFileRoute('/rankings/best-league-of-legends-skins')")
-    expect(src).toContain('statusCode: 301')
-    expect(src).toContain("slice: 'all'")
+  // The URL was published as the flagship slug and then answered by
+  // /rankings/$slice as a 200 saying "No such slice". A stub route owns it
+  // now, and three things keep that true: the stub is in the generated tree
+  // (or $slice catches the URL again), its beforeLoad throws a 301 to the
+  // page that holds the ranking, and the query string rides along - a
+  // ?utm_source=chatgpt.com that dies on the hop is a referral PostHog never
+  // sees. The stub is exercised, not grepped: the redirect it throws is the
+  // Response the server answers with.
+  const FLAGSHIP = '/rankings/best-league-of-legends-skins'
+
+  it('is registered in the route tree', () => {
+    expect(read('../routeTree.gen.ts')).toContain(`'${FLAGSHIP}'`)
+  })
+
+  it('throws a 301 to /rankings/all with the query string intact', async () => {
+    const { Route } = await import('~/routes/rankings/best-league-of-legends-skins')
+    let thrown: unknown
+    try {
+      Route.options.beforeLoad!({} as never)
+    } catch (e) {
+      thrown = e
+    }
+    expect(isRedirect(thrown)).toBe(true)
+    const r = thrown as Response & { options: Record<string, unknown> }
+    expect(r.status).toBe(301)
+    expect(r.options).toMatchObject({
+      to: '/rankings/$slice',
+      params: { slice: 'all' },
+      search: true,
+      statusCode: 301,
+    })
   })
 })
 
