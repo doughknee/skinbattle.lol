@@ -539,21 +539,35 @@ function applyPersonalTierUpdate(
 }
 
 // Rank among skins that have actually fought (battles > 0). ~2k rows - a
-// plain count is cheap.
+// plain count is cheap, and the join is a primary-key lookup per row.
+//
+// Scoped to the CATALOG, not to skin_ratings alone. A rating row outlives the
+// skin it describes: a Community Dragon sync can renumber or drop an entry,
+// and the rating stays behind as an orphan nobody can open a page for. Counting
+// those inflated every "#N of M" on the site - production showed "1,944 of
+// 1,941 rated", more ranked skins than skins - and it put three unreachable
+// rows ahead of real ones in the rank. num != 0 for the same reason /skins, the
+// battle pool, the ranking slices and the champion pages all use it: the base
+// look is not a skin anyone owns, so a page that counted it would contradict
+// every page linking to it.
+const RATED_IN_CATALOG = `FROM skin_ratings r
+     JOIN catalog_skins c ON c.id = r.skin_id
+    WHERE r.battles > 0 AND c.num != 0`
+
 export function globalRank(db: DatabaseSync, rating: number): number {
   const row = db
-    .prepare(
-      'SELECT COUNT(*) AS c FROM skin_ratings WHERE battles > 0 AND rating > ?',
-    )
+    .prepare(`SELECT COUNT(*) AS c ${RATED_IN_CATALOG} AND r.rating > ?`)
     .get(rating) as { c: number }
   return row.c + 1
 }
 
 // The denominator for "#789 of 1,420": how many skins have a real ranking
-// (have fought at least one battle). Cheap COUNT over ~2k rows.
+// (have fought at least one battle). Cheap COUNT over ~2k rows. Same catalog
+// scope as globalRank above - the rank and its denominator have to be counting
+// the same set or the pair is nonsense.
 export function ratedCount(db: DatabaseSync): number {
   const row = db
-    .prepare('SELECT COUNT(*) AS c FROM skin_ratings WHERE battles > 0')
+    .prepare(`SELECT COUNT(*) AS c ${RATED_IN_CATALOG}`)
     .get() as { c: number }
   return row.c
 }
