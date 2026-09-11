@@ -27,6 +27,7 @@ Route count is not a smell; door count is.
 /                        Home — hero CTA drops straight into /battle
 /battle                  Quick Battle PLAYS HERE (no landing page in the way),
                          with "Today's challenges" + leaderboards strip below
+  /battle/tier-drop      Rank a champion's skins S–D in one pass
   /battle/splashdle      Daily: name the skin from a sliver of splash
   /battle/price-point    Daily: guess the RP
   /battle/chroma-vision  Daily: name the skin from its colors
@@ -41,6 +42,10 @@ Route count is not a smell; door count is.
                          slice discovery is the slice bar on the page itself)
   /rankings/$slice       Leaf: all | price-* | line-* | champion-* | year-*
   /rankings/drought      Days since each champion's last skin
+/methodology             How the rating works + where each number comes from.
+                         Not under /rankings: skin and champion pages cite it
+                         too, so it is the site's provenance page, not a
+                         rankings view. /rankings/elo 301s here (DONI-83).
 /profile                 YOU = the Mirror (PR 4): your tier list, hot takes,
                          wardrobe, completion. Account is a quiet tab.
                          Works for guests (guests battle too) → doubles as the
@@ -89,6 +94,8 @@ older up/down vote) has been removed entirely.
 | /games/mirror         | /profile (the profile IS the Mirror) |
 | /battle/price-check   | /battle/price-point    |
 | /battle/mirror        | /profile (brief interim home during the move) |
+| /battle/tiers         | /battle/tier-drop (renamed after launch) |
+| /rankings/elo         | /methodology (the explainer grew into the provenance page) |
 | /leaderboards         | /battle/leaderboards (retargeted stub) |
 | /awards               | /rankings/all (Awards retired with star/ban voting) |
 | /rankings/awards      | /rankings/all (Awards retired with star/ban voting) |
@@ -102,10 +109,12 @@ the "By champion" lens (two views, one door — not a redesign).
 
 ## Navbar
 
-**Battle · Skins · Rankings** (+ Champions until PR 2 lands) + search (Ctrl+K)
-+ account. Battle styled as the accent item — it's the brand verb.
-Dropdowns stay registry-driven: Battle ▾ (dailies, leaderboards), Rankings ▾
-(full ranking, drought). Account menu owns the profile/Mirror.
+**Battle · Skins · Rankings** + search (Ctrl+K) + account. Battle styled as the
+accent item — it's the brand verb. Dropdowns stay registry-driven: Battle ▾
+(dailies, tier drop), Skins ▾ (the two catalog lenses). Rankings is a plain
+link — its slice bar does discovery in-page. The account button owns the
+profile/Mirror; the footer carries it too, so a signed-out visitor (whose
+account button says "Sign in") still has a way in.
 
 ## Home page funnel
 
@@ -116,10 +125,32 @@ return visits = streaks, leaderboard spot, your Mirror sharpening.
 
 ## Delivery phases
 
-1. **PR 1 — the IA itself**: registry, URL moves, redirect stubs (no chains),
-   Battle-accented navbar, home hero → Battle.
-2. **PR 2 — catalog merge**: /skins lenses, /champions index redirect, 3 doors.
+1. **PR 1 — the IA itself** ✅ shipped: registry, URL moves, redirect stubs (no
+   chains), Battle-accented navbar, home hero → Battle.
+2. **PR 2 — catalog merge** ✅ shipped (DONI-88): /skins "All Skins" lens,
+   CatalogTabs joining it to /champions, three doors restored.
+   **/champions does NOT redirect** — it is the second lens and keeps its URL.
+   (An earlier draft of this line said "/champions index redirect", which
+   contradicted the migration map two sections up. The map was right.)
 3. **PR 3 — dossier display rules**: community badges on skin pages, Elo
    badges on champion pages.
 4. **PR 4 — profile = the Mirror** (Phase A; public /u/<name> stays gated on
    real players).
+
+## Drift log
+
+The nav drifted from this document once already: it shipped as **Play ·
+Rankings · Mirror** with Champions demoted to the footer and `/skins` never
+built at all — so the sitemap advertised ~1,900 `/skins/$slug` URLs whose
+parent 404'd. DONI-88 restored the three doors above. Two pieces of that drift
+were **kept**, because they were real decisions this document simply never
+recorded, not accidents:
+
+- **/methodology** replacing `/rankings/elo` (DONI-83) — one rating explainer,
+  cited from skin and champion pages, so it outgrew being a rankings view.
+- **/battle/tier-drop** — a battle mode added after this plan was written.
+
+Everything else was restored to the plan rather than the plan rewritten to
+match the code. One thing is new: the `/rankings/all` nav entry is now labelled
+**"Full ranking"**, because the catalog door took the name "All Skins" and two
+identical labels in one footer send people to the wrong lens.

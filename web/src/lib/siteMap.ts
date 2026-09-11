@@ -6,10 +6,15 @@
 // once. Nothing should hand-roll its own list of site links.
 //
 // The model (see ROUTES.md): the top nav is a growth instrument, not a filing
-// cabinet. Three doors - Play (do), Rankings (see), Mirror (your taste) - plus
-// Search and the account avatar on the right. Everything else (Champions,
-// search, the legal/utility pages) lives in the footer, which is the full
-// sitemap. Leaf content (champion/skin detail pages, slices) never appears.
+// cabinet. Three doors, three verbs - Battle (do), Skins (find), Rankings
+// (see) - plus Search and the account avatar on the right. The profile/Mirror
+// sits behind the account button and is deliberately NOT a door. The
+// legal/utility pages live in the footer, which is the full sitemap. Leaf
+// content (champion/skin detail pages, slices) never appears.
+//
+// Skins is one door over two routes: /skins is the "All Skins" lens and
+// /champions is the "By Champion" lens, joined on-page by CatalogTabs. Both
+// hang off the Skins section here so every nav surface shows the pair.
 
 import {
   faChartLine,
@@ -24,7 +29,6 @@ import {
   faRankingStar,
   faRoad,
   faRocket,
-  faScaleUnbalanced,
   faShieldHalved,
   faShuffle,
   faTrophy,
@@ -70,7 +74,7 @@ export const HOME: SitePage = {
 
 // ─── Individual pages, defined once and reused across nav + footer ──────────
 
-// Play
+// Battle
 const HEAD_TO_HEAD: SitePage = {
   to: '/battle',
   label: 'Head-to-Head',
@@ -113,10 +117,15 @@ const CHROMA_VISION: SitePage = {
 }
 
 // Rankings
-const ALL_SKINS: SitePage = {
+// Labelled "Full ranking", not "All skins": the catalog door now owns the
+// phrase "All Skins" (/skins), and two entries reading "All skins" in the same
+// footer and palette is exactly the kind of collision that sends people to the
+// wrong lens. Different verb, different name - this one is a verdict, not a
+// catalog.
+const FULL_RANKING: SitePage = {
   to: '/rankings/all',
-  label: 'All skins',
-  blurb: 'Every skin, one list - slice it by price, line, champion, year.',
+  label: 'Full ranking',
+  blurb: 'Every rated skin, one list - slice it by price, line, champion, year.',
   icon: faListOl,
   search: 'best skins overall top list full ranking all',
 }
@@ -146,25 +155,40 @@ const HOW_RANKINGS_WORK: SitePage = {
     'elo rating explainer how it works bradley terry calibrating uncertainty mmr math methodology confidence sample size provenance sources',
 }
 
-// Explore (footer)
+// The catalog door's two lenses. Same shelf, two ways of facing it: the flat
+// list of every skin, and the same skins grouped by who wears them.
+export const SKIN_CATALOG: SitePage = {
+  to: '/skins',
+  label: 'All Skins',
+  blurb: 'Every skin in the game, one flat catalog you can search.',
+  icon: faLayerGroup,
+  search:
+    'catalog browse all skins every skin list collection wardrobe library index',
+  hero: true,
+  group: 'Browse by',
+}
+// Keeps the plain name "Champions" everywhere it appears on its own (footer,
+// palette, mobile nav); "By Champion" is its role in the on-page lens pair,
+// which CatalogTabs supplies where the two sit side by side.
 export const CHAMPIONS: SitePage = {
   to: '/champions',
   label: 'Champions',
-  blurb: 'Every champion and their wardrobe, ranked skin by skin.',
+  blurb: 'The same catalog, grouped by champion and their wardrobe.',
   icon: faUsers,
   search:
-    'catalog browse champions roster splash art collection wardrobe skins',
+    'catalog browse champions roster splash art collection wardrobe skins by champion',
+  group: 'Browse by',
 }
 
-// Mirror tabs. Account lives in the avatar menu and the footer (not the nav
-// dropdown), so the Mirror door stays focused on your taste artifacts.
+// The Mirror. Not a nav door (ROUTES.md: it sits behind the account button),
+// so these two reach people through the footer, the command palette and the
+// avatar - never the navbar.
 const YOUR_TIER_LIST: SitePage = {
   to: '/profile',
   label: 'Your tier list',
   blurb: 'The ranking your battles build, plus your contrarian takes.',
   icon: faLayerGroup,
-  search: 'mirror tier list taste my ranking stats',
-  hero: true,
+  search: 'mirror tier list taste my ranking stats profile you',
 }
 export const ACCOUNT: SitePage = {
   to: '/profile',
@@ -180,7 +204,9 @@ export const ACCOUNT: SitePage = {
 export const SITE_SECTIONS: SiteSection[] = [
   {
     to: '/battle',
-    label: 'Play',
+    // "Battle", not "Play": the brand is skinbattle.lol and the door should
+    // say the brand verb (ROUTES.md, "three doors, three verbs").
+    label: 'Battle',
     blurb: 'Battles and daily puzzles. Jump in.',
     icon: faShuffle,
     // Carries the head-to-head terms too: the palette dedupes the child that
@@ -189,6 +215,21 @@ export const SITE_SECTIONS: SiteSection[] = [
       'play games quick battle versus head to head 1v1 swipe endless vote tier list puzzles daily',
     accent: true,
     children: [HEAD_TO_HEAD, TIER_DROP, SPLASHDLE, PRICE_POINT, CHROMA_VISION],
+  },
+  {
+    // The catalog door. Lands on the flat "All Skins" lens; the dropdown and
+    // the on-page tab bar both carry the second lens (/champions), so the two
+    // routes always travel together as one door.
+    to: '/skins',
+    match: '/skins',
+    label: 'Skins',
+    blurb: 'The whole catalog - every skin, every champion wardrobe.',
+    icon: faLayerGroup,
+    // Carries the All Skins terms too: the palette dedupes the child pointing
+    // at this same path, so its keywords have to live here.
+    search:
+      'skins catalog browse all every skin champions roster wardrobe collection library find lookup',
+    children: [SKIN_CATALOG, CHAMPIONS],
   },
   {
     // The section lands on the full ranking - the list IS the product, and its
@@ -202,17 +243,6 @@ export const SITE_SECTIONS: SiteSection[] = [
     search:
       'best worst top tier list insights skins overall price tier skin line year champion slice rankings',
   },
-  {
-    // The personal door: the tier list your battles build. Account/sign-in
-    // stay in the avatar menu. Guest-capable, so even a signed-out visitor has
-    // a Mirror (which makes it the sign-up pitch). A plain link, no dropdown -
-    // the door and its one child (the tier list) point at the same page.
-    to: '/profile',
-    label: 'Mirror',
-    blurb: 'The tier list your battles build.',
-    icon: faScaleUnbalanced,
-    search: 'profile mirror tier list taste my ranking stats history you',
-  },
 ]
 
 // ─── Footer columns - the full sitemap, curated by intent ───────────────────
@@ -221,14 +251,16 @@ export const SITE_SECTIONS: SiteSection[] = [
 
 export const FOOTER_COLUMNS: { title: string; pages: SitePage[] }[] = [
   {
-    title: 'Play',
+    title: 'Battle',
     pages: [HEAD_TO_HEAD, TIER_DROP, SPLASHDLE, PRICE_POINT, CHROMA_VISION],
   },
   {
     title: 'Rankings',
-    pages: [ALL_SKINS, DROUGHT, LEADERBOARDS, HOW_RANKINGS_WORK],
+    pages: [FULL_RANKING, DROUGHT, LEADERBOARDS, HOW_RANKINGS_WORK],
   },
-  { title: 'Explore', pages: [CHAMPIONS] },
+  { title: 'Skins', pages: [SKIN_CATALOG, CHAMPIONS] },
+  // The Mirror is not a nav door (it lives behind the account button), so the
+  // footer is where a signed-out visitor still finds it.
   { title: 'Mirror', pages: [YOUR_TIER_LIST, ACCOUNT] },
   // Filled from SECONDARY_PAGES below so the palette and footer never drift.
   { title: 'More', pages: [] },
@@ -271,8 +303,8 @@ export const SECONDARY_PAGES: SitePage[] = [
 FOOTER_COLUMNS[FOOTER_COLUMNS.length - 1].pages = SECONDARY_PAGES
 
 // Flat, deduped list of every navigable page - powers the command palette and
-// the sitemap. Includes pages that aren't in the navbar (Champions, the deeper
-// rankings views) so Search and crawlers still reach them.
+// the sitemap. Includes pages that aren't in the navbar (the deeper rankings
+// views, the Mirror) so Search and crawlers still reach them.
 export function allSitePages(): SitePage[] {
   const seen = new Set<string>()
   const out: SitePage[] = []
@@ -286,16 +318,19 @@ export function allSitePages(): SitePage[] {
     push(s)
     for (const c of s.children ?? []) push(c)
   }
-  push(CHAMPIONS)
-  for (const p of [ALL_SKINS, DROUGHT, LEADERBOARDS, HOW_RANKINGS_WORK]) {
+  for (const p of [FULL_RANKING, DROUGHT, LEADERBOARDS, HOW_RANKINGS_WORK]) {
     push(p)
   }
+  // The Mirror is reachable from the account button and the footer but is no
+  // longer a nav door - without this it would fall out of the command palette
+  // entirely, which is how you lose a page nobody meant to hide.
+  push(YOUR_TIER_LIST)
   for (const p of SECONDARY_PAGES) push(p)
   return out
 }
 
-// The curated short list shown before the user types anything. Champions left
-// the navbar, so it earns a spot here to stay one keystroke away.
+// The curated short list shown before the user types anything: home plus the
+// three doors. Both catalog lenses ride along as children of the Skins door.
 export function quickNavPages(): SitePage[] {
   return [HOME, ...SITE_SECTIONS, CHAMPIONS]
 }
