@@ -223,27 +223,38 @@ No PII is captured.
 
 ---
 
-## 8. Dashboard: "Participation Growth" (manual setup)
+## 8. Dashboard: "Participation Growth"
 
-Create a dashboard named **Participation Growth**. All insights session-scoped
-(unique sessions), because guests have no person profile. Suggested date range
-30 days, weekly breakdown where a trend is asked for.
+**Live:** <https://us.posthog.com/project/468413/dashboard/2088118>
+(PostHog project 468413, "SkinBattle.lol"). Built on 2026-09-11 by
+`web/scripts/posthog-dashboard.mjs`, which is the dashboard's definition:
+`PH_KEY=<personal api key> node scripts/posthog-dashboard.mjs 468413 apply`
+finds-or-creates the dashboard and every insight by name, so re-running it
+after editing a query updates the live tiles; `validate` runs every query
+through `/query/` without writing; `verify` refreshes each tile. The key is
+Brandon's personal PostHog key, scoped to that project; it is never committed
+and never stored anywhere in this repo.
 
-| # | Insight | Build |
+Every insight is session-scoped (unique sessions), because guests have no
+person profile. Date range 30 days, weekly interval on the trends.
+
+| # | Tile | Build |
 |---|---|---|
-| A | Landing → first battle | Funnel: `ranking_viewed` → `battle_vote_submitted` (`session_picks = 1`). Aggregate by unique sessions. Breakdown: `page_type` on step 1. |
-| B | Battles per new visitor | Trend: `battle_vote_submitted` total ÷ unique sessions (formula `A / B`, both filtered to sessions whose entry is not `/battle`). Breakdown by `scope_champion is set` vs not. |
-| C | First → second battle | Funnel: `battle_vote_submitted` (`session_picks = 1`) → `battle_vote_submitted` (`session_picks = 2`). |
-| D | Reaching 5 battles | Funnel: `session_picks = 1` → `session_picks = 5`. Breakdown `scope_champion is set`. |
-| E | Ranking views after participation | Trend: `ranking_viewed` where `session_battles > 0`, plus the funnel `battle_vote_submitted` → `ranking_viewed`. |
-| F | Ranking share rate | Funnel: `ranking_viewed` → `ranking_shared`. Breakdown `method`. |
-| G | Visitors from shares | Trend: `share_referred_visit`, breakdown `utm_medium`; and the funnel `share_referred_visit` → `battle_vote_submitted`. |
-| H | D1 retention | Retention: `battle_vote_submitted` returning to `battle_vote_submitted`, day granularity, read day 1. Caveat: guests are `distinct_id`s that rotate on cleared cookies and on sign-out, so this is a floor. |
-| I | D7 retention | Same retention insight, read day 7. |
+| A | Landing → first battle | Funnel: `ranking_viewed` → `battle_vote_submitted` (`session_picks = 1`), unique sessions, breakdown `page_type`. |
+| B | Battles per battling session | Trend, weekly: `battle_vote_submitted` total ÷ unique sessions (formula `A/B`). |
+| B2 | Battles: scoped vs catalog-wide | Trend, weekly: `battle_vote_submitted` with a HogQL breakdown on whether `scope_champion` is set. |
+| C | First → second battle | Funnel: `session_picks = 1` → `session_picks = 2`, unique sessions. |
+| D | Reaching 5 battles | Funnel: `session_picks = 1` → `session_picks = 5`, unique sessions, same scoped/catalog-wide breakdown. |
+| E | Ranking views after a battle | Trend, weekly: `ranking_viewed` where `session_battles > 0`, breakdown `page_type`. |
+| E2 | Battle → ranking view | Funnel: `battle_vote_submitted` → `ranking_viewed`, unique sessions. |
+| F | Ranking share rate | Funnel: `ranking_viewed` → `ranking_shared`, breakdown `method`. |
+| G | Visitors from shares | Trend, weekly: `share_referred_visit`, breakdown `utm_medium`. |
+| G2 | Share arrival → battle | Funnel: `share_referred_visit` → `battle_vote_submitted`, unique sessions. |
+| H/I | Voter retention (D1 … D7) | Retention: first `battle_vote_submitted` returning to `battle_vote_submitted`, day granularity, 8 intervals; read day 1 and day 7. Caveat: guests are `distinct_id`s that rotate on cleared cookies and on sign-out, so this is a floor. |
+| Acquisition | Sessions, battles and shares by channel | HogQL table over the last 30 days: sessions bucketed by entry referrer / `utm_source`, with sessions, sessions that battled, % battled, battles per session, shares. |
 
-**Acquisition breakdown** (apply to A, B, G as a breakdown or as a HogQL
-insight): group sessions by `$entry_utm_source` / `$entry_referring_domain`
-with
+The channel buckets are the rules below and nothing more - an unknown
+referrer stays "other":
 
 ```sql
 multiIf(
@@ -258,7 +269,8 @@ multiIf(
   'other')
 ```
 
-Channels not in that list stay "other"; nothing is inferred.
+(The live tile reads the same buckets off each session's first
+`$referring_domain` / `utm_source` event properties; see the script.)
 
 ---
 
@@ -274,4 +286,3 @@ Channels not in that list stay "other"; nothing is inferred.
   alone - deleting a dependency is its own change.
 - **Tier Drop → scoped battle handoff** after a submission: the post-submit
   panel already offers "Rank another"; not added.
-- **Dashboard creation**: needs a personal API key that no task session holds.
