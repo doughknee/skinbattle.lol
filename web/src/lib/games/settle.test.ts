@@ -34,53 +34,75 @@ describe('the ask follows the verdict', () => {
 })
 
 describe('the share payload', () => {
-  const url = 'https://skinbattle.lol/champions/ahri?utm_source=share&utm_medium=copy&utm_campaign=ranking'
-
-  it('lists the live top three and says provisional when it is', () => {
+  it('opens with a hook, lists the live podium with medals, and says provisional when it is', () => {
     const text = rankingShareText({
       title: 'Ahri',
+      champion: true,
       top: ['Spirit Blossom Ahri', 'K/DA ALL OUT Ahri', 'Elderwood Ahri', 'Arcade Ahri'],
       state: 'provisional',
-      url,
+      battles: 21,
     })
     expect(text.split('\n')).toEqual([
-      'Ahri · SkinBattle community ranking',
-      '#1 Spirit Blossom Ahri',
-      '#2 K/DA ALL OUT Ahri',
-      '#3 Elderwood Ahri',
-      "Provisional: the top spot isn't settled yet.",
-      `Help settle it: ${url}`,
+      "Ahri's best skin isn't settled yet:",
+      '🥇 Spirit Blossom Ahri (leading)',
+      '🥈 K/DA ALL OUT Ahri',
+      '🥉 Elderwood Ahri',
+      'Provisional after 21 battles. Your vote could decide it, no account needed:',
     ])
   })
 
-  it('does not call a settled ranking provisional, or invent a podium for an empty one', () => {
-    expect(
-      rankingShareText({ title: 'Ahri', top: ['A', 'B'], state: 'settled', url }),
-    ).not.toMatch(/provisional/i)
-    const empty = rankingShareText({ title: 'Ahri', top: [], state: 'empty', url })
-    expect(empty).not.toMatch(/#1/)
-    expect(empty).toMatch(/No battles yet/)
-  })
-
-  it('leaves the link to the share sheet when no url is given', () => {
-    const text = rankingShareText({ title: 'Ahri', top: ['A'], state: 'provisional' })
-    expect(text.split('\n').at(-1)).toBe('Help settle it')
+  it('invites an argument once settled, and never carries the link itself', () => {
+    const text = rankingShareText({
+      title: 'Jhin',
+      champion: true,
+      top: ['Dark Cosmic Jhin', 'Mythmaker Jhin', 'Dark Cosmic Erasure Jhin'],
+      state: 'settled',
+      battles: 87,
+    })
+    expect(text.split('\n')[0]).toBe("Jhin's best skin, by community vote:")
+    expect(text).not.toMatch(/provisional|leading/i)
+    expect(text.split('\n').at(-1)).toBe(
+      'Settled after 87 battles. Think the community got it wrong? Vote, no account needed:',
+    )
     expect(text).not.toMatch(/https?:/)
   })
 
-  it('attributes the share on the canonical path with the medium it used', () => {
-    expect(shareUrl('https://skinbattle.lol', '/champions/ahri', 'copy')).toBe(url)
+  it('names a cross-champion slice in the singular and skips the count when there is none', () => {
+    const text = rankingShareText({
+      title: '975 RP skins',
+      champion: false,
+      top: ['A', 'B'],
+      state: 'settled',
+      battles: 0,
+    })
+    expect(text.split('\n')[0]).toBe('The best 975 RP skin, by community vote:')
+    expect(text).toMatch(/^Settled\. Think/m)
+    expect(text).not.toMatch(/🥉/)
+    expect(
+      rankingShareText({ title: 'Ahri', champion: true, top: ['A'], state: 'provisional', battles: 1 }),
+    ).toMatch(/after 1 battle\./)
+  })
+
+  it('invents no podium for an empty ranking', () => {
+    const empty = rankingShareText({ title: 'Ahri', champion: true, top: [], state: 'empty', battles: 0 })
+    expect(empty).not.toMatch(/🥇/)
+    expect(empty).toBe('No Ahri skin has been through a battle yet. Be the first to vote, no account needed:')
+  })
+
+  it('attributes the share on the canonical path with the medium it used, and nothing more', () => {
+    expect(shareUrl('https://skinbattle.lol', '/champions/ahri', 'copy')).toBe(
+      'https://skinbattle.lol/champions/ahri?utm_source=share&utm_medium=copy',
+    )
     expect(shareUrl('https://skinbattle.lol', '/rankings/all', 'native')).toBe(
-      'https://skinbattle.lol/rankings/all?utm_source=share&utm_medium=native&utm_campaign=ranking',
+      'https://skinbattle.lol/rankings/all?utm_source=share&utm_medium=native',
     )
   })
 })
 
 describe('the arrival', () => {
   it('recognises only our own share links', () => {
-    expect(parseShareReferral('?utm_source=share&utm_medium=native&utm_campaign=ranking')).toEqual({
+    expect(parseShareReferral('?utm_source=share&utm_medium=native')).toEqual({
       medium: 'native',
-      campaign: 'ranking',
     })
     expect(parseShareReferral('?utm_source=chatgpt.com')).toBeNull()
     expect(parseShareReferral('')).toBeNull()

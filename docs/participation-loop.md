@@ -175,14 +175,23 @@ Other slices: "Help shape this ranking" plus the slice's Tier Drop board.
 
 ## 6. Sharing and attribution
 
-- `<ShareRanking>` on champion pages and every ranking slice: Web Share where
-  the platform has a sheet (decided at click time - the button is
-  server-rendered), the clipboard otherwise. The payload is the live top three
-  the page rendered plus the verdict's state; a provisional ranking says so.
-- The link is the **canonical page** with `utm_source=share`,
-  `utm_medium=copy|native`, `utm_campaign=ranking`. "Native" is honest: the
-  Web Share sheet never says which app took the link. No platform-specific
-  buttons were added (brief minimum: copy + Web Share + fallback).
+- `<ShareRanking>` on champion pages and every ranking slice, and the daily
+  result panels, all go through one `shareOrCopy` (settle.ts): Web Share
+  where the platform has a sheet (decided at click time - the buttons are
+  server-rendered), the clipboard otherwise. The ranking payload is a hook a
+  stranger can read ("Jhin's best skin, by community vote:" / "…isn't settled
+  yet:"), the live top three with medal emoji, the leader's battle count, and
+  one ask; a provisional ranking says so. The dailies keep their grid and gain
+  a one-line hook. The link is never inside the text: the sheet carries it,
+  and the clipboard copy gets it as the last line.
+- The link is the **canonical page** with `utm_source=share` and
+  `utm_medium=copy|native` - two parameters, because the link is the most
+  visible part of a pasted share. "Native" is honest: the Web Share sheet
+  never says which app took the link. No platform-specific buttons were added
+  (brief minimum: copy + Web Share + fallback).
+- The unfurl (`og:description`) on champion pages and slices is the verdict
+  sentence plus the ask, not the search description - a share has to make
+  someone click; a snippet has to stay stable.
 - `<ShareReferral>` (root) records `share_referred_visit` on arrival and then
   removes every `utm_*` from the address bar (`history.replaceState`, one tick
   later), so nothing rides into the next `<Link>` or a re-share copied from the
@@ -190,12 +199,13 @@ Other slices: "Help shape this ranking" plus the slice's Tier Drop board.
   mounts above it), so session entry attribution and `$initial_*` are intact.
   Canonical tags were already path-only (`canonicalLink` is pinned to literals
   by the crawl test).
-- **OG card.** Champion pages now point `og:image` at the existing dynamic
-  rankings card for their slice (`/og/rankings/champion-<id>`: title + live top
-  three over the leader's splash), which now prints the verdict's state
-  ("Provisional · help settle it" / "Settled by community battles") instead of
-  the calibrating line. A purpose-designed champion card (the brief's mock) is
-  a future enhancement; this reuse cost one line and no new renderer.
+- **OG card.** Champion pages point `og:image` at the dynamic rankings card
+  for their slice (`/og/rankings/champion-<id>`), redesigned as a share rather
+  than a data readout: the #1 splash kept vivid on the right, a settled /
+  provisional pill, the title, a medal-order podium without Elo numbers, the
+  verdict line with the leader's battle count, and a "Vote now · free · no
+  account needed" call to action. The cache key carries a version
+  (`og-rankings-v2-…`) so a redesign replaces yesterday's cards at once.
 
 ---
 
@@ -214,7 +224,7 @@ battle are **filters** on `battle_vote_submitted`, not new events.
 | five_battles_completed | `battle_vote_submitted` where `session_picks = 5` | | |
 | ranking_viewed_after_battle | `ranking_viewed` where `session_battles > 0` (or the funnel's own step order) | | |
 | ranking_shared | `ranking_shared` (new) | share control | `method` ∈ `copy` \| `native`, `page_type`, `champion`, `ranking_state` |
-| share_referred_visit | `share_referred_visit` (new) | root, on arrival | `utm_medium`, `utm_campaign`, `page_type`, `champion`, `path` |
+| share_referred_visit | `share_referred_visit` (new) | root, on arrival | `utm_medium`, `page_type`, `champion`, `path` |
 
 Session-level acquisition properties come from PostHog itself
 (`$entry_referring_domain`, `$entry_utm_source`, `$entry_pathname`); nothing is

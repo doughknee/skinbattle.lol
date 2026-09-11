@@ -191,8 +191,11 @@ function frame(bg: Node | null, content: Node[]): Node {
   )
 }
 
-// Full-bleed splash background with a readability gradient.
-function splashBg(dataUri: string): Node {
+// Full-bleed splash background with a readability gradient. `vivid` keeps
+// the art bright on the right half (the text column sits on the left), for
+// cards whose whole point is the skin - a ranking share is an argument about
+// art, and a near-black wash over it argues for nothing.
+function splashBg(dataUri: string, vivid = false): Node {
   return el(
     'div',
     { position: 'absolute', top: 0, left: 0, width: W, height: H },
@@ -211,9 +214,24 @@ function splashBg(dataUri: string): Node {
       left: 0,
       width: W,
       height: H,
-      backgroundImage:
-        'linear-gradient(to right, rgba(1,10,19,0.94) 30%, rgba(1,10,19,0.55) 100%)',
+      backgroundImage: vivid
+        ? 'linear-gradient(to right, rgba(1,10,19,0.96) 0%, rgba(1,10,19,0.9) 40%, rgba(1,10,19,0.3) 66%, rgba(1,10,19,0.1) 100%)'
+        : 'linear-gradient(to right, rgba(1,10,19,0.94) 30%, rgba(1,10,19,0.55) 100%)',
     }),
+    ...(vivid
+      ? [
+          // A low fade so the footer strip stays legible over bright art.
+          el('div', {
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            width: W,
+            height: H,
+            backgroundImage:
+              'linear-gradient(to bottom, rgba(1,10,19,0) 70%, rgba(1,10,19,0.75) 100%)',
+          }),
+        ]
+      : []),
   )
 }
 
@@ -627,8 +645,24 @@ export async function skinOgResponse(skinId: string): Promise<Response> {
   }
 }
 
-// Ranking-slice OG card: slice title + top-3 podium text over the #1 skin's
-// splash. Cached per slice per UTC day.
+// A small labelled pill: the verdict state, in the Verdict panel's own tones.
+const pill = (s: string, color: string) =>
+  text(s.toUpperCase(), {
+    fontFamily: 'Inter',
+    fontWeight: 700,
+    fontSize: 19,
+    letterSpacing: 4,
+    color,
+    padding: '6px 14px',
+    border: `2px solid ${color}`,
+  })
+
+// Ranking-slice OG card - the share that has to make a stranger click: the
+// #1 skin's splash kept vivid, the title, a podium in the same medal order
+// the share text uses (no Elo numbers - they mean nothing to someone who has
+// never seen the site), the verdict's state in its own words, and the ask.
+// Cached per slice per UTC day; the key carries a version so a redesign
+// replaces yesterday's cards instead of waiting for midnight.
 export async function rankingsOgResponse(slice: string): Promise<Response> {
   const { rankingsState } = await import('./rankings')
   const state = await rankingsState(slice)
@@ -637,47 +671,95 @@ export async function rankingsOgResponse(slice: string): Promise<Response> {
   try {
     const dir = join(DATA_DIR, 'cache')
     mkdirSync(dir, { recursive: true })
-    const path = join(dir, `og-rankings-${slice}-${puzzleDay()}.png`)
+    const path = join(dir, `og-rankings-v2-${slice}-${puzzleDay()}.png`)
     let png: Buffer
     if (existsSync(path)) {
       png = readFileSync(path)
     } else {
       const top = state.rows.slice(0, 3)
       const bg = top[0] ? await fetchAsDataUri(top[0].splashUrl) : null
-      const medals = ['1.', '2.', '3.']
-      const node = frame(bg ? splashBg(bg) : null, [
+      const confidence = state.answer.confidence
+      const leaderBattles = top[0]?.battles ?? 0
+      const after =
+        leaderBattles > 0
+          ? ` after ${leaderBattles.toLocaleString('en-US')} ${leaderBattles === 1 ? 'battle' : 'battles'}`
+          : ''
+      const verdictLine =
+        confidence === 'provisional'
+          ? `Provisional${after} · your vote could decide it`
+          : confidence === 'confident'
+            ? `Settled${after} · think the community got it wrong?`
+            : 'No battles yet · be the first to vote'
+      // The card is a fixed 1200×630: a long title or a long #1 name wraps,
+      // and every wrapped line is height the footer no longer has. Long
+      // strings step down a size so the card keeps its shape; a name that
+      // still wraps keeps its numeral on the first line (top-aligned).
+      const titleSize = state.title.length > 22 ? 44 : 56
+      const leadSize = (top[0]?.name.length ?? 0) > 22 ? 36 : 46
+      const podium = (r: (typeof top)[number], i: number) =>
         el(
           'div',
-          { flexDirection: 'column', gap: 14, justifyContent: 'center', flexGrow: 1 },
-          eyebrow('Community rankings'),
-          title(state.title, 60),
+          { alignItems: 'flex-start', gap: 16 },
+          text(String(i + 1), {
+            fontFamily: 'Cinzel',
+            fontWeight: 700,
+            fontSize: i === 0 ? leadSize - 4 : 26,
+            lineHeight: 1.15,
+            color: i === 0 ? C.gold2 : C.gold5,
+            width: 40,
+            justifyContent: 'flex-end',
+          }),
+          text(r.name, {
+            fontFamily: i === 0 ? 'Cinzel' : 'Inter',
+            fontWeight: i === 0 ? 700 : 500,
+            fontSize: i === 0 ? leadSize : 28,
+            color: i === 0 ? C.gold1 : C.grey1,
+            lineHeight: 1.15,
+          }),
+        )
+      const node = frame(bg ? splashBg(bg, true) : null, [
+        el(
+          'div',
+          { flexDirection: 'column', gap: 10, justifyContent: 'center', flexGrow: 1, width: 700 },
+          el(
+            'div',
+            { alignItems: 'center', gap: 18 },
+            eyebrow('Community ranking'),
+            confidence === 'provisional'
+              ? pill('Provisional', C.blue2)
+              : confidence === 'confident'
+                ? pill('Settled', C.gold2)
+                : pill('No battles yet', C.grey1),
+          ),
+          title(state.title, titleSize),
           ...(top.length > 0
-            ? top.map((r, i) =>
-                text(`${medals[i]} ${r.name} · ${r.rating}`, {
-                  fontFamily: 'Inter',
-                  fontWeight: i === 0 ? 600 : 400,
-                  fontSize: i === 0 ? 30 : 26,
-                  color: i === 0 ? C.gold1 : C.grey1,
-                }),
-              )
-            : [body('No battles in this slice yet. Be the first.')]),
-          // The verdict's own state, the same word the page prints: a shared
-          // card must not present a provisional top three as settled.
-          state.answer.confidence === 'provisional'
-            ? text('Provisional · help settle it at skinbattle.lol', {
-                fontFamily: 'Inter',
-                fontWeight: 600,
-                fontSize: 22,
-                color: C.blue2,
-              })
-            : state.answer.confidence === 'confident'
-              ? text('Settled by community battles', {
-                  fontFamily: 'Inter',
-                  fontWeight: 600,
-                  fontSize: 22,
-                  color: C.gold2,
-                })
-              : body(''),
+            ? [el('div', { flexDirection: 'column', gap: 4, marginTop: 4 }, ...top.map(podium))]
+            : [body('Nothing here has been through a battle. Be the first.')]),
+          text(verdictLine, {
+            fontFamily: 'Inter',
+            fontWeight: 500,
+            fontSize: 23,
+            color: confidence === 'provisional' ? C.blue2 : C.gold2,
+            marginTop: 4,
+          }),
+          // The footer already says "free · no account needed"; the pill is
+          // the verb.
+          el(
+            'div',
+            {
+              marginTop: 10,
+              padding: '10px 22px',
+              border: `2px solid ${C.gold2}`,
+              backgroundColor: 'rgba(120,90,40,0.45)',
+              alignSelf: 'flex-start',
+            },
+            text('Vote now · every pick counts', {
+              fontFamily: 'Cinzel',
+              fontWeight: 700,
+              fontSize: 24,
+              color: C.gold1,
+            }),
+          ),
         ),
       ])
       const svg = await satori(node as never, {

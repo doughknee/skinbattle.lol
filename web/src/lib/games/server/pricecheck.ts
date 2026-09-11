@@ -171,7 +171,8 @@ function buildShareText(
     grid,
   ]
   if (streak.current > 1) lines.push(`🔥 ${streak.current}-day streak`)
-  lines.push('skinbattle.lol/battle')
+  // The link is appended by the client with share attribution (shareOrCopy).
+  lines.push('Guess what five skins cost in RP:')
   return lines.join('\n')
 }
 

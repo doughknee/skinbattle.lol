@@ -27,6 +27,7 @@ import {
   rankingStateOf,
   readSessionBattles,
   settleCta,
+  unfurlAsk,
 } from '~/lib/games/settle'
 import { createSearcher } from '~/lib/search'
 import type {
@@ -68,9 +69,12 @@ export const Route = createFileRoute('/rankings/$slice')({
         { name: 'description', content: state.subtitle },
         // Keep near-empty slices out of the index until they hold real data.
         ...robotsMeta(sliceIsIndexable(state.ratedCount)),
+        // The unfurl text is the verdict sentence plus the ask, not the search
+        // description: a share has to make someone click, a snippet has to
+        // stay stable. Same split the champion page makes.
         ...ogMeta({
           title,
-          description: state.subtitle,
+          description: `${state.answer.answer} ${unfurlAsk(state.answer.confidence)}`,
           imagePath: `/og/rankings/${state.slice}`,
           path: `/rankings/${state.slice}`,
         }),
@@ -835,11 +839,13 @@ function RankingSlicePage() {
         )}
         <ShareRanking
           title={shareTitle}
+          champion={!!championName}
           top={state.rows.map((r) => r.name)}
           state={rankingState}
+          battles={state.rows[0]?.battles ?? 0}
           path={`/rankings/${state.slice}`}
           pageType="ranking-slice"
-          champion={champion}
+          championSlug={champion}
         />
         {/* Where the next battle would count most. Kept off the catalog-wide
             slice, whose ask is the whole catalog anyway. */}

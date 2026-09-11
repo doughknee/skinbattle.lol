@@ -20,6 +20,7 @@ import {
   rankingStateOf,
   readSessionBattles,
   settleCta,
+  unfurlAsk,
 } from '~/lib/games/settle'
 import { btnPrimarySm, btnSecondarySm } from '~/lib/ui'
 import type { RankingRow } from '~/lib/games/types'
@@ -134,7 +135,7 @@ export const Route = createFileRoute('/champions/$id')({
   },
   head: ({ loaderData }) => {
     if (!loaderData) return { meta: [{ title: 'Champion | SkinBattle' }] }
-    const { champion, wardrobe, name } = loaderData
+    const { champion, wardrobe, name, answer } = loaderData
     // The query this page answers, in the one line search renders. "Best" is
     // the search intent, not a claim: the verdict block on the page decides
     // what the data pays for, in the same words every other page uses. No
@@ -150,12 +151,14 @@ export const Route = createFileRoute('/champions/$id')({
       meta: [
         { title },
         { name: 'description', content: description },
-        // The share card is the champion's own ranking slice: its live top
-        // three over the leader's splash, with the verdict's state on it -
-        // what a shared link should unfurl as, instead of the generic card.
+        // The unfurl is a share, not a search snippet: its card is the
+        // champion's own ranking slice (live top three over the leader's
+        // splash, verdict state on it) and its text is the verdict sentence
+        // itself plus the ask - what makes someone click, where the stable
+        // search description above stays what makes a crawler trust the page.
         ...ogMeta({
           title,
-          description,
+          description: `${answer.answer} ${unfurlAsk(answer.confidence)}`,
           imagePath: `/og/rankings/champion-${champion.id.toLowerCase()}`,
           path,
         }),
@@ -372,11 +375,13 @@ function ChampionPage() {
           )}
           <ShareRanking
             title={name}
+            champion
             top={rows.map((r) => r.name)}
             state={rankingState}
+            battles={rows[0]?.battles ?? 0}
             path={championPath}
             pageType="champion"
-            champion={slug}
+            championSlug={slug}
           />
           <Link
             to="/methodology"

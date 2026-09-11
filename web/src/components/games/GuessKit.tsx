@@ -18,6 +18,7 @@ import {
 import { toast } from '~/components/Toaster'
 import { btnPrimarySm, btnSecondarySm } from '~/lib/ui'
 import { msToNextReset } from '~/lib/games/dailyTz'
+import { shareOrCopy } from '~/lib/games/settle'
 import { skinSlug } from '~/lib/games/slug'
 import { createSearcher, norm } from '~/lib/search'
 import type {
@@ -541,6 +542,7 @@ export function ResultPanel({
   shareText,
   animate,
   gameName,
+  sharePath,
 }: {
   status: 'won' | 'lost'
   guesses: SplashdleGuess[]
@@ -552,6 +554,9 @@ export function ResultPanel({
   // skeleton, so the celebratory cascade only plays for a live win.
   animate: boolean
   gameName: string // "Splashdle" | "Chroma Vision" - used in the countdown
+  // The puzzle's own page, which the share links to (with attribution) so
+  // the pasted link unfurls as that puzzle's card.
+  sharePath: string
 }) {
   const posthog = usePostHog()
   const [countdown, setCountdown] = useState(nextPuzzleCountdown)
@@ -564,17 +569,23 @@ export function ResultPanel({
   const share = async () => {
     if (!shareText) return
     try {
-      await navigator.clipboard.writeText(shareText)
-      toast('Result copied. Go flex it!')
+      const medium = await shareOrCopy({
+        title: `${gameName} · SkinBattle`,
+        text: shareText,
+        path: sharePath,
+      })
+      if (!medium) return
+      if (medium === 'copy') toast('Result copied. Go flex it!')
       posthog?.capture('game_result_shared', {
         game_name: gameName,
         outcome: status,
         guesses_used: guesses.length,
         max_guesses: maxGuesses,
         streak: streak.current,
+        method: medium,
       })
     } catch {
-      toast("Couldn't copy to clipboard.", 'error')
+      toast("Couldn't share the result.", 'error')
     }
   }
 

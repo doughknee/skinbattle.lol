@@ -47,45 +47,91 @@ export function settleCta(
 
 export type ShareMedium = 'copy' | 'native'
 
+// The ask that follows the verdict sentence in a link unfurl (og:description):
+// a settled ranking invites an argument, anything else invites the deciding
+// vote. Same register as settleCta, one sentence shorter.
+export const unfurlAsk = (c: AnswerConfidence): string =>
+  c === 'confident'
+    ? 'Think the community got it wrong? Vote, no account needed.'
+    : 'Your vote could decide it, no account needed.'
+
 // Share attribution rides on the canonical page URL as ordinary campaign
 // parameters, which PostHog reads on arrival without any code. `native` is the
 // Web Share API: the sheet never says which app it handed the link to, so the
-// medium stays honest at "native" rather than guessing a platform.
+// medium stays honest at "native" rather than guessing a platform. Two
+// parameters, not three: the link is the most visible part of a pasted share,
+// and every extra parameter reads as spam.
 export const SHARE_SOURCE = 'share'
-export const SHARE_CAMPAIGN = 'ranking'
 
 export function shareUrl(origin: string, path: string, medium: ShareMedium): string {
-  const q = new URLSearchParams({
-    utm_source: SHARE_SOURCE,
-    utm_medium: medium,
-    utm_campaign: SHARE_CAMPAIGN,
-  })
+  const q = new URLSearchParams({ utm_source: SHARE_SOURCE, utm_medium: medium })
   return `${origin}${path}?${q}`
 }
 
-// The share text is built from the live rows the page just rendered, so it
-// can never name a winner the page does not show - and a provisional ranking
-// says so in the share, the same way the page does. Without `url` the last
-// line is the bare call to action: the Web Share sheet carries the link in
-// its own field, and targets that merge the two would otherwise print it
-// twice.
+// The Web Share sheet where the platform has one (phones), the clipboard
+// everywhere else. The text never contains the link: the sheet carries it in
+// its own field, and the clipboard copy gets it appended as the last line, so
+// no target ever prints it twice. Decided at click time, never at render time
+// - the buttons are server-rendered and `navigator` only exists on the client.
+// Resolves to the medium used, or null when the sheet was dismissed (which is
+// neither a share nor an error); any other failure throws.
+export async function shareOrCopy(opts: {
+  title: string
+  text: string
+  path: string // canonical path, e.g. /champions/ahri
+}): Promise<ShareMedium | null> {
+  const native = typeof navigator.share === 'function'
+  const medium: ShareMedium = native ? 'native' : 'copy'
+  const url = shareUrl(window.location.origin, opts.path, medium)
+  try {
+    if (native) await navigator.share({ title: opts.title, text: opts.text, url })
+    else await navigator.clipboard.writeText(`${opts.text}\n${url}`)
+    return medium
+  } catch (err) {
+    if (err instanceof DOMException && err.name === 'AbortError') return null
+    throw err
+  }
+}
+
+// The share text: a hook a stranger can read, the podium, and one ask. Built
+// from the live rows the page just rendered, so it can never name a winner
+// the page does not show, and a provisional ranking says so in the share the
+// same way the page does. No link here - shareOrCopy owns the link.
 export function rankingShareText(opts: {
   title: string // "Ahri", "975 RP skins", "League of Legends skins"
+  champion: boolean // a champion's wardrobe, or a cross-champion slice
   top: string[] // the rows the page shows, best first; sliced to three here
   state: RankingState
-  url?: string
+  battles: number // the leader's battle count, 0 when there is no leader
 }): string {
-  const lines = [`${opts.title} · SkinBattle community ranking`]
-  const top = opts.top.slice(0, 3)
-  top.forEach((name, i) => lines.push(`#${i + 1} ${name}`))
-  const cta =
+  const headline = opts.champion
+    ? `${opts.title}'s best skin`
+    : `The best ${opts.title.replace(/ skins$/, ' skin')}`
+  if (opts.state === 'empty' || opts.top.length === 0) {
+    const none = opts.champion
+      ? `No ${opts.title} skin has been through a battle yet.`
+      : `None of the ${opts.title} have been through a battle yet.`
+    return `${none} Be the first to vote, no account needed:`
+  }
+  const medals = ['🥇', '🥈', '🥉']
+  const lines = [
     opts.state === 'provisional'
-      ? ["Provisional: the top spot isn't settled yet.", 'Help settle it']
-      : opts.state === 'settled'
-        ? ['Settled by community battles.', 'Think they got it wrong?']
-        : ['No battles yet.', 'Be the first to rank it']
-  lines.push(cta[0])
-  lines.push(opts.url ? `${cta[1]}: ${opts.url}` : cta[1])
+      ? `${headline} isn't settled yet:`
+      : `${headline}, by community vote:`,
+  ]
+  opts.top.slice(0, 3).forEach((name, i) => {
+    const lead = i === 0 && opts.state === 'provisional' ? ' (leading)' : ''
+    lines.push(`${medals[i]} ${name}${lead}`)
+  })
+  const after =
+    opts.battles > 0
+      ? ` after ${opts.battles.toLocaleString('en-US')} ${opts.battles === 1 ? 'battle' : 'battles'}`
+      : ''
+  lines.push(
+    opts.state === 'provisional'
+      ? `Provisional${after}. Your vote could decide it, no account needed:`
+      : `Settled${after}. Think the community got it wrong? Vote, no account needed:`,
+  )
   return lines.join('\n')
 }
 
@@ -124,7 +170,6 @@ export function championOfPath(pathname: string): string | null {
 
 export interface ShareReferral {
   medium: string
-  campaign: string | null
 }
 
 // A visit that arrived through one of our own share links, or null. Only
@@ -133,7 +178,7 @@ export interface ShareReferral {
 export function parseShareReferral(search: string): ShareReferral | null {
   const q = new URLSearchParams(search)
   if (q.get('utm_source') !== SHARE_SOURCE) return null
-  return { medium: q.get('utm_medium') ?? 'unknown', campaign: q.get('utm_campaign') }
+  return { medium: q.get('utm_medium') ?? 'unknown' }
 }
 
 // The same query string with every utm_* parameter removed, '' when nothing
