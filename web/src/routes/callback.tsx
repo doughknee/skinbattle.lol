@@ -42,11 +42,11 @@ function CallbackPage() {
     try {
       const claims = await getIdTokenClaims()
       if (claims?.sub) {
-        posthog.identify(claims.sub, {
-          email: claims.email,
-          username: claims.username,
-          player_tier: 'member',
-        })
+        // Only the opaque subject id and the tier. No email, no username:
+        // nothing here reads them, and /privacy promises analytics holds
+        // neither. Keep it that way - adding a person property means
+        // changing that page in the same PR.
+        posthog.identify(claims.sub, { player_tier: 'member' })
         // Flip the super-property immediately so events between here and the
         // next render carry 'member'. user_signed_in fires ONLY after a
         // successful identify - otherwise it would land on the anonymous id
