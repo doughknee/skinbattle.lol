@@ -187,7 +187,7 @@ function frame(bg: Node | null, content: Node[], cta?: string): Node {
           ? text(cta, {
               fontFamily: 'Inter',
               fontWeight: 600,
-              fontSize: 30,
+              fontSize: 34,
               color: C.gold1,
             })
           : text('free · no account needed', {
@@ -256,6 +256,86 @@ async function fetchAsDataUri(url: string): Promise<string | null> {
   } catch {
     return null
   }
+}
+
+// The share cards' backdrop, composed with jimp (already here for the
+// Splashdle crops) because satori has neither blur nor masks: the splash
+// blurred edge to edge, with the crisp splash blended back in from the middle
+// rightward through a horizontal alpha ramp. The satori overlay on top
+// (shareBg) then leans dark on the left - black plus blur behind the words -
+// and lifts to a light tint on the right, so the skin itself reads at near
+// full strength where no words are. Contrast where the type is, art where it
+// is not: what a chat thumbnail needs.
+// The text column runs to ~90% of the width on its longest lines, so the
+// crisp art only takes over on the right third; long lines still sit on the
+// black-and-blur side.
+const BLEND_FROM = 0.5 // the crisp art starts here, as a fraction of the width
+const BLEND_TO = 0.74 // ...and is fully crisp from here
+
+async function shareBackground(url: string): Promise<string | null> {
+  try {
+    const res = await fetch(url, { signal: AbortSignal.timeout(10_000) })
+    if (!res.ok) return null
+    const { Jimp } = await import('jimp')
+    const src = await Jimp.fromBuffer(Buffer.from(await res.arrayBuffer()))
+    src.cover({ w: W, h: H })
+    const blurred = src.clone().blur(16)
+    // Grayscale ramp: black (transparent) on the left, white (opaque) on the
+    // right, so masking the crisp copy with it fades the art in left to right.
+    const ramp = new Jimp({ width: W, height: H, color: 0x000000ff })
+    const x0 = Math.round(W * BLEND_FROM)
+    const x1 = Math.round(W * BLEND_TO)
+    ramp.scan((x, _y, idx) => {
+      const t = x <= x0 ? 0 : x >= x1 ? 1 : (x - x0) / (x1 - x0)
+      const v = Math.round(255 * t)
+      ramp.bitmap.data[idx] = v
+      ramp.bitmap.data[idx + 1] = v
+      ramp.bitmap.data[idx + 2] = v
+      ramp.bitmap.data[idx + 3] = 255
+    })
+    const crisp = src.clone().mask({ src: ramp })
+    blurred.composite(crisp, 0, 0)
+    const jpg = await blurred.getBuffer('image/jpeg', { quality: 84 })
+    return `data:image/jpeg;base64,${jpg.toString('base64')}`
+  } catch {
+    return null
+  }
+}
+
+// The overlay that finishes the share backdrop: black leaning left, a light
+// tint right, and a low fade so the footer stays legible over bright art.
+function shareBg(dataUri: string): Node {
+  return el(
+    'div',
+    { position: 'absolute', top: 0, left: 0, width: W, height: H },
+    {
+      type: 'img',
+      props: {
+        src: dataUri,
+        width: W,
+        height: H,
+        style: { objectFit: 'cover', width: W, height: H },
+      },
+    },
+    el('div', {
+      position: 'absolute',
+      top: 0,
+      left: 0,
+      width: W,
+      height: H,
+      backgroundImage:
+        'linear-gradient(to right, rgba(1,10,19,0.86) 0%, rgba(1,10,19,0.84) 48%, rgba(1,10,19,0.38) 74%, rgba(1,10,19,0.1) 100%)',
+    }),
+    el('div', {
+      position: 'absolute',
+      top: 0,
+      left: 0,
+      width: W,
+      height: H,
+      backgroundImage:
+        'linear-gradient(to bottom, rgba(1,10,19,0) 72%, rgba(1,10,19,0.7) 100%)',
+    }),
+  )
 }
 
 function topSkin(): { name: string; splashUrl: string } | null {
@@ -616,8 +696,8 @@ const contextLine = (
     {
       fontFamily: 'Inter',
       fontWeight: 700,
-      fontSize: 28,
-      letterSpacing: 5,
+      fontSize: 34,
+      letterSpacing: 6,
       color:
         confidence === 'provisional'
           ? C.blue2
@@ -648,7 +728,7 @@ export async function skinOgResponse(skinId: string): Promise<Response> {
   try {
     const dir = join(DATA_DIR, 'cache')
     mkdirSync(dir, { recursive: true })
-    const path = join(dir, `og-skin-v2-${skinId}-${puzzleDay()}.png`)
+    const path = join(dir, `og-skin-v3-${skinId}-${puzzleDay()}.png`)
     let png: Buffer
     if (existsSync(path)) {
       png = readFileSync(path)
@@ -697,24 +777,24 @@ export async function skinOgResponse(skinId: string): Promise<Response> {
         : 0
       const standing = rating
         ? `${skin.championName}'s #${championRank} skin · #${n(rank)} of ${n(ratedTotal)} overall`
-        : `A ${skin.championName} skin · no battles yet`
+        : `${/^[aeiou]/i.test(skin.championName) ? 'An' : 'A'} ${skin.championName} skin · no battles yet`
       const detail = rating
         ? `${n(rating.battles)} ${rating.battles === 1 ? 'battle' : 'battles'} · rated ${n(Math.round(rating.rating))} ± ${Math.round(rating.uncertainty)}`
         : 'Be the first to vote on it'
 
-      const bg = await fetchAsDataUri(skin.splashUrl)
+      const bg = await shareBackground(skin.splashUrl)
       const node = frame(
-        bg ? splashBg(bg, true) : null,
+        bg ? shareBg(bg) : null,
         [
           el(
             'div',
-            { flexDirection: 'column', gap: 14, justifyContent: 'center', flexGrow: 1, width: 840 },
+            { flexDirection: 'column', gap: 14, justifyContent: 'center', flexGrow: 1, width: 1000 },
             contextLine('Community rating', confidence),
-            title(skin.name, stepDown(skin.name, [[16, 76], [24, 64], [34, 52]], 44)),
+            title(skin.name, stepDown(skin.name, [[16, 84], [24, 70], [34, 56]], 46)),
             text(standing, {
               fontFamily: 'Cinzel',
               fontWeight: 700,
-              fontSize: 34,
+              fontSize: 40,
               color: C.gold1,
               lineHeight: 1.2,
               marginTop: 6,
@@ -722,7 +802,7 @@ export async function skinOgResponse(skinId: string): Promise<Response> {
             text(detail, {
               fontFamily: 'Inter',
               fontWeight: 500,
-              fontSize: 30,
+              fontSize: 34,
               color: confidence === 'provisional' ? C.blue2 : C.gold2,
             }),
           ),
@@ -765,13 +845,13 @@ export async function rankingsOgResponse(slice: string): Promise<Response> {
   try {
     const dir = join(DATA_DIR, 'cache')
     mkdirSync(dir, { recursive: true })
-    const path = join(dir, `og-rankings-v2-${slice}-${puzzleDay()}.png`)
+    const path = join(dir, `og-rankings-v3-${slice}-${puzzleDay()}.png`)
     let png: Buffer
     if (existsSync(path)) {
       png = readFileSync(path)
     } else {
       const top = state.rows.slice(0, 3)
-      const bg = top[0] ? await fetchAsDataUri(top[0].splashUrl) : null
+      const bg = top[0] ? await shareBackground(top[0].splashUrl) : null
       const confidence = state.answer.confidence
       const leaderBattles = top[0]?.battles ?? 0
       const after =
@@ -787,44 +867,47 @@ export async function rankingsOgResponse(slice: string): Promise<Response> {
       // Five lines, big: a long title or a long #1 name wraps, and every
       // wrapped line is height the footer no longer has, so long strings step
       // down; a name that still wraps keeps its numeral on its first line.
-      const titleSize = stepDown(state.title, [[18, 68], [26, 56]], 46)
-      const leadSize = stepDown(top[0]?.name ?? '', [[16, 64], [24, 54], [32, 46]], 40)
+      const titleSize = stepDown(state.title, [[18, 76], [26, 62]], 50)
+      const leadSize = stepDown(top[0]?.name ?? '', [[16, 70], [24, 60], [32, 50]], 42)
       const podium = (r: (typeof top)[number], i: number) =>
         el(
           'div',
-          { alignItems: 'flex-start', gap: 18 },
+          { alignItems: 'flex-start', gap: 20 },
           text(String(i + 1), {
             fontFamily: 'Cinzel',
             fontWeight: 700,
-            fontSize: i === 0 ? leadSize - 6 : 30,
-            lineHeight: 1.15,
+            fontSize: i === 0 ? leadSize - 8 : 36,
+            lineHeight: 1.12,
             color: i === 0 ? C.gold2 : C.gold5,
-            width: 44,
+            width: 56,
             justifyContent: 'flex-end',
           }),
           text(r.name, {
             fontFamily: i === 0 ? 'Cinzel' : 'Inter',
             fontWeight: i === 0 ? 700 : 500,
-            fontSize: i === 0 ? leadSize : stepDown(r.name, [[30, 36]], 30),
+            fontSize:
+              i === 0
+                ? leadSize
+                : stepDown(r.name, [[30, i === 1 ? 44 : 40]], 34),
             color: i === 0 ? C.gold1 : C.icon,
-            lineHeight: 1.15,
+            lineHeight: 1.12,
           }),
         )
       const node = frame(
-        bg ? splashBg(bg, true) : null,
+        bg ? shareBg(bg) : null,
         [
           el(
             'div',
-            { flexDirection: 'column', gap: 12, justifyContent: 'center', flexGrow: 1, width: 840 },
+            { flexDirection: 'column', gap: 12, justifyContent: 'center', flexGrow: 1, width: 1000 },
             contextLine('Community ranking', confidence),
             title(state.title, titleSize),
             ...(top.length > 0
-              ? [el('div', { flexDirection: 'column', gap: 8, marginTop: 6 }, ...top.map(podium))]
-              : [body('Nothing here has been through a battle yet. Be the first.', 34)]),
+              ? [el('div', { flexDirection: 'column', gap: 6, marginTop: 8 }, ...top.map(podium))]
+              : [body('Nothing here has been through a battle yet. Be the first.', 36)]),
             text(verdictLine, {
               fontFamily: 'Inter',
               fontWeight: 500,
-              fontSize: 28,
+              fontSize: 32,
               color: confidence === 'provisional' ? C.blue2 : C.gold2,
               marginTop: 6,
             }),

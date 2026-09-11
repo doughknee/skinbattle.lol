@@ -205,12 +205,17 @@ Other slices: "Help shape this ranking" plus the slice's Tier Drop board.
   and sized for the place they are actually seen: a chat client shows a
   1200-wide card at about 400, so each card is at most five lines, the two
   that matter at 60px or more, nothing under 28px, and the ask ("Vote now ·
-  free · no account needed") lives in the footer. The rankings card: vivid #1
-  splash, "COMMUNITY RANKING · SETTLED/PROVISIONAL", title, medal-order podium
+  free · no account needed") lives in the footer. The backdrop is composed
+  with jimp before satori draws (`shareBackground`): the #1 splash blurred
+  edge to edge, with the crisp splash blended back in from the middle
+  rightward through an alpha ramp, then a dark overlay that leans black on
+  the left (behind the words) and lifts to a 10% tint on the right, so the
+  art reads at near full strength where no words are. The rankings card:
+  "COMMUNITY RANKING · SETTLED/PROVISIONAL", title, medal-order podium
   without Elo numbers, the verdict line with the leader's battle count. The
   skin card: "COMMUNITY RATING · …", the skin's name, "{Champion}'s #N skin ·
   #N of M overall", battles and rating. Long strings step down a size; cache
-  keys are versioned (`og-rankings-v2-…`, `og-skin-v2-…`) so a redesign
+  keys are versioned (`og-rankings-v3-…`, `og-skin-v3-…`) so a redesign
   replaces yesterday's cards at once.
 
 ---
