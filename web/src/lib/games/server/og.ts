@@ -272,29 +272,30 @@ async function fetchAsDataUri(url: string): Promise<string | null> {
 const BLEND_FROM = 0.5 // the crisp art starts here, as a fraction of the width
 const BLEND_TO = 0.74 // ...and is fully crisp from here
 
-async function shareBackground(url: string): Promise<string | null> {
+async function composeBackdrop(source: Buffer, crisp: boolean): Promise<string | null> {
   try {
-    const res = await fetch(url, { signal: AbortSignal.timeout(10_000) })
-    if (!res.ok) return null
     const { Jimp } = await import('jimp')
-    const src = await Jimp.fromBuffer(Buffer.from(await res.arrayBuffer()))
+    const src = await Jimp.fromBuffer(source)
     src.cover({ w: W, h: H })
     const blurred = src.clone().blur(16)
-    // Grayscale ramp: black (transparent) on the left, white (opaque) on the
-    // right, so masking the crisp copy with it fades the art in left to right.
-    const ramp = new Jimp({ width: W, height: H, color: 0x000000ff })
-    const x0 = Math.round(W * BLEND_FROM)
-    const x1 = Math.round(W * BLEND_TO)
-    ramp.scan((x, _y, idx) => {
-      const t = x <= x0 ? 0 : x >= x1 ? 1 : (x - x0) / (x1 - x0)
-      const v = Math.round(255 * t)
-      ramp.bitmap.data[idx] = v
-      ramp.bitmap.data[idx + 1] = v
-      ramp.bitmap.data[idx + 2] = v
-      ramp.bitmap.data[idx + 3] = 255
-    })
-    const crisp = src.clone().mask({ src: ramp })
-    blurred.composite(crisp, 0, 0)
+    if (crisp) {
+      // Grayscale ramp: black (transparent) on the left, white (opaque) on
+      // the right, so masking the crisp copy with it fades the art in left to
+      // right.
+      const ramp = new Jimp({ width: W, height: H, color: 0x000000ff })
+      const x0 = Math.round(W * BLEND_FROM)
+      const x1 = Math.round(W * BLEND_TO)
+      ramp.scan((x, _y, idx) => {
+        const t = x <= x0 ? 0 : x >= x1 ? 1 : (x - x0) / (x1 - x0)
+        const v = Math.round(255 * t)
+        ramp.bitmap.data[idx] = v
+        ramp.bitmap.data[idx + 1] = v
+        ramp.bitmap.data[idx + 2] = v
+        ramp.bitmap.data[idx + 3] = 255
+      })
+      const sharp = src.clone().mask({ src: ramp })
+      blurred.composite(sharp, 0, 0)
+    }
     const jpg = await blurred.getBuffer('image/jpeg', { quality: 84 })
     return `data:image/jpeg;base64,${jpg.toString('base64')}`
   } catch {
@@ -302,9 +303,28 @@ async function shareBackground(url: string): Promise<string | null> {
   }
 }
 
-// The overlay that finishes the share backdrop: black leaning left, a light
-// tint right, and a low fade so the footer stays legible over bright art.
-function shareBg(dataUri: string): Node {
+async function shareBackground(url: string): Promise<string | null> {
+  try {
+    const res = await fetch(url, { signal: AbortSignal.timeout(10_000) })
+    if (!res.ok) return null
+    return composeBackdrop(Buffer.from(await res.arrayBuffer()), true)
+  } catch {
+    return null
+  }
+}
+
+// Blur-only backdrop from an image the server already holds as a data URL
+// (today's puzzle crop or mosaic): the card shows nothing the puzzle does not.
+function backdropFromDataUri(dataUri: string): Promise<string | null> {
+  const comma = dataUri.indexOf(',')
+  if (comma < 0) return Promise.resolve(null)
+  return composeBackdrop(Buffer.from(dataUri.slice(comma + 1), 'base64'), false)
+}
+
+// The overlay that finishes the share backdrop. 'split': black leaning left,
+// a light tint right (the crisp art lives there). 'wash': one even tint over
+// a blur-only backdrop. Both keep a low fade so the footer stays legible.
+function shareBg(dataUri: string, mode: 'split' | 'wash' = 'split'): Node {
   return el(
     'div',
     { position: 'absolute', top: 0, left: 0, width: W, height: H },
@@ -324,7 +344,9 @@ function shareBg(dataUri: string): Node {
       width: W,
       height: H,
       backgroundImage:
-        'linear-gradient(to right, rgba(1,10,19,0.86) 0%, rgba(1,10,19,0.84) 48%, rgba(1,10,19,0.38) 74%, rgba(1,10,19,0.1) 100%)',
+        mode === 'wash'
+          ? 'linear-gradient(to right, rgba(1,10,19,0.8) 0%, rgba(1,10,19,0.72) 100%)'
+          : 'linear-gradient(to right, rgba(1,10,19,0.86) 0%, rgba(1,10,19,0.84) 48%, rgba(1,10,19,0.38) 74%, rgba(1,10,19,0.1) 100%)',
     }),
     el('div', {
       position: 'absolute',
@@ -352,202 +374,222 @@ function topSkin(): { name: string; splashUrl: string } | null {
 
 // ─── cards ──────────────────────────────────────────────────────────────────
 
+// ─── the generic cards ──────────────────────────────────────────────────────
+//
+// Every surface without a verdict of its own - the home page, the battle
+// modes, the dailies, the Mirror, the leaderboards, the Drought Index - shares
+// one layout built to the same rule as the verdict cards: at most five lines,
+// the two that matter large, nothing under 30px, the ask in the footer, and
+// the black-and-blur backdrop with the crisp art on the right wherever a skin
+// is the subject. The dailies use today's own puzzle image, blurred all the
+// way across, so the card can never leak more than the puzzle already shows.
+
+const contextText = (s: string, compact = false): Node =>
+  text(s.toUpperCase(), {
+    fontFamily: 'Inter',
+    fontWeight: 700,
+    fontSize: compact ? 30 : 34,
+    letterSpacing: compact ? 4 : 6,
+    color: C.gold2,
+  })
+
+const pitch = (s: string): Node =>
+  text(s, {
+    fontFamily: 'Inter',
+    fontWeight: 500,
+    fontSize: 34,
+    lineHeight: 1.25,
+    color: C.icon,
+  })
+
+const stat = (s: string, color: string = C.gold1): Node =>
+  text(s, { fontFamily: 'Inter', fontWeight: 600, fontSize: 32, color })
+
+// The five tier letters - the visual signature Tier Drop and the Mirror share.
+const tierChips = (colors: string[]): Node =>
+  el(
+    'div',
+    { gap: 14, marginTop: 6 },
+    ...['S', 'A', 'B', 'C', 'D'].map((t, i) =>
+      el(
+        'div',
+        {
+          width: 84,
+          height: 84,
+          alignItems: 'center',
+          justifyContent: 'center',
+          border: `2px solid ${C.gold5}`,
+          backgroundColor: 'rgba(1,10,19,0.6)',
+        },
+        text(t, { fontFamily: 'Cinzel', fontWeight: 700, fontSize: 48, color: colors[i] }),
+      ),
+    ),
+  )
+
+// Today's puzzle image, framed, beside the words.
+const puzzleImage = (dataUri: string): Node => ({
+  type: 'img',
+  props: {
+    src: dataUri,
+    width: 440,
+    height: 248,
+    style: { width: 440, height: 248, objectFit: 'cover', border: `2px solid ${C.gold2}` },
+  },
+})
+
+function standardCard(opts: {
+  bg: string | null
+  wash?: boolean // blur-only backdrop (the dailies): one even tint, no crisp side
+  context: string
+  title: string
+  lines: Node[]
+  cta: string
+  aside?: Node
+}): Node {
+  const column = el(
+    'div',
+    {
+      flexDirection: 'column',
+      gap: 14,
+      justifyContent: 'center',
+      flexGrow: 1,
+      width: opts.aside ? 620 : 1000,
+    },
+    contextText(opts.context, !!opts.aside),
+    title(opts.title, stepDown(opts.title, [[16, 76], [26, 62]], 50)),
+    ...opts.lines,
+  )
+  return frame(
+    opts.bg ? shareBg(opts.bg, opts.wash ? 'wash' : 'split') : null,
+    [
+      opts.aside
+        ? el('div', { gap: 40, alignItems: 'center', flexGrow: 1 }, column, opts.aside)
+        : column,
+    ],
+    opts.cta,
+  )
+}
+
+const PLAY_CTA = "Play today's · free · no account needed"
+
 async function buildCard(card: OgCard): Promise<Node> {
   const db = getDb()
   await ensureCatalog(db)
   const battles = communityBattleCount(db)
-  const battlesLine =
-    battles > 0 ? `${battles.toLocaleString('en-US')} community battles fought` : ''
+  const battlesLine = battles > 0 ? `${n(battles)} battles fought` : ''
+  // The current #1 skin (5+ battles) is the art on every card whose subject
+  // is the site rather than one skin - live, and it changes as votes land.
+  const top = topSkin()
+  const topBg = () => (top ? shareBackground(top.splashUrl) : Promise.resolve(null))
 
   switch (card) {
+    case 'games': {
+      const { ratedCount } = await import('./ratings')
+      const rated = ratedCount(db)
+      return standardCard({
+        bg: await topBg(),
+        context: 'Community skin rankings',
+        title: 'Settle the skin debate',
+        lines: [
+          pitch('Every League skin, ranked by head-to-head battles.'),
+          ...(battlesLine
+            ? [stat([battlesLine, rated > 0 ? `${n(rated)} skins ranked` : ''].filter(Boolean).join(' · '))]
+            : []),
+          ...(top ? [stat(`#1 right now: ${top.name}`, C.gold2)] : []),
+        ],
+        cta: VOTE_CTA,
+      })
+    }
+    case 'quick-battle':
+      return standardCard({
+        bg: await topBg(),
+        context: 'Head-to-Head · endless',
+        title: 'Which do you like more?',
+        lines: [
+          pitch('Two skins. Pick one. Every vote moves the rankings.'),
+          ...(battlesLine ? [stat(battlesLine)] : []),
+        ],
+        cta: 'Battle now · free · no account needed',
+      })
+    case 'tier-list': {
+      const lists = (
+        db
+          .prepare(
+            `SELECT COUNT(*) AS c FROM game_events WHERE game = 'tier-list' AND type = 'tier_submitted'`,
+          )
+          .get() as { c: number }
+      ).c
+      return standardCard({
+        bg: await topBg(),
+        context: 'Tier Drop',
+        title: 'Rank a wardrobe S to D',
+        lines: [
+          pitch("Drop a champion's skins into tiers, then see how the crowd ranked them."),
+          tierChips([C.red, C.gold2, C.blue2, C.gold1, C.grey1]),
+          ...(lists > 0 ? [stat(`${n(lists)} tier ${lists === 1 ? 'list' : 'lists'} submitted`)] : []),
+        ],
+        cta: 'Rank one now · free · no account needed',
+      })
+    }
+    case 'mirror':
+      return standardCard({
+        bg: await topBg(),
+        context: 'The Mirror',
+        title: 'Your taste, reflected',
+        lines: [
+          pitch('Every battle builds your personal tier list. No forms, no setup.'),
+          tierChips([C.gold1, C.gold2, C.blue2, C.grey1, C.red]),
+        ],
+        cta: 'Start battling · free · no account needed',
+      })
     case 'splashdle': {
       const info = await splashdleOgInfo()
-      return frame(null, [
-        el(
-          'div',
-          { gap: 48, alignItems: 'center', flexGrow: 1 },
-          el(
-            'div',
-            { flexDirection: 'column', gap: 18, flexGrow: 1, width: 540 },
-            eyebrow('Daily · guess the skin'),
-            title(`Splashdle #${info.puzzleNumber}`, 76),
-            body(
-              'Name the skin from a sliver of its splash. It zooms out with every miss. Six guesses.',
-            ),
-          ),
-          {
-            type: 'img',
-            props: {
-              src: info.crop,
-              width: 460,
-              height: 259,
-              style: {
-                width: 460,
-                height: 259,
-                objectFit: 'cover',
-                border: `2px solid ${C.gold5}`,
-              },
-            },
-          },
-        ),
-      ])
-    }
-    case 'quick-battle': {
-      const top = topSkin()
-      const bg = top ? await fetchAsDataUri(top.splashUrl) : null
-      return frame(bg ? splashBg(bg) : null, [
-        el(
-          'div',
-          { flexDirection: 'column', gap: 18, justifyContent: 'center', flexGrow: 1 },
-          eyebrow('Endless · which do you like more?'),
-          title('Head-to-Head'),
-          body('Two skins. Pick one. Every vote builds the community ranking.'),
-          battlesLine
-            ? text(battlesLine, {
-                fontFamily: 'Inter',
-                fontWeight: 600,
-                fontSize: 30,
-                color: C.gold1,
-              })
-            : body(''),
-        ),
-      ])
-    }
-    case 'tier-list': {
-      const tierColors = [C.red, C.gold2, C.blue2, C.gold1, C.grey1]
-      return frame(null, [
-        el(
-          'div',
-          { flexDirection: 'column', gap: 18, justifyContent: 'center', flexGrow: 1 },
-          eyebrow("New · sort a champion's wardrobe"),
-          title('Tier Drop'),
-          body(
-            "Rank a champion's skins S to D. One board counts for up to eight head-to-head battles' worth of evidence.",
-          ),
-          el(
-            'div',
-            { gap: 14, marginTop: 10 },
-            ...['S', 'A', 'B', 'C', 'D'].map((t, i) =>
-              el(
-                'div',
-                {
-                  width: 84,
-                  height: 84,
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  border: `2px solid ${C.gold5}`,
-                  backgroundColor: 'rgba(1,10,19,0.6)',
-                },
-                text(t, {
-                  fontFamily: 'Cinzel',
-                  fontWeight: 700,
-                  fontSize: 48,
-                  color: tierColors[i],
-                }),
-              ),
-            ),
-          ),
-          battlesLine
-            ? text(battlesLine, {
-                fontFamily: 'Inter',
-                fontWeight: 600,
-                fontSize: 30,
-                color: C.gold1,
-              })
-            : body(''),
-        ),
-      ])
-    }
-    case 'mirror': {
-      const tierColors = [C.gold1, C.gold2, C.blue2, C.grey1, C.red]
-      return frame(null, [
-        el(
-          'div',
-          { flexDirection: 'column', gap: 18, justifyContent: 'center', flexGrow: 1 },
-          eyebrow('Your taste, reflected'),
-          title('The Mirror'),
-          body(
-            'The personal tier list your battles build, plus your most contrarian takes.',
-          ),
-          el(
-            'div',
-            { gap: 14, marginTop: 10 },
-            ...['S', 'A', 'B', 'C', 'D'].map((t, i) =>
-              el(
-                'div',
-                {
-                  width: 84,
-                  height: 84,
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  border: `2px solid ${C.gold5}`,
-                  backgroundColor: 'rgba(1,10,19,0.6)',
-                },
-                text(t, {
-                  fontFamily: 'Cinzel',
-                  fontWeight: 700,
-                  fontSize: 48,
-                  color: tierColors[i],
-                }),
-              ),
-            ),
-          ),
-        ),
-      ])
+      return standardCard({
+        bg: await backdropFromDataUri(info.crop),
+        wash: true,
+        context: `Splashdle #${info.puzzleNumber} · daily`,
+        title: 'Name the skin',
+        lines: [
+          pitch('From a sliver of its splash. It zooms out with every miss. Six guesses, a new one every midnight Central.'),
+        ],
+        cta: PLAY_CTA,
+        aside: puzzleImage(info.crop),
+      })
     }
     case 'chroma-vision': {
       const { chromaOgInfo } = await import('./chromavision')
       const info = await chromaOgInfo()
-      return frame(null, [
-        el(
-          'div',
-          { gap: 48, alignItems: 'center', flexGrow: 1 },
-          el(
-            'div',
-            { flexDirection: 'column', gap: 18, flexGrow: 1, width: 540 },
-            eyebrow('Daily · hard mode · colors only'),
-            title(`Chroma Vision #${info.puzzleNumber}`, 70),
-            body(
-              'Name the skin from its colors alone. The mosaic sharpens with every miss. Six guesses.',
-            ),
-          ),
-          {
-            type: 'img',
-            props: {
-              src: info.mosaic,
-              width: 460,
-              height: 259,
-              style: {
-                width: 460,
-                height: 259,
-                objectFit: 'cover',
-                border: `2px solid ${C.gold5}`,
-              },
-            },
-          },
-        ),
-      ])
+      return standardCard({
+        bg: await backdropFromDataUri(info.mosaic),
+        wash: true,
+        context: `Chroma Vision #${info.puzzleNumber} · daily`,
+        title: 'Colors only',
+        lines: [
+          pitch('Name the skin from its colors alone. The mosaic sharpens with every miss. Six guesses.'),
+        ],
+        cta: PLAY_CTA,
+        aside: puzzleImage(info.mosaic),
+      })
     }
     case 'price-check': {
       const { priceCheckPuzzleNumber } = await import('./pricecheck')
       const { PRICE_TIERS } = await import('./facts')
-      return frame(null, [
-        el(
-          'div',
-          { flexDirection: 'column', gap: 18, justifyContent: 'center', flexGrow: 1 },
-          eyebrow('Daily · what did it cost?'),
-          title(`Price Point #${priceCheckPuzzleNumber(puzzleDay())}`, 76),
-          body('Five skins. Guess what each cost in RP. Legacy relics included.'),
+      return standardCard({
+        bg: await topBg(),
+        context: `Price Point #${priceCheckPuzzleNumber(puzzleDay())} · daily`,
+        title: 'Guess the price',
+        lines: [
+          pitch('Five skins a day. What did each one cost in RP? Legacy relics included.'),
           el(
             'div',
-            { gap: 12, marginTop: 10 },
+            { gap: 12, marginTop: 6 },
             ...PRICE_TIERS.map((t) =>
               el(
                 'div',
                 {
-                  height: 56,
-                  paddingLeft: 22,
-                  paddingRight: 22,
+                  height: 60,
+                  paddingLeft: 20,
+                  paddingRight: 20,
                   alignItems: 'center',
                   justifyContent: 'center',
                   border: `2px solid ${C.gold5}`,
@@ -556,88 +598,56 @@ async function buildCard(card: OgCard): Promise<Node> {
                 text(t.toLocaleString('en-US'), {
                   fontFamily: 'Cinzel',
                   fontWeight: 700,
-                  fontSize: 26,
+                  fontSize: 30,
                   color: C.gold1,
                 }),
               ),
             ),
           ),
-        ),
-      ])
+        ],
+        cta: PLAY_CTA,
+      })
     }
     case 'leaderboards': {
       const { leaderboardsState } = await import('./leaderboards')
       const lb = await leaderboardsState()
-      const top = lb.battleBoards.find((b) => b.period === 'all')?.entries[0]
-      return frame(null, [
-        el(
-          'div',
-          { flexDirection: 'column', gap: 18, justifyContent: 'center', flexGrow: 1 },
-          eyebrow('Community · named players only'),
-          title('Leaderboards', 84),
-          body('Streaks, fastest daily solves, and battle volume.'),
-          top
-            ? text(
-                `Most battles: ${top.name} · ${top.battles.toLocaleString('en-US')}`,
-                {
-                  fontFamily: 'Inter',
-                  fontWeight: 600,
-                  fontSize: 30,
-                  color: C.gold1,
-                },
-              )
-            : body('The boards are open. Be the first name on them.'),
-        ),
-      ])
+      const most = lb.battleBoards.find((b) => b.period === 'all')?.entries[0]
+      return standardCard({
+        bg: await topBg(),
+        context: 'Leaderboards',
+        title: 'Streaks, solves, battles',
+        lines: [
+          pitch('The players keeping the dailies alive and settling the most battles.'),
+          stat(
+            most
+              ? `Most battles: ${most.name} · ${n(most.battles)}`
+              : 'The boards are open. Be the first name on them.',
+          ),
+        ],
+        cta: 'Sign in to get on the board',
+      })
     }
     case 'drought': {
       const { droughtIndex } = await import('./insights')
       const drought = await droughtIndex()
       const leader = drought.rows[0]
-      const bg = leader ? await fetchAsDataUri(leader.lastSkinSplashUrl) : null
-      return frame(bg ? splashBg(bg) : null, [
-        el(
-          'div',
-          { flexDirection: 'column', gap: 18, justifyContent: 'center', flexGrow: 1 },
-          eyebrow('Rankings · days since last skin'),
-          title('The Skin Drought Index', 68),
-          leader
-            ? text(
-                `${leader.championName}: ${leader.days.toLocaleString('en-US')} days and counting`,
-                {
-                  fontFamily: 'Inter',
-                  fontWeight: 600,
-                  fontSize: 32,
-                  color: C.gold1,
-                },
-              )
-            : body(''),
-          body(
-            `${drought.stats.overTwoYears} champions have waited 2+ years. Every champion, ranked.`,
+      return standardCard({
+        bg: leader ? await shareBackground(leader.lastSkinSplashUrl) : null,
+        context: 'The Drought Index',
+        title: leader ? `${n(leader.days)} days without a skin` : 'Days since the last skin',
+        lines: [
+          pitch(
+            leader
+              ? `${leader.championName}'s last skin was ${leader.lastSkinName}. Every champion, ranked by the wait.`
+              : 'Every champion, ranked by the wait.',
           ),
-        ),
-      ])
+          ...(drought.stats.overTwoYears > 0
+            ? [stat(`${n(drought.stats.overTwoYears)} champions have waited two years or more`)]
+            : []),
+        ],
+        cta: "See every champion's wait · free",
+      })
     }
-    case 'games':
-      return frame(null, [
-        el(
-          'div',
-          { flexDirection: 'column', gap: 18, justifyContent: 'center', flexGrow: 1 },
-          eyebrow('Community skin rankings'),
-          title('SkinBattle'),
-          body(
-            'Every League skin, ranked by community battles. Head-to-Head, Tier Drop, and a new puzzle every day.',
-          ),
-          battlesLine
-            ? text(battlesLine, {
-                fontFamily: 'Inter',
-                fontWeight: 600,
-                fontSize: 30,
-                color: C.gold1,
-              })
-            : body(''),
-        ),
-      ])
   }
 }
 
@@ -648,7 +658,7 @@ async function buildCard(card: OgCard): Promise<Node> {
 async function renderCard(card: OgCard): Promise<Buffer> {
   const dir = join(DATA_DIR, 'cache')
   mkdirSync(dir, { recursive: true })
-  const path = join(dir, `og-${card}-${puzzleDay()}.png`)
+  const path = join(dir, `og-${card}-v2-${puzzleDay()}.png`)
   if (existsSync(path)) return readFileSync(path)
 
   const node = await buildCard(card)
@@ -969,14 +979,14 @@ function buildTierShareCard(
         text(name ? `${name}'s tier list` : 'My tier list', {
           fontFamily: 'Cinzel',
           fontWeight: 700,
-          fontSize: 54,
+          fontSize: 64,
           color: C.gold1,
         }),
         text(champ.toUpperCase(), {
           fontFamily: 'Inter',
-          fontWeight: 600,
-          fontSize: 26,
-          letterSpacing: 4,
+          fontWeight: 700,
+          fontSize: 30,
+          letterSpacing: 5,
           color: C.gold2,
         }),
       ),
@@ -998,7 +1008,7 @@ function buildTierShareCard(
               text(r.tier, {
                 fontFamily: 'Cinzel',
                 fontWeight: 700,
-                fontSize: 44,
+                fontSize: 52,
                 color: TIER_HEX[r.tier][1],
               }),
             ),
@@ -1016,24 +1026,31 @@ function buildTierShareCard(
                 type: 'img',
                 props: {
                   src: s.uri,
-                  width: 76,
-                  height: 76,
-                  style: { width: 76, height: 76, objectFit: 'cover' },
+                  width: 88,
+                  height: 88,
+                  style: { width: 88, height: 88, objectFit: 'cover' },
                 },
               })),
             ),
           ),
         ),
       ),
+      // Same footer as the share cards: the wordmark and the ask.
       el(
         'div',
-        { justifyContent: 'center', alignItems: 'baseline' },
+        { justifyContent: 'space-between', alignItems: 'baseline' },
         text('SKINBATTLE.LOL', {
           fontFamily: 'Cinzel',
           fontWeight: 700,
           fontSize: 32,
-          letterSpacing: 8,
+          letterSpacing: 6,
           color: C.gold2,
+        }),
+        text('Rank it yourself · free · no account needed', {
+          fontFamily: 'Inter',
+          fontWeight: 600,
+          fontSize: 32,
+          color: C.gold1,
         }),
       ),
     ),
@@ -1056,7 +1073,7 @@ export async function tierShareImageResponse(id: string): Promise<Response> {
     const dir = join(DATA_DIR, 'cache')
     mkdirSync(dir, { recursive: true })
     const key = createHash('sha1').update(data).digest('hex').slice(0, 16)
-    const path = join(dir, `og-tier-${key}-${puzzleDay()}.png`)
+    const path = join(dir, `og-tier-v2-${key}-${puzzleDay()}.png`)
     let png: Buffer
     if (existsSync(path)) {
       png = readFileSync(path)
