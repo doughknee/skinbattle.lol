@@ -2,17 +2,28 @@ import { describe, expect, it } from 'vitest'
 import {
   answerBlock,
   FRESH_UNCERTAINTY,
+  hasEnoughVoters,
   isConfident,
   MAX_CONFIDENT_UNCERTAINTY,
+  MIN_CONFIDENT_VOTERS,
+  VOTER_SKIN_CAP,
   weightedBattlesFor,
   type AnswerInput,
 } from './answer'
 import { MIN_INDEXABLE_BATTLES } from './seo'
-import { START_UNCERTAINTY } from './server/ratings'
+import { BATTLE_VOTER_SKIN_CAP, START_UNCERTAINTY } from './server/ratings'
+
+const crowd = { members: 5, guests: 8 }
 
 const base: AnswerInput = {
   scope: 'Ahri skins',
-  leader: { name: 'Elderwood Ahri', rating: 1642, uncertainty: 62, battles: 41 },
+  leader: {
+    name: 'Elderwood Ahri',
+    rating: 1642,
+    uncertainty: 62,
+    battles: 41,
+    voters: crowd,
+  },
   rated: 24,
   total: 24,
 }
@@ -50,6 +61,60 @@ describe('the threshold', () => {
   })
 })
 
+describe('the voter floor', () => {
+  it('mirrors the anti-farm cap it is derived from', () => {
+    // Same node:sqlite problem as FRESH_UNCERTAINTY: answer.ts ships to the
+    // browser and cannot import ratings.ts, so it duplicates the constant.
+    expect(VOTER_SKIN_CAP).toBe(BATTLE_VOTER_SKIN_CAP)
+  })
+
+  it('is the smallest crowd the confident band could have come from', () => {
+    // The refit caps one voter's weighted pull on a single skin at the cap, so
+    // MIN_CONFIDENT_VOTERS - 1 people cannot between them supply the weighted
+    // battles a +/-100 band claims. Derivation, not a chosen number.
+    const needed = weightedBattlesFor(MAX_CONFIDENT_UNCERTAINTY)
+    expect((MIN_CONFIDENT_VOTERS - 1) * VOTER_SKIN_CAP).toBeLessThan(needed)
+    expect(MIN_CONFIDENT_VOTERS * VOTER_SKIN_CAP).toBeGreaterThanOrEqual(needed)
+  })
+
+  it('counts a member whole and a signed-out cookie as half', () => {
+    expect(hasEnoughVoters({ members: MIN_CONFIDENT_VOTERS, guests: 0 })).toBe(true)
+    expect(hasEnoughVoters({ members: MIN_CONFIDENT_VOTERS - 1, guests: 0 })).toBe(
+      false,
+    )
+    expect(hasEnoughVoters({ members: 0, guests: MIN_CONFIDENT_VOTERS * 2 })).toBe(
+      true,
+    )
+    expect(
+      hasEnoughVoters({ members: 0, guests: MIN_CONFIDENT_VOTERS * 2 - 1 }),
+    ).toBe(false)
+    // Mixed: one member plus enough cookies to make up the rest.
+    expect(hasEnoughVoters({ members: 1, guests: 4 })).toBe(true)
+  })
+
+  it('treats missing or broken counts as nobody', () => {
+    expect(hasEnoughVoters(null)).toBe(false)
+    expect(hasEnoughVoters(undefined)).toBe(false)
+    expect(hasEnoughVoters({ members: NaN as never, guests: 99 })).toBe(true)
+    expect(hasEnoughVoters({ members: 0, guests: 0 })).toBe(false)
+  })
+
+  it('is a separate bar from the band, not a second confidence scale', () => {
+    // One vocabulary: both failures read "provisional". DONI-86 retired the
+    // competing "solid"/"settling in" wording and nothing here brings it back.
+    const wideBandBigCrowd = answerBlock({
+      ...base,
+      leader: { ...base.leader!, uncertainty: 210 },
+    })
+    const tightBandNoCrowd = answerBlock({
+      ...base,
+      leader: { ...base.leader!, voters: { members: 1, guests: 1 } },
+    })
+    expect(wideBandBigCrowd.confidence).toBe('provisional')
+    expect(tightBandNoCrowd.confidence).toBe('provisional')
+  })
+})
+
 describe('answerBlock branches', () => {
   it('is confident when the band is tight', () => {
     const b = answerBlock(base)
@@ -63,13 +128,66 @@ describe('answerBlock branches', () => {
     // The live sample behind DONI-84: 3 battles, +/-140 to +/-350.
     const b = answerBlock({
       ...base,
-      leader: { name: 'Foxfire Ahri', rating: 1512, uncertainty: 210, battles: 3 },
+      leader: {
+        name: 'Foxfire Ahri',
+        rating: 1512,
+        uncertainty: 210,
+        battles: 3,
+        voters: { members: 0, guests: 3 },
+      },
       rated: 4,
     })
     expect(b.confidence).toBe('provisional')
     expect(b.answer).toContain('currently rates highest')
     expect(b.answer).toContain('provisional')
     expect(b.basis).toContain('3 head-to-head battles')
+  })
+
+  it('holds the band but not the crowd: settled needs both', () => {
+    // The DONI-94 case: a tight band that one person produced. Same band, same
+    // Elo, different verdict - and the sentence says which bar it missed.
+    const b = answerBlock({
+      ...base,
+      leader: { ...base.leader!, voters: { members: 1, guests: 0 } },
+    })
+    expect(b.confidence).toBe('provisional')
+    expect(b.answer).toContain('too few people have voted')
+    expect(b.answer).not.toContain('is the highest-rated')
+    expect(b.basis).toContain('1 voter')
+    expect(b.basis).not.toContain('1 voters')
+    expect(b.basis).toContain(`${MIN_CONFIDENT_VOTERS} separate voters`)
+    expect(b.basis).toContain('half a person')
+  })
+
+  it('names the band, not the crowd, when both bars are missed', () => {
+    const b = answerBlock({
+      ...base,
+      leader: {
+        ...base.leader!,
+        uncertainty: 210,
+        voters: { members: 1, guests: 0 },
+      },
+    })
+    expect(b.answer).toContain('that placing is provisional')
+    expect(b.answer).not.toContain('too few people')
+    // ...but the stated rule still carries both halves, or the page would
+    // publish a bar it no longer uses.
+    expect(b.basis).toContain(`${MIN_CONFIDENT_VOTERS} separate voters`)
+  })
+
+  it('says how many people are behind a settled claim', () => {
+    const b = answerBlock(base)
+    expect(b.confidence).toBe('confident')
+    expect(b.basis).toContain('from 13 voters')
+  })
+
+  it('never prints a zero head count', () => {
+    const b = answerBlock({
+      ...base,
+      leader: { ...base.leader!, voters: { members: 0, guests: 0 } },
+    })
+    expect(b.basis).not.toContain('0 voters')
+    expect(b.basis).not.toContain('from ')
   })
 
   it('is empty when nothing in scope has been battled', () => {
@@ -82,7 +200,13 @@ describe('answerBlock branches', () => {
   it('stays grammatical when exactly one thing is rated', () => {
     const b = answerBlock({
       ...base,
-      leader: { name: 'Foxfire Ahri', rating: 1500, uncertainty: 350, battles: 1 },
+      leader: {
+        name: 'Foxfire Ahri',
+        rating: 1500,
+        uncertainty: 350,
+        battles: 1,
+        voters: { members: 1, guests: 0 },
+      },
       rated: 1,
     })
     expect(b.answer).toContain('is the only one of the Ahri skins')
@@ -106,7 +230,13 @@ describe('never emits undefined', () => {
     { scope: undefined as never, leader: undefined as never, rated: NaN, total: NaN },
     {
       scope: '   ',
-      leader: { name: '  ', rating: 1500, uncertainty: 90, battles: 0 },
+      leader: {
+        name: '  ',
+        rating: 1500,
+        uncertainty: 90,
+        battles: 0,
+        voters: undefined as never,
+      },
       rated: 1,
       total: 0,
     },
@@ -117,13 +247,20 @@ describe('never emits undefined', () => {
         rating: undefined as never,
         uncertainty: undefined as never,
         battles: undefined as never,
+        voters: undefined as never,
       },
       rated: 5,
       total: 5,
     },
     {
       scope: 'Ahri skins',
-      leader: { name: 'A', rating: NaN, uncertainty: Infinity, battles: -4 },
+      leader: {
+        name: 'A',
+        rating: NaN,
+        uncertainty: Infinity,
+        battles: -4,
+        voters: { members: -2, guests: NaN as never },
+      },
       rated: -1,
       total: 3,
     },

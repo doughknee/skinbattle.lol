@@ -13,7 +13,7 @@ import { ChampionDetailSkeleton } from '~/components/Skeletons'
 import { championDisplayName } from '~/lib/skinName'
 import { canonicalLink, ogMeta } from '~/lib/games/ogMeta'
 import { breadcrumbJsonLd, itemListJsonLd } from '~/lib/games/jsonLd'
-import { answerBlock } from '~/lib/games/answer'
+import { answerBlock, type AnswerVoters } from '~/lib/games/answer'
 import { btnPrimarySm, btnSecondarySm } from '~/lib/ui'
 import type { RankingRow } from '~/lib/games/types'
 
@@ -62,11 +62,19 @@ export const Route = createFileRoute('/champions/$id')({
     // Non-fatal: the page works without the games layer; the ranked list and
     // the badges just drop out and the verdict reads as "no battles yet".
     let rows: RankingRow[] = []
+    // Heads behind rows[0]. Taken from the slice rather than counted again
+    // here: this is the same slice at offset 0, so its leader IS rows[0], and
+    // the verdict rule must not be able to read differently on two pages
+    // about the same skin.
+    let leaderVoters: AnswerVoters = { members: 0, guests: 0 }
     try {
       const r = await fetchRankings({ data: { slice: `champion-${canonicalId}` } })
       // Rows are rating-desc and capped at 100 - no champion is close, so this
       // is the whole ranking, which is what lets the ItemList mirror it exactly.
-      if (r) rows = r.rows
+      if (r) {
+        rows = r.rows
+        leaderVoters = r.leaderVoters
+      }
     } catch {
       /* unrated wardrobe - no ranked list, no badges */
     }
@@ -84,6 +92,7 @@ export const Route = createFileRoute('/champions/$id')({
             rating: rows[0].rating,
             uncertainty: rows[0].uncertainty,
             battles: rows[0].battles,
+            voters: leaderVoters,
           }
         : null,
       rated: rows.length,

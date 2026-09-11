@@ -13,6 +13,8 @@ import { fetchMethodology } from '~/lib/games/serverFns'
 import {
   answerBlock,
   MAX_CONFIDENT_UNCERTAINTY,
+  MIN_CONFIDENT_VOTERS,
+  VOTER_SKIN_CAP,
   weightedBattlesFor,
 } from '~/lib/games/answer'
 import { MIN_INDEXABLE_BATTLES, MIN_INDEXABLE_RATED } from '~/lib/games/seo'
@@ -127,7 +129,13 @@ function AnswerSample({
 }: {
   caption: string
   scope: string
-  leader: { name: string; rating: number; uncertainty: number; battles: number } | null
+  leader: {
+    name: string
+    rating: number
+    uncertainty: number
+    battles: number
+    voters: { members: number; guests: number }
+  } | null
   rated: number
   total: number
 }) {
@@ -367,7 +375,11 @@ function MethodologyPage() {
               {[
                 ['1', '± 350', 'Nothing. This is the starting band.'],
                 ['3', '± 202', 'A page worth showing. Not an order.'],
-                [`${confidentWeighted}`, `± ${MAX_CONFIDENT_UNCERTAINTY}`, 'A stated winner.'],
+                [
+                  `${confidentWeighted}`,
+                  `± ${MAX_CONFIDENT_UNCERTAINTY}`,
+                  `A stated winner, if ${MIN_CONFIDENT_VOTERS} people are behind it.`,
+                ],
                 ['34', '± 60', 'The floor. As settled as it gets.'],
               ].map(([votes, band, means]) => (
                 <tr key={band} className="border-t border-icon/20">
@@ -397,9 +409,9 @@ function MethodologyPage() {
         )}
       </Section>
 
-      <Section title="Two thresholds, and why they are not the same number">
+      <Section title="Three thresholds, and why they are not the same number">
         <p>
-          There are two separate decisions here, and collapsing them into one
+          There are three separate decisions here, and collapsing them into one
           number would be the easiest way to quietly start lying.
         </p>
         <div className="mt-4 overflow-x-auto">
@@ -425,6 +437,13 @@ function MethodologyPage() {
                   ± {MAX_CONFIDENT_UNCERTAINTY} band
                 </td>
                 <td className="py-2">Is the order real?</td>
+              </tr>
+              <tr className="border-t border-icon/20">
+                <td className="py-2 pr-4">Call that winner the community's</td>
+                <td className="py-2 pr-4 font-serif font-bold text-gold1">
+                  {MIN_CONFIDENT_VOTERS} voters
+                </td>
+                <td className="py-2">Whose order is it?</td>
               </tr>
             </tbody>
           </table>
@@ -452,12 +471,42 @@ function MethodologyPage() {
           vote weighs half, {confidentWeighted} weighted votes means somewhere
           between {confidentWeighted} and {confidentWeighted * 2} real ones.
         </p>
+        <p>
+          The <b>{MIN_CONFIDENT_VOTERS}-voter</b> bar exists because the band
+          cannot tell the difference between {confidentWeighted} votes from{' '}
+          {confidentWeighted} people and {confidentWeighted} votes from one
+          person having a long afternoon. Both produce ±{' '}
+          {MAX_CONFIDENT_UNCERTAINTY}; only one of them is a community. The
+          number is not a guess — a single voter's pull on any one skin is
+          already capped at {VOTER_SKIN_CAP} weighted votes by the anti-farming
+          rule, so the{' '}
+          {confidentWeighted} weighted votes behind a ±{' '}
+          {MAX_CONFIDENT_UNCERTAINTY} band cannot honestly come from fewer than{' '}
+          {MIN_CONFIDENT_VOTERS} people. This bar enforces what the band was
+          already claiming.
+        </p>
+        <p>
+          <b>How a signed-out visitor counts.</b> As half a person, the same
+          discount their vote already gets. Not because their opinion is worth
+          less — it is the same click — but because we are counting{' '}
+          <i>independence</i>, and a signed-out identity is a browser cookie:
+          one visitor clearing theirs becomes several, one shared laptop makes
+          several visitors one. Counting those at face value would let a
+          determined afternoon manufacture a "community" verdict, which is the
+          thing this bar exists to stop. Refusing to count them at all would be
+          worse, because almost nobody signs in, and a site that runs on
+          signed-out votes should not pretend it doesn't. So{' '}
+          {MIN_CONFIDENT_VOTERS} members clear the bar, and so do{' '}
+          {MIN_CONFIDENT_VOTERS * 2} signed-out visitors. That is a real
+          weakness and this paragraph is where we admit it rather than hide it.
+        </p>
         <p className="text-sm text-grey1/80">
           In code: <b>MIN_INDEXABLE_BATTLES</b> in{' '}
           <code className="text-gold2">lib/games/seo.ts</code> governs the robots
-          tag and what enters the sitemap; <b>MAX_CONFIDENT_UNCERTAINTY</b> in{' '}
-          <code className="text-gold2">lib/games/answer.ts</code> governs
-          phrasing. They are different files on purpose.
+          tag and what enters the sitemap; <b>MAX_CONFIDENT_UNCERTAINTY</b> and{' '}
+          <b>MIN_CONFIDENT_VOTERS</b> in{' '}
+          <code className="text-gold2">lib/games/answer.ts</code> govern
+          phrasing, and both must pass. They are different files on purpose.
         </p>
       </Section>
 
@@ -465,18 +514,19 @@ function MethodologyPage() {
         <p>
           Ranking claims across the site are generated from live ratings by a
           fixed template — the same data always produces the same sentence, and
-          no language model writes copy at request time. There are three
-          versions, chosen by the band:
+          no language model writes copy at request time. There are four
+          versions, chosen by the band and the head count:
         </p>
         <div className="mt-4 space-y-3">
           <AnswerSample
-            caption="Band inside the bar"
+            caption="Both bars cleared"
             scope="Ahri skins"
             leader={{
               name: 'Elderwood Ahri',
               rating: 1642,
               uncertainty: 62,
               battles: 41,
+              voters: { members: 4, guests: 9 },
             }}
             rated={24}
             total={24}
@@ -489,8 +539,22 @@ function MethodologyPage() {
               rating: 1642,
               uncertainty: 210,
               battles: 4,
+              voters: { members: 0, guests: 3 },
             }}
             rated={19}
+            total={24}
+          />
+          <AnswerSample
+            caption="Band inside the bar, too few people behind it"
+            scope="Ahri skins"
+            leader={{
+              name: 'Elderwood Ahri',
+              rating: 1642,
+              uncertainty: 62,
+              battles: 41,
+              voters: { members: 1, guests: 1 },
+            }}
+            rated={24}
             total={24}
           />
           <AnswerSample
@@ -513,9 +577,13 @@ function MethodologyPage() {
               Being blunt about it: <b>{n(s.confidentSkins)}</b> of the{' '}
               {n(s.ratedSkins)} skins with battle data currently sit inside the
               ± {MAX_CONFIDENT_UNCERTAINTY} band, and the median one has{' '}
-              <b>{n(s.medianBattles)} battles</b>. So the provisional phrasing
-              above is not an error state — at this stage it is the honest
-              default, and most pages on the site use it.
+              <b>{n(s.medianBattles)} battles</b>. That figure is the band
+              alone; fewer pages than that are settled, because a settled
+              verdict also needs {MIN_CONFIDENT_VOTERS} voters behind the
+              leader, and votes on this site are concentrated in far fewer
+              people than skins. So the provisional phrasing above is not an
+              error state — at this stage it is the honest default, and most
+              pages on the site use it.
             </>
           ) : (
             <>

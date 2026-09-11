@@ -1,7 +1,7 @@
 // Shared (client-safe) types for the games framework. Server-only logic
 // lives under ./server - never import that from components.
 
-import type { AnswerBlock } from './answer'
+import type { AnswerBlock, AnswerVoters } from './answer'
 
 export type GameId = 'splashdle' | 'price-check' | 'chroma-vision'
 
@@ -421,6 +421,11 @@ export interface RankingsState {
   // body quote the same sentence. Computed from the full rated set, not the
   // page of rows, so a deep "Show more" page still carries the real leader.
   answer: AnswerBlock
+  // Heads behind the leader's battles, members and guest cookies counted
+  // apart (answer.ts discounts the cookies). Two aggregate numbers, never an
+  // identity - the champion page reuses them so both surfaces judge the same
+  // leader by the same rule.
+  leaderVoters: AnswerVoters
   // When the ratings were last rebuilt (ISO, meta key refit_at). The page's
   // freshness label reads this, never the render clock.
   refitAt: string | null
