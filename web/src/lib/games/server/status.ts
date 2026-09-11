@@ -10,6 +10,7 @@
 import { getDb } from './db'
 import { getMeta } from './catalog'
 import { factsSnapshotAt } from './facts'
+import { ratingEventCount } from './ratings'
 
 // Catalog re-syncs every 12 h on traffic; double it before alarming.
 const CATALOG_STALE_MS = 26 * 60 * 60 * 1000
@@ -30,13 +31,11 @@ export async function gamesStatusResponse(): Promise<Response> {
       .prepare('SELECT COUNT(*) AS c FROM catalog_skins WHERE num != 0')
       .get() as { c: number }
   ).c
-  const events = (
-    db
-      .prepare(
-        `SELECT COUNT(*) AS c FROM game_events WHERE type = 'battle_voted'`,
-      )
-      .get() as { c: number }
-  ).c
+  // Must be ratingEventCount, not a battle_voted count: runRefit stamps its
+  // baseline in these units (votes + tier submissions), so counting either
+  // side differently makes the delta meaningless - it read -12 in production,
+  // which also left the overdue check below permanently unable to fire.
+  const events = ratingEventCount(db)
   const refitAt = Date.parse(getMeta(db, 'refit_at') ?? '') || 0
   const refitEvents = Number(getMeta(db, 'refit_events') ?? '0')
   const factsAt = Date.parse(factsSnapshotAt) || 0
@@ -53,7 +52,7 @@ export async function gamesStatusResponse(): Promise<Response> {
   }
   if (events - refitEvents > REFIT_OVERDUE_EVENTS) {
     problems.push(
-      `${events - refitEvents} battle events since the last rating refit`,
+      `${events - refitEvents} rating events since the last refit`,
     )
   }
 
@@ -64,11 +63,10 @@ export async function gamesStatusResponse(): Promise<Response> {
       ddVersion: getMeta(db, 'dd_version'),
       skins: catalogCount,
       syncedAt: syncedAt ? new Date(syncedAt).toISOString() : null,
-      splashSweepVersion: getMeta(db, 'splash_sweep_version'),
     },
     facts: { snapshotAt: factsSnapshotAt },
     ratings: {
-      battleEvents: events,
+      ratingEvents: events,
       refitAt: refitAt ? new Date(refitAt).toISOString() : null,
       eventsSinceRefit: events - refitEvents,
     },

@@ -36,12 +36,8 @@ console.log(
 console.log(
   'meta:',
   q(
-    `SELECT k, v FROM catalog_meta WHERE k IN ('refit_at','refit_events','splash_sweep_version')`,
+    `SELECT k, v FROM catalog_meta WHERE k IN ('refit_at','refit_events')`,
   ),
-)
-console.log(
-  'benched splashes:',
-  q(`SELECT COUNT(*) AS n FROM catalog_skins WHERE splash_ok = 0`),
 )
 console.log(
   'last 5 events:',
