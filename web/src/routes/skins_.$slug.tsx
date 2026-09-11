@@ -120,7 +120,7 @@ function SkinPage() {
       <JsonLd
         data={breadcrumbJsonLd([
           { name: 'Home', path: '/' },
-          { name: state.championName, path: `/champions/${state.championId}` },
+          { name: state.championName, path: `/champions/${state.championId.toLowerCase()}` },
           { name: state.name, path: `/skins/${state.slug}` },
         ])}
       />
@@ -128,7 +128,7 @@ function SkinPage() {
         <p className="mb-2 text-sm font-semibold uppercase tracking-[0.3em] text-gold2">
           <Link
             to="/champions/$id"
-            params={{ id: state.championId }}
+            params={{ id: state.championId.toLowerCase() }}
             className="transition duration-150 hover:text-gold1"
           >
             {state.championName}
@@ -292,7 +292,7 @@ function SkinPage() {
         </Link>
         <Link
           to="/champions/$id"
-          params={{ id: state.championId }}
+          params={{ id: state.championId.toLowerCase() }}
           className={btnSecondarySm}
         >
           <FontAwesomeIcon icon={faArrowLeft} className="h-4" />

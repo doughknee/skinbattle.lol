@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from '@tanstack/react-router'
+import { canonicalLink, ogMeta } from '~/lib/games/ogMeta'
 import PageHeader from '~/components/PageHeader'
 
 // Plain-language privacy policy. The site collects very little, so the page
@@ -15,7 +16,15 @@ export const Route = createFileRoute('/privacy')({
         content:
           'What skinbattle.lol collects (very little), why, and how to delete it.',
       },
+      ...ogMeta({
+        title: 'Privacy · Skin Battle',
+        description:
+          'What skinbattle.lol collects (very little), why, and how to delete it.',
+        card: 'games',
+        path: '/privacy',
+      }),
     ],
+    links: [canonicalLink('/privacy')],
   }),
   component: PrivacyPage,
 })

@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from '@tanstack/react-router'
+import { createFileRoute, Link, redirect } from '@tanstack/react-router'
 import { useMemo, useState } from 'react'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faArrowLeft } from '@fortawesome/free-solid-svg-icons'
@@ -9,12 +9,26 @@ import Dropdown from '~/components/Dropdown'
 import ErrorState from '~/components/ErrorState'
 import { ChampionDetailSkeleton } from '~/components/Skeletons'
 import { championDisplayName } from '~/lib/skinName'
+import { canonicalLink, ogMeta } from '~/lib/games/ogMeta'
 
 export const Route = createFileRoute('/champions/$id')({
   loader: async ({ params }) => {
     // Base (public) champion data. User-vote columns are layered in
     // client-side once we have a Logto access token.
     const champion = await api.champion(params.id)
+    // One URL per champion. The API resolves an id in any casing, so
+    // /champions/Aatrox and /champions/AATROX would each serve this page with
+    // a 200 - three URLs, one page, no way for a crawler to pick. Redirect to
+    // the lowercase form (what the sitemap and every internal link use), the
+    // same way a non-canonical skin slug redirects in skins_.$slug.
+    const canonicalId = champion.id.toLowerCase()
+    if (params.id !== canonicalId) {
+      throw redirect({
+        to: '/champions/$id',
+        params: { id: canonicalId },
+        statusCode: 301,
+      })
+    }
     // Battle-Elo ranks for the wardrobe - display rule: Elo is THE rank;
     // star/ban/vote counts are badges and sorts, never a competing rank.
     // Non-fatal: the page works without the games layer; badges just hide.
@@ -33,15 +47,24 @@ export const Route = createFileRoute('/champions/$id')({
     }
     return { champion, elo }
   },
-  head: ({ loaderData }) => ({
-    meta: [
-      {
-        title: loaderData
-          ? `${championDisplayName(loaderData.champion.id)} · Skin Battle`
-          : 'Skin Battle',
-      },
-    ],
-  }),
+  head: ({ loaderData }) => {
+    if (!loaderData) return { meta: [{ title: 'Champion · Skin Battle' }] }
+    const name = championDisplayName(loaderData.champion.id)
+    const title = `${name} · Skin Battle`
+    // Factual only: what the page actually shows. No ranking claims here -
+    // the wardrobe's Elo badges are a sample of ~3 battles per skin, which is
+    // nowhere near enough to assert a "best" anything (see docs/seo-audit.md).
+    const description = `All ${loaderData.champion.skins.length} ${name} skins in one place: splash art, release dates, and prices, with each skin's community battle rating.`
+    const path = `/champions/${loaderData.champion.id.toLowerCase()}`
+    return {
+      meta: [
+        { title },
+        { name: 'description', content: description },
+        ...ogMeta({ title, description, card: 'games', path }),
+      ],
+      links: [canonicalLink(path)],
+    }
+  },
   pendingComponent: () => (
     <ChampionDetailSkeleton quip="One-shotting the ADC..." />
   ),

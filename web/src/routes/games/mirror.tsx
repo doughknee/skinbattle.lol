@@ -4,6 +4,6 @@ import { createFileRoute, redirect } from '@tanstack/react-router'
 // so old links keep working.
 export const Route = createFileRoute('/games/mirror')({
   beforeLoad: () => {
-    throw redirect({ to: '/profile' })
+    throw redirect({ to: '/profile', statusCode: 301 })
   },
 })

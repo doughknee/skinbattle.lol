@@ -5,6 +5,6 @@ import { createFileRoute, redirect } from '@tanstack/react-router'
 // URLs keep working. (The internal game id is still "price-check".)
 export const Route = createFileRoute('/battle/price-check')({
   beforeLoad: () => {
-    throw redirect({ to: '/battle/price-point' })
+    throw redirect({ to: '/battle/price-point', statusCode: 301 })
   },
 })

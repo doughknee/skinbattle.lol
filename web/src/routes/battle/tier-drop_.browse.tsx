@@ -10,7 +10,7 @@ import {
 } from '@fortawesome/free-solid-svg-icons'
 import ErrorState from '~/components/ErrorState'
 import { TierListSkeleton } from '~/components/Skeletons'
-import { ogMeta } from '~/lib/games/ogMeta'
+import { canonicalLink, ogMeta } from '~/lib/games/ogMeta'
 import { fetchTierFeed, fetchTierScopes } from '~/lib/games/serverFns'
 import type { TierFeedRow, TierScopeCatalog } from '~/lib/games/types'
 
@@ -35,6 +35,7 @@ export const Route = createFileRoute('/battle/tier-drop_/browse')({
         { name: 'description', content: description },
         ...ogMeta({ title, description, path: '/battle/tier-drop/browse', card: 'tier-list' as const }),
       ],
+      links: [canonicalLink('/battle/tier-drop/browse')],
     }
   },
   errorComponent: ({ error }) => (

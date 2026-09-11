@@ -1,6 +1,25 @@
+# Answer engines (GPTBot, OAI-SearchBot, ClaudeBot, PerplexityBot, Google-
+# Extended) are welcome - the rankings exist to be cited. They are covered by
+# the "*" group below and deliberately have no group of their own: a crawler
+# that matches a specific User-agent group ignores "*" entirely, so a
+# per-bot group would silently hand them the Disallow-ed paths too.
 User-agent: *
 Allow: /
-Disallow: /profile
+
+# Auth round-trips, API endpoints, and the analytics proxy. No page content,
+# nothing to index, and crawling them only burns crawl budget.
 Disallow: /callback
+Disallow: /social-callback
+Disallow: /ingest/
+Disallow: /games-status
+Disallow: /games-attach
+Disallow: /games-logout
+Disallow: /account-connectors
+
+# /profile is deliberately NOT disallowed here. It is kept out of the index by
+# a noindex tag on the page itself (routes/profile.tsx). Disallowing it would
+# stop crawlers fetching the page at all, which means they would never read
+# that tag - and the URL could still be indexed title-only off the sitewide
+# "Mirror" nav link. Letting them fetch it and see noindex is what removes it.
 
 Sitemap: https://skinbattle.lol/sitemap.xml

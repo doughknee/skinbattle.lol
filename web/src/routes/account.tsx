@@ -4,6 +4,6 @@ import { createFileRoute, redirect } from '@tanstack/react-router'
 // bookmarks keep working.
 export const Route = createFileRoute('/account')({
   beforeLoad: () => {
-    throw redirect({ to: '/profile' })
+    throw redirect({ to: '/profile', statusCode: 301 })
   },
 })

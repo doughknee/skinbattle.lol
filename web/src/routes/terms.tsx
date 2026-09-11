@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from '@tanstack/react-router'
+import { canonicalLink, ogMeta } from '~/lib/games/ogMeta'
 import PageHeader from '~/components/PageHeader'
 
 // Plain-language terms for a free fan project: what the site is, the Riot
@@ -13,7 +14,15 @@ export const Route = createFileRoute('/terms')({
         content:
           'The terms of use for skinbattle.lol: a free League of Legends fan project.',
       },
+      ...ogMeta({
+        title: 'Terms · Skin Battle',
+        description:
+          'The terms of use for skinbattle.lol: a free League of Legends fan project.',
+        card: 'games',
+        path: '/terms',
+      }),
     ],
+    links: [canonicalLink('/terms')],
   }),
   component: TermsPage,
 })

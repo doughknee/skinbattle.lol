@@ -20,6 +20,7 @@ import { btnPrimarySm } from '~/lib/ui'
 import { fetchMirror } from '~/lib/games/serverFns'
 import { guestRestoreToken, rememberGuestToken } from '~/lib/games/client'
 import { ogMeta } from '~/lib/games/ogMeta'
+import { robotsMeta } from '~/lib/games/seo'
 import type { Me } from '~/lib/types'
 
 type Tab = 'mirror' | 'account'
@@ -50,6 +51,11 @@ export const Route = createFileRoute('/profile')({
         card: 'mirror',
         path: '/profile',
       }),
+      // Personal page: it renders the visitor's own board, so there is nothing
+      // stable to index. noindex (not a robots.txt Disallow) is what actually
+      // keeps it out — a disallowed URL can still be indexed title-only from
+      // the sitewide Mirror link, because the crawler never reads this tag.
+      ...robotsMeta(false),
     ],
   }),
   errorComponent: ({ error }) => (
