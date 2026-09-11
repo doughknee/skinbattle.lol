@@ -60,7 +60,7 @@ const leastFavorites = mine.slice(-10).filter((s) => !favorites.includes(s))
 // the target skins against).
 const pool = db
   .prepare(
-    `SELECT id FROM catalog_skins WHERE splash_ok = 1 ORDER BY id LIMIT 400`,
+    `SELECT id FROM catalog_skins ORDER BY id LIMIT 400`,
   )
   .all()
   .map((r) => r.id)
