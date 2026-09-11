@@ -43,6 +43,7 @@ import {
   faVolumeXmark,
   faXmark,
 } from '@fortawesome/free-solid-svg-icons'
+import { usePostHog } from 'posthog-js/react'
 import ErrorState from '~/components/ErrorState'
 import TodayStrip from '~/components/games/TodayStrip'
 import { toast } from '~/components/Toaster'
@@ -809,6 +810,7 @@ function Builder({
   banner?: ReactNode
   hub?: DailyHubState
 }) {
+  const posthog = usePostHog()
   const [board, setBoard] = useState<TierBoard>(initialBoard)
   const [challengeActive, setChallengeActive] = useState(true)
   // Start in results mode when the player already ranked this board.
@@ -979,6 +981,17 @@ function Builder({
         },
       })
       rememberGuestToken(res.guestToken)
+      // One submission makes the player a distinct voter for every skin on the
+      // board at once (skinVoters UNIONs this same 'tier_submitted' game event
+      // with battle votes) - the high-yield arm of the voter funnel. Optional-
+      // chained because ClientProviders mounts no provider without a token, and
+      // a throw in here would false-alarm "didn't save" on a list that saved.
+      posthog?.capture('tier_submitted', {
+        board_id: board.boardId,
+        board_type: board.boardType,
+        skins_placed: placedCount,
+        board_size: board.skins.length,
+      })
       recentRef.current = [...recentRef.current, board.boardId].slice(-12)
       setRankedCount((n) => n + 1)
       playSubmit()
@@ -991,7 +1004,7 @@ function Builder({
     } finally {
       setSubmitting(false)
     }
-  }, [board, placed, placedCount, submitting])
+  }, [board, placed, placedCount, submitting, posthog])
 
   const rankAnother = useCallback(() => {
     if (!result) return
