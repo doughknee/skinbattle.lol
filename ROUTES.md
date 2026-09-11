@@ -37,7 +37,9 @@ Route count is not a smell; door count is.
   /skins/$slug           Leaf: skin dossier (see display rules)
 /champions               The catalog's "By Champion" lens (keeps its URL;
                          lives under the Skins door in every nav surface)
-  /champions/$id         Leaf: champion dossier — wardrobe, lore.
+  /champions/$id         Leaf: champion dossier — answer block, ranked skins,
+                         wardrobe, lore. Deliberately ungated: all 173 index
+                         regardless of battle volume (DONI-85).
 /rankings                Every verdict surface (redirects to /rankings/all;
                          slice discovery is the slice bar on the page itself)
   /rankings/$slice       Leaf: all | price-* | line-* | champion-* | year-*
@@ -78,8 +80,10 @@ older up/down vote) has been removed entirely.
   battle-driven.
 - **Skin pages show the dossier** — Elo ± uncertainty, rank, win%, battle
   count, price, facts, release.
-- Champion pages surface Elo rank badges and sort by release order or battle
-  rating.
+- Champion pages lead with the answer block (lib/games/answer.ts) over a ranked
+  list of the rated skins, then the full wardrobe with Elo rank badges, sorted
+  by release order or battle rating. The wardrobe excludes num 0 (the base
+  look), the same set /skins and the ranking slices count.
 
 ## Migration map (every old URL gets a redirect stub; no chains)
 

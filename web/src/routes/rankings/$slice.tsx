@@ -656,8 +656,10 @@ function RankingSlicePage() {
             median of {state.medianBattles}{' '}
             {state.medianBattles === 1 ? 'battle' : 'battles'} each. Every
             Head-to-Head pick sharpens this list.{' '}
+            {/* /methodology directly: /rankings/elo 301s here (DONI-83), and
+                an internal link through a redirect wastes the hop. */}
             <Link
-              to="/rankings/elo"
+              to="/methodology"
               className="font-semibold underline underline-offset-2 transition duration-150 hover:text-gold1"
             >
               How the rankings work
