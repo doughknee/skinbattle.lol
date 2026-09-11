@@ -10,6 +10,6 @@ export const Route = createFileRoute('/battle/tiers')({
     ...(typeof s.set === 'string' ? { set: s.set } : {}),
   }),
   beforeLoad: ({ search }) => {
-    throw redirect({ to: '/battle/tier-drop', search })
+    throw redirect({ to: '/battle/tier-drop', search, statusCode: 301 })
   },
 })

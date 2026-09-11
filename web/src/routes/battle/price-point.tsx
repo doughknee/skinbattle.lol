@@ -16,7 +16,7 @@ import {
   submitPriceGuess,
 } from '~/lib/games/serverFns'
 import { guestRestoreToken, rememberGuestToken } from '~/lib/games/client'
-import { ogMeta } from '~/lib/games/ogMeta'
+import { canonicalLink, ogMeta } from '~/lib/games/ogMeta'
 import TodayStrip from '~/components/games/TodayStrip'
 import GameBreadcrumb from '~/components/games/GameBreadcrumb'
 import { ConsensusStat } from '~/components/games/GuessKit'
@@ -50,6 +50,7 @@ export const Route = createFileRoute('/battle/price-point')({
         path: '/battle/price-point',
       }),
     ],
+    links: [canonicalLink('/battle/price-point')],
   }),
   errorComponent: ({ error }) => (
     <ErrorState

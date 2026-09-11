@@ -4,6 +4,6 @@ import { createFileRoute, redirect } from '@tanstack/react-router'
 // share-text URLs keep working.
 export const Route = createFileRoute('/games/splashdle')({
   beforeLoad: () => {
-    throw redirect({ to: '/battle/splashdle' })
+    throw redirect({ to: '/battle/splashdle', statusCode: 301 })
   },
 })

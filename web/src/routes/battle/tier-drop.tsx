@@ -48,7 +48,7 @@ import TodayStrip from '~/components/games/TodayStrip'
 import { toast } from '~/components/Toaster'
 import { openLightbox } from '~/components/Lightbox'
 import { AnimatedNumber } from '~/components/games/AnimatedNumber'
-import { ogMeta } from '~/lib/games/ogMeta'
+import { canonicalLink, ogMeta } from '~/lib/games/ogMeta'
 import {
   createTierShare,
   fetchDailyHub,
@@ -128,6 +128,11 @@ export const Route = createFileRoute('/battle/tier-drop')({
             : { card: 'tier-list' as const }),
         }),
       ],
+      // Shared boards (?s=…) are the same page rendered with one player's
+      // picks — canonicalise them all to the bare route so thousands of share
+      // URLs consolidate instead of competing. og:url above keeps ?s= so the
+      // unfurl still shows that board.
+      links: [canonicalLink('/battle/tier-drop')],
     }
   },
   errorComponent: ({ error }) => (

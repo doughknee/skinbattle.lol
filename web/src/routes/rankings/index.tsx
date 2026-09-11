@@ -5,6 +5,6 @@ import { createFileRoute, redirect } from '@tanstack/react-router'
 // redirect so old links and bookmarks land somewhere better.
 export const Route = createFileRoute('/rankings/')({
   beforeLoad: () => {
-    throw redirect({ to: '/rankings/$slice', params: { slice: 'all' } })
+    throw redirect({ to: '/rankings/$slice', params: { slice: 'all' }, statusCode: 301 })
   },
 })

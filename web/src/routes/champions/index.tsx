@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from '@tanstack/react-router'
+import { canonicalLink, ogMeta } from '~/lib/games/ogMeta'
 import { useEffect, useMemo, useState } from 'react'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import {
@@ -39,7 +40,22 @@ export const Route = createFileRoute('/champions/')({
     return { champions }
   },
   head: () => ({
-    meta: [{ title: 'Champions · Skin Battle' }],
+    meta: [
+      { title: 'Champions · Skin Battle' },
+      {
+        name: 'description',
+        content:
+          'Every League of Legends champion and their full wardrobe: splash art, release dates, and prices for every skin.',
+      },
+      ...ogMeta({
+        title: 'Champions · Skin Battle',
+        description:
+          'Every League of Legends champion and their full wardrobe: splash art, release dates, and prices for every skin.',
+        card: 'games',
+        path: '/champions',
+      }),
+    ],
+    links: [canonicalLink('/champions')],
   }),
   pendingComponent: () => (
     <RouteSkeleton quip="Stealing baron..." variant="champions" />

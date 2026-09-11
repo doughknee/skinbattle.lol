@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from '@tanstack/react-router'
+import { canonicalLink, ogMeta } from '~/lib/games/ogMeta'
 import type { ReactNode } from 'react'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import {
@@ -23,7 +24,15 @@ export const Route = createFileRoute('/rankings/elo')({
         content:
           'Every skin starts at 1500. Every battle moves two numbers. Here is how your picks become the community skin ranking, explained for League players.',
       },
+      ...ogMeta({
+        title: 'How the Rankings Work · Skin Battle',
+        description:
+          'Every skin starts at 1500. Every battle moves two numbers. Here is how your picks become the community skin ranking, explained for League players.',
+        card: 'games',
+        path: '/rankings/elo',
+      }),
     ],
+    links: [canonicalLink('/rankings/elo')],
   }),
   component: HowRankingsWorkPage,
 })

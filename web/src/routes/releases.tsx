@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from '@tanstack/react-router'
+import { canonicalLink, ogMeta } from '~/lib/games/ogMeta'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import {
   faChevronDown,
@@ -19,7 +20,15 @@ export const Route = createFileRoute('/releases')({
         content:
           'What just shipped on skinbattle.lol, in plain language: new games, new rankings, and the fixes in between.',
       },
+      ...ogMeta({
+        title: 'Releases · Skin Battle',
+        description:
+          'What just shipped on skinbattle.lol, in plain language: new games, new rankings, and the fixes in between.',
+        card: 'games',
+        path: '/releases',
+      }),
     ],
+    links: [canonicalLink('/releases')],
   }),
   component: ReleasesPage,
 })

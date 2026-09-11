@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from '@tanstack/react-router'
+import { canonicalLink, ogMeta } from '~/lib/games/ogMeta'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import type { IconDefinition } from '@fortawesome/fontawesome-svg-core'
 import {
@@ -28,7 +29,15 @@ export const Route = createFileRoute('/roadmap')({
         content:
           'What is live, what is coming, and the community milestones that unlock it. Every battle counts toward the next era.',
       },
+      ...ogMeta({
+        title: 'Roadmap · Skin Battle',
+        description:
+          'What is live, what is coming, and the community milestones that unlock it. Every battle counts toward the next era.',
+        card: 'games',
+        path: '/roadmap',
+      }),
     ],
+    links: [canonicalLink('/roadmap')],
   }),
   errorComponent: ({ error }) => (
     <ErrorState title="Couldn't load the roadmap" message={error.message} />

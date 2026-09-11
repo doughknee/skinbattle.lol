@@ -4,6 +4,6 @@ import { createFileRoute, redirect } from '@tanstack/react-router'
 // kept as a redirect so old links keep working.
 export const Route = createFileRoute('/battle/mirror')({
   beforeLoad: () => {
-    throw redirect({ to: '/profile' })
+    throw redirect({ to: '/profile', statusCode: 301 })
   },
 })

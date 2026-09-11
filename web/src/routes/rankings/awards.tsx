@@ -5,6 +5,6 @@ import { createFileRoute, redirect } from '@tanstack/react-router'
 // so old bookmarks and links land on the full ranking instead of a 404.
 export const Route = createFileRoute('/rankings/awards')({
   beforeLoad: () => {
-    throw redirect({ to: '/rankings/$slice', params: { slice: 'all' } })
+    throw redirect({ to: '/rankings/$slice', params: { slice: 'all' }, statusCode: 301 })
   },
 })

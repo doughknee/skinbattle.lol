@@ -6,6 +6,6 @@ import { createFileRoute, redirect } from '@tanstack/react-router'
 export const Route = createFileRoute('/games/quick-battle')({
   validateSearch: (s: Record<string, unknown>) => s,
   beforeLoad: ({ search }) => {
-    throw redirect({ to: '/battle', search: search as never })
+    throw redirect({ to: '/battle', search: search as never, statusCode: 301 })
   },
 })

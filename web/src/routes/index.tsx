@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from '@tanstack/react-router'
+import { canonicalLink, ogMeta } from '~/lib/games/ogMeta'
 import { useEffect, useState } from 'react'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import {
@@ -53,7 +54,15 @@ export const Route = createFileRoute('/')({
         content:
           'Every League of Legends skin, ranked by head-to-head community battles. Pick a winner and settle the debate.',
       },
+      ...ogMeta({
+        title: 'SKINBATTLE.LOL · League of Legends Skin Rankings',
+        description:
+          'Every League of Legends skin, ranked by head-to-head community battles. Pick a winner and settle the debate.',
+        card: 'games',
+        path: '/',
+      }),
     ],
+    links: [canonicalLink('/')],
   }),
   pendingComponent: HomeSkeleton,
   component: HomePage,

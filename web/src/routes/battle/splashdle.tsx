@@ -18,7 +18,7 @@ import {
   submitSplashdleGuess,
 } from '~/lib/games/serverFns'
 import { guestRestoreToken, rememberGuestToken } from '~/lib/games/client'
-import { ogMeta } from '~/lib/games/ogMeta'
+import { canonicalLink, ogMeta } from '~/lib/games/ogMeta'
 import TodayStrip from '~/components/games/TodayStrip'
 import GameBreadcrumb from '~/components/games/GameBreadcrumb'
 import type { GuessOption, SplashdleState } from '~/lib/games/types'
@@ -52,6 +52,7 @@ export const Route = createFileRoute('/battle/splashdle')({
         path: '/battle/splashdle',
       }),
     ],
+    links: [canonicalLink('/battle/splashdle')],
   }),
   errorComponent: ({ error }) => (
     <ErrorState

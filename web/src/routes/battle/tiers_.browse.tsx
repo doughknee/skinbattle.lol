@@ -4,6 +4,6 @@ import { createFileRoute, redirect } from '@tanstack/react-router'
 // rename). Kept as a redirect so old links keep resolving.
 export const Route = createFileRoute('/battle/tiers_/browse')({
   beforeLoad: () => {
-    throw redirect({ to: '/battle/tier-drop/browse' })
+    throw redirect({ to: '/battle/tier-drop/browse', statusCode: 301 })
   },
 })

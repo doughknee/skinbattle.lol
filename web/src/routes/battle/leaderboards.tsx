@@ -11,7 +11,7 @@ import ErrorState from '~/components/ErrorState'
 import { btnSecondarySm } from '~/lib/ui'
 import { useAuth } from '~/lib/useAuth'
 import { fetchLeaderboards } from '~/lib/games/serverFns'
-import { ogMeta } from '~/lib/games/ogMeta'
+import { canonicalLink, ogMeta } from '~/lib/games/ogMeta'
 import type { GameId } from '~/lib/games/types'
 
 export const Route = createFileRoute('/battle/leaderboards')({
@@ -32,6 +32,7 @@ export const Route = createFileRoute('/battle/leaderboards')({
         path: '/battle/leaderboards',
       }),
     ],
+    links: [canonicalLink('/battle/leaderboards')],
   }),
   errorComponent: ({ error }) => (
     <ErrorState title="Couldn't load the leaderboards" message={error.message} />

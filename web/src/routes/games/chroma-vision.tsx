@@ -4,6 +4,6 @@ import { createFileRoute, redirect } from '@tanstack/react-router'
 // share-text URLs keep working.
 export const Route = createFileRoute('/games/chroma-vision')({
   beforeLoad: () => {
-    throw redirect({ to: '/battle/chroma-vision' })
+    throw redirect({ to: '/battle/chroma-vision', statusCode: 301 })
   },
 })

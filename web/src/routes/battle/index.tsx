@@ -40,7 +40,7 @@ import {
   submitBattleUndo,
   submitBattleVote,
 } from '~/lib/games/serverFns'
-import { ogMeta } from '~/lib/games/ogMeta'
+import { canonicalLink, ogMeta } from '~/lib/games/ogMeta'
 import { fallbackToRaw, skinThumb } from '~/lib/img'
 import { guestRestoreToken, rememberGuestToken } from '~/lib/games/client'
 import {
@@ -99,19 +99,22 @@ export const Route = createFileRoute('/battle/')({
     // React hydrates: the visible pair at high priority, the on-deck pair at
     // low. (The CommunityDragon preconnect lives in the root document, so the
     // socket is already warming by the time these preloads fire.)
-    links: loaderData
-      ? [
-          { pair: loaderData.qb.pair, priority: 'high' as const },
-          { pair: loaderData.qb.next, priority: 'low' as const },
-        ].flatMap(({ pair, priority }) =>
-          [pair.a, pair.b].map((s) => ({
-            rel: 'preload',
-            as: 'image',
-            href: s.splashUrl,
-            fetchPriority: priority,
-          })),
-        )
-      : [],
+    links: [
+      canonicalLink('/battle'),
+      ...(loaderData
+        ? [
+            { pair: loaderData.qb.pair, priority: 'high' as const },
+            { pair: loaderData.qb.next, priority: 'low' as const },
+          ].flatMap(({ pair, priority }) =>
+            [pair.a, pair.b].map((s) => ({
+              rel: 'preload',
+              as: 'image',
+              href: s.splashUrl,
+              fetchPriority: priority,
+            })),
+          )
+        : []),
+    ],
   }),
   errorComponent: ({ error }) => (
     <ErrorState
