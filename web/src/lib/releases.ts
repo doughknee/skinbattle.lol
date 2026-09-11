@@ -16,6 +16,27 @@ export interface ReleaseEntry {
 // Newest first. The page renders this array top to bottom.
 export const RELEASES: ReleaseEntry[] = [
   {
+    date: '2026-09-11',
+    title: 'Help settle a ranking, then share it',
+    highlights: [
+      "Every champion page, skin page and ranking now says whether the community's verdict is settled or still provisional, and one tap drops you into battles dealt only from that champion's skins. A banner keeps score of what you're settling, every vote shows where the winner lands among that champion's skins, and after a few battles you get pointed back to the ranking you just moved.",
+      'A new Rankings That Need You page lists the champions whose top spot is still up for grabs, with what it would take to settle each one.',
+      "Share a ranking from any champion page or ranking view. On your phone it opens the share sheet; on desktop it copies a ready-to-paste summary with the top three. The link unfurls on Discord and X as a card with the winner's splash art, the podium, and whether the verdict is settled.",
+      'Every skin has its own page now: community rating with its uncertainty band, rank, battles, price, release date and skin line, plus your own take if you have battled it.',
+      'Champion pages open with the community verdict, then the ranked list, then the whole wardrobe. The full ranking got its verdict too, and a new page explains how every number is computed.',
+    ],
+    fixes: [
+      'A ranking only counts as settled once enough different people have voted on it, not just enough votes from one determined fan.',
+      'The catalog is one door again: All Skins lists everything, Champions groups it by wardrobe.',
+      'Daily puzzle shares now link to the puzzle itself with a one-line hook, and finishing a puzzle offers a battle for the champion you just guessed.',
+      'Price, skin line and year rankings offer their own Tier Drop board.',
+      'Every "#N of M" on the site now counts the same set of skins, so pages no longer disagree by a few.',
+      'A mistyped champion link shows a clean "no such champion" page instead of an error.',
+      'The privacy page says exactly what the site collects, and analytics holds no email or name.',
+      'Prices, release dates and skin lines were refreshed from the wiki.',
+    ],
+  },
+  {
     date: '2026-06-18',
     title: 'Head-to-Head opens in Champion mode',
     highlights: [
