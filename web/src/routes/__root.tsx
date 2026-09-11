@@ -15,6 +15,7 @@ import RouteProgress from '~/components/RouteProgress'
 import Toaster from '~/components/Toaster'
 import Lightbox from '~/components/Lightbox'
 import GuestAttachment from '~/components/GuestAttachment'
+import ShareReferral from '~/components/ShareReferral'
 import Footer from '~/components/Footer'
 import JsonLd from '~/components/JsonLd'
 import { readServerConfig, type PublicConfig } from '~/lib/config'
@@ -98,6 +99,7 @@ function RootComponent() {
         <Lightbox />
         <Toaster />
         <GuestAttachment />
+        <ShareReferral />
       </ClientProviders>
     </RootDocument>
   )

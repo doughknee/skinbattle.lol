@@ -57,6 +57,19 @@ Route count is not a smell; door count is.
 Infra (unchanged): `/callback`, `/og/*`, `/games-status`, `/games-attach`,
 `/sitemap.xml`.
 
+Participation routing (not doors, not leaf content, not indexed - see
+`docs/participation-loop.md`):
+
+```
+/battle?champion=<id>    The same arena, dealt from one wardrobe: every
+                         ranking surface's "Help settle …" lands here.
+                         &skin=<id> pins that skin into the first pair.
+                         Canonical stays /battle; the scoped page is noindex.
+/settle                  Hub of champion rankings still provisional or
+                         untouched, each linking into the scoped battle.
+                         noindex, outside the site map registry on purpose.
+```
+
 ## Why "Battle" absorbs the dailies
 
 The brand is skinbattle.lol — Battle is the door, and with Quick Battle as the

@@ -8,11 +8,11 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { usePostHog } from 'posthog-js/react'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import {
-  faArrowLeft,
   faCircleNotch,
   faFire,
   faMagnifyingGlass,
   faShareNodes,
+  faShuffle,
   faUsers,
 } from '@fortawesome/free-solid-svg-icons'
 import { toast } from '~/components/Toaster'
@@ -566,7 +566,7 @@ export function ResultPanel({
     try {
       await navigator.clipboard.writeText(shareText)
       toast('Result copied. Go flex it!')
-      posthog.capture('game_result_shared', {
+      posthog?.capture('game_result_shared', {
         game_name: gameName,
         outcome: status,
         guesses_used: guesses.length,
@@ -617,9 +617,24 @@ export function ResultPanel({
           <FontAwesomeIcon icon={faShareNodes} className="h-4" />
           Share result
         </button>
-        <Link to="/battle" className={btnSecondarySm}>
-          <FontAwesomeIcon icon={faArrowLeft} className="h-4" />
-          Back to the battle
+        {/* The daily → battle handoff: the player just named one of this
+            champion's skins, so the battle it leads to is that champion's
+            wardrobe, not two skins from anywhere. */}
+        <Link
+          to="/battle"
+          search={{ champion: answer.championId.toLowerCase() }}
+          onClick={() =>
+            posthog?.capture('settle_cta_clicked', {
+              page_type: 'daily-puzzle',
+              champion: answer.championId.toLowerCase(),
+              ranking_state: null,
+              cta: 'battle',
+            })
+          }
+          className={btnSecondarySm}
+        >
+          <FontAwesomeIcon icon={faShuffle} className="h-4" />
+          Battle {answer.championName} skins
         </Link>
         {/* Time-derived, so the server-rendered text can lag the client's
             by a minute - not worth a hydration warning. */}

@@ -18,6 +18,7 @@ import { guestRestoreToken, rememberGuestToken } from '~/lib/games/client'
 import { canonicalLink, ogMeta } from '~/lib/games/ogMeta'
 import { breadcrumbJsonLd } from '~/lib/games/jsonLd'
 import { robotsMeta, skinIsIndexable } from '~/lib/games/seo'
+import { rankingStateOf } from '~/lib/games/settle'
 import { kebab } from '~/lib/games/slug'
 import { skinTitleName } from '~/lib/skinName'
 import type { SkinPageState } from '~/lib/games/types'
@@ -156,14 +157,17 @@ function SkinPage() {
     rememberGuestToken(state.guestToken)
   }, [state.guestToken])
 
+  const rankingState = rankingStateOf(state.answer.confidence)
+
   useEffect(() => {
-    posthog.capture('skin_page_viewed', {
+    posthog?.capture('skin_page_viewed', {
       skin_id: state.skinId,
       skin_name: state.name,
       champion_id: state.championId,
       champion_name: state.championName,
       elo_rank: state.community?.rank ?? null,
       battles: state.community?.battles ?? 0,
+      ranking_state: rankingState,
     })
   // Only fire once per skin: re-firing on posthog identity changes isn't useful here.
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -259,9 +263,28 @@ function SkinPage() {
         rated={state.ratedTotal}
         total={state.catalogTotal}
       >
-        <Link to="/battle" className={btnPrimarySm}>
+        {/* Keeps its promise now: the battle opens on THIS skin, against a
+            wardrobe-mate, and every pair after is dealt from the same
+            wardrobe - so the visitor's vote lands on the skin they came for. */}
+        <Link
+          to="/battle"
+          search={{
+            champion: state.championId.toLowerCase(),
+            skin: Number(state.skinId),
+          }}
+          onClick={() =>
+            posthog?.capture('settle_cta_clicked', {
+              page_type: 'skin',
+              champion: state.championId.toLowerCase(),
+              skin_id: state.skinId,
+              ranking_state: rankingState,
+              cta: 'battle',
+            })
+          }
+          className={btnPrimarySm}
+        >
           <FontAwesomeIcon icon={faShuffle} className="h-4" />
-          Battle this skin
+          Help rank {state.name}
         </Link>
         <Link
           to="/rankings/$slice"
