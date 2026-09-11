@@ -25,6 +25,7 @@ import type {
   RankingsState,
   MethodologyState,
   RoadmapState,
+  SettleHubState,
   SkinPageState,
   SplashdleState,
   SharedTierListState,
@@ -173,13 +174,30 @@ export const fetchMethodology = createServerFn({ method: 'GET' }).handler(
 
 // Quick Battle state: the current pair plus a preloaded next pair. `refit`
 // manually triggers the Bradley-Terry refit (guarded by GAMES_ADMIN_SECRET
-// when set) - reachable via /battle?refit=… for cron/curl.
+// when set) - reachable via /battle?refit=… for cron/curl. `champion` scopes
+// the deal to one wardrobe (/battle?champion=<id>, the "help settle" loop)
+// and `skin` pins that skin into the first pair; an unresolvable scope deals
+// from the whole catalog and comes back as `scope: null`.
 export const fetchQuickBattle = createServerFn({ method: 'POST' })
-  .inputValidator((d: GuestInput & { refit?: string }) => d)
+  .inputValidator(
+    (d: GuestInput & { refit?: string; champion?: string; skin?: string }) => d,
+  )
   .handler(async ({ data }): Promise<QuickBattleState> => {
     const { quickBattleState } = await import('./server/quickbattle')
-    return quickBattleState(data.restoreToken, data.refit)
+    return quickBattleState(data.restoreToken, data.refit, {
+      champion: data.champion,
+      skin: data.skin,
+    })
   })
+
+// The /settle hub: which champion rankings are still provisional or untouched,
+// by the same verdict rule the champion pages apply. Anonymous derived data.
+export const fetchSettleHub = createServerFn({ method: 'GET' }).handler(
+  async (): Promise<SettleHubState> => {
+    const { settleHubState } = await import('./server/settle')
+    return settleHubState()
+  },
+)
 
 // The Mirror is strictly a read surface: viewing it never mints a user and
 // never writes a row.
@@ -200,6 +218,8 @@ export const submitBattleVote = createServerFn({ method: 'POST' })
         // 'champion' = king-of-the-hill: the next pair is anchored on the
         // winner. Omitted/`shuffle` keeps today's fresh-pair behavior.
         mode?: BattleMode
+        // Scopes the NEXT pair to one wardrobe (the "help settle" loop).
+        champion?: string
       },
     ) => d,
   )
@@ -211,6 +231,7 @@ export const submitBattleVote = createServerFn({ method: 'POST' })
       data.recent,
       data.restoreToken,
       data.mode,
+      { champion: data.champion },
     )
   })
 

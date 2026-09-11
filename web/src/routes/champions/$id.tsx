@@ -1,5 +1,6 @@
 import { createFileRoute, Link, notFound, redirect } from '@tanstack/react-router'
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
+import { usePostHog } from 'posthog-js/react'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faLayerGroup, faShuffle } from '@fortawesome/free-solid-svg-icons'
 import { api, type ApiError } from '~/lib/api'
@@ -8,12 +9,18 @@ import SkinCard from '~/components/SkinCard'
 import Dropdown from '~/components/Dropdown'
 import ErrorState from '~/components/ErrorState'
 import JsonLd from '~/components/JsonLd'
+import ShareRanking from '~/components/ShareRanking'
 import Verdict from '~/components/Verdict'
 import { ChampionDetailSkeleton } from '~/components/Skeletons'
 import { championDisplayName } from '~/lib/skinName'
 import { canonicalLink, ogMeta } from '~/lib/games/ogMeta'
 import { breadcrumbJsonLd, itemListJsonLd } from '~/lib/games/jsonLd'
 import { answerBlock, type AnswerVoters } from '~/lib/games/answer'
+import {
+  rankingStateOf,
+  readSessionBattles,
+  settleCta,
+} from '~/lib/games/settle'
 import { btnPrimarySm, btnSecondarySm } from '~/lib/ui'
 import type { RankingRow } from '~/lib/games/types'
 
@@ -143,7 +150,15 @@ export const Route = createFileRoute('/champions/$id')({
       meta: [
         { title },
         { name: 'description', content: description },
-        ...ogMeta({ title, description, card: 'games', path }),
+        // The share card is the champion's own ranking slice: its live top
+        // three over the leader's splash, with the verdict's state on it -
+        // what a shared link should unfurl as, instead of the generic card.
+        ...ogMeta({
+          title,
+          description,
+          imagePath: `/og/rankings/champion-${champion.id.toLowerCase()}`,
+          path,
+        }),
       ],
       links: [canonicalLink(path)],
     }
@@ -175,8 +190,39 @@ export const Route = createFileRoute('/champions/$id')({
 
 function ChampionPage() {
   const { champion, wardrobe, rows, answer, name } = Route.useLoaderData()
+  const posthog = usePostHog()
   const [loreExpanded, setLoreExpanded] = useState(false)
   const [sortBy, setSortBy] = useState('release')
+
+  // The ask follows the verdict: "help settle" while it is provisional, an
+  // invitation to argue once it is settled. Same words the /settle hub and the
+  // ranking slice use (settle.ts), so the site makes one kind of ask.
+  const slug = champion.id.toLowerCase()
+  const rankingState = rankingStateOf(answer.confidence)
+  const cta = settleCta(rankingState, name)
+
+  // The loop's landing event: which ranking, in what state, and whether this
+  // visit has already battled (so "ranking viewed after a battle" is a filter,
+  // not a second event). Once per champion, like skin_page_viewed.
+  useEffect(() => {
+    posthog?.capture('ranking_viewed', {
+      page_type: 'champion',
+      champion: slug,
+      ranking_state: rankingState,
+      rated: rows.length,
+      total: wardrobe.length,
+      session_battles: readSessionBattles(),
+    })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [slug])
+
+  const ctaClick = (which: 'battle' | 'tier-drop') =>
+    posthog?.capture('settle_cta_clicked', {
+      page_type: 'champion',
+      champion: slug,
+      ranking_state: rankingState,
+      cta: which,
+    })
 
   const skinSortOptions = [
     { value: 'release', label: 'Release Order' },
@@ -297,20 +343,41 @@ function ChampionPage() {
       {/* ── The answer ───────────────────────────────────────── */}
       <div className="container mx-auto max-w-5xl px-6 pt-4">
         <Verdict answer={answer} rated={rows.length} total={wardrobe.length}>
+          {/* The supporting line for the ask, in the verdict's own state:
+              provisional says what a battle here does, settled says the
+              ranking is open to argument. Never a count of votes to go. */}
+          <p className="w-full text-sm text-gold1/90">{cta.hint}</p>
+          {/* Scoped battle: every pair is dealt from this wardrobe, so each
+              pick is evidence for THIS ranking rather than for two skins the
+              visitor did not come for. */}
+          <Link
+            to="/battle"
+            search={{ champion: slug }}
+            onClick={() => ctaClick('battle')}
+            className={btnPrimarySm}
+          >
+            <FontAwesomeIcon icon={faShuffle} className="h-4" />
+            {cta.label}
+          </Link>
           {wardrobe.length >= MIN_TIER_BOARD && (
             <Link
               to="/battle/tier-drop"
               search={{ set: `champion:${champion.id}` }}
-              className={btnPrimarySm}
+              onClick={() => ctaClick('tier-drop')}
+              className={btnSecondarySm}
             >
               <FontAwesomeIcon icon={faLayerGroup} className="h-4" />
-              Rank the whole wardrobe in one pass
+              Rank all {wardrobe.length} in one pass
             </Link>
           )}
-          <Link to="/battle" className={btnSecondarySm}>
-            <FontAwesomeIcon icon={faShuffle} className="h-4" />
-            Battle head-to-head
-          </Link>
+          <ShareRanking
+            title={name}
+            top={rows.map((r) => r.name)}
+            state={rankingState}
+            path={championPath}
+            pageType="champion"
+            champion={slug}
+          />
           <Link
             to="/methodology"
             className="text-sm font-bold text-gold2 underline underline-offset-4 transition duration-150 hover:text-gold1"

@@ -705,6 +705,15 @@ settled are the ones any of the proposals below would convert first.**
 
 ## Ranked proposals
 
+> **Status, 2026-09-11 (DONI-108, [`participation-loop.md`](./participation-loop.md)):**
+> P1 shipped earlier (DONI-98). P4 is shipped in a stronger form - the dossier's
+> CTA now opens a head-to-head session scoped to the skin's own wardrobe with
+> that skin in the first pair (`/battle?champion=<id>&skin=<id>`), so the
+> arrival intent lands on the skin the reader came for. P3 is shipped for the
+> price / line / year slices (their Tier Drop board is the second action) and
+> champion slices route to the scoped session instead. P5, P6, P7, P8, P8b, P9
+> are untouched.
+
 Expected effect, cheapest first within a tier. **Nothing here moves a
 threshold.** Everything marked *own issue* touches the voting path and is
 Brandon's call, per DONI-96.

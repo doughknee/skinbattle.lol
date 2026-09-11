@@ -661,14 +661,23 @@ export async function rankingsOgResponse(slice: string): Promise<Response> {
                 }),
               )
             : [body('No battles in this slice yet. Be the first.')]),
-          state.calibrating
-            ? text('Early rankings: still calibrating', {
+          // The verdict's own state, the same word the page prints: a shared
+          // card must not present a provisional top three as settled.
+          state.answer.confidence === 'provisional'
+            ? text('Provisional · help settle it at skinbattle.lol', {
                 fontFamily: 'Inter',
-                fontWeight: 400,
+                fontWeight: 600,
                 fontSize: 22,
                 color: C.blue2,
               })
-            : body(''),
+            : state.answer.confidence === 'confident'
+              ? text('Settled by community battles', {
+                  fontFamily: 'Inter',
+                  fontWeight: 600,
+                  fontSize: 22,
+                  color: C.gold2,
+                })
+              : body(''),
         ),
       ])
       const svg = await satori(node as never, {

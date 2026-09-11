@@ -14,12 +14,16 @@ import type {
   BattleFeedback,
   BattleMode,
   BattlePair,
+  BattleScope,
   BattleSkin,
   BattleStats,
   BattleUndoResult,
   BattleVoteResult,
   QuickBattleState,
+  ScopedStanding,
 } from '../types'
+import { hasEnoughVoters, isConfident } from '../answer'
+import type { RankingState } from '../settle'
 import { appendEvent, getDb } from './db'
 import { allCatalogSkins, ensureCatalog, getMeta, setMeta } from './catalog'
 import { ensureUser, peekUser, type GameUser } from './guests'
@@ -39,6 +43,7 @@ import {
   restorePersonalRating,
   reverseLiveUpdate,
   runRefit,
+  skinVoters,
   START_RATING,
   START_UNCERTAINTY,
   type PersonalBefore,
@@ -166,6 +171,125 @@ function loadRatedSkins(db: DatabaseSync): RatedSkin[] {
       battles: r?.battles ?? 0,
     }
   })
+}
+
+// ─── scoped battles ("help settle") ─────────────────────────────────────────
+
+// What a /battle?champion=<id>&skin=<id> link asks for. Both are untrusted
+// client strings: the champion resolves case-insensitively against the
+// catalog, and anything unresolvable falls back to the whole catalog, so a
+// stale or hand-typed link still deals a battle instead of an error.
+export interface ScopeRequest {
+  champion?: string | null
+  skin?: string | null
+}
+
+// The scoped pool: one champion's wardrobe. Pure, and handed to the SAME
+// pickers the catalog-wide deal uses - scoping restricts who can be dealt,
+// never how a pair is chosen. The statistical reasoning is in
+// docs/participation-loop.md ("matchmaking integrity"): pair selection that
+// depends only on past data and never on the vote about to be cast is
+// ignorable to the Bradley-Terry fit, and a pool restriction is the mildest
+// such design of all - it is exactly what a Tier Drop champion board already
+// does.
+export function scopePool(skins: RatedSkin[], championId: string): RatedSkin[] {
+  const id = championId.toLowerCase()
+  return skins.filter((s) => s.championId.toLowerCase() === id)
+}
+
+// The verdict state of a champion's ranking, by the two bars answer.ts judges
+// the champion page with: the leader's stored band, and - only once the band
+// is inside the bar - how many people stand behind it. The voter scan is the
+// expensive half (two passes over game_events), so it runs only when the band
+// alone can no longer decide.
+function scopeState(db: DatabaseSync, pool: RatedSkin[]): RankingState {
+  const rated = pool.filter((s) => s.battles > 0)
+  if (rated.length === 0) return 'empty'
+  const leader = rated.reduce((a, b) => (b.rating > a.rating ? b : a))
+  // The STORED band, not the idle-inflated one loadRatedSkins carries for the
+  // matchmaker: the champion page judges the stored value, and the banner
+  // here and the verdict there must say the same word about the same skin.
+  const band = Math.round(getSkinRating(db, leader.id).uncertainty)
+  if (!isConfident(band)) return 'provisional'
+  return hasEnoughVoters(skinVoters(db, leader.id)) ? 'settled' : 'provisional'
+}
+
+interface ResolvedScope {
+  info: BattleScope
+  pool: RatedSkin[]
+  // The dossier's "Help rank <skin>": this skin fights first.
+  pin: string | null
+}
+
+function resolveScope(
+  db: DatabaseSync,
+  skins: RatedSkin[],
+  req?: ScopeRequest | null,
+): ResolvedScope | null {
+  const champion = typeof req?.champion === 'string' ? req.champion.trim() : ''
+  if (!/^[a-z0-9]{1,32}$/i.test(champion)) return null
+  const pool = scopePool(skins, champion)
+  // A wardrobe of one has no battle in it: fall back to the catalog.
+  if (pool.length < 2) return null
+  const skin =
+    typeof req?.skin === 'string' && /^\d{1,12}$/.test(req.skin) ? req.skin : null
+  return {
+    info: {
+      championId: pool[0].championId,
+      championName: pool[0].championName,
+      slug: pool[0].championId.toLowerCase(),
+      total: pool.length,
+      rated: pool.filter((s) => s.battles > 0).length,
+      state: scopeState(db, pool),
+    },
+    pool,
+    pin: skin && pool.some((s) => s.id === skin) ? skin : null,
+  }
+}
+
+// Where the winner now sits inside its wardrobe, flanked by its named
+// neighbours. Over the freshly loaded pool (post-update ratings), rated
+// members only, best first.
+export function scopedStanding(
+  pool: RatedSkin[],
+  winnerId: string,
+): ScopedStanding | null {
+  const rated = pool
+    .filter((s) => s.battles > 0)
+    .sort((a, b) => b.rating - a.rating)
+  const at = rated.findIndex((s) => s.id === winnerId)
+  if (at < 0) return null
+  const above = rated[at - 1]
+  const below = rated[at + 1]
+  return {
+    rank: at + 1,
+    of: rated.length,
+    above: above ? { name: above.name, rank: at } : null,
+    below: below ? { name: below.name, rank: at + 2 } : null,
+  }
+}
+
+// This user's head-to-head battles that touched the wardrobe - lifetime, so
+// "you've fought N battles for Ahri's ranking" survives a trip to the
+// ranking page and back. Bound by wardrobe size (≤ ~30 ids), one scan of the
+// user's own rows via idx_game_events_user.
+function scopedBattleCount(
+  db: DatabaseSync,
+  userId: string,
+  pool: RatedSkin[],
+): number {
+  if (pool.length === 0) return 0
+  const ids = pool.map((s) => s.id)
+  const marks = ids.map(() => '?').join(',')
+  const row = db
+    .prepare(
+      `SELECT COUNT(*) AS c FROM game_events
+       WHERE user_id = ? AND game = ? AND type = 'battle_voted'
+         AND (json_extract(payload, '$.winnerId') IN (${marks})
+           OR json_extract(payload, '$.loserId') IN (${marks}))`,
+    )
+    .get(userId, GAME, ...ids, ...ids) as { c: number }
+  return row.c
 }
 
 const sample = <T>(arr: T[]): T => arr[Math.floor(Math.random() * arr.length)]
@@ -496,13 +620,20 @@ export function communityBattleCount(db: DatabaseSync): number {
   return row.c
 }
 
-function statsFor(db: DatabaseSync, user: GameUser | null): BattleStats {
+function statsFor(
+  db: DatabaseSync,
+  user: GameUser | null,
+  scope?: RatedSkin[],
+): BattleStats {
   const counts = userBattleCounts(db, user?.id ?? null)
   return {
     total: counts.total,
     today: counts.today,
     community: communityBattleCount(db),
     tier: user?.trustTier ?? 'guest',
+    ...(scope
+      ? { scopeBattles: user ? scopedBattleCount(db, user.id, scope) : 0 }
+      : {}),
   }
 }
 
@@ -514,6 +645,9 @@ function statsFor(db: DatabaseSync, user: GameUser | null): BattleStats {
 export async function quickBattleState(
   restoreToken?: string | null,
   refitParam?: string,
+  // `champion` scopes the deal to one wardrobe; `skin` pins that skin into the
+  // first pair (the dossier's "Help rank <skin>"). Unresolvable → catalog-wide.
+  scopeReq?: ScopeRequest | null,
 ): Promise<QuickBattleState> {
   const db = getDb()
   await ensureCatalog(db)
@@ -531,14 +665,21 @@ export async function quickBattleState(
   const skins = loadRatedSkins(db)
   if (skins.length < 2) throw new Error('The skin catalog is not ready yet.')
 
-  const pair = dealPair(db, skins, new Set())
-  const next = dealPair(db, skins, new Set([pair.a.skinId, pair.b.skinId]))
+  const scoped = resolveScope(db, skins, scopeReq)
+  const pool = scoped?.pool ?? skins
+  // A pinned skin fights first, against a matchmade challenger from the same
+  // wardrobe; every pair after it is dealt from the pool like any other.
+  const pair = scoped?.pin
+    ? dealChallengerPair(db, pool, scoped.pin, new Set())
+    : dealPair(db, pool, new Set())
+  const next = dealPair(db, pool, new Set([pair.a.skinId, pair.b.skinId]))
   return {
     pair,
     next,
-    stats: statsFor(db, known?.user ?? null),
+    stats: statsFor(db, known?.user ?? null, scoped?.pool),
     guestToken: known?.token ?? '',
     refit,
+    scope: scoped?.info ?? null,
   }
 }
 
@@ -551,6 +692,10 @@ export async function submitBattleVote(
   // just recorded is identical either way — a normal signed pick — so the
   // ranking never sees the mode. Defaults to shuffle.
   mode?: BattleMode,
+  // Scopes the NEXT pair to one wardrobe (see quickBattleState). Like `mode`,
+  // it only changes what is dealt next; the vote itself is the same signed
+  // pick whatever pool it came from.
+  scopeReq?: ScopeRequest | null,
 ): Promise<BattleVoteResult> {
   const db = getDb()
   const assetVersion = await ensureCatalog(db)
@@ -639,6 +784,10 @@ export async function submitBattleVote(
   // skins on either side - the wordless "needle" for the feedback line.
   const winnerRank = globalRank(db, live.winner.rating)
   const neighbors = rankNeighbors(db, live.winner.rating, winnerRank)
+  // Post-update ratings, for the next deal and the within-wardrobe standing.
+  const skins = loadRatedSkins(db)
+  const scoped = resolveScope(db, skins, scopeReq)
+  const pool = scoped?.pool ?? skins
   const feedback: BattleFeedback = {
     winnerSkinId: winnerId,
     winnerName: skinName(db, winnerId),
@@ -655,25 +804,26 @@ export async function submitBattleVote(
     ratedCount: ratedCount(db),
     neighborAbove: neighbors.above,
     neighborBelow: neighbors.below,
+    scope: scoped ? scopedStanding(scoped.pool, winnerId) : null,
   }
 
-  const skins = loadRatedSkins(db)
   const exclude = new Set(
     [...(recent ?? []).slice(-16), claim.a, claim.b].filter(Boolean),
   )
   // In champion mode the winner stays on: deal the next challenger against it.
   const nextPair =
     mode === 'champion'
-      ? dealChallengerPair(db, skins, winnerId, exclude)
-      : dealPair(db, skins, exclude)
+      ? dealChallengerPair(db, pool, winnerId, exclude)
+      : dealPair(db, pool, exclude)
 
   maybeAutoRefit(db, ratingEventCount(db))
 
   return {
     feedback,
     nextPair,
-    stats: statsFor(db, user),
+    stats: statsFor(db, user, scoped?.pool),
     guestToken: token,
+    scope: scoped?.info ?? null,
   }
 }
 

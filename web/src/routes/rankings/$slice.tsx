@@ -1,11 +1,14 @@
 import { createFileRoute, Link, notFound } from '@tanstack/react-router'
 import { fallbackToRaw, skinThumb } from '~/lib/img'
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
+import { usePostHog } from 'posthog-js/react'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import {
   faChevronDown,
   faCrown,
+  faFlaskVial,
   faHourglassHalf,
+  faLayerGroup,
   faMagnifyingGlass,
   faRankingStar,
   faShuffle,
@@ -13,12 +16,18 @@ import {
 import EmptyState from '~/components/EmptyState'
 import ErrorState from '~/components/ErrorState'
 import JsonLd from '~/components/JsonLd'
+import ShareRanking from '~/components/ShareRanking'
 import Verdict from '~/components/Verdict'
 import { btnChip, btnPrimarySm, btnSecondarySm } from '~/lib/ui'
 import { fetchRankings, fetchRankingsIndex } from '~/lib/games/serverFns'
 import { canonicalLink, ogMeta } from '~/lib/games/ogMeta'
 import { breadcrumbJsonLd, itemListJsonLd } from '~/lib/games/jsonLd'
 import { robotsMeta, sliceIsIndexable } from '~/lib/games/seo'
+import {
+  rankingStateOf,
+  readSessionBattles,
+  settleCta,
+} from '~/lib/games/settle'
 import { createSearcher } from '~/lib/search'
 import type {
   RankingRow,
@@ -610,8 +619,73 @@ function SliceDirectory({
   )
 }
 
+// A price / line / year slice has an exact Tier Drop board (server/tierlist.ts
+// resolveBoard): the same grammar with ':' for '-' at the first separator.
+// Champion slices go to the scoped head-to-head instead, and the catalog-wide
+// slice has no board. Below MIN_BOARD skins the board falls back to the daily,
+// so the link is only offered where it can keep its promise.
+const tierBoardFor = (slice: string, totalCount: number): string | null => {
+  const m = /^(price|line|year)-(.+)$/.exec(slice)
+  return m && totalCount >= 4 ? `${m[1]}:${m[2]}` : null
+}
+
 function RankingSlicePage() {
   const { state, index } = Route.useLoaderData()
+  const posthog = usePostHog()
+
+  // The ask follows the verdict (settle.ts): a champion slice asks for help
+  // settling that champion by name; the catalog-wide list asks for help
+  // shaping the rankings; every other slice asks for help with this one.
+  const champion = /^champion-(.+)$/.exec(state.slice)?.[1] ?? null
+  const championName = champion
+    ? (state.rows[0]?.championName ??
+      index.champions.find((l) => l.slice === state.slice)?.label ??
+      null)
+    : null
+  const rankingState = rankingStateOf(state.answer.confidence)
+  const ask =
+    champion && championName
+      ? settleCta(rankingState, championName)
+      : state.slice === 'all'
+        ? {
+            label: 'Help shape the rankings',
+            hint: 'Every battle is evidence in this list. Pick the skin you like more, and the ranking listens.',
+          }
+        : {
+            label: 'Help shape this ranking',
+            hint: 'Battles are dealt across the whole catalog; a Tier Drop board covers exactly this set in one pass.',
+          }
+  const tierBoard = tierBoardFor(state.slice, state.totalCount)
+  // The share names the set, not the page title: "975 RP skins", not "Best
+  // 975 RP skins" - the ranking decides what is best, the share just quotes it.
+  const shareTitle =
+    championName ??
+    (state.slice === 'all'
+      ? 'League of Legends skins'
+      : state.title.replace(/^Best /, ''))
+
+  useEffect(() => {
+    posthog?.capture('ranking_viewed', {
+      page_type: 'ranking-slice',
+      slice: state.slice,
+      champion,
+      ranking_state: rankingState,
+      rated: state.ratedCount,
+      total: state.totalCount,
+      session_battles: readSessionBattles(),
+    })
+    // Once per slice.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [state.slice])
+
+  const ctaClick = (cta: 'battle' | 'tier-drop') =>
+    posthog?.capture('settle_cta_clicked', {
+      page_type: 'ranking-slice',
+      slice: state.slice,
+      champion,
+      ranking_state: rankingState,
+      cta,
+    })
 
   // Pages pulled through "Show more", keyed to their slice so an in-page
   // slice switch can never splice one list's tail onto another's head.
@@ -738,10 +812,46 @@ function RankingSlicePage() {
         rated={state.ratedCount}
         total={state.totalCount}
       >
-        <Link to="/battle" className={btnPrimarySm}>
+        <p className="w-full text-sm text-gold1/90">{ask.hint}</p>
+        <Link
+          to="/battle"
+          search={champion ? { champion } : {}}
+          onClick={() => ctaClick('battle')}
+          className={btnPrimarySm}
+        >
           <FontAwesomeIcon icon={faShuffle} className="h-4" />
-          Battle to sharpen this list
+          {ask.label}
         </Link>
+        {tierBoard && (
+          <Link
+            to="/battle/tier-drop"
+            search={{ set: tierBoard }}
+            onClick={() => ctaClick('tier-drop')}
+            className={btnSecondarySm}
+          >
+            <FontAwesomeIcon icon={faLayerGroup} className="h-4" />
+            Rank this set in one pass
+          </Link>
+        )}
+        <ShareRanking
+          title={shareTitle}
+          top={state.rows.map((r) => r.name)}
+          state={rankingState}
+          path={`/rankings/${state.slice}`}
+          pageType="ranking-slice"
+          champion={champion}
+        />
+        {/* Where the next battle would count most. Kept off the catalog-wide
+            slice, whose ask is the whole catalog anyway. */}
+        {state.slice !== 'all' && (
+          <Link
+            to="/settle"
+            className="text-sm font-bold text-gold2 underline underline-offset-4 transition duration-150 hover:text-gold1"
+          >
+            <FontAwesomeIcon icon={faFlaskVial} className="mr-1.5 h-3.5" />
+            Rankings that need you
+          </Link>
+        )}
       </Verdict>
 
       <DataSummary state={state} />

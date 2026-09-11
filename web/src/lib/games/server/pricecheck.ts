@@ -123,10 +123,10 @@ function gradeGuess(
   const facts = factsFor(skinId)
   const skin = db
     .prepare(
-      'SELECT name, champion_name AS championName, splash_url AS splashUrl FROM catalog_skins WHERE id = ?',
+      'SELECT name, champion_id AS championId, champion_name AS championName, splash_url AS splashUrl FROM catalog_skins WHERE id = ?',
     )
     .get(skinId) as
-    | { name: string; championName: string; splashUrl: string }
+    | { name: string; championId: string; championName: string; splashUrl: string }
     | undefined
   const actual = facts?.cost ?? 0
   const gi = (PRICE_TIERS as readonly number[]).indexOf(guess)
@@ -134,6 +134,7 @@ function gradeGuess(
   const result: PriceRoundResult = {
     skinId,
     name: skin?.name ?? 'Unknown skin',
+    championId: skin?.championId ?? '',
     championName: skin?.championName ?? '',
     splashUrl: skin?.splashUrl ?? '',
     guess,

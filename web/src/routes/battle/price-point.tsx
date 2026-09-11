@@ -5,11 +5,13 @@ import {
   faCoins,
   faFire,
   faShareNodes,
+  faShuffle,
 } from '@fortawesome/free-solid-svg-icons'
 import { usePostHog } from 'posthog-js/react'
+import { Link } from '@tanstack/react-router'
 import ErrorState from '~/components/ErrorState'
 import { toast } from '~/components/Toaster'
-import { btnPrimarySm } from '~/lib/ui'
+import { btnPrimarySm, btnSecondarySm } from '~/lib/ui'
 import {
   fetchDailyHub,
   fetchPriceCheck,
@@ -324,6 +326,27 @@ function PriceCheckPage() {
             <FontAwesomeIcon icon={faShareNodes} className="h-4" />
             Share result
           </button>
+        )}
+        {/* The daily → battle handoff: the last skin priced leads into its
+            champion's scoped battle, so the next pick is evidence for a
+            ranking the player just looked at. */}
+        {finished && last?.championId && (
+          <Link
+            to="/battle"
+            search={{ champion: last.championId.toLowerCase() }}
+            onClick={() =>
+              posthog?.capture('settle_cta_clicked', {
+                page_type: 'daily-puzzle',
+                champion: last.championId.toLowerCase(),
+                ranking_state: null,
+                cta: 'battle',
+              })
+            }
+            className={btnSecondarySm}
+          >
+            <FontAwesomeIcon icon={faShuffle} className="h-4" />
+            Battle {last.championName} skins
+          </Link>
         )}
         {state.streak.current > 0 && (
           <span className="flex items-center gap-1.5 text-sm font-bold text-gold2">

@@ -12,14 +12,18 @@ import { motion, useAnimate, useReducedMotion, useSpring } from 'motion/react'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import {
   faArrowTrendUp,
+  faArrowUp,
   faBolt,
   faCompress,
   faCrown,
   faExpand,
   faFire,
+  faFlaskVial,
   faKeyboard,
   faMagnifyingGlassPlus,
+  faRankingStar,
   faRotateLeft,
+  faScaleUnbalanced,
   faShuffle,
   faTrophy,
   faUser,
@@ -41,6 +45,13 @@ import {
   submitBattleVote,
 } from '~/lib/games/serverFns'
 import { canonicalLink, ogMeta } from '~/lib/games/ogMeta'
+import { robotsMeta } from '~/lib/games/seo'
+import {
+  bumpSessionBattles,
+  isMilestone,
+  type RankingState,
+} from '~/lib/games/settle'
+import { btnChip, btnPrimarySm, btnSecondarySm } from '~/lib/ui'
 import { fallbackToRaw, skinThumb } from '~/lib/img'
 import { guestRestoreToken, rememberGuestToken } from '~/lib/games/client'
 import {
@@ -57,16 +68,45 @@ import type {
   BattleFeedback,
   BattleMode,
   BattlePair,
+  BattleScope,
   BattleSkin,
   BattleStats,
 } from '~/lib/games/types'
 
+interface BattleSearch {
+  refit?: string
+  champion?: string
+  // A number, not a string: the router JSON-encodes search values, and a
+  // numeric string would travel as ?skin=%22103001%22. Skin ids are small
+  // integers, so the number form is exact and reads as ?skin=103001.
+  skin?: number
+}
+
 export const Route = createFileRoute('/battle/')({
   // ?refit=<secret> is the manual Bradley-Terry refit trigger (cron/curl
   // hits this URL; the loader passes it through to the server).
-  validateSearch: (s: Record<string, unknown>): { refit?: string } =>
-    typeof s.refit === 'string' ? { refit: s.refit } : {},
-  loaderDeps: ({ search }) => ({ refit: search.refit }),
+  // ?champion=<id> scopes the session to one wardrobe - the "help settle"
+  // loop every ranking surface links into - and ?skin=<id> pins that skin
+  // into the first pair (the dossier's "Help rank <skin>"). Both are shaped
+  // here and resolved on the server; anything unresolvable deals from the
+  // whole catalog and the page says nothing about settling. A hand-typed
+  // ?skin=103001 arrives JSON-parsed as a number; a quoted one as a string,
+  // so both spellings are accepted and normalised.
+  validateSearch: (s: Record<string, unknown>): BattleSearch => ({
+    ...(typeof s.refit === 'string' ? { refit: s.refit } : {}),
+    ...(typeof s.champion === 'string' && /^[a-z0-9]{1,32}$/i.test(s.champion)
+      ? { champion: s.champion.toLowerCase() }
+      : {}),
+    ...((typeof s.skin === 'string' || typeof s.skin === 'number') &&
+    /^\d{1,12}$/.test(String(s.skin))
+      ? { skin: Number(s.skin) }
+      : {}),
+  }),
+  loaderDeps: ({ search }) => ({
+    refit: search.refit,
+    champion: search.champion,
+    skin: search.skin === undefined ? undefined : String(search.skin),
+  }),
   // /battle is the door AND the game: Quick Battle plays at the top, the
   // daily-challenges strip renders below. Both payloads load in parallel
   // BEFORE the route renders (SSR on first visit, prefetched on navigation)
@@ -74,48 +114,66 @@ export const Route = createFileRoute('/battle/')({
   loader: async ({ deps }) => {
     const restoreToken = guestRestoreToken()
     const [qb, hub] = await Promise.all([
-      fetchQuickBattle({ data: { restoreToken, refit: deps.refit } }),
+      fetchQuickBattle({
+        data: {
+          restoreToken,
+          refit: deps.refit,
+          champion: deps.champion,
+          skin: deps.skin,
+        },
+      }),
       fetchDailyHub({ data: { restoreToken } }),
     ])
     return { qb, hub }
   },
-  head: ({ loaderData }) => ({
-    meta: [
-      { title: 'Battle | SkinBattle' },
-      {
-        name: 'description',
-        content:
-          'Two League skins. Pick the one you like more. Every vote builds the community ranking.',
-      },
-      ...ogMeta({
-        title: 'Battle | SkinBattle',
-        description:
-          'Two League skins. Pick the one you like more. Every vote builds the community ranking, and your personal tier list.',
-        card: 'quick-battle',
-        path: '/battle',
-      }),
-    ],
-    // Start the splash downloads from the <head>, before the body parses or
-    // React hydrates: the visible pair at high priority, the on-deck pair at
-    // low. (The CommunityDragon preconnect lives in the root document, so the
-    // socket is already warming by the time these preloads fire.)
-    links: [
-      canonicalLink('/battle'),
-      ...(loaderData
-        ? [
-            { pair: loaderData.qb.pair, priority: 'high' as const },
-            { pair: loaderData.qb.next, priority: 'low' as const },
-          ].flatMap(({ pair, priority }) =>
-            [pair.a, pair.b].map((s) => ({
-              rel: 'preload',
-              as: 'image',
-              href: s.splashUrl,
-              fetchPriority: priority,
-            })),
-          )
-        : []),
-    ],
-  }),
+  head: ({ loaderData }) => {
+    // A scoped session is the same page working on one wardrobe: it keeps
+    // /battle's canonical (there is one battle page), carries noindex so
+    // 170 ?champion= spellings never compete with it, and tells the tab
+    // what it is settling.
+    const scope = loaderData?.qb.scope ?? null
+    const title = scope
+      ? `Help settle ${scope.championName}'s ranking | SkinBattle`
+      : 'Battle | SkinBattle'
+    const description = scope
+      ? `Two ${scope.championName} skins at a time. Every pick adds evidence to the community ranking of ${scope.championName}'s wardrobe.`
+      : 'Two League skins. Pick the one you like more. Every vote builds the community ranking.'
+    return {
+      meta: [
+        { title },
+        { name: 'description', content: description },
+        ...(scope ? robotsMeta(false) : []),
+        ...ogMeta({
+          title,
+          description: scope
+            ? description
+            : 'Two League skins. Pick the one you like more. Every vote builds the community ranking, and your personal tier list.',
+          card: 'quick-battle',
+          path: '/battle',
+        }),
+      ],
+      // Start the splash downloads from the <head>, before the body parses or
+      // React hydrates: the visible pair at high priority, the on-deck pair at
+      // low. (The CommunityDragon preconnect lives in the root document, so the
+      // socket is already warming by the time these preloads fire.)
+      links: [
+        canonicalLink('/battle'),
+        ...(loaderData
+          ? [
+              { pair: loaderData.qb.pair, priority: 'high' as const },
+              { pair: loaderData.qb.next, priority: 'low' as const },
+            ].flatMap(({ pair, priority }) =>
+              [pair.a, pair.b].map((s) => ({
+                rel: 'preload',
+                as: 'image',
+                href: s.splashUrl,
+                fetchPriority: priority,
+              })),
+            )
+          : []),
+      ],
+    }
+  },
   errorComponent: ({ error }) => (
     <ErrorState
       title="Couldn't start the battle"
@@ -123,7 +181,14 @@ export const Route = createFileRoute('/battle/')({
       back={{ to: '/', label: 'Back home' }}
     />
   ),
-  component: BattlePage,
+  // Keyed by scope: /battle?champion=ahri → /battle is a same-route
+  // navigation, and the page seeds its arena from loader data once on mount,
+  // so a scope change must remount rather than play a stale wardrobe under a
+  // fresh banner.
+  component: () => {
+    const { qb } = Route.useLoaderData()
+    return <BattlePage key={qb.scope?.slug ?? 'all'} />
+  },
 })
 
 // How long the pick is acknowledged (winner blooms, loser concedes) before
@@ -770,9 +835,22 @@ function FeedbackBar({ feedback }: { feedback: BattleFeedback | null }) {
 // named place: "you put this skin at #789, right behind X, just ahead of Y."
 // Lives below the bar (never above the cards), so its height never disturbs
 // the act; renders only once a verdict exists, then stays put across picks.
-function Standing({ feedback }: { feedback: BattleFeedback | null }) {
+function Standing({
+  feedback,
+  scopeName,
+}: {
+  feedback: BattleFeedback | null
+  // In a scoped session the standing is the winner's place INSIDE that
+  // wardrobe - "#2 of 14 Ahri skins" - which is the ranking the visitor came
+  // to help; the catalog-wide rank would be true but beside the point.
+  scopeName?: string
+}) {
   if (!feedback) return null
-  const { neighborAbove, neighborBelow } = feedback
+  const scoped = scopeName ? feedback.scope : null
+  const rank = scoped ? scoped.rank : feedback.rank
+  const of = scoped ? scoped.of : feedback.ratedCount
+  const neighborAbove = scoped ? scoped.above : feedback.neighborAbove
+  const neighborBelow = scoped ? scoped.below : feedback.neighborBelow
   // A subordinate caption of the beat, not a second sentence: it hugs the line
   // above (-mt) and runs smaller/dimmer, so the eye reads one verdict with a
   // "where it landed" detail. No winner name (the beat just said it).
@@ -783,10 +861,14 @@ function Standing({ feedback }: { feedback: BattleFeedback | null }) {
     >
       <span>
         <span className="font-bold text-gold2/90">
-          #{feedback.rank.toLocaleString()}
+          #{rank.toLocaleString()}
         </span>
-        {feedback.ratedCount > 0 && (
-          <> of {feedback.ratedCount.toLocaleString()}</>
+        {of > 0 && (
+          <>
+            {' '}
+            of {of.toLocaleString()}
+            {scoped && ` ${scopeName} skins`}
+          </>
         )}
       </span>
       {(neighborAbove || neighborBelow) && (
@@ -810,6 +892,165 @@ function Standing({ feedback }: { feedback: BattleFeedback | null }) {
         </span>
       )}
     </p>
+  )
+}
+
+// ─── the scoped session ("help settle") ─────────────────────────────────────
+
+// The verdict state as a chip, in the Verdict panel's own tones and words.
+function StateChip({ state }: { state: RankingState }) {
+  const tone =
+    state === 'settled'
+      ? 'bg-gold5/20 text-gold2 outline-gold2/50'
+      : state === 'provisional'
+        ? 'bg-blue5/30 text-blue1 outline-blue3/50'
+        : 'bg-hextech-black/40 text-grey1 outline-icon/25'
+  return (
+    <span
+      className={`inline-flex items-center gap-1 px-2 py-0.5 align-middle font-sans text-xs font-bold uppercase tracking-wider outline -outline-offset-1 ${tone}`}
+    >
+      <FontAwesomeIcon
+        icon={state === 'settled' ? faRankingStar : faFlaskVial}
+        className="h-3"
+      />
+      {state === 'settled'
+        ? 'Settled'
+        : state === 'provisional'
+          ? 'Provisional'
+          : 'No battles yet'}
+    </span>
+  )
+}
+
+// What this session is settling, and how far along it is - the frame the
+// scoped arena sits in. Everything here is read from the server's resolution
+// of the scope, so the page can never claim to be settling a wardrobe it is
+// not actually dealing from. `contributed` is this user's lifetime count of
+// head-to-head battles on the wardrobe (stats.scopeBattles), refreshed with
+// every vote, so it survives a trip to the ranking page and back.
+function ScopeBanner({
+  scope,
+  contributed,
+}: {
+  scope: BattleScope
+  contributed: number
+}) {
+  return (
+    <section
+      aria-label="What this battle settles"
+      className="animate-fade-up relative z-20 mb-6 flex flex-col gap-4 bg-hextech-black/40 p-4 outline outline-icon/20 -outline-offset-1 sm:flex-row sm:items-center sm:justify-between"
+    >
+      <div className="min-w-0">
+        <p className="mb-1 text-xs font-semibold uppercase tracking-[0.25em] text-gold2">
+          Helping settle
+        </p>
+        <p className="flex flex-wrap items-center gap-x-2 gap-y-1 font-serif text-xl font-bold text-gold1">
+          {scope.championName}'s ranking
+          <StateChip state={scope.state} />
+        </p>
+        <p className="mt-1 text-sm text-grey1">
+          {scope.rated.toLocaleString()} of {scope.total.toLocaleString()} skins
+          rated
+          {contributed > 0 && (
+            <>
+              {' '}
+              · you've fought{' '}
+              <b className="text-gold1">{contributed.toLocaleString()}</b>{' '}
+              {contributed === 1 ? 'battle' : 'battles'} for it
+            </>
+          )}
+        </p>
+      </div>
+      <div className="flex flex-wrap items-center gap-2">
+        <Link
+          to="/champions/$id"
+          params={{ id: scope.championId.toLowerCase() }}
+          className={btnChip}
+        >
+          <FontAwesomeIcon icon={faRankingStar} className="h-3.5 text-gold2" />
+          See {scope.championName} rankings
+        </Link>
+        <Link
+          to="/settle"
+          className="px-2 text-sm font-bold text-gold2 transition duration-150 hover:text-gold1"
+        >
+          More rankings that need you
+        </Link>
+        <Link
+          to="/battle"
+          className="px-2 text-sm text-grey1 transition duration-150 hover:text-gold1"
+        >
+          Battle everything instead
+        </Link>
+      </div>
+    </section>
+  )
+}
+
+// The payoff at a milestone (settle.ts isMilestone): a line that says what the
+// battles so far amount to, in words the data pays for, and the two ways on -
+// keep going, or go and look at the ranking. Rendered once a milestone is
+// reached and left in place until the next replaces it, so it never flickers
+// in and out below the arena. Every claim is grounded: the live rating update
+// is synchronous, so the champion page already reflects these picks; the
+// personal tier list is written on every vote (applyPersonalUpdate).
+function MilestoneStrip({
+  n,
+  scope,
+  lifetime,
+  onKeep,
+}: {
+  n: number // battles this visit, in this scope
+  scope: BattleScope
+  lifetime: number // stats.scopeBattles
+  onKeep: () => void
+}) {
+  const name = scope.championName
+  const line =
+    n === 1
+      ? `Your first battle for ${name}'s ranking is in. Every pick adds evidence to the community ranking.`
+      : n < 5
+        ? `${n} battles contributed to ${name}'s ranking. Keep going - it adds up.`
+        : scope.state === 'settled'
+          ? `${n} battles this visit. ${name}'s ranking is settled, and your battles keep it honest.`
+          : `You've contributed ${n} battles to ${name}'s ranking this visit.`
+  const total = lifetime > n ? ` ${lifetime.toLocaleString()} in all.` : ''
+  return (
+    <section
+      key={n}
+      aria-live="polite"
+      className="animate-feedback-pop mx-auto mt-6 max-w-2xl bg-gold5/10 p-4 text-center outline outline-gold2/30 -outline-offset-1"
+    >
+      <p className="text-gold1">
+        {line}
+        {total}
+      </p>
+      {n >= 5 && (
+        <p className="mt-1 text-sm text-grey1">
+          Your personal tier list is taking shape too.
+        </p>
+      )}
+      <div className="mt-3 flex flex-wrap items-center justify-center gap-2">
+        <button type="button" onClick={onKeep} className={btnPrimarySm}>
+          <FontAwesomeIcon icon={faArrowUp} className="h-4" />
+          Keep battling
+        </button>
+        <Link
+          to="/champions/$id"
+          params={{ id: scope.championId.toLowerCase() }}
+          className={btnSecondarySm}
+        >
+          <FontAwesomeIcon icon={faRankingStar} className="h-4" />
+          See {name} rankings
+        </Link>
+        {n >= 5 && (
+          <Link to="/profile" className={btnSecondarySm}>
+            <FontAwesomeIcon icon={faScaleUnbalanced} className="h-4" />
+            Your Mirror
+          </Link>
+        )}
+      </div>
+    </section>
   )
 }
 
@@ -940,6 +1181,7 @@ const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms))
 
 function BattlePage() {
   const { qb: initial, hub } = Route.useLoaderData()
+  const { skin: pinnedSkin } = Route.useSearch()
   const { login } = useAuth()
   const posthog = usePostHog()
   const [view, setView] = useState<View>({
@@ -950,6 +1192,15 @@ function BattlePage() {
   })
   const [session, setSession] = useState(0)
   const [history, setHistory] = useState<HistoryEntry[]>([])
+  // The scoped session, as the server resolved it (null = whole catalog).
+  // Re-read from every vote response: a pick can be the one that settles the
+  // ranking, and the banner should say so.
+  const [scope, setScope] = useState<BattleScope | null>(initial.scope)
+  // Battles that COUNTED this visit, in this scope (only successful votes;
+  // `session` moves at pick time and is walked back on failure), and the last
+  // milestone reached, which the strip below the arena renders.
+  const contributedRef = useRef(0)
+  const [milestone, setMilestone] = useState(0)
   // Screen-shake on each pick: a short, decaying jolt of the whole arena (the
   // classic "impact" juice). Driven imperatively via useAnimate so it replays
   // every pick without remounting the arena; skipped under reduced-motion.
@@ -965,7 +1216,12 @@ function BattlePage() {
   const [theater, setTheater] = useState(false)
   // Loop mode. 'champion' (default) is king-of-the-hill — the winner stays on
   // and only the challenger swaps; 'shuffle' deals a fresh pair every round.
-  const [mode, setMode] = useState<BattleMode>('champion')
+  // A scoped session opens in shuffle: the point is evidence across one
+  // wardrobe, which the matchmaker spreads best over fresh pairs, and shuffle
+  // has the next pair preloaded so the loop never waits on the network.
+  const [mode, setMode] = useState<BattleMode>(
+    initial.scope ? 'shuffle' : 'champion',
+  )
   // King-of-the-hill bookkeeping (champion mode only): which slot holds the
   // reigning champion, and its run of consecutive defences.
   const [championSide, setChampionSide] = useState<'a' | 'b' | null>(null)
@@ -995,6 +1251,8 @@ function BattlePage() {
   // keyboard listener every round.
   const modeRef = useRef(mode)
   modeRef.current = mode
+  const scopeRef = useRef(scope)
+  scopeRef.current = scope
   const championSideRef = useRef(championSide)
   championSideRef.current = championSide
   const streakRef = useRef(streak)
@@ -1057,6 +1315,20 @@ function BattlePage() {
     if (initial.refit) console.log('rating refit:', initial.refit)
   }, [initial.refit])
 
+  // The loop's entry event: an arena is on screen. Scope, pin and verdict
+  // state travel with it so the funnel can split "started a scoped session
+  // from a provisional ranking" from a walk-in at /battle. Once per mount
+  // (the component is keyed by scope, so a scope change is a new mount).
+  useEffect(() => {
+    posthog?.capture('battle_started', {
+      champion: initial.scope?.slug ?? null,
+      ranking_state: initial.scope?.state ?? null,
+      pinned_skin: pinnedSkin === undefined ? null : String(pinnedSkin),
+      battle_mode: initial.scope ? 'shuffle' : 'champion',
+    })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
   // Theater chrome: Esc backs out, and the page behind the overlay keeps
   // its scroll position.
   useEffect(() => {
@@ -1078,7 +1350,10 @@ function BattlePage() {
   const resync = useCallback(async () => {
     try {
       const s = await fetchQuickBattle({
-        data: { restoreToken: guestRestoreToken() },
+        data: {
+          restoreToken: guestRestoreToken(),
+          champion: scopeRef.current?.slug,
+        },
       })
       rememberGuestToken(s.guestToken)
       setView((v) => ({ ...v, current: s.pair, next: s.next, stats: s.stats }))
@@ -1180,6 +1455,7 @@ function BattlePage() {
           recent: recentRef.current,
           restoreToken: guestRestoreToken(),
           mode: m,
+          champion: scopeRef.current?.slug,
         },
       })
       votePromise.catch(() => {
@@ -1210,18 +1486,32 @@ function BattlePage() {
 
       const onVoted = (res: Awaited<typeof votePromise>) => {
         rememberGuestToken(res.guestToken)
-        posthog.capture('battle_vote_submitted', {
+        const sc = scopeRef.current
+        posthog?.capture('battle_vote_submitted', {
           winner_skin_id: winnerId,
+          loser_skin_id: loserSkin.skinId,
           winner_skin_name: res.feedback.winnerName,
           loser_skin_name: res.feedback.loserName,
           elo_delta: res.feedback.delta,
           winner_rank: res.feedback.rank,
           agreement_pct: res.feedback.agreementPct,
+          // session_picks = 1 is the first vote of a visit; = 2 and = 5 are
+          // the funnel's second- and fifth-battle steps (filters, not events).
           session_picks: picksMadeRef.current,
           player_tier: res.stats.tier,
           battle_mode: m,
           streak: m === 'champion' ? newStreak : undefined,
+          scope_champion: sc?.slug ?? null,
+          ranking_state: res.scope?.state ?? null,
+          scope_rank: res.feedback.scope?.rank ?? null,
         })
+        bumpSessionBattles()
+        if (sc) {
+          setScope(res.scope)
+          const n = contributedRef.current + 1
+          contributedRef.current = n
+          if (isMilestone(n)) setMilestone(n)
+        }
         setHistory((h) => [newHistoryEntry(res), ...h].slice(0, HISTORY_CAP))
         setCanUndo(true)
         playWhoosh()
@@ -1312,7 +1602,7 @@ function BattlePage() {
         }
         if (newBest) {
           toast(`New best reign — ${newStreak} straight! 🔥`, 'info')
-          posthog.capture('battle_reign_best', { streak: newStreak })
+          posthog?.capture('battle_reign_best', { streak: newStreak })
         }
 
         const np = res.nextPair
@@ -1429,7 +1719,10 @@ function BattlePage() {
     recentRef.current = [...recentRef.current, skinId].slice(-16)
     try {
       const s = await fetchQuickBattle({
-        data: { restoreToken: guestRestoreToken() },
+        data: {
+          restoreToken: guestRestoreToken(),
+          champion: scopeRef.current?.slug,
+        },
       })
       setView((prev) => (prev.next ? { ...prev, next: s.pair } : prev))
     } catch {
@@ -1455,7 +1748,10 @@ function BattlePage() {
       void (async () => {
         try {
           const s = await fetchQuickBattle({
-            data: { restoreToken: guestRestoreToken() },
+            data: {
+              restoreToken: guestRestoreToken(),
+              champion: scopeRef.current?.slug,
+            },
           })
           rememberGuestToken(s.guestToken)
           setView((prev) => (prev.next ? prev : { ...prev, next: s.pair }))
@@ -1491,6 +1787,13 @@ function BattlePage() {
   }, [pick])
 
   const { current, feedback, stats } = view
+
+  // "Keep battling" on the milestone strip: the cards are above it (below it
+  // on a phone, once scrolled), so bring them back into view.
+  const keepBattling = useCallback(() => {
+    arenaRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+  }, [arenaRef])
+
   // First load plays the one-time reveal ceremony; every pair after it gets the
   // per-round square-up entrance. During the verdict beat nothing re-enters.
   // (Still used by the VS badge below.)
@@ -1732,7 +2035,8 @@ function BattlePage() {
         <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-3">
           <div>
             <p className="mb-1.5 text-sm font-semibold uppercase tracking-[0.3em] text-gold2">
-              Endless · which do you like more?
+              {scope ? `${scope.championName} skins` : 'Endless'} · which do you
+              like more?
             </p>
             <h1 className="font-serif text-4xl md:text-5xl font-bold text-gold1">
               Head-to-Head
@@ -1748,6 +2052,10 @@ function BattlePage() {
           </div>
         )}
       </header>
+
+      {scope && (
+        <ScopeBanner scope={scope} contributed={stats.scopeBattles ?? 0} />
+      )}
 
       {/* The arena. Stacked on mobile (thumb-first - share links open on
           phones), side by side from md up. In theater mode it relocates
@@ -1804,8 +2112,16 @@ function BattlePage() {
         <>
           {arena}
           <FeedbackBar feedback={feedback} />
-          <Standing feedback={feedback} />
+          <Standing feedback={feedback} scopeName={scope?.championName} />
           <ConsensusCallout feedback={feedback} />
+          {scope && milestone > 0 && (
+            <MilestoneStrip
+              n={milestone}
+              scope={scope}
+              lifetime={stats.scopeBattles ?? 0}
+              onKeep={keepBattling}
+            />
+          )}
         </>
       )}
 

@@ -2,6 +2,7 @@
 // lives under ./server - never import that from components.
 
 import type { AnswerBlock, AnswerVoters } from './answer'
+import type { RankingState } from './settle'
 
 export type GameId = 'splashdle' | 'price-check' | 'chroma-vision'
 
@@ -138,6 +139,66 @@ export interface BattleStats {
   today: number
   community: number // all battles ever fought, by everyone
   tier: 'guest' | 'member'
+  // In a scoped session: this user's lifetime head-to-head battles that
+  // touched the scoped wardrobe - "you've fought N battles for Ahri's
+  // ranking". Absent when the session is not scoped.
+  scopeBattles?: number
+}
+
+// ─── Scoped battles ("help settle") ─────────────────────────────────────────
+
+// The one wardrobe a battle session is scoped to (/battle?champion=<id>), as
+// the server resolved it: what the matchmaker deals from, and the verdict
+// state of that champion's ranking so the page can say what it is helping.
+// Null on the page means the link did not resolve and the whole catalog is in
+// play - the page must not claim to be settling anything.
+export interface BattleScope {
+  championId: string // DDragon id, e.g. 'MissFortune'
+  championName: string
+  slug: string // lowercase id: the URL and ranking-slice spelling
+  total: number // ownable skins in the wardrobe
+  rated: number // with battle data
+  state: RankingState
+}
+
+// Where the just-won skin sits INSIDE the scoped wardrobe, with its named
+// neighbours - the within-champion twin of the global standing.
+export interface ScopedStanding {
+  rank: number
+  of: number
+  above: RankNeighbor | null
+  below: RankNeighbor | null
+}
+
+// One champion on the /settle hub: its ranking's verdict state and, for a
+// provisional one, which of the two published bars the leader still misses.
+// Nothing here is a countdown - the band and the head count are the model's
+// own numbers, and the bars are answer.ts's published constants.
+export interface SettleRow {
+  championId: string
+  championName: string
+  slug: string
+  total: number
+  rated: number
+  state: RankingState
+  // 'band': the leader's band is still wider than the bar. 'voters': the band
+  // is inside the bar but too few separate people stand behind it. Null when
+  // the ranking is settled or has no leader.
+  missing: 'band' | 'voters' | null
+  leader: {
+    name: string
+    band: number // rounded ± Elo, the number the pages print
+    battles: number
+    voters: number // heads at face value, members + guests (answer.ts prints the same)
+  } | null
+}
+
+export interface SettleHubState {
+  // Rankings that need participation: provisional first (the ones only a head
+  // count away, then by band, tightest first), then the untouched wardrobes.
+  // Settled rankings are counted, not listed - they do not need anyone.
+  rows: SettleRow[]
+  counts: { settled: number; provisional: number; empty: number; champions: number }
 }
 
 // What a pick answers back with (principle 1): the winner's rating movement
@@ -161,6 +222,8 @@ export interface BattleFeedback {
   ratedCount: number // the denominator for "#789 of 1,420" (0 if unknown)
   neighborAbove: RankNeighbor | null // the skin one rung higher, or null at #1
   neighborBelow: RankNeighbor | null // the skin one rung lower, or null at last
+  // The winner's place among its champion's skins - only in a scoped session.
+  scope: ScopedStanding | null
 }
 
 export interface RankNeighbor {
@@ -183,6 +246,7 @@ export interface QuickBattleState {
   stats: BattleStats
   guestToken: string
   refit?: RefitSummary // present only when a manual refit was triggered
+  scope: BattleScope | null
 }
 
 export interface BattleVoteResult {
@@ -190,6 +254,8 @@ export interface BattleVoteResult {
   nextPair: BattlePair
   stats: BattleStats
   guestToken: string
+  // Re-resolved after the vote: a pick can be the one that settles a ranking.
+  scope: BattleScope | null
 }
 
 export interface BattleUndoResult {
@@ -327,6 +393,7 @@ export interface SharedTierListState {
 export interface PriceRoundResult {
   skinId: string
   name: string
+  championId: string // DDragon id, for the post-game scoped battle link
   championName: string
   splashUrl: string
   guess: number
