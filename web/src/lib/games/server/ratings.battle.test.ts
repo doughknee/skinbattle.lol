@@ -1,6 +1,6 @@
 import { DatabaseSync } from 'node:sqlite'
 import { describe, expect, it } from 'vitest'
-import { getSkinRating, runRefit } from './ratings'
+import { getSkinRating, runRefit, skinVoters } from './ratings'
 
 // Minimal in-memory schema covering only the tables runRefit touches.
 function makeDb(): DatabaseSync {
@@ -86,5 +86,73 @@ describe('quick-battle refit: per-voter-per-skin influence cap', () => {
     // the wins are spread across many people.
     expect(organicS.rating).toBeGreaterThan(farmS.rating)
     expect(organicSummary.flagged ?? 0).toBe(0)
+  })
+})
+
+// A Tier Drop submission: one event, many skins placed. These feed the same
+// tallies as head-to-head votes, so they have to feed the head count too.
+const tierSubmit = (
+  db: DatabaseSync,
+  userId: string,
+  tiers: Record<string, string[]>,
+) =>
+  db
+    .prepare(
+      `INSERT INTO game_events (user_id, game, puzzle_date, type, payload, question_asked, asset_version, trust_tier, created_at)
+       VALUES (?, 'tier-list', '2026-06-15', 'tier_submitted', ?, 'q', 'x', 'guest', '2026-06-15T12:00:00.000Z')`,
+    )
+    .run(userId, JSON.stringify({ boardId: 'b', tiers }))
+
+describe('skinVoters: how many people, not how much evidence', () => {
+  it('counts distinct people, not votes', () => {
+    const db = makeDb()
+    member(db, 'F')
+    // The DONI-93 shape: one person, a pile of battles on one skin.
+    Array.from({ length: 12 }, (_, i) => 'c' + i).forEach((c, i) =>
+      vote(db, 'F', 'S', c, i),
+    )
+    expect(skinVoters(db, 'S')).toEqual({ members: 1, guests: 0 })
+    expect(getSkinRating(db, 'S').battles).toBe(0) // not refit yet
+    runRefit(db)
+    // Twelve battles of volume, one opinion behind them. That gap is the bug
+    // DONI-94 closes, and it is invisible in the band alone.
+    expect(getSkinRating(db, 'S').battles).toBe(12)
+  })
+
+  it('sees the skin on either side of the pair', () => {
+    const db = makeDb()
+    member(db, 'W')
+    member(db, 'L')
+    vote(db, 'W', 'S', 'other', 0) // S won
+    vote(db, 'L', 'other', 'S', 1) // S lost
+    expect(skinVoters(db, 'S')).toEqual({ members: 2, guests: 0 })
+  })
+
+  it('splits members from signed-out visitors', () => {
+    const db = makeDb()
+    member(db, 'M')
+    db.prepare('INSERT INTO game_users (id, logto_sub) VALUES (?, NULL)').run('G')
+    vote(db, 'M', 'S', 'a', 0)
+    vote(db, 'G', 'S', 'b', 1)
+    // A voter with no game_users row at all is a guest too, not a crash.
+    vote(db, 'ghost', 'S', 'c', 2)
+    expect(skinVoters(db, 'S')).toEqual({ members: 1, guests: 2 })
+  })
+
+  it('counts Tier Drop placements, which also move the rating', () => {
+    const db = makeDb()
+    member(db, 'T')
+    tierSubmit(db, 'T', { S: ['S'], A: ['a', 'b'], D: ['c'] })
+    expect(skinVoters(db, 'S')).toEqual({ members: 1, guests: 0 })
+    expect(skinVoters(db, 'a')).toEqual({ members: 1, guests: 0 })
+    expect(skinVoters(db, 'unplaced')).toEqual({ members: 0, guests: 0 })
+  })
+
+  it('does not double-count one person across both modes', () => {
+    const db = makeDb()
+    member(db, 'T')
+    vote(db, 'T', 'S', 'a', 0)
+    tierSubmit(db, 'T', { S: ['S'], D: ['a'] })
+    expect(skinVoters(db, 'S')).toEqual({ members: 1, guests: 0 })
   })
 })

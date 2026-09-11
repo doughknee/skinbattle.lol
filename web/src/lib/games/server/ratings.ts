@@ -338,6 +338,63 @@ export const TIER_SKIN_CAP = 3
 // rarely serves one player the same skin that often, so legit play is untouched.
 export const BATTLE_VOTER_SKIN_CAP = 6
 
+// ─── who is behind a skin's record ──────────────────────────────────────────
+
+// Distinct people whose votes touched one skin, split by trust tier.
+//
+// The band answers "how much evidence?"; this answers "how many opinions?",
+// and the two come apart badly. BATTLE_VOTER_SKIN_CAP lets a single member
+// put 6 weighted battles on one skin, and a Tier Drop board adds up to
+// TIER_SKIN_CAP more per submission with no ceiling ACROSS submissions - so a
+// ±90 band can rest on one determined afternoon. answer.ts decides what that
+// means for the words on the page; this only counts heads.
+//
+// Aggregate by construction: ids are counted inside SQLite and never leave
+// this function. Merges are handled for free - attach.ts re-points a
+// converting guest's game_events onto the account row, so one person stays
+// one user_id however they signed up.
+//
+// Both battle modes count, because both move the rating: a Quick Battle vote
+// names the skin on one side of the pair, a Tier Drop submission places it
+// somewhere on the board. Full scan of the two event types per call, which is
+// fine while it runs once per page render for one skin and the log is in the
+// thousands; if it ever isn't, this is where a materialised per-skin voter
+// tally goes.
+export function skinVoters(
+  db: DatabaseSync,
+  skinId: string,
+): { members: number; guests: number } {
+  const rows = db
+    .prepare(
+      `SELECT u.logto_sub IS NOT NULL AS isMember, COUNT(*) AS c
+         FROM (
+           SELECT DISTINCT e.user_id AS uid
+             FROM game_events e
+            WHERE e.game = 'quick-battle' AND e.type = 'battle_voted'
+              AND ? IN (json_extract(e.payload, '$.winnerId'),
+                        json_extract(e.payload, '$.loserId'))
+           UNION
+           SELECT DISTINCT e.user_id AS uid
+             FROM game_events e,
+                  json_each(json_extract(e.payload, '$.tiers')) AS tier,
+                  json_each(tier.value) AS placed
+            WHERE e.game = 'tier-list' AND e.type = 'tier_submitted'
+              AND placed.value = ?
+         ) v
+         LEFT JOIN game_users u ON u.id = v.uid
+        GROUP BY isMember`,
+    )
+    .all(skinId, skinId) as unknown as { isMember: number; c: number }[]
+
+  let members = 0
+  let guests = 0
+  for (const r of rows) {
+    if (r.isMember) members += r.c
+    else guests += r.c
+  }
+  return { members, guests }
+}
+
 export interface TierComparison {
   winnerId: string
   loserId: string

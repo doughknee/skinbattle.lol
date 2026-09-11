@@ -20,7 +20,7 @@ import {
   type CatalogSkin,
 } from './catalog'
 import { factsFor, PRICE_TIERS } from './facts'
-import { ratingEventCount } from './ratings'
+import { ratingEventCount, skinVoters } from './ratings'
 import { kebab, skinSlug } from '../slug'
 
 // Page size: the route loads the first page server-side and "Show more"
@@ -182,7 +182,14 @@ export async function rankingsState(
   // it. Same numbers on one screen or the page argues with itself - and the
   // rounded band is the one the reader can see, so it is the one that decides
   // whether the claim is settled.
+  //
+  // The head count is the second half of the verdict and is queried only for
+  // the leader - the one skin the sentence is about. Everyone else's voters
+  // are nobody's business and would cost 100 scans a page.
   const leader = rated[0]
+  const leaderVoters = leader
+    ? skinVoters(db, leader.skin.id)
+    : { members: 0, guests: 0 }
   const answer = answerBlock({
     scope: resolved.scope,
     leader: leader
@@ -191,6 +198,7 @@ export async function rankingsState(
           rating: Math.round(leader.r.rating),
           uncertainty: Math.round(leader.r.uncertainty),
           battles: leader.r.battles,
+          voters: leaderVoters,
         }
       : null,
     rated: rated.length,
@@ -207,6 +215,7 @@ export async function rankingsState(
     medianBattles,
     calibrating: medianBattles < CALIBRATED_MEDIAN,
     answer,
+    leaderVoters,
     refitAt: getMeta(db, 'refit_at'),
     totalVotes: slice === 'all' ? ratingEventCount(db) : null,
   }
