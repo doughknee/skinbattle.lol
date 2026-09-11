@@ -110,6 +110,27 @@ describe('migration redirects are permanent', () => {
   })
 })
 
+describe('an unresolvable dynamic id is a 404, not a 500', () => {
+  // /champions/miss-fortune used to 500. The API answers an unknown champion
+  // with a clean 404, but api.champion THROWS on any non-2xx, and a throw that
+  // escapes a loader renders errorComponent with a 500 - which tells a crawler
+  // the server is broken and can suppress crawling of the whole /champions
+  // directory, while a 404 is forgotten cleanly.
+  //
+  // Every other dynamic route reaches its data through a server fn that returns
+  // null on a miss, so `if (!x) throw notFound()` covers them. Only a loader
+  // calling the raw api client has to catch, so only that shape can regress -
+  // including a future route that copies /champions/$id without the catch.
+  it('every loader resolving a param through api.* can reach notFound()', () => {
+    const missing = routeFiles(ROUTES)
+      .map((path) => ({ name: rel(path), src: readFileSync(path, 'utf8') }))
+      .filter(({ src }) => /\bapi\.\w+\(params\./.test(src))
+      .filter(({ src }) => !/\bnotFound\(\)/.test(src))
+      .map((r) => r.name)
+    expect(missing).toEqual([])
+  })
+})
+
 describe('the sitemap and the robots tag agree', () => {
   // Two sources decided this independently: server/sitemap.ts added every
   // catalog skin and every ranking slice, while seo.ts decided noindex from
