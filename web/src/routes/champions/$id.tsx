@@ -1,27 +1,19 @@
 import { createFileRoute, Link, redirect } from '@tanstack/react-router'
 import { useMemo, useState } from 'react'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import {
-  faFlaskVial,
-  faLayerGroup,
-  faRankingStar,
-  faShuffle,
-} from '@fortawesome/free-solid-svg-icons'
+import { faLayerGroup, faShuffle } from '@fortawesome/free-solid-svg-icons'
 import { api } from '~/lib/api'
 import { fetchRankings } from '~/lib/games/serverFns'
 import SkinCard from '~/components/SkinCard'
 import Dropdown from '~/components/Dropdown'
 import ErrorState from '~/components/ErrorState'
 import JsonLd from '~/components/JsonLd'
+import Verdict from '~/components/Verdict'
 import { ChampionDetailSkeleton } from '~/components/Skeletons'
 import { championDisplayName } from '~/lib/skinName'
 import { canonicalLink, ogMeta } from '~/lib/games/ogMeta'
 import { breadcrumbJsonLd, itemListJsonLd } from '~/lib/games/jsonLd'
-import {
-  answerBlock,
-  type AnswerBlock,
-  type AnswerConfidence,
-} from '~/lib/games/answer'
+import { answerBlock } from '~/lib/games/answer'
 import { btnPrimarySm, btnSecondarySm } from '~/lib/ui'
 import type { RankingRow } from '~/lib/games/types'
 
@@ -135,121 +127,6 @@ export const Route = createFileRoute('/champions/$id')({
   ),
   component: ChampionPage,
 })
-
-// ─── the verdict panel ──────────────────────────────────────────────────────
-
-// Provisional is the ordinary state, not the exception: the confident band is
-// ±100 Elo and the catalog averages ~3 battles per skin, so nearly every
-// champion renders the provisional branch. It therefore gets the SAME panel,
-// the same prominence and the same weight as a settled ranking - only the
-// accent changes. A verdict that reads as a measurement earns more trust than
-// a fabricated #1, and the CTAs below it are how a page stops being provisional.
-const TONE: Record<
-  AnswerConfidence,
-  { label: string; wrap: string; accent: string; bar: string }
-> = {
-  confident: {
-    label: 'Settled',
-    wrap: 'bg-gold5/20 outline-gold2/50',
-    accent: 'text-gold2',
-    bar: 'bg-gold2/80',
-  },
-  provisional: {
-    label: 'Provisional',
-    wrap: 'bg-blue5/30 outline-blue3/50',
-    accent: 'text-blue1',
-    bar: 'bg-blue2/80',
-  },
-  empty: {
-    label: 'No battles yet',
-    wrap: 'bg-hextech-black/40 outline-icon/25',
-    accent: 'text-grey1',
-    bar: 'bg-icon/40',
-  },
-}
-
-function Verdict({
-  answer,
-  rated,
-  total,
-  name,
-  championId,
-}: {
-  answer: AnswerBlock
-  rated: number
-  total: number
-  name: string
-  championId: string
-}) {
-  const tone = TONE[answer.confidence]
-  const pct = Math.min(100, Math.round((100 * rated) / Math.max(1, total)))
-
-  return (
-    <section
-      aria-labelledby="verdict-heading"
-      className={`animate-fade-up p-6 outline -outline-offset-2 md:p-8 ${tone.wrap}`}
-    >
-      <h2
-        id="verdict-heading"
-        className="flex items-center gap-2 text-sm font-semibold uppercase tracking-[0.25em] text-gold2"
-      >
-        <FontAwesomeIcon
-          icon={answer.confidence === 'confident' ? faRankingStar : faFlaskVial}
-          className="h-3.5 shrink-0"
-        />
-        Community verdict
-        <span className={`font-normal tracking-widest ${tone.accent}`}>
-          · {tone.label}
-        </span>
-      </h2>
-
-      {/* Body face, not font-serif/font-bold: globals.css routes bold body text
-          into Cinzel, which is all-caps display type - fine for a heading, a
-          wall to read as a two-line sentence. Size and colour carry the weight. */}
-      <p className="mt-4 text-xl leading-relaxed text-gold1 md:text-2xl">
-        {answer.answer}
-      </p>
-      <p className="mt-3 max-w-2xl text-grey1">{answer.basis}</p>
-
-      {/* Coverage as a measured quantity, same idiom as the ranking slices. */}
-      <div className="mt-5 max-w-sm">
-        <div
-          className="h-1 w-full bg-hextech-black/60"
-          title={`${rated} of ${total} rated`}
-        >
-          <div className={`h-full ${tone.bar}`} style={{ width: `${pct}%` }} />
-        </div>
-        <p className="mt-1.5 text-xs uppercase tracking-widest text-grey1">
-          {rated.toLocaleString('en-US')} of {total.toLocaleString('en-US')}{' '}
-          rated
-        </p>
-      </div>
-
-      <div className="mt-6 flex flex-wrap items-center gap-3">
-        {total >= MIN_TIER_BOARD && (
-          <Link
-            to="/battle/tier-drop"
-            search={{ set: `champion:${championId}` }}
-            className={btnPrimarySm}
-          >
-            <FontAwesomeIcon icon={faLayerGroup} className="h-4" />
-            Rank all {total} in one pass
-          </Link>
-        )}
-        <Link to="/battle" className={btnSecondarySm}>
-          <FontAwesomeIcon icon={faShuffle} className="h-4" />
-          Battle head-to-head
-        </Link>
-        <Link
-          to="/methodology"
-          className="text-sm font-bold text-gold2 underline underline-offset-4 transition duration-150 hover:text-gold1"
-        >
-          How {name}'s ratings are computed
-        </Link>
-      </div>
-    </section>
-  )
-}
 
 // ─── page ───────────────────────────────────────────────────────────────────
 
@@ -374,13 +251,28 @@ function ChampionPage() {
 
       {/* ── The answer ───────────────────────────────────────── */}
       <div className="container mx-auto max-w-5xl px-6 pt-4">
-        <Verdict
-          answer={answer}
-          rated={rows.length}
-          total={wardrobe.length}
-          name={name}
-          championId={champion.id}
-        />
+        <Verdict answer={answer} rated={rows.length} total={wardrobe.length}>
+          {wardrobe.length >= MIN_TIER_BOARD && (
+            <Link
+              to="/battle/tier-drop"
+              search={{ set: `champion:${champion.id}` }}
+              className={btnPrimarySm}
+            >
+              <FontAwesomeIcon icon={faLayerGroup} className="h-4" />
+              Rank all {wardrobe.length} in one pass
+            </Link>
+          )}
+          <Link to="/battle" className={btnSecondarySm}>
+            <FontAwesomeIcon icon={faShuffle} className="h-4" />
+            Battle head-to-head
+          </Link>
+          <Link
+            to="/methodology"
+            className="text-sm font-bold text-gold2 underline underline-offset-4 transition duration-150 hover:text-gold1"
+          >
+            How {name}'s ratings are computed
+          </Link>
+        </Verdict>
       </div>
 
       {/* ── The ranking ──────────────────────────────────────── */}

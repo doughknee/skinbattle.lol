@@ -11,9 +11,16 @@ import type {
   RankingsState,
   SliceLink,
 } from '../types'
+import { answerBlock } from '../answer'
 import { getDb } from './db'
-import { allCatalogSkins, ensureCatalog, type CatalogSkin } from './catalog'
+import {
+  allCatalogSkins,
+  ensureCatalog,
+  getMeta,
+  type CatalogSkin,
+} from './catalog'
 import { factsFor, PRICE_TIERS } from './facts'
+import { ratingEventCount } from './ratings'
 import { kebab, skinSlug } from '../slug'
 
 // Page size: the route loads the first page server-side and "Show more"
@@ -30,6 +37,10 @@ const LINE_MIN_SKINS = 4
 interface Slice {
   title: string
   subtitle: string
+  // Plural noun phrase for answerBlock, read mid-sentence as "highest-rated
+  // of the <scope>". It is not the title: "Best 975 RP skins" is a heading,
+  // "975 RP skins" is the thing being compared.
+  scope: string
   match: (skin: CatalogSkin) => boolean
 }
 
@@ -48,8 +59,14 @@ function lineBySlug(db: DatabaseSync): Map<string, string> {
 function resolveSlice(db: DatabaseSync, slice: string): Slice | null {
   if (slice === 'all') {
     return {
-      title: 'All skins',
-      subtitle: 'The whole catalog, ranked by community battles.',
+      // "Full ranking", not "All skins": /skins is the catalog door and owns
+      // the phrase "All Skins" in the nav, footer and palette (see siteMap.ts).
+      // Two entries reading the same sends people to the wrong lens - this one
+      // is a verdict, that one is a wardrobe.
+      title: 'Full ranking',
+      subtitle:
+        'Every League of Legends skin with battle data, ranked by community head-to-head votes.',
+      scope: 'skins in the catalog',
       match: () => true,
     }
   }
@@ -60,6 +77,7 @@ function resolveSlice(db: DatabaseSync, slice: string): Slice | null {
     return {
       title: `Best ${tier.toLocaleString()} RP skins`,
       subtitle: `Every ${tier.toLocaleString()} RP skin, ranked. The purchasing guide.`,
+      scope: `${tier.toLocaleString()} RP skins`,
       match: (s) => factsFor(s.id)?.cost === tier,
     }
   }
@@ -68,6 +86,7 @@ function resolveSlice(db: DatabaseSync, slice: string): Slice | null {
     return {
       title: `Best skins of ${year[1]}`,
       subtitle: `Everything Riot shipped in ${year[1]}, ranked.`,
+      scope: `skins released in ${year[1]}`,
       match: (s) => factsFor(s.id)?.release?.startsWith(year[1]) ?? false,
     }
   }
@@ -78,6 +97,7 @@ function resolveSlice(db: DatabaseSync, slice: string): Slice | null {
     return {
       title: `Best ${name} skins`,
       subtitle: `The ${name} line, ranked by community battles.`,
+      scope: `${name} skins`,
       match: (s) => factsFor(s.id)?.sets.includes(name) ?? false,
     }
   }
@@ -91,6 +111,7 @@ function resolveSlice(db: DatabaseSync, slice: string): Slice | null {
     return {
       title: `Best ${skin.championName} skins`,
       subtitle: `${skin.championName}'s wardrobe, ranked by community battles.`,
+      scope: `${skin.championName} skins`,
       match: (s) => s.championId === skin.championId,
     }
   }
@@ -147,7 +168,34 @@ export async function rankingsState(
     uncertainty: Math.round(x.r.uncertainty),
     battles: x.r.battles,
     cost: factsFor(x.skin.id)?.cost ?? null,
+    release: factsFor(x.skin.id)?.release ?? null,
   }))
+
+  // Built from rated[0], not rows[0]: a "Show more" page starts at an offset
+  // and its first row is not the leader, but the verdict must still be the
+  // slice's. answerBlock is a deterministic template - no model runs, and the
+  // same data always renders the same words, which is what makes it quotable.
+  //
+  // Rounded to the same integers the rows carry, not handed the raw floats:
+  // answerBlock floors what it is given while the rows round, so a raw ±204.6
+  // would print "±205" in the table and "±204" in the sentence directly above
+  // it. Same numbers on one screen or the page argues with itself - and the
+  // rounded band is the one the reader can see, so it is the one that decides
+  // whether the claim is settled.
+  const leader = rated[0]
+  const answer = answerBlock({
+    scope: resolved.scope,
+    leader: leader
+      ? {
+          name: leader.skin.name,
+          rating: Math.round(leader.r.rating),
+          uncertainty: Math.round(leader.r.uncertainty),
+          battles: leader.r.battles,
+        }
+      : null,
+    rated: rated.length,
+    total: members.length,
+  })
 
   return {
     slice,
@@ -158,6 +206,9 @@ export async function rankingsState(
     totalCount: members.length,
     medianBattles,
     calibrating: medianBattles < CALIBRATED_MEDIAN,
+    answer,
+    refitAt: getMeta(db, 'refit_at'),
+    totalVotes: slice === 'all' ? ratingEventCount(db) : null,
   }
 }
 
