@@ -5,7 +5,6 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faBars, faChevronRight, faXmark } from '@fortawesome/free-solid-svg-icons'
 import { CrownMark, Wordmark } from './Brand'
 import {
-  CHAMPIONS,
   HOME,
   SECONDARY_PAGES,
   SITE_SECTIONS,
@@ -117,7 +116,9 @@ export default function MobileNav() {
     }
   }, [open])
 
-  const footerLinks = [HOME, CHAMPIONS, ...SECONDARY_PAGES]
+  // Champions is not here: it rides under the Skins door as a chip now, and
+  // listing it twice in one panel just makes the catalog look like two places.
+  const footerLinks = [HOME, ...SECONDARY_PAGES]
 
   return (
     <>

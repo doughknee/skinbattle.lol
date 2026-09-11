@@ -9,6 +9,7 @@ import {
 } from '@fortawesome/free-solid-svg-icons'
 import { api } from '~/lib/api'
 import { fallbackToRaw, skinThumb } from '~/lib/img'
+import CatalogTabs from '~/components/CatalogTabs'
 import Dropdown from '~/components/Dropdown'
 import EmptyState from '~/components/EmptyState'
 import ErrorState from '~/components/ErrorState'
@@ -225,9 +226,11 @@ function ChampionsPage() {
       <PageHeader
         eyebrow="The catalog"
         title="Champions"
-        subtitle={`Every champion and their wardrobe: ${champions.length} champions, ${totalSkins.toLocaleString()} skins to judge. Pick one to star or ban skin by skin.`}
+        subtitle={`Every champion and their wardrobe: ${champions.length} champions, ${totalSkins.toLocaleString()} skins to judge. Pick one to see how its skins rank.`}
         className="mb-8"
       />
+
+      <CatalogTabs current="/champions" />
 
       {/* Toolbar: search / sort / density */}
       <div className="mb-6 flex flex-wrap items-center gap-3">
