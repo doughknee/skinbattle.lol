@@ -280,7 +280,26 @@ every matching request: the group reference reaches Traefik mangled (Coolify
 escapes `$` in labels on top of compose's own `$$` rule). Nothing here may use
 a capture group.
 
-DNS already resolves `www` to the server. Verify:
+Verified live 2026-09-11 (final QA sweep, after PR #101 and the two Coolify
+toggles above):
+
+| Request | Result |
+|---|---|
+| `http://skinbattle.lol/champions/ahri?x=1` | 301 → `https://skinbattle.lol/champions/ahri?x=1` (one hop) |
+| `https://www.skinbattle.lol/champions/ahri?utm_source=chatgpt.com` | 301 → apex, query intact (one hop) |
+| `http://www.skinbattle.lol/rankings/all` | 301 → `https://www…` → 301 → apex (two hops, both permanent) |
+| `https://skinbattle.lol/` | 200, untouched |
+| `http://api.skinbattle.lol/healthz` | 200, other services unaffected |
+| `www.skinbattle.lol` certificate | Let's Encrypt, valid to 2026-12-10 |
+
+The same sweep confirmed the rest of the crawl layer: every page self-canonical
+without query strings, UTM variants identical to the clean page, the legacy
+`/rankings/best-league-of-legends-skins` a 301 to `/rankings/all`, unknown
+champion/skin/slice ids real 404s, OAI-SearchBot / Googlebot / bingbot served
+the full page, and a 2,365-URL sitemap with no UTM, stub, noindex or lastmod
+entries.
+
+Re-verify with:
 
 ```bash
 curl -sI http://www.skinbattle.lol/champions/ahri?x=1 | head -3   # 301 → https://www.skinbattle.lol/champions/ahri?x=1, then 301 → apex
