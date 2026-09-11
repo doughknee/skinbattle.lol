@@ -252,11 +252,22 @@ to be set in Coolify for that redirect to ever run:
    generated middleware; Coolify exposes this as the "Force HTTPS" / permanent
    option). A `302` tells crawlers to keep requesting the http URL.
 
-DNS already resolves `www` to the server (the 404 above comes from Traefik,
-not from a missing record). After the change, verify:
+Status (2026-09-11): step 1 is done. `www.skinbattle.lol` is listed on the
+`web` service, holds a Let's Encrypt certificate, and Coolify's own
+middleware redirects it to the apex (query string intact) before the request
+reaches server.mjs. Both of Coolify's redirects - www → apex and http → https -
+are still **302**. Making them permanent means setting `permanent=true` on the
+two Traefik middlewares Coolify generates for the service (a `redirectscheme`
+for https and a `redirectregex` for the host); Coolify does not expose that as
+a switch for compose services, so it is a custom-label edit on the `web`
+service, matching whatever middleware names Coolify generated. With every page
+self-canonicalising to the apex, the 302 only weakens consolidation slightly;
+it is not blocking.
+
+DNS already resolves `www` to the server. Verify:
 
 ```bash
-curl -sI http://www.skinbattle.lol/champions/ahri?x=1 | head -3   # 301 → https://skinbattle.lol/champions/ahri?x=1
-curl -sI https://www.skinbattle.lol/ | head -3                     # 301, valid certificate
-curl -sI http://skinbattle.lol/ | head -3                          # 301 (not 302)
+curl -sIL http://www.skinbattle.lol/champions/ahri?x=1 | grep -iE "^(HTTP|location)"   # ends at https://skinbattle.lol/champions/ahri?x=1 200
+curl -sI https://www.skinbattle.lol/ | head -3                     # redirect to the apex, valid certificate
+curl -sI http://skinbattle.lol/ | head -3                          # 302 today; 301 once permanent=true is set
 ```
