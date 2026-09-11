@@ -18,7 +18,7 @@ import { guestRestoreToken, rememberGuestToken } from '~/lib/games/client'
 import { canonicalLink, ogMeta } from '~/lib/games/ogMeta'
 import { breadcrumbJsonLd } from '~/lib/games/jsonLd'
 import { robotsMeta, skinIsIndexable } from '~/lib/games/seo'
-import { rankingStateOf } from '~/lib/games/settle'
+import { rankingStateOf, unfurlAsk } from '~/lib/games/settle'
 import { kebab } from '~/lib/games/slug'
 import { skinTitleName } from '~/lib/skinName'
 import type { SkinPageState } from '~/lib/games/types'
@@ -71,9 +71,11 @@ export const Route = createFileRoute('/skins_/$slug')({
         { name: 'description', content: description },
         // Never-battled skins are thin/near-duplicate; index once they fight.
         ...robotsMeta(skinIsIndexable(loaderData.community?.battles)),
+        // The unfurl is a share, not a snippet: the verdict sentence and the
+        // ask, where the search description above stays the stable one.
         ...ogMeta({
           title,
-          description,
+          description: `${loaderData.answer.answer} ${unfurlAsk(loaderData.answer.confidence)}`,
           imagePath: `/og/skin/${loaderData.skinId}`,
           path: `/skins/${loaderData.slug}`,
         }),

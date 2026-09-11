@@ -199,13 +199,19 @@ Other slices: "Help shape this ranking" plus the slice's Tier Drop board.
   mounts above it), so session entry attribution and `$initial_*` are intact.
   Canonical tags were already path-only (`canonicalLink` is pinned to literals
   by the crawl test).
-- **OG card.** Champion pages point `og:image` at the dynamic rankings card
-  for their slice (`/og/rankings/champion-<id>`), redesigned as a share rather
-  than a data readout: the #1 splash kept vivid on the right, a settled /
-  provisional pill, the title, a medal-order podium without Elo numbers, the
-  verdict line with the leader's battle count, and a "Vote now · free · no
-  account needed" call to action. The cache key carries a version
-  (`og-rankings-v2-…`) so a redesign replaces yesterday's cards at once.
+- **OG cards.** Champion pages point `og:image` at the dynamic rankings card
+  for their slice (`/og/rankings/champion-<id>`); dossiers keep
+  `/og/skin/<id>`. Both were redesigned as shares rather than data readouts,
+  and sized for the place they are actually seen: a chat client shows a
+  1200-wide card at about 400, so each card is at most five lines, the two
+  that matter at 60px or more, nothing under 28px, and the ask ("Vote now ·
+  free · no account needed") lives in the footer. The rankings card: vivid #1
+  splash, "COMMUNITY RANKING · SETTLED/PROVISIONAL", title, medal-order podium
+  without Elo numbers, the verdict line with the leader's battle count. The
+  skin card: "COMMUNITY RATING · …", the skin's name, "{Champion}'s #N skin ·
+  #N of M overall", battles and rating. Long strings step down a size; cache
+  keys are versioned (`og-rankings-v2-…`, `og-skin-v2-…`) so a redesign
+  replaces yesterday's cards at once.
 
 ---
 

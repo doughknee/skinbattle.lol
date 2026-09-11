@@ -58,6 +58,7 @@ const C = {
   gold5: PALETTE.gold5,
   blue2: PALETTE.blue2,
   grey1: PALETTE.grey1,
+  icon: PALETTE.icon,
   red: OG_RED,
 }
 
@@ -145,7 +146,9 @@ const body = (s: string, size = 30) =>
     lineHeight: 1.45,
   })
 
-function frame(bg: Node | null, content: Node[]): Node {
+// `cta` swaps the footer's right-hand line for a share card's ask - in gold,
+// and large enough to survive a chat thumbnail.
+function frame(bg: Node | null, content: Node[], cta?: string): Node {
   return el(
     'div',
     {
@@ -180,12 +183,19 @@ function frame(bg: Node | null, content: Node[]): Node {
           letterSpacing: 6,
           color: C.gold2,
         }),
-        text('free · no account needed', {
-          fontFamily: 'Inter',
-          fontWeight: 400,
-          fontSize: 24,
-          color: C.grey1,
-        }),
+        cta
+          ? text(cta, {
+              fontFamily: 'Inter',
+              fontWeight: 600,
+              fontSize: 30,
+              color: C.gold1,
+            })
+          : text('free · no account needed', {
+              fontFamily: 'Inter',
+              fontWeight: 400,
+              fontSize: 24,
+              color: C.grey1,
+            }),
       ),
     ),
   )
@@ -574,8 +584,58 @@ async function renderCard(card: OgCard): Promise<Buffer> {
   return png
 }
 
-// Per-skin OG card: splash + rating ± confidence + rank + battle count
-// (the roadmap's skin-page card spec). Cached per skin per UTC day.
+// ─── the share cards ────────────────────────────────────────────────────────
+//
+// Discord, Reddit and X show an OG card at roughly a third of its size - a
+// 1200-wide card renders about 400 wide in a chat - so a card that reads like
+// a page reads like nothing. The rule for the two cards below: at most five
+// lines of text, the two that matter at 60px or more, nothing under 28px,
+// and the ask in the footer rather than a sixth line. Long strings step down
+// a size so the fixed 1200×630 keeps its shape.
+
+const stepDown = (
+  s: string,
+  steps: [max: number, size: number][],
+  floor: number,
+): number => steps.find(([max]) => s.length <= max)?.[1] ?? floor
+
+// "COMMUNITY RANKING · SETTLED": the context and the verdict's state in one
+// line, in the Verdict panel's own tones and words.
+const contextLine = (
+  label: string,
+  confidence: 'confident' | 'provisional' | 'empty',
+): Node =>
+  text(
+    `${label} · ${
+      confidence === 'confident'
+        ? 'Settled'
+        : confidence === 'provisional'
+          ? 'Provisional'
+          : 'No battles yet'
+    }`.toUpperCase(),
+    {
+      fontFamily: 'Inter',
+      fontWeight: 700,
+      fontSize: 28,
+      letterSpacing: 5,
+      color:
+        confidence === 'provisional'
+          ? C.blue2
+          : confidence === 'confident'
+            ? C.gold2
+            : C.grey1,
+    },
+  )
+
+const VOTE_CTA = 'Vote now · free · no account needed'
+
+const n = (v: number): string => v.toLocaleString('en-US')
+
+// Per-skin OG card: the dossier as a share - the splash kept vivid, the
+// skin's name, where it stands (its champion's #N, #N of all rated skins),
+// the verdict's state in the dossier's own words, and the ask. Cached per
+// skin per UTC day; the key carries a version so a redesign replaces
+// yesterday's cards at once.
 export async function skinOgResponse(skinId: string): Promise<Response> {
   const db = getDb()
   await ensureCatalog(db)
@@ -588,7 +648,7 @@ export async function skinOgResponse(skinId: string): Promise<Response> {
   try {
     const dir = join(DATA_DIR, 'cache')
     mkdirSync(dir, { recursive: true })
-    const path = join(dir, `og-skin-${skinId}-${puzzleDay()}.png`)
+    const path = join(dir, `og-skin-v2-${skinId}-${puzzleDay()}.png`)
     let png: Buffer
     if (existsSync(path)) {
       png = readFileSync(path)
@@ -600,29 +660,75 @@ export async function skinOgResponse(skinId: string): Promise<Response> {
         .get(skinId) as
         | { rating: number; uncertainty: number; battles: number }
         | undefined
-      // Same rank and denominator the dossier prints (catalog-joined), so
-      // the share card can never say "#N of M" with a different M.
-      const { globalRank, ratedCount } = await import('./ratings')
+      // Same rank, denominator, rounding, voters and rule as the dossier
+      // (server/skinpage.ts), so the card can never say a different word or
+      // a different "#N of M" than the page it unfurls for.
+      const { globalRank, ratedCount, skinVoters } = await import('./ratings')
+      const { catalogSkinTotal } = await import('./catalog')
+      const { skinAnswerBlock } = await import('../answer')
       const ratedTotal = ratedCount(db)
-      const statLine = rating
-        ? `${Math.round(rating.rating)} ± ${Math.round(rating.uncertainty)} · #${globalRank(db, rating.rating)} of ${ratedTotal} rated · ${rating.battles} battles`
-        : 'Unranked: no battles fought yet'
+      const rank = rating ? globalRank(db, rating.rating) : 0
+      const confidence = skinAnswerBlock({
+        name: skin.name,
+        community: rating
+          ? {
+              rating: Math.round(rating.rating),
+              uncertainty: Math.round(rating.uncertainty),
+              battles: rating.battles,
+              rank,
+              voters: skinVoters(db, skinId),
+            }
+          : null,
+        rated: ratedTotal,
+        total: catalogSkinTotal(db),
+      }).confidence
+      // Its place in its own wardrobe - the number a fan actually argues
+      // about. Same catalog join and battles > 0 rule as globalRank.
+      const championRank = rating
+        ? (
+            db
+              .prepare(
+                `SELECT COUNT(*) AS c FROM skin_ratings r
+                   JOIN catalog_skins c ON c.id = r.skin_id
+                  WHERE c.champion_id = ? AND c.num != 0 AND r.battles > 0 AND r.rating > ?`,
+              )
+              .get(skin.championId, rating.rating) as { c: number }
+          ).c + 1
+        : 0
+      const standing = rating
+        ? `${skin.championName}'s #${championRank} skin · #${n(rank)} of ${n(ratedTotal)} overall`
+        : `A ${skin.championName} skin · no battles yet`
+      const detail = rating
+        ? `${n(rating.battles)} ${rating.battles === 1 ? 'battle' : 'battles'} · rated ${n(Math.round(rating.rating))} ± ${Math.round(rating.uncertainty)}`
+        : 'Be the first to vote on it'
 
       const bg = await fetchAsDataUri(skin.splashUrl)
-      const node = frame(bg ? splashBg(bg) : null, [
-        el(
-          'div',
-          { flexDirection: 'column', gap: 16, justifyContent: 'flex-end', flexGrow: 1 },
-          eyebrow(skin.championName),
-          title(skin.name, 66),
-          text(statLine, {
-            fontFamily: 'Inter',
-            fontWeight: 600,
-            fontSize: 30,
-            color: C.gold1,
-          }),
-        ),
-      ])
+      const node = frame(
+        bg ? splashBg(bg, true) : null,
+        [
+          el(
+            'div',
+            { flexDirection: 'column', gap: 14, justifyContent: 'center', flexGrow: 1, width: 840 },
+            contextLine('Community rating', confidence),
+            title(skin.name, stepDown(skin.name, [[16, 76], [24, 64], [34, 52]], 44)),
+            text(standing, {
+              fontFamily: 'Cinzel',
+              fontWeight: 700,
+              fontSize: 34,
+              color: C.gold1,
+              lineHeight: 1.2,
+              marginTop: 6,
+            }),
+            text(detail, {
+              fontFamily: 'Inter',
+              fontWeight: 500,
+              fontSize: 30,
+              color: confidence === 'provisional' ? C.blue2 : C.gold2,
+            }),
+          ),
+        ],
+        VOTE_CTA,
+      )
       const svg = await satori(node as never, {
         width: W,
         height: H,
@@ -644,18 +750,6 @@ export async function skinOgResponse(skinId: string): Promise<Response> {
     return new Response('Card unavailable', { status: 500 })
   }
 }
-
-// A small labelled pill: the verdict state, in the Verdict panel's own tones.
-const pill = (s: string, color: string) =>
-  text(s.toUpperCase(), {
-    fontFamily: 'Inter',
-    fontWeight: 700,
-    fontSize: 19,
-    letterSpacing: 4,
-    color,
-    padding: '6px 14px',
-    border: `2px solid ${color}`,
-  })
 
 // Ranking-slice OG card - the share that has to make a stranger click: the
 // #1 skin's splash kept vivid, the title, a podium in the same medal order
@@ -682,86 +776,62 @@ export async function rankingsOgResponse(slice: string): Promise<Response> {
       const leaderBattles = top[0]?.battles ?? 0
       const after =
         leaderBattles > 0
-          ? ` after ${leaderBattles.toLocaleString('en-US')} ${leaderBattles === 1 ? 'battle' : 'battles'}`
+          ? ` after ${n(leaderBattles)} ${leaderBattles === 1 ? 'battle' : 'battles'}`
           : ''
       const verdictLine =
         confidence === 'provisional'
           ? `Provisional${after} · your vote could decide it`
           : confidence === 'confident'
-            ? `Settled${after} · think the community got it wrong?`
+            ? `Settled${after} · think they got it wrong?`
             : 'No battles yet · be the first to vote'
-      // The card is a fixed 1200×630: a long title or a long #1 name wraps,
-      // and every wrapped line is height the footer no longer has. Long
-      // strings step down a size so the card keeps its shape; a name that
-      // still wraps keeps its numeral on the first line (top-aligned).
-      const titleSize = state.title.length > 22 ? 44 : 56
-      const leadSize = (top[0]?.name.length ?? 0) > 22 ? 36 : 46
+      // Five lines, big: a long title or a long #1 name wraps, and every
+      // wrapped line is height the footer no longer has, so long strings step
+      // down; a name that still wraps keeps its numeral on its first line.
+      const titleSize = stepDown(state.title, [[18, 68], [26, 56]], 46)
+      const leadSize = stepDown(top[0]?.name ?? '', [[16, 64], [24, 54], [32, 46]], 40)
       const podium = (r: (typeof top)[number], i: number) =>
         el(
           'div',
-          { alignItems: 'flex-start', gap: 16 },
+          { alignItems: 'flex-start', gap: 18 },
           text(String(i + 1), {
             fontFamily: 'Cinzel',
             fontWeight: 700,
-            fontSize: i === 0 ? leadSize - 4 : 26,
+            fontSize: i === 0 ? leadSize - 6 : 30,
             lineHeight: 1.15,
             color: i === 0 ? C.gold2 : C.gold5,
-            width: 40,
+            width: 44,
             justifyContent: 'flex-end',
           }),
           text(r.name, {
             fontFamily: i === 0 ? 'Cinzel' : 'Inter',
             fontWeight: i === 0 ? 700 : 500,
-            fontSize: i === 0 ? leadSize : 28,
-            color: i === 0 ? C.gold1 : C.grey1,
+            fontSize: i === 0 ? leadSize : stepDown(r.name, [[30, 36]], 30),
+            color: i === 0 ? C.gold1 : C.icon,
             lineHeight: 1.15,
           }),
         )
-      const node = frame(bg ? splashBg(bg, true) : null, [
-        el(
-          'div',
-          { flexDirection: 'column', gap: 10, justifyContent: 'center', flexGrow: 1, width: 700 },
+      const node = frame(
+        bg ? splashBg(bg, true) : null,
+        [
           el(
             'div',
-            { alignItems: 'center', gap: 18 },
-            eyebrow('Community ranking'),
-            confidence === 'provisional'
-              ? pill('Provisional', C.blue2)
-              : confidence === 'confident'
-                ? pill('Settled', C.gold2)
-                : pill('No battles yet', C.grey1),
-          ),
-          title(state.title, titleSize),
-          ...(top.length > 0
-            ? [el('div', { flexDirection: 'column', gap: 4, marginTop: 4 }, ...top.map(podium))]
-            : [body('Nothing here has been through a battle. Be the first.')]),
-          text(verdictLine, {
-            fontFamily: 'Inter',
-            fontWeight: 500,
-            fontSize: 23,
-            color: confidence === 'provisional' ? C.blue2 : C.gold2,
-            marginTop: 4,
-          }),
-          // The footer already says "free · no account needed"; the pill is
-          // the verb.
-          el(
-            'div',
-            {
-              marginTop: 10,
-              padding: '10px 22px',
-              border: `2px solid ${C.gold2}`,
-              backgroundColor: 'rgba(120,90,40,0.45)',
-              alignSelf: 'flex-start',
-            },
-            text('Vote now · every pick counts', {
-              fontFamily: 'Cinzel',
-              fontWeight: 700,
-              fontSize: 24,
-              color: C.gold1,
+            { flexDirection: 'column', gap: 12, justifyContent: 'center', flexGrow: 1, width: 840 },
+            contextLine('Community ranking', confidence),
+            title(state.title, titleSize),
+            ...(top.length > 0
+              ? [el('div', { flexDirection: 'column', gap: 8, marginTop: 6 }, ...top.map(podium))]
+              : [body('Nothing here has been through a battle yet. Be the first.', 34)]),
+            text(verdictLine, {
+              fontFamily: 'Inter',
+              fontWeight: 500,
+              fontSize: 28,
+              color: confidence === 'provisional' ? C.blue2 : C.gold2,
+              marginTop: 6,
             }),
           ),
-        ),
-      ])
+        ],
+        VOTE_CTA,
+      )
       const svg = await satori(node as never, {
         width: W,
         height: H,
