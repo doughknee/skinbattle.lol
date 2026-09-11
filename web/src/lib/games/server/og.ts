@@ -169,13 +169,15 @@ function frame(bg: Node | null, content: Node[], cta?: string): Node {
         bottom: 24,
         border: `2px solid ${C.gold5}`,
         flexDirection: 'column',
-        justifyContent: 'space-between',
+        // The words and the footer centre on the card as one group: a footer
+        // pinned to the bottom edge read as extra headroom above the text.
+        justifyContent: 'center',
         padding: 52,
       },
-      el('div', { flexDirection: 'column', gap: 18, flexGrow: 1 }, ...content),
+      el('div', { flexDirection: 'column', gap: 18 }, ...content),
       el(
         'div',
-        { justifyContent: 'space-between', alignItems: 'baseline' },
+        { justifyContent: 'space-between', alignItems: 'baseline', marginTop: 44 },
         text('SKINBATTLE.LOL', {
           fontFamily: 'Cinzel',
           fontWeight: 700,
@@ -431,9 +433,9 @@ const puzzleImage = (dataUri: string): Node => ({
   type: 'img',
   props: {
     src: dataUri,
-    width: 440,
-    height: 248,
-    style: { width: 440, height: 248, objectFit: 'cover', border: `2px solid ${C.gold2}` },
+    width: 400,
+    height: 225,
+    style: { width: 400, height: 225, objectFit: 'cover', border: `2px solid ${C.gold2}` },
   },
 })
 
@@ -451,9 +453,7 @@ function standardCard(opts: {
     {
       flexDirection: 'column',
       gap: 14,
-      justifyContent: 'center',
-      flexGrow: 1,
-      width: opts.aside ? 620 : 1000,
+      width: opts.aside ? 600 : 1000,
     },
     contextText(opts.context, !!opts.aside),
     title(opts.title, stepDown(opts.title, [[16, 76], [26, 62]], 50)),
@@ -463,7 +463,14 @@ function standardCard(opts: {
     opts.bg ? shareBg(opts.bg, opts.wash ? 'wash' : 'split') : null,
     [
       opts.aside
-        ? el('div', { gap: 40, alignItems: 'center', flexGrow: 1 }, column, opts.aside)
+        ? el(
+            'div',
+            { gap: 24, alignItems: 'center' },
+            column,
+            // The aside takes the rest of the width and centres in it, so it
+            // never reaches the frame.
+            el('div', { flexGrow: 1, justifyContent: 'center', alignItems: 'center' }, opts.aside),
+          )
         : column,
     ],
     opts.cta,
@@ -658,7 +665,7 @@ async function buildCard(card: OgCard): Promise<Node> {
 async function renderCard(card: OgCard): Promise<Buffer> {
   const dir = join(DATA_DIR, 'cache')
   mkdirSync(dir, { recursive: true })
-  const path = join(dir, `og-${card}-v2-${puzzleDay()}.png`)
+  const path = join(dir, `og-${card}-v3-${puzzleDay()}.png`)
   if (existsSync(path)) return readFileSync(path)
 
   const node = await buildCard(card)
@@ -738,7 +745,7 @@ export async function skinOgResponse(skinId: string): Promise<Response> {
   try {
     const dir = join(DATA_DIR, 'cache')
     mkdirSync(dir, { recursive: true })
-    const path = join(dir, `og-skin-v3-${skinId}-${puzzleDay()}.png`)
+    const path = join(dir, `og-skin-v4-${skinId}-${puzzleDay()}.png`)
     let png: Buffer
     if (existsSync(path)) {
       png = readFileSync(path)
@@ -798,7 +805,7 @@ export async function skinOgResponse(skinId: string): Promise<Response> {
         [
           el(
             'div',
-            { flexDirection: 'column', gap: 14, justifyContent: 'center', flexGrow: 1, width: 1000 },
+            { flexDirection: 'column', gap: 14, width: 1000 },
             contextLine('Community rating', confidence),
             title(skin.name, stepDown(skin.name, [[16, 84], [24, 70], [34, 56]], 46)),
             text(standing, {
@@ -855,7 +862,7 @@ export async function rankingsOgResponse(slice: string): Promise<Response> {
   try {
     const dir = join(DATA_DIR, 'cache')
     mkdirSync(dir, { recursive: true })
-    const path = join(dir, `og-rankings-v3-${slice}-${puzzleDay()}.png`)
+    const path = join(dir, `og-rankings-v4-${slice}-${puzzleDay()}.png`)
     let png: Buffer
     if (existsSync(path)) {
       png = readFileSync(path)
@@ -908,7 +915,7 @@ export async function rankingsOgResponse(slice: string): Promise<Response> {
         [
           el(
             'div',
-            { flexDirection: 'column', gap: 12, justifyContent: 'center', flexGrow: 1, width: 1000 },
+            { flexDirection: 'column', gap: 12, width: 1000 },
             contextLine('Community ranking', confidence),
             title(state.title, titleSize),
             ...(top.length > 0
