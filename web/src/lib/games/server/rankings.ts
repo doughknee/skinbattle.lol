@@ -168,24 +168,55 @@ export async function rankingsIndex(): Promise<RankingsIndex> {
   await ensureCatalog(db)
   const skins = allCatalogSkins(db)
 
-  const prices: SliceLink[] = PRICE_TIERS.map((tier) => ({
-    slice: `price-${tier}`,
-    label: `${tier.toLocaleString()} RP`,
-    count: skins.filter((s) => factsFor(s.id)?.cost === tier).length,
-  })).filter((p) => p.count > 0)
+  // Rated membership per slice, so /sitemap.xml can gate on the same count
+  // sliceIsIndexable() uses. One query, then set lookups inside the counting
+  // passes that already run.
+  const rated = new Set(
+    (
+      db
+        .prepare(
+          'SELECT skin_id FROM skin_ratings WHERE battles > 0',
+        )
+        .all() as unknown as { skin_id: string }[]
+    ).map((r) => r.skin_id),
+  )
 
-  const yearCounts = new Map<string, number>()
-  const lineCounts = new Map<string, number>()
-  const champCounts = new Map<string, { name: string; count: number }>()
+  const prices: SliceLink[] = PRICE_TIERS.map((tier) => {
+    const members = skins.filter((s) => factsFor(s.id)?.cost === tier)
+    return {
+      slice: `price-${tier}`,
+      label: `${tier.toLocaleString()} RP`,
+      count: members.length,
+      rated: members.filter((s) => rated.has(s.id)).length,
+    }
+  }).filter((p) => p.count > 0)
+
+  type Tally = { count: number; rated: number }
+  const bump = (m: Map<string, Tally>, k: string, isRated: boolean) => {
+    const t = m.get(k) ?? { count: 0, rated: 0 }
+    t.count += 1
+    if (isRated) t.rated += 1
+    m.set(k, t)
+  }
+
+  const yearCounts = new Map<string, Tally>()
+  const lineCounts = new Map<string, Tally>()
+  const champCounts = new Map<string, Tally & { name: string }>()
   for (const s of skins) {
     const f = factsFor(s.id)
+    const isRated = rated.has(s.id)
     const y = f?.release?.slice(0, 4)
-    if (y) yearCounts.set(y, (yearCounts.get(y) ?? 0) + 1)
+    if (y) bump(yearCounts, y, isRated)
     for (const set of f?.sets ?? []) {
-      if (set !== 'Legacy') lineCounts.set(set, (lineCounts.get(set) ?? 0) + 1)
+      if (set !== 'Legacy') bump(lineCounts, set, isRated)
     }
-    const c = champCounts.get(s.championId) ?? { name: s.championName, count: 0 }
+    const c = champCounts.get(s.championId) ?? {
+      name: s.championName,
+      count: 0,
+      rated: 0,
+    }
     c.count += 1
+    if (isRated) c.rated += 1
     champCounts.set(s.championId, c)
   }
 
@@ -193,17 +224,18 @@ export async function rankingsIndex(): Promise<RankingsIndex> {
     prices,
     years: [...yearCounts.entries()]
       .sort((a, b) => b[0].localeCompare(a[0]))
-      .map(([y, count]) => ({ slice: `year-${y}`, label: y, count })),
+      .map(([y, t]) => ({ slice: `year-${y}`, label: y, ...t })),
     lines: [...lineCounts.entries()]
-      .filter(([, count]) => count >= LINE_MIN_SKINS)
+      .filter(([, t]) => t.count >= LINE_MIN_SKINS)
       .sort((a, b) => a[0].localeCompare(b[0]))
-      .map(([name, count]) => ({ slice: `line-${kebab(name)}`, label: name, count })),
+      .map(([name, t]) => ({ slice: `line-${kebab(name)}`, label: name, ...t })),
     champions: [...champCounts.entries()]
       .sort((a, b) => a[1].name.localeCompare(b[1].name))
       .map(([id, c]) => ({
         slice: `champion-${id.toLowerCase()}`,
         label: c.name,
         count: c.count,
+        rated: c.rated,
       })),
   }
 }

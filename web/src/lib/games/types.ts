@@ -419,7 +419,8 @@ export interface RankingsState {
 export interface SliceLink {
   slice: string
   label: string
-  count: number
+  count: number // catalog members
+  rated: number // members with battle data - drives sitemap inclusion
 }
 
 export interface RankingsIndex {
@@ -598,4 +599,20 @@ export interface RoadmapState {
   ratedSkins: number // skins with at least one battle
   totalSkins: number // full catalog size
   medianBattles: number // median battles among rated skins
+}
+
+// Live provenance figures for /methodology. Aggregate counts only - the page
+// states how thin the data currently is, so those numbers have to be real.
+export interface MethodologyState {
+  catalogSkins: number
+  ratedSkins: number // skins with at least one battle
+  battleEvents: number // head-to-head votes + tier-list submissions
+  indexableSkins: number // clear MIN_INDEXABLE_BATTLES
+  confidentSkins: number // band at or inside MAX_CONFIDENT_UNCERTAINTY
+  medianBattles: number
+  widestBand: number | null // null when nothing is rated yet
+  tightestBand: number | null
+  refitAt: string | null // ISO; null before the first refit
+  catalogSyncedAt: string | null
+  factsSnapshotAt: string
 }

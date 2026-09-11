@@ -134,13 +134,16 @@ const LEADERBOARDS: SitePage = {
   icon: faTrophy,
   search: 'top players streaks ranks community leaderboards',
 }
+// Lives at /methodology, not under /rankings: it is the provenance page for
+// every number on the site (skin pages and champion pages cite it too), and
+// the old /rankings/elo URL 301s here.
 const HOW_RANKINGS_WORK: SitePage = {
-  to: '/rankings/elo',
+  to: '/methodology',
   label: 'How Rankings Work',
-  blurb: 'The rating system behind the lists, explained for humans.',
+  blurb: 'The rating system behind the lists, and what each number rests on.',
   icon: faChartLine,
   search:
-    'elo rating explainer how it works bradley terry calibrating uncertainty mmr math',
+    'elo rating explainer how it works bradley terry calibrating uncertainty mmr math methodology confidence sample size provenance sources',
 }
 
 // Explore (footer)
