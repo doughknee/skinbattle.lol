@@ -256,16 +256,24 @@ out). It is **not** a basis for confident phrasing:
 > A skin with 3 battles and **±140–350 Elo uncertainty** cannot support
 > "the best Ahri skin." At that sample the rank is close to noise.
 
-**So DONI-84 needs its own threshold for confident language, well above the
-indexing threshold, and the two should not share a constant.** Suggested shape:
-`seo.ts` keeps `MIN_INDEXABLE_BATTLES` for the robots tag; DONI-84 adds a
-separate confidence tier that drives phrasing ("community favourite" vs "still
-calibrating — N battles so far") and is honest about N on the page.
+**This shipped — the paragraph below used to describe it as outstanding work.**
+DONI-84 gave confident phrasing its own threshold instead of reusing the
+indexing one, and DONI-94 added the voter condition it turned out to need. There
+are now **three** constants, and none of them is the free-floating judgement call
+this audit expected — each is derived from the engine's own numbers:
 
-The machinery to do this is in place and untouched by this pass. **What is
-missing is the number, and the number is a judgement call about how much
-uncertainty is tolerable in a public claim** — which is DONI-84's job, not this
-one's.
+| Constant | Where | What it gates |
+|----------|-------|---------------|
+| `MIN_INDEXABLE_BATTLES = 3` | `web/src/lib/games/seo.ts` | The robots tag and the sitemap entry — "is there anything here at all?" |
+| `MAX_CONFIDENT_UNCERTAINTY = 100` | `web/src/lib/games/answer.ts` | Whether the leader's band is tight enough to state a winner at all |
+| `MIN_CONFIDENT_VOTERS = 3` | `web/src/lib/games/answer.ts` | Whether that band came from a crowd rather than one person's afternoon. Derived, not chosen: `ceil(weightedBattlesFor(MAX_CONFIDENT_UNCERTAINTY) / VOTER_SKIN_CAP)` |
+
+The split this section asked for is the one that shipped: `seo.ts` decides what
+to **index**, `answer.ts` decides what to **claim**, and they share no constant,
+so a crawl-budget change can never quietly loosen a phrasing promise. All three
+are explained to readers on **`/methodology`**, which renders them from the
+constants themselves rather than restating the numbers — so that page cannot go
+stale the way this paragraph did.
 
 ---
 

@@ -1,8 +1,8 @@
-import { createFileRoute, Link, redirect } from '@tanstack/react-router'
+import { createFileRoute, Link, notFound, redirect } from '@tanstack/react-router'
 import { useMemo, useState } from 'react'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faLayerGroup, faShuffle } from '@fortawesome/free-solid-svg-icons'
-import { api } from '~/lib/api'
+import { api, type ApiError } from '~/lib/api'
 import { fetchRankings } from '~/lib/games/serverFns'
 import SkinCard from '~/components/SkinCard'
 import Dropdown from '~/components/Dropdown'
@@ -35,7 +35,17 @@ export const Route = createFileRoute('/champions/$id')({
   loader: async ({ params }) => {
     // Base (public) champion data. User-vote columns are layered in
     // client-side once we have a Logto access token.
-    const champion = await api.champion(params.id)
+    //
+    // An id nothing resolves - `miss-fortune` for missfortune, a typo, a dead
+    // link - is a not-found, not a server fault, and api.champion throws on
+    // any non-2xx. Letting that throw escape rendered errorComponent with a
+    // 500, which tells a crawler the server is broken and can suppress
+    // crawling of all 173 champion pages; a 404 is forgotten cleanly. Only
+    // 404 converts: if the API is down that 500 is honest, and turning an
+    // outage into 404s would deindex every real page.
+    const champion = await api.champion(params.id).catch((e: ApiError) => {
+      throw e.status === 404 ? notFound() : e
+    })
     // One URL per champion. The API resolves an id in any casing, so
     // /champions/Aatrox and /champions/AATROX would each serve this page with
     // a 200 - three URLs, one page, no way for a crawler to pick. Redirect to
@@ -126,11 +136,20 @@ export const Route = createFileRoute('/champions/$id')({
   pendingComponent: () => (
     <ChampionDetailSkeleton quip="One-shotting the ADC..." />
   ),
+  notFoundComponent: () => (
+    <ErrorState
+      title="No such champion"
+      message="That link doesn't resolve to a champion. Champion URLs use the League client's own spelling with no spaces or hyphens - /champions/missfortune."
+      retry={false}
+      back={{ to: '/champions', label: 'All champions' }}
+    />
+  ),
+  // Only genuine failures land here now - the API being down, not a bad id -
+  // so a reload is worth offering.
   errorComponent: ({ error }) => (
     <ErrorState
-      title="Champion not found"
+      title="Couldn't load this champion"
       message={error.message}
-      retry={false}
       back={{ to: '/champions', label: 'Back to champions' }}
     />
   ),
