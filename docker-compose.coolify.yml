@@ -165,22 +165,21 @@ services:
     restart: unless-stopped
     depends_on:
       - api
-    # Canonical host and scheme, as ONE permanent redirect. Coolify attaches any
-    # traefik.http.middlewares.<name>.* label it finds here to every router it
-    # generates for this service (fqdnLabelsForTraefik, middlewares_from_labels),
-    # so this runs on both domains and both entrypoints. It only does the job if
-    # Coolify's own two redirects are switched OFF for the web service - both are
-    # hard-coded 302s, run before anything listed here, and cannot be overridden
-    # from this file: the www→apex middleware gets "permanent=false" appended
-    # after any label we set, and the https middleware ("redirect-to-https") is a
-    # name every container on the proxy shares, so changing it here would make
-    # Traefik discard it for all of them. Settings: Domains → direction
-    # "Allow www & non-www", and "Force HTTPS" off. https://skinbattle.lol/... does
-    # not match the pattern and passes through untouched. See DEPLOY.md.
+    # Permanent http → https, defined where Coolify will attach it. Coolify adds
+    # any traefik.http.middlewares.<name>.* label it finds here to every router
+    # it generates for this service (fqdnLabelsForTraefik, middlewares_from_labels).
+    # On the https routers a redirectscheme to https is a no-op, so this only
+    # bites on the http entrypoint. It replaces Coolify's own "Force HTTPS",
+    # which is a hard-coded 302 under a middleware name every container on the
+    # proxy shares (changing it here would make Traefik discard it for all of
+    # them) - so that toggle stays OFF for the web service. www → apex is
+    # server.mjs's 301, which needs Coolify's www redirect set to "No redirect"
+    # so the request reaches the container. No capture groups on purpose: a
+    # redirectregex replacement with 1 arrived at Traefik mangled and every
+    # matching request answered 502. See DEPLOY.md, "Canonical host".
     labels:
-      - 'traefik.http.middlewares.sb-canonical.redirectregex.regex=^(?:https?://www\.|http://)(.+)'
-      - 'traefik.http.middlewares.sb-canonical.redirectregex.replacement=https://$${1}'
-      - traefik.http.middlewares.sb-canonical.redirectregex.permanent=true
+      - traefik.http.middlewares.sb-https.redirectscheme.scheme=https
+      - traefik.http.middlewares.sb-https.redirectscheme.permanent=true
     environment:
       # The public site domain.
       - SERVICE_FQDN_WEB_3000

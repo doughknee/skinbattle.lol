@@ -259,26 +259,31 @@ certificate. Coolify's own redirects (www → apex, http → https) are hard-cod
 (`redirect-to-https`) is a name every container on the proxy shares, so a
 different definition here would make Traefik discard it for all of them.
 
-So the compose file defines ONE permanent middleware of its own,
-`sb-canonical` (see the `web` service's `labels`), which Coolify attaches to
-every router it generates for the service. It redirects `http://…` and
-`https://www.…` to `https://skinbattle.lol/…` with a 301 in one hop, and lets
-`https://skinbattle.lol/…` through. For it to be the redirect that runs,
-Coolify's two must be off on the `web` service:
+So the compose file defines a permanent middleware of its own, `sb-https`
+(see the `web` service's `labels`): a `redirectscheme` to https, which Coolify
+attaches to every router it generates for the service and which is a no-op on
+the https routers. www → apex is server.mjs's own 301. For those two to be the
+redirects that run, Coolify's two must be off on the `web` service:
 
-1. Domains → keep both hosts listed, direction **Allow www & non-www**.
-2. **Force HTTPS: off** (the http router then carries this middleware instead
-   of Coolify's 302).
+1. Domains → keep both hosts listed, www redirect **No redirect** (so a www
+   request reaches the container and server.mjs answers the 301).
+2. **Redirect HTTP to HTTPS: Disabled** (the http router then carries
+   `sb-https` instead of Coolify's 302).
 3. Redeploy so the labels are regenerated from the compose file.
 
-If only step 1 is done, the www hop becomes 301 and the scheme hop stays
-Coolify's 302. server.mjs's own www → apex 301 remains as the last line of
-defence for any request that reaches the container on the wrong host.
+Resulting hops: `http://skinbattle.lol/x` → 301 → https apex (one hop);
+`https://www…/x` → 301 → apex (one hop); `http://www…/x` → 301 → `https://www…/x`
+→ 301 → apex (two hops, both permanent).
+
+A `redirectregex` with a `${1}` replacement was tried first and answered 502 on
+every matching request: the group reference reaches Traefik mangled (Coolify
+escapes `$` in labels on top of compose's own `$$` rule). Nothing here may use
+a capture group.
 
 DNS already resolves `www` to the server. Verify:
 
 ```bash
-curl -sI http://www.skinbattle.lol/champions/ahri?x=1 | head -3   # 301 → https://skinbattle.lol/champions/ahri?x=1 (one hop)
+curl -sI http://www.skinbattle.lol/champions/ahri?x=1 | head -3   # 301 → https://www.skinbattle.lol/champions/ahri?x=1, then 301 → apex
 curl -sI https://www.skinbattle.lol/ | head -3                     # 301 → https://skinbattle.lol/, valid certificate
 curl -sI http://skinbattle.lol/ | head -3                          # 301 → https://skinbattle.lol/
 curl -sI https://skinbattle.lol/ | head -1                         # 200, untouched
