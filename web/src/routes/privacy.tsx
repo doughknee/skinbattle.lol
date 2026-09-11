@@ -29,7 +29,7 @@ export const Route = createFileRoute('/privacy')({
   component: PrivacyPage,
 })
 
-const EFFECTIVE = 'June 12, 2026'
+const EFFECTIVE = 'September 11, 2026'
 
 function Section({
   title,
@@ -61,10 +61,12 @@ function PrivacyPage() {
       <div className="animate-fade-up">
         <Section title="The short version">
           <p>
-            skinbattle.lol is a free, community-built fan project. There are no
-            ads, no third-party analytics, no tracking pixels, and your data is
-            never sold or shared for marketing. The site keeps the minimum it
-            needs to do one thing: let people rank League of Legends skins.
+            skinbattle.lol is a free, community-built fan project. There are
+            no ads, no tracking pixels, and your data is never sold or shared
+            for marketing. One privacy-focused analytics tool measures how the
+            site is used; it is never sent your email or your username. The
+            site keeps the minimum it needs to do one thing: let people rank
+            League of Legends skins.
           </p>
         </Section>
 
@@ -97,15 +99,25 @@ function PrivacyPage() {
             website, the servers keep short-lived standard logs (IP address,
             user agent, requested URL) for debugging and abuse prevention.
           </p>
+          <p>
+            <b className="text-gold1">Usage analytics.</b> PostHog, a
+            privacy-focused analytics service, records which pages are
+            visited, what is clicked, and which errors are hit, so the site
+            can tell what people actually use. It is sent no email and no
+            username: a signed-in account is only an opaque id plus a
+            signed-in/signed-out label. Its requests are proxied through
+            skinbattle.lol rather than loading a third-party script, and it
+            stores an identifier in a cookie and in local storage so repeat
+            visits aren't counted as new people.
+          </p>
         </Section>
 
         <Section title="What the site doesn't do">
           <p>
-            No third-party analytics or advertising scripts run on this site.
-            There is no cross-site tracking, no fingerprinting, and no consent
-            banner because there's nothing to consent to: every cookie and
-            local-storage entry is strictly functional (signing you in,
-            remembering your guest progress, caching your preferences).
+            No advertising scripts run on this site, and nothing here tracks
+            you across other sites or fingerprints your device. The analytics
+            described above is the only measurement, and it is never sent your
+            email, your name, or anything you type into the site.
           </p>
         </Section>
 
