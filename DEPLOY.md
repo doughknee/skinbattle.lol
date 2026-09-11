@@ -100,12 +100,29 @@ Notes:
   VITE_LOGTO_RESOURCE=https://api.skinbattle.lol
   POSTHOG_PROJECT_TOKEN=<PostHog project token>   # public client token
   POSTHOG_HOST=https://us.i.posthog.com           # or your region's host
+  INDEXNOW_KEY=<32-hex random string>             # optional, see below
   PORT=3000
   ```
   PostHog vars are read at **runtime** (like Logto) — set/rotate them and restart
   the `web` service, no rebuild. An empty token disables analytics. Browser events
   are proxied **same-origin** through `/ingest` by `server.mjs`, so no extra Coolify
   proxy rule is needed for PostHog (unlike `/api`) and ad-blockers can't drop them.
+- **`INDEXNOW_KEY` (optional).** Enables IndexNow pings to Bing (which grounds
+  Copilot); Google does not use IndexNow, so nothing about Google Search depends
+  on it. Generate any 8-128 character hex string (`openssl rand -hex 16`) and set
+  it in **two places with the same value**:
+  1. here, on the `web` service — `server.mjs` then serves it at
+     `https://skinbattle.lol/<key>.txt`, which is how IndexNow verifies we own
+     the domain. Read at **runtime** like the Logto/PostHog vars: set or rotate
+     it and restart `web`, no rebuild. The key file is never committed and never
+     written to disk — unset the var and the path just 404s.
+  2. as a GitHub Actions repository secret named `INDEXNOW_KEY`
+     (**Settings → Secrets and variables → Actions**), which the daily
+     `indexnow` workflow uses to submit. Leave it unset and the workflow fails
+     loudly rather than silently no-opping.
+
+  Bing Webmaster Tools setup is separate and not required for submission.
+
 - **Same-origin proxy:** route `https://skinbattle.lol/api/*` to the `api` service.
   Configure this in Coolify's proxy (Traefik label / additional domain rule) so the
   browser's `/api` calls reach Go. Alternatively give the API its own domain

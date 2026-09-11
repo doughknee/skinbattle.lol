@@ -1,0 +1,50 @@
+# Unattended IndexNow sweep: fetches the live /sitemap.xml, diffs it against
+# the last submission, and pings the IndexNow endpoint with whatever is new.
+#
+# Why a scheduled diff and not event hooks: the URL set barely moves (a new
+# champion, a skin crossing skinIsIndexable(), a slice crossing
+# sliceIsIndexable()) while ratings churn constantly. A daily diff catches all
+# three of those without a single hook, and cannot miss a write path someone
+# adds later. It also cannot fire on a vote, a battle, or a refit - none of
+# them change the sitemap's URL list. See web/scripts/submit-indexnow.mjs.
+#
+# Low stakes by design: Google ignores IndexNow entirely. This is for Bing,
+# which grounds Copilot, and the sitemap already carries discovery on its own
+# - so a failed run costs a day of lag, nothing more. The run still fails
+# loudly (and GitHub emails it) if the sitemap or the endpoint breaks.
+name: indexnow
+
+on:
+  schedule:
+    - cron: '0 7 * * *' # daily, 07:00 UTC - an hour behind facts-snapshot
+  workflow_dispatch: {}
+
+# Read-only: this job opens no PR and pushes nothing. The between-run snapshot
+# lives in the Actions cache, which is not gated by `permissions` - deliberately
+# not in git, so the daily sweep never touches the repo.
+permissions:
+  contents: read
+
+jobs:
+  sweep:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      # A cache key can't be overwritten, so it carries the run id and the
+      # restore-keys prefix picks up the most recent one. A miss (first run, or
+      # the 7-day eviction that daily runs should never hit) seeds the snapshot
+      # and submits nothing.
+      - uses: actions/cache@v4
+        with:
+          path: .indexnow-snapshot.txt
+          key: indexnow-snapshot-${{ github.run_id }}
+          restore-keys: indexnow-snapshot-
+      - name: Submit URLs that entered the sitemap
+        env:
+          # Same value as INDEXNOW_KEY on the web service - that's what serves
+          # the /<key>.txt file IndexNow fetches to verify ownership.
+          INDEXNOW_KEY: ${{ secrets.INDEXNOW_KEY }}
+        run: node web/scripts/submit-indexnow.mjs
