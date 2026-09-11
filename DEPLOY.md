@@ -252,22 +252,34 @@ to be set in Coolify for that redirect to ever run:
    generated middleware; Coolify exposes this as the "Force HTTPS" / permanent
    option). A `302` tells crawlers to keep requesting the http URL.
 
-Status (2026-09-11): step 1 is done. `www.skinbattle.lol` is listed on the
-`web` service, holds a Let's Encrypt certificate, and Coolify's own
-middleware redirects it to the apex (query string intact) before the request
-reaches server.mjs. Both of Coolify's redirects - www → apex and http → https -
-are still **302**. Making them permanent means setting `permanent=true` on the
-two Traefik middlewares Coolify generates for the service (a `redirectscheme`
-for https and a `redirectregex` for the host); Coolify does not expose that as
-a switch for compose services, so it is a custom-label edit on the `web`
-service, matching whatever middleware names Coolify generated. With every page
-self-canonicalising to the apex, the 302 only weakens consolidation slightly;
-it is not blocking.
+Status (2026-09-11): the www host is routed and holds a Let's Encrypt
+certificate. Coolify's own redirects (www → apex, http → https) are hard-coded
+**302** and cannot be made permanent from this repo: its www middleware gets
+`permanent=false` appended after any label we set, and its https middleware
+(`redirect-to-https`) is a name every container on the proxy shares, so a
+different definition here would make Traefik discard it for all of them.
+
+So the compose file defines ONE permanent middleware of its own,
+`sb-canonical` (see the `web` service's `labels`), which Coolify attaches to
+every router it generates for the service. It redirects `http://…` and
+`https://www.…` to `https://skinbattle.lol/…` with a 301 in one hop, and lets
+`https://skinbattle.lol/…` through. For it to be the redirect that runs,
+Coolify's two must be off on the `web` service:
+
+1. Domains → keep both hosts listed, direction **Allow www & non-www**.
+2. **Force HTTPS: off** (the http router then carries this middleware instead
+   of Coolify's 302).
+3. Redeploy so the labels are regenerated from the compose file.
+
+If only step 1 is done, the www hop becomes 301 and the scheme hop stays
+Coolify's 302. server.mjs's own www → apex 301 remains as the last line of
+defence for any request that reaches the container on the wrong host.
 
 DNS already resolves `www` to the server. Verify:
 
 ```bash
-curl -sIL http://www.skinbattle.lol/champions/ahri?x=1 | grep -iE "^(HTTP|location)"   # ends at https://skinbattle.lol/champions/ahri?x=1 200
-curl -sI https://www.skinbattle.lol/ | head -3                     # redirect to the apex, valid certificate
-curl -sI http://skinbattle.lol/ | head -3                          # 302 today; 301 once permanent=true is set
+curl -sI http://www.skinbattle.lol/champions/ahri?x=1 | head -3   # 301 → https://skinbattle.lol/champions/ahri?x=1 (one hop)
+curl -sI https://www.skinbattle.lol/ | head -3                     # 301 → https://skinbattle.lol/, valid certificate
+curl -sI http://skinbattle.lol/ | head -3                          # 301 → https://skinbattle.lol/
+curl -sI https://skinbattle.lol/ | head -1                         # 200, untouched
 ```
