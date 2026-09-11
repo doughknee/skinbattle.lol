@@ -257,6 +257,7 @@ function SplashdlePage() {
               shareText={state.shareText}
               animate={!loadedWith.current.finished}
               gameName="Splashdle"
+              sharePath="/battle/splashdle"
             />
             <GuessBoard
               guesses={state.guesses}

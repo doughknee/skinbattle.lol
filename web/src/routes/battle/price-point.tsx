@@ -19,6 +19,7 @@ import {
 } from '~/lib/games/serverFns'
 import { guestRestoreToken, rememberGuestToken } from '~/lib/games/client'
 import { canonicalLink, ogMeta } from '~/lib/games/ogMeta'
+import { shareOrCopy } from '~/lib/games/settle'
 import TodayStrip from '~/components/games/TodayStrip'
 import GameBreadcrumb from '~/components/games/GameBreadcrumb'
 import { ConsensusStat } from '~/components/games/GuessKit'
@@ -229,15 +230,21 @@ function PriceCheckPage() {
   const share = async () => {
     if (!state.shareText) return
     try {
-      await navigator.clipboard.writeText(state.shareText)
-      toast('Result copied. Go flex it!')
-      posthog.capture('price_check_result_shared', {
+      const medium = await shareOrCopy({
+        title: `Price Point #${state.puzzleNumber} · SkinBattle`,
+        text: state.shareText,
+        path: '/battle/price-point',
+      })
+      if (!medium) return
+      if (medium === 'copy') toast('Result copied. Go flex it!')
+      posthog?.capture('price_check_result_shared', {
         puzzle_number: state.puzzleNumber,
         score: state.score,
         total_rounds: state.totalRounds,
+        method: medium,
       })
     } catch {
-      toast("Couldn't copy to clipboard.", 'error')
+      toast("Couldn't share the result.", 'error')
     }
   }
 

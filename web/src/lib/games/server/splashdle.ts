@@ -206,7 +206,10 @@ function buildShareText(
   if (result.status === 'won' && streak.current > 1) {
     lines.push(`🔥 ${streak.current}-day streak`)
   }
-  lines.push('skinbattle.lol/battle')
+  // One line a stranger can act on. No link here: the client appends the
+  // puzzle's own URL with share attribution (settle.ts shareOrCopy), so the
+  // link unfurls as the puzzle card and the arrival is attributed.
+  lines.push('Name the skin from a sliver of its splash:')
   return lines.join('\n')
 }
 

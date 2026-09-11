@@ -34,7 +34,6 @@ export default function ShareReferral() {
     handled = true
     posthog?.capture('share_referred_visit', {
       utm_medium: ref.medium,
-      utm_campaign: ref.campaign,
       page_type: pageTypeOf(pathname),
       champion: championOfPath(pathname),
       path: pathname,

@@ -255,6 +255,7 @@ function ChromaVisionPage() {
               shareText={state.shareText}
               animate={!loadedWith.current.finished}
               gameName="Chroma Vision"
+              sharePath="/battle/chroma-vision"
             />
             <GuessBoard
               guesses={state.guesses}
