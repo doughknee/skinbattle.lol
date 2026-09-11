@@ -14,6 +14,7 @@
 
 import { DatabaseSync } from 'node:sqlite'
 import { describe, expect, it } from 'vitest'
+import snapshot from '../../search/__fixtures__/catalog.json'
 import {
   allCatalogSkins,
   catalogFingerprint,
@@ -115,6 +116,49 @@ describe('the champion directory and the champion page agree', () => {
     const d = fixture()
     const ahri = championRoster(d).find((r) => r.championId === 'Ahri')!
     expect(ahri.splashUrl).toBe('http://x/Ahri-0.jpg')
+  })
+})
+
+describe('every champion in a real catalog', () => {
+  // The fixture above pins the relationship on three champions; this runs it
+  // over a full catalog snapshot - every champion and every skin of one
+  // patch, base looks included (the search fixture) - so a champion-shaped
+  // edge the toy lacks (a one-skin wardrobe, an id the display name differs
+  // from, a champion whose base row sorts last) cannot slip past. The
+  // expected count per champion is taken from the snapshot directly, not
+  // from any helper under test.
+  const d = db()
+  const insert = d.prepare(
+    'INSERT INTO catalog_skins (id, champion_id, champion_name, num, name, splash_url) VALUES (?,?,?,?,?,?)',
+  )
+  const expected = new Map<string, number>()
+  for (const s of snapshot.skins) {
+    insert.run(s.id, s.championId, s.championName, s.num, s.name, `http://x/${s.id}.jpg`)
+    if (s.num !== 0) expected.set(s.championId, (expected.get(s.championId) ?? 0) + 1)
+  }
+
+  it('is a full roster, not a sample', () => {
+    expect(expected.size).toBeGreaterThan(160)
+    expect(championRoster(d).map((r) => r.championId)).toEqual([...expected.keys()].sort())
+    expect(championCount(d)).toBe(expected.size)
+  })
+
+  it('prints the same count on every card and its champion page', () => {
+    const wrong = championRoster(d)
+      .filter((r) => r.skinCount !== championSkins(d, r.championId).length)
+      .map((r) => r.championId)
+    expect(wrong).toEqual([])
+  })
+
+  it('counts exactly the non-base rows of every champion, summing to the catalog', () => {
+    const wrong = championRoster(d)
+      .filter((r) => r.skinCount !== expected.get(r.championId))
+      .map((r) => `${r.championId}: ${r.skinCount} vs ${expected.get(r.championId)}`)
+    expect(wrong).toEqual([])
+    const total = [...expected.values()].reduce((a, b) => a + b, 0)
+    expect(catalogSkinTotal(d)).toBe(total)
+    expect(championRoster(d).reduce((n, r) => n + r.skinCount, 0)).toBe(total)
+    expect(allCatalogSkins(d)).toHaveLength(total)
   })
 })
 
