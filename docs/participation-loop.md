@@ -217,6 +217,14 @@ Other slices: "Help shape this ranking" plus the slice's Tier Drop board.
   #N of M overall", battles and rating. Long strings step down a size; cache
   keys are versioned (`og-rankings-v3-…`, `og-skin-v3-…`) so a redesign
   replaces yesterday's cards at once.
+- **The nine generic cards** (home and every page without a verdict of its
+  own: the battle modes, the three dailies, the Mirror, the leaderboards, the
+  Drought Index) share one `standardCard` layout to the same rule, each with
+  live content: the current #1 skin's splash as the crisp art, today's puzzle
+  crop or mosaic on the dailies (blurred all the way across for the backdrop,
+  so a card never shows more than the puzzle does), the longest drought's
+  last skin. The shared tier-list image keeps its thumbnail rows with larger
+  type and the same footer ask. Cache keys `og-<card>-v2-…`, `og-tier-v2-…`.
 
 ---
 
