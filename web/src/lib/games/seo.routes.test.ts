@@ -110,6 +110,44 @@ describe('migration redirects are permanent', () => {
   })
 })
 
+describe('the sitemap and the robots tag agree', () => {
+  // Two sources decided this independently: server/sitemap.ts added every
+  // catalog skin and every ranking slice, while seo.ts decided noindex from
+  // battle counts. They agreed only because nothing fell below the bar - the
+  // moment a threshold moves, the gap becomes "Submitted URL marked noindex"
+  // in Search Console. The fix is that the sitemap calls the same predicates,
+  // so this guards against a future `paths.add` that skips them.
+  const src = readFileSync(
+    join(import.meta.dirname, 'server/sitemap.ts'),
+    'utf8',
+  )
+
+  it('gates generated skin and slice URLs on seo.ts predicates', () => {
+    expect(src).toContain("from '../seo'")
+    expect(src).toMatch(/if \(skinIsIndexable\([^)]*\)\)/)
+    expect(src).toMatch(/if \(sliceIsIndexable\([^)]*\)\)/)
+  })
+
+  it('adds no generated URL outside a gate', () => {
+    // Every paths.add() of an interpolated URL must sit on, or directly
+    // under, a line carrying its …IsIndexable(…) gate.
+    const lines = src.split('\n')
+    const ungated = lines
+      .map((line, i) => ({ line, prev: lines[i - 1] ?? '' }))
+      .filter(({ line }) => /^\s*paths\.add\(`[^`]*\$\{/.test(line))
+      .filter(
+        ({ line, prev }) =>
+          !/(skin|slice)IsIndexable\(/.test(line) &&
+          !/(skin|slice)IsIndexable\(/.test(prev),
+      )
+      .map(({ line }) => /`([^`]+)`/.exec(line)?.[1] ?? line.trim())
+    // Champion pages are the one deliberate exception: they carry a full
+    // wardrobe regardless of battle volume and seo.ts has no predicate for
+    // them. If that changes, gate them too rather than deleting this line.
+    expect(ungated).toEqual(['/champions/${championId.toLowerCase()}'])
+  })
+})
+
 describe('robots.txt', () => {
   const robots = readFileSync(
     join(import.meta.dirname, '../../../public/robots.txt'),

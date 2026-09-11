@@ -21,6 +21,7 @@ import type {
   QuickBattleState,
   RankingsIndex,
   RankingsState,
+  MethodologyState,
   RoadmapState,
   SkinPageState,
   SplashdleState,
@@ -156,6 +157,15 @@ export const fetchRoadmap = createServerFn({ method: 'GET' }).handler(
   async (): Promise<RoadmapState> => {
     const { roadmapState } = await import('./server/roadmap')
     return roadmapState()
+  },
+)
+
+// Provenance figures for /methodology: how much data the ratings actually
+// rest on right now. Anonymous aggregate counts, no guest token.
+export const fetchMethodology = createServerFn({ method: 'GET' }).handler(
+  async (): Promise<MethodologyState> => {
+    const { methodologyState } = await import('./server/methodology')
+    return methodologyState()
   },
 )
 
