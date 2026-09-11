@@ -5,20 +5,21 @@
 
 import type { RoadmapState } from '../types'
 import { getDb } from './db'
-import { allCatalogSkins, ensureCatalog } from './catalog'
+import { catalogSkinTotal, ensureCatalog } from './catalog'
 import { communityBattleCount } from './quickbattle'
+import { RATED_IN_CATALOG } from './ratings'
 
 export async function roadmapState(): Promise<RoadmapState> {
   const db = getDb()
   await ensureCatalog(db)
 
   const battles = communityBattleCount(db)
-  const totalSkins = allCatalogSkins(db).length
+  const totalSkins = catalogSkinTotal(db)
 
+  // Catalog-joined like every other rated count, so the meter's "N of M"
+  // cannot count rating rows for skins the catalog dropped.
   const rated = db
-    .prepare(
-      'SELECT battles FROM skin_ratings WHERE battles > 0 ORDER BY battles',
-    )
+    .prepare(`SELECT r.battles ${RATED_IN_CATALOG} ORDER BY r.battles`)
     .all() as unknown as { battles: number }[]
   const ratedSkins = rated.length
   const medianBattles =

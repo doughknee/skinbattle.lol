@@ -81,14 +81,14 @@ export const Route = createFileRoute('/battle/')({
   },
   head: ({ loaderData }) => ({
     meta: [
-      { title: 'Battle · Skin Battle' },
+      { title: 'Battle | SkinBattle' },
       {
         name: 'description',
         content:
           'Two League skins. Pick the one you like more. Every vote builds the community ranking.',
       },
       ...ogMeta({
-        title: 'Battle · Skin Battle',
+        title: 'Battle | SkinBattle',
         description:
           'Two League skins. Pick the one you like more. Every vote builds the community ranking, and your personal tier list.',
         card: 'quick-battle',
@@ -748,7 +748,8 @@ function FeedbackBar({ feedback }: { feedback: BattleFeedback | null }) {
         <p className="text-sm text-grey1">
           Pick the one you like more. Every vote moves the{' '}
           <Link
-            to="/rankings"
+            to="/rankings/$slice"
+            params={{ slice: 'all' }}
             className="font-bold text-gold1 underline-offset-2 transition duration-150 hover:underline"
           >
             rankings
@@ -915,7 +916,7 @@ function SessionHistory({
       <p className="mt-3 text-center text-sm text-grey1">
         Every verdict sharpens the{' '}
         <Link
-          to="/battle/mirror"
+          to="/profile"
           className="font-bold text-gold1 underline-offset-2 transition duration-150 hover:underline"
         >
           tier list

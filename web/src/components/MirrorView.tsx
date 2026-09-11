@@ -342,7 +342,7 @@ function TierListSection({ state }: { state: MirrorState }) {
       <SectionHeading
         icon={faRankingStar}
         title="Your tier list"
-        sub={`Auto-built from ${state.totalBattles.toLocaleString()} battles. Only skins you've actually judged. Every battle sharpens it.`}
+        sub={`Auto-built from ${state.totalBattles.toLocaleString()} head-to-head battles plus every Tier Drop board you've submitted. Only skins you've actually judged. Every verdict sharpens it.`}
       />
 
       <div className="mb-3 flex flex-wrap items-center gap-2">
@@ -389,9 +389,10 @@ function TierListSection({ state }: { state: MirrorState }) {
           className="mb-3 max-w-2xl bg-hextech-black/30 p-4 text-sm leading-relaxed text-grey1 outline outline-icon/20 -outline-offset-1"
         >
           <p>
-            Every pick you make in Head-to-Head updates a personal rating for
-            the two skins you judged. Each skin starts at 1500. The one you
-            pick gains points, and the one you pass on loses some.
+            Every Head-to-Head pick, and every Tier Drop board you submit,
+            updates a personal rating for the skins you judged. Each skin
+            starts at 1500. The one you pick (or place higher) gains points,
+            and the one you pass on (or place lower) loses some.
           </p>
           <p className="mt-2">
             Tiers are fixed bands on that rating:{' '}
@@ -575,10 +576,11 @@ function EmptyMirror({ state }: { state: MirrorState }) {
             This is where your taste takes shape
           </h2>
           <p className="mt-2 max-w-xl text-grey1">
-            Every Head-to-Head pick rates the skins you saw, and the Mirror
-            turns those picks into your personal tier list, your most
-            contrarian takes, and the champions you secretly over-index on. No
-            account needed. It starts with one battle.
+            Every Head-to-Head pick and every Tier Drop board rates the skins
+            you judged, and the Mirror turns those verdicts into your personal
+            tier list, your most contrarian takes, and the champions you
+            secretly over-index on. No account needed. It starts with one
+            battle.
           </p>
           <div className="mt-5 flex flex-wrap items-center gap-3">
             <Link to="/battle" className={btnPrimarySm}>
@@ -629,14 +631,16 @@ function KeepItBanner({ battles }: { battles: number }) {
 }
 
 export default function MirrorView({ state }: { state: MirrorState }) {
-  if (state.totalBattles === 0) return <EmptyMirror state={state} />
+  if (state.totalBattles === 0 && state.skinsRated === 0) {
+    return <EmptyMirror state={state} />
+  }
 
   return (
     <>
-      {state.totalBattles > 0 && (
+      {state.skinsRated > 0 && (
         <p className="animate-fade-up mb-8 text-sm text-grey1">
           <b className="text-gold1">{state.totalBattles.toLocaleString()}</b>{' '}
-          battles ·{' '}
+          head-to-head battles ·{' '}
           <b className="text-gold1">{state.skinsRated.toLocaleString()}</b> of{' '}
           {state.catalogTotal.toLocaleString()} skins rated ·{' '}
           <b className="text-gold1">{state.championsTouched}</b> of{' '}

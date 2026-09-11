@@ -110,8 +110,8 @@ export const Route = createFileRoute('/battle/tier-drop')({
     const hasImage = !!shared?.found && shared.mode !== 'board'
     const title =
       shared?.found && shared.sharerName
-        ? `${shared.sharerName}'s tier list · Skin Battle`
-        : 'Tier Drop · Skin Battle'
+        ? `${shared.sharerName}'s tier list | SkinBattle`
+        : 'Tier Drop | SkinBattle'
     const description =
       "Sort a champion's skins S to D, then see how your take stacks up against the community."
     return {
@@ -1274,7 +1274,8 @@ function Builder({
               </motion.button>
             </div>
             <Link
-              to="/rankings"
+              to="/rankings/$slice"
+              params={{ slice: 'all' }}
               className="text-sm text-grey1 underline-offset-2 transition duration-150 hover:text-gold1 hover:underline"
             >
               See the full rankings your verdicts build →

@@ -159,6 +159,14 @@ export const hasEnoughVoters = (v: AnswerVoters | null | undefined): boolean =>
 const settledRule = (subject: string): string =>
   `A placing here is settled once its band reaches ±${num(MAX_CONFIDENT_UNCERTAINTY)} Elo, which takes about ${plural(weightedBattlesFor(MAX_CONFIDENT_UNCERTAINTY), 'weighted battle')}, and once ${plural(MIN_CONFIDENT_VOTERS, 'separate voter')} stand behind ${subject}, counting a signed-out visitor as half a person.`
 
+// A "battle", in every sentence below and on every page that prints a
+// battle count, is one appearance in a head-to-head pick OR one placement on
+// a submitted Tier Drop board - the two inputs the rating engine consumes
+// (server/ratings.ts applyLiveUpdate / applyTierListUpdate, and runRefit over
+// both). The sentences used to say "head-to-head battles" for a number that
+// had counted Tier Drop placements since Tier Drop shipped. /methodology
+// carries the same definition in prose.
+
 // ─── the block ──────────────────────────────────────────────────────────────
 
 export function answerBlock(input: AnswerInput): AnswerBlock {
@@ -172,7 +180,7 @@ export function answerBlock(input: AnswerInput): AnswerBlock {
   if (!leader || !usableRating(leader.rating) || rated < 1) {
     return {
       confidence: 'empty',
-      answer: `No ${scope} have been through a head-to-head battle yet, so there is no community ranking for them.`,
+      answer: `No ${scope} have been through a battle yet, so there is no community ranking for them.`,
       basis: `The catalog lists ${plural(total, 'skin')} in this group, none with battle data so far.`,
     }
   }
@@ -198,7 +206,7 @@ export function answerBlock(input: AnswerInput): AnswerBlock {
     return {
       confidence: 'confident',
       answer: `${name} is the highest-rated of the ${scope}, at ${rating} Elo (±${num(band)}).`,
-      basis: `That rests on ${plural(battles, 'head-to-head battle')} for ${name}${from}, a band narrow enough to separate it from the field and enough separate people to call it a community result. ${coverage}`,
+      basis: `That rests on ${plural(battles, 'battle')} for ${name}${from}, a band narrow enough to separate it from the field and enough separate people, counting a signed-out visitor as half, to call it a community result. ${coverage}`,
     }
   }
 
@@ -217,7 +225,7 @@ export function answerBlock(input: AnswerInput): AnswerBlock {
     return {
       confidence: 'provisional',
       answer: `${lead}, but at ±${num(band)} that placing is provisional.`,
-      basis: `It rests on ${plural(battles, 'head-to-head battle')}${from} so far. ${rule} ${coverage}`,
+      basis: `It rests on ${plural(battles, 'battle')}${from} so far. ${rule} ${coverage}`,
     }
   }
 
@@ -228,7 +236,7 @@ export function answerBlock(input: AnswerInput): AnswerBlock {
   return {
     confidence: 'provisional',
     answer: `${lead}, but too few people have voted on it for that placing to be settled.`,
-    basis: `Its band is tight, at ±${num(band)} over ${plural(battles, 'head-to-head battle')}${from}, but a community ranking needs more than that. ${rule} ${coverage}`,
+    basis: `Its band is tight, at ±${num(band)} over ${plural(battles, 'battle')}${from}, but a community ranking needs more than that. ${rule} ${coverage}`,
   }
 }
 
@@ -270,7 +278,7 @@ export function skinAnswerBlock(input: SkinAnswerInput): AnswerBlock {
   if (!c || !usableRating(c.rating)) {
     return {
       confidence: 'empty',
-      answer: `${name} has not been through a head-to-head battle yet, so it has no community rating.`,
+      answer: `${name} has not been through a battle yet, so it has no community rating.`,
       basis: `Of the ${plural(total, 'skin')} in the catalog, ${num(rated)} ${
         rated === 1 ? 'has' : 'have'
       } battle data so far. This one is waiting for its first vote.`,
@@ -291,7 +299,7 @@ export function skinAnswerBlock(input: SkinAnswerInput): AnswerBlock {
     return {
       confidence: 'confident',
       answer: `${name} rates ${rating} Elo (±${num(band)})${place}.`,
-      basis: `That rests on ${plural(battles, 'head-to-head battle')}${from}, a band narrow enough to hold the placing against the field and enough separate people to call it a community result.`,
+      basis: `That rests on ${plural(battles, 'battle')}${from}, a band narrow enough to hold the placing against the field and enough separate people, counting a signed-out visitor as half, to call it a community result.`,
     }
   }
 
@@ -299,13 +307,13 @@ export function skinAnswerBlock(input: SkinAnswerInput): AnswerBlock {
     return {
       confidence: 'provisional',
       answer: `${name} currently rates ${rating} Elo${place}, but at ±${num(band)} that placing is provisional.`,
-      basis: `It rests on ${plural(battles, 'head-to-head battle')}${from} so far. ${settledRule('it')}`,
+      basis: `It rests on ${plural(battles, 'battle')}${from} so far. ${settledRule('it')}`,
     }
   }
 
   return {
     confidence: 'provisional',
     answer: `${name} rates ${rating} Elo${place}, but too few people have voted on it for that placing to be settled.`,
-    basis: `Its band is tight, at ±${num(band)} over ${plural(battles, 'head-to-head battle')}${from}, but a community ranking needs more than that. ${settledRule('it')}`,
+    basis: `Its band is tight, at ±${num(band)} over ${plural(battles, 'battle')}${from}, but a community ranking needs more than that. ${settledRule('it')}`,
   }
 }

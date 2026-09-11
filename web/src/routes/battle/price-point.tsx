@@ -36,14 +36,14 @@ export const Route = createFileRoute('/battle/price-point')({
   },
   head: () => ({
     meta: [
-      { title: 'Price Point · Skin Battle' },
+      { title: 'Price Point | SkinBattle' },
       {
         name: 'description',
         content:
           'Five League skins a day. Guess what each one cost in RP. Legacy relics included.',
       },
       ...ogMeta({
-        title: 'Price Point · Skin Battle',
+        title: 'Price Point | SkinBattle',
         description:
           'Five League skins a day. Guess what each one cost in RP. Legacy relics included.',
         card: 'price-check',

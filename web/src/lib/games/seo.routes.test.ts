@@ -201,3 +201,111 @@ describe('robots.txt', () => {
     expect(groups).toEqual(['*'])
   })
 })
+
+// ─── the final audit's guards (2026-09-11) ──────────────────────────────────
+
+const read = (rel: string) => readFileSync(join(ROUTES, rel), 'utf8')
+
+describe('search intent lands on stable titles', () => {
+  it('champion pages target "Best <Champion> Skins" and keep the winner out of the title', () => {
+    const src = read('champions/$id.tsx')
+    expect(src).toContain('const title = `Best ${name} Skins Ranked by Players | SkinBattle`')
+    expect(src).toContain('Best {name} Skins')
+    // The description is stable per champion: it must not interpolate the
+    // verdict, whose leader, rating and band move with every vote.
+    const description = /const description = `([^`]*)`/.exec(src)?.[1] ?? ''
+    expect(description).not.toContain('answer.')
+    expect(description).not.toContain('rows[0]')
+  })
+
+  it('the catalog-wide ranking owns the broad query', () => {
+    const src = read('rankings/$slice.tsx')
+    expect(src).toContain("'Best League of Legends Skins Ranked by Players | SkinBattle'")
+    expect(src).not.toMatch(/title[^\n]*rows\[0\]/)
+  })
+
+  it('every title carries the one-word brand', () => {
+    // "Skin Battle", "SkinBattle" and "SKINBATTLE.LOL" all shipped as title
+    // suffixes at once. The wordmark stays on the home <title>; everything
+    // else ends in " | SkinBattle".
+    const offenders = routeFiles(ROUTES)
+      .map((path) => ({ name: rel(path), src: readFileSync(path, 'utf8') }))
+      .filter(({ src }) => /Skin Battle/.test(src))
+      .map((r) => r.name)
+    expect(offenders).toEqual([])
+  })
+})
+
+describe('the flagship slug is a permanent redirect, never a soft 404', () => {
+  it('sends /rankings/best-league-of-legends-skins to /rankings/all with a 301', () => {
+    const src = read('rankings/best-league-of-legends-skins.tsx')
+    expect(src).toContain("createFileRoute('/rankings/best-league-of-legends-skins')")
+    expect(src).toContain('statusCode: 301')
+    expect(src).toContain("slice: 'all'")
+  })
+})
+
+describe('internal links never pass through a redirect stub', () => {
+  // Every redirect stub's own path, read from its createFileRoute() call.
+  const stubs = routeFiles(ROUTES)
+    .map((path) => readFileSync(path, 'utf8'))
+    .filter((src) => src.includes('throw redirect('))
+    .map((src) => /createFileRoute\('([^']+)'\)/.exec(src)?.[1])
+    .filter((p): p is string => !!p && !p.includes('$'))
+
+  it('finds the stubs at all', () => {
+    expect(stubs).toContain('/rankings/elo')
+    expect(stubs).toContain('/rankings/best-league-of-legends-skins')
+  })
+
+  it('no <Link to> or href targets one', () => {
+    const SRC = join(import.meta.dirname, '../..')
+    const files = [
+      ...routeFiles(ROUTES),
+      ...routeFiles(join(SRC, 'components')),
+      join(SRC, 'lib', 'siteMap.ts'),
+    ]
+    const offenders = files.flatMap((path) => {
+      const src = readFileSync(path, 'utf8')
+      return stubs
+        .filter((stub) => src.includes(`to="${stub}"`) || src.includes(`href="${stub}"`))
+        .map((stub) => `${rel(path)} → ${stub}`)
+    })
+    expect(offenders).toEqual([])
+  })
+})
+
+describe('tracking parameters never reach a canonical URL', () => {
+  it('canonicalLink() is only ever given a path literal or a path template', () => {
+    const offenders = routeFiles(ROUTES)
+      .map((path) => ({ name: rel(path), src: readFileSync(path, 'utf8') }))
+      .flatMap(({ name, src }) =>
+        [...src.matchAll(/canonicalLink\(([^)]*)\)/g)]
+          .map((m) => m[1])
+          .filter((arg) => /search|\?|utm/i.test(arg))
+          .map((arg) => `${name}: ${arg}`),
+      )
+    expect(offenders).toEqual([])
+  })
+})
+
+describe('current product copy', () => {
+  it('names the real reset clock (US Central, not UTC)', () => {
+    const SRC = join(import.meta.dirname, '../..')
+    const offenders = [...routeFiles(ROUTES), ...routeFiles(join(SRC, 'components'))]
+      .map((path) => ({ name: rel(path), src: readFileSync(path, 'utf8') }))
+      .filter(({ src }) => /midnight\s+UTC/.test(src))
+      .map((r) => r.name)
+    expect(offenders).toEqual([])
+  })
+
+  it('renders no worked example that could pass for live data', () => {
+    // /methodology used to render its answer-template examples for
+    // "Elderwood Ahri" over "24 Ahri skins"; a crawler quoted the empty case
+    // as a statement about the site.
+    const src = read('methodology.tsx')
+    expect(src).not.toContain('Elderwood')
+    expect(src).not.toContain('scope="Ahri')
+    expect(src).not.toContain('leader={null}')
+  })
+})

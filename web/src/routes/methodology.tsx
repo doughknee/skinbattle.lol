@@ -30,16 +30,16 @@ import { btnPrimarySm, btnSecondarySm } from '~/lib/ui'
 // with it. The live figures come from the loader, never from memory.
 
 const DESCRIPTION =
-  'How SkinBattle ranks League of Legends skins: community head-to-head votes, a Bradley-Terry refit over the full match log, and a published uncertainty band on every rating.'
+  'How SkinBattle ranks League of Legends skins: community votes from head-to-head battles and Tier Drop boards, a Bradley-Terry refit over the full match log, and a published uncertainty band on every rating.'
 
 export const Route = createFileRoute('/methodology')({
   loader: () => fetchMethodology(),
   head: () => ({
     meta: [
-      { title: 'Methodology · Skin Battle' },
+      { title: 'Methodology | SkinBattle' },
       { name: 'description', content: DESCRIPTION },
       ...ogMeta({
-        title: 'Methodology · Skin Battle',
+        title: 'Methodology | SkinBattle',
         description: DESCRIPTION,
         card: 'games',
         path: '/methodology',
@@ -207,8 +207,8 @@ function MethodologyPage() {
         <Figure label="With battle data" value={n(s.ratedSkins)} />
         <Figure label="Votes recorded" value={n(s.battleEvents)} />
         <Figure
-          label="Settled rankings"
-          value={`${n(s.confidentSkins)}`}
+          label={`Inside the ± ${MAX_CONFIDENT_UNCERTAINTY} band`}
+          value={n(s.confidentSkins)}
         />
       </div>
 
@@ -236,6 +236,13 @@ function MethodologyPage() {
           not independent, so a whole board is capped at about{' '}
           <b>8 effective comparisons</b> and any single skin on it at{' '}
           <b>3</b>. Ranking twelve skins does not count as sixty-six opinions.
+        </p>
+        <p>
+          <b>What a battle count means.</b> Wherever this site prints a battle
+          count, one battle is one appearance in a head-to-head pick or one
+          placement on a submitted Tier Drop board. Both feed the live rating
+          and the recount below, so the count is the skin's whole evidence,
+          not the head-to-head half of it.
         </p>
         <p>
           There are no star ratings and no bans. If you see a number on this
@@ -326,7 +333,7 @@ function MethodologyPage() {
         <p>
           One more guard, because the biggest risk to a community ranking is one
           determined person: a single voter's influence on any one skin is
-          capped at about <b>6 effective comparisons</b>. Past that, your votes
+          capped at about <b>6 weighted battles</b>. Past that, your votes
           still count as battles — they just stop moving that skin. You cannot
           farm a favorite up the table.
         </p>
@@ -358,7 +365,7 @@ function MethodologyPage() {
       <Section title="What the ± actually is">
         <p>
           After a recount, a skin's band is set directly by how much evidence it
-          has: <b>± 350 ÷ √(weighted votes)</b>, floored at ± 60. It is a sample
+          has: <b>± 350 ÷ √(weighted battles)</b>, floored at ± 60. It is a sample
           size wearing different clothes, and it is the single most useful number
           on this site.
         </p>
@@ -366,7 +373,7 @@ function MethodologyPage() {
           <table className="w-full min-w-[24rem] text-left text-sm">
             <thead className="text-xs uppercase tracking-widest text-grey1/80">
               <tr>
-                <th className="py-2 pr-4 font-normal">Weighted votes</th>
+                <th className="py-2 pr-4 font-normal">Weighted battles</th>
                 <th className="py-2 pr-4 font-normal">Band</th>
                 <th className="py-2 font-normal">What it supports</th>
               </tr>
@@ -466,9 +473,9 @@ function MethodologyPage() {
         </p>
         <p>
           So they are deliberately far apart: about{' '}
-          <b>{confidentWeighted} weighted votes</b> for the second versus{' '}
+          <b>{confidentWeighted} weighted battles</b> for the second versus{' '}
           {MIN_INDEXABLE_BATTLES} raw battles for the first. Because a signed-out
-          vote weighs half, {confidentWeighted} weighted votes means somewhere
+          vote weighs half, {confidentWeighted} weighted battles means somewhere
           between {confidentWeighted} and {confidentWeighted * 2} real ones.
         </p>
         <p>
@@ -478,9 +485,9 @@ function MethodologyPage() {
           person having a long afternoon. Both produce ±{' '}
           {MAX_CONFIDENT_UNCERTAINTY}; only one of them is a community. The
           number is not a guess — a single voter's pull on any one skin is
-          already capped at {VOTER_SKIN_CAP} weighted votes by the anti-farming
+          already capped at {VOTER_SKIN_CAP} weighted battles by the anti-farming
           rule, so the{' '}
-          {confidentWeighted} weighted votes behind a ±{' '}
+          {confidentWeighted} weighted battles behind a ±{' '}
           {MAX_CONFIDENT_UNCERTAINTY} band cannot honestly come from fewer than{' '}
           {MIN_CONFIDENT_VOTERS} people. This bar enforces what the band was
           already claiming.
@@ -515,58 +522,60 @@ function MethodologyPage() {
           Ranking claims across the site are generated from live ratings by a
           fixed template — the same data always produces the same sentence, and
           no language model writes copy at request time. There are four
-          versions, chosen by the band and the head count:
+          versions, chosen by the band and the head count. Three of them, on
+          made-up figures for a made-up skin:
         </p>
+        {/* Illustrative inputs only. These used to be rendered for a real
+            skin of a real champion over that champion's real wardrobe size,
+            and a crawler quoted the empty case ("The catalog lists N skins
+            in this group, none with battle data so far") as a statement
+            about the site. Nothing here may look like a real skin, a real
+            champion or a live count - seo.routes.test.ts checks. */}
         <div className="mt-4 space-y-3">
           <AnswerSample
-            caption="Both bars cleared"
-            scope="Ahri skins"
+            caption="Both bars cleared (illustrative figures)"
+            scope="example skins"
             leader={{
-              name: 'Elderwood Ahri',
+              name: 'Example Skin',
               rating: 1642,
               uncertainty: 62,
               battles: 41,
               voters: { members: 4, guests: 9 },
             }}
-            rated={24}
-            total={24}
+            rated={12}
+            total={12}
           />
           <AnswerSample
-            caption="Band outside the bar — today's normal case"
-            scope="Ahri skins"
+            caption="Band outside the bar — today's normal case (illustrative figures)"
+            scope="example skins"
             leader={{
-              name: 'Elderwood Ahri',
+              name: 'Example Skin',
               rating: 1642,
               uncertainty: 210,
               battles: 4,
               voters: { members: 0, guests: 3 },
             }}
-            rated={19}
-            total={24}
+            rated={9}
+            total={12}
           />
           <AnswerSample
-            caption="Band inside the bar, too few people behind it"
-            scope="Ahri skins"
+            caption="Band inside the bar, too few people behind it (illustrative figures)"
+            scope="example skins"
             leader={{
-              name: 'Elderwood Ahri',
+              name: 'Example Skin',
               rating: 1642,
               uncertainty: 62,
               battles: 41,
               voters: { members: 1, guests: 1 },
             }}
-            rated={24}
-            total={24}
-          />
-          <AnswerSample
-            caption="Nothing battled yet"
-            scope="Ahri skins"
-            leader={null}
-            rated={0}
-            total={24}
+            rated={12}
+            total={12}
           />
         </div>
         <p className="mt-4 text-sm text-grey1/80">
-          Worked examples, rendered by the same helper the rest of the site uses.
+          The fourth version is for a group nobody has battled yet: it says so
+          and names no leader. Every example above is rendered by the same
+          helper the rest of the site uses, on figures invented for this page.
         </p>
       </Section>
 
@@ -588,7 +597,7 @@ function MethodologyPage() {
           ) : (
             <>
               Being blunt about it: nothing has been battled yet, so every page
-              is on the third template above. The provisional and confident
+              is on the fourth, empty template. The provisional and confident
               phrasing arrive as votes do — in that order.
             </>
           )}

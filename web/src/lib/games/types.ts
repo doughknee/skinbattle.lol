@@ -38,7 +38,7 @@ export interface SplashdleAnswer {
 }
 
 export interface SplashdleState {
-  date: string // YYYY-MM-DD (UTC) - the puzzle resets at midnight UTC
+  date: string // YYYY-MM-DD in America/Chicago - the puzzle resets at midnight US Central (dailyTz.ts)
   puzzleNumber: number
   maxGuesses: number
   status: 'in_progress' | 'won' | 'lost'
@@ -469,8 +469,9 @@ export interface SkinPageState {
   community: {
     rating: number
     uncertainty: number
-    battles: number
-    wins: number
+    battles: number // head-to-head appearances + Tier Drop placements
+    wins: number // head-to-head wins only
+    h2hBattles: number // the denominator a win rate is allowed to use
     rank: number
     calibrated: boolean // false = "Early ranking: needs more votes"
   } | null // null = never battled
@@ -514,17 +515,57 @@ export interface HomeSlide {
 }
 
 export interface HomeState {
-  date: string // UTC day the slide set is seeded from
+  date: string // puzzle day (America/Chicago) the slide set is seeded from
   slides: HomeSlide[]
+  // All four from catalog.ts / ratings.ts - the one definition each of these
+  // has (see "the counts every public page prints" in server/catalog.ts).
   community: {
-    battles: number // all battles ever fought, by everyone
-    rated: number // skins with at least one battle
-    catalog: number // playable skins in the catalog
+    battles: number // head-to-head battles ever fought, by everyone
+    rated: number // catalog skins with at least one battle
+    catalog: number // ownable skins in the catalog (num != 0)
+    champions: number // champions with at least one ownable skin
   }
   drought: {
     top: DroughtRow[]
     stats: DroughtState['stats']
   } | null // null = no dated skins yet; the section hides itself
+}
+
+// ─── The catalog door (/skins, /champions, the champion wardrobe) ───────────
+
+// One skin as the catalog lists it. The same rows the ranking slices, the
+// dossiers and the sitemap are built from, so a card here always links to a
+// page that exists.
+export interface CatalogSkinEntry {
+  id: string
+  num: number
+  name: string
+  slug: string
+  championId: string
+  championName: string
+  splashUrl: string
+}
+
+export interface CatalogChampionEntry {
+  championId: string
+  championName: string
+  splashUrl: string // the base look, the roster card art
+  skinCount: number // ownable skins - what the champion page counts
+}
+
+export interface CatalogState {
+  champions: CatalogChampionEntry[]
+  skins: CatalogSkinEntry[] // num != 0, release order within a champion
+}
+
+// One champion's wardrobe for /champions/$id, from the same catalog the
+// champion's ranking slice is built over - so the page's "All N of them" and
+// its verdict's "M of N" are counting one set.
+export interface ChampionWardrobeState {
+  championId: string
+  championName: string
+  splashUrl: string | null // base look for the hero, if the catalog has it
+  skins: CatalogSkinEntry[]
 }
 
 // ─── Insights: the Skin Drought Index ───────────────────────────────────────

@@ -30,7 +30,7 @@ export function ogMeta(opts: {
   const image = `${ORIGIN}${opts.imagePath ?? `/og/${opts.card}`}`
   return [
     { property: 'og:type', content: 'website' },
-    { property: 'og:site_name', content: 'Skin Battle' },
+    { property: 'og:site_name', content: 'SkinBattle' },
     { property: 'og:title', content: opts.title },
     { property: 'og:description', content: opts.description },
     { property: 'og:url', content: `${ORIGIN}${opts.path}` },

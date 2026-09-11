@@ -153,7 +153,7 @@ describe('the Drought Index dataset block', () => {
     expect(parsed['@type']).toBe('Dataset')
     expect(parsed.url).toBe(absUrl('/rankings/drought'))
     expect(parsed.dateModified).toBe('2026-09-11')
-    expect(parsed.creator.name).toBe('Skin Battle')
+    expect(parsed.creator.name).toBe('SkinBattle')
     expect(parsed.isBasedOn).toHaveLength(2)
     // The upstream source stays named: the derivation is ours, the game data
     // is not, and the markup has to keep saying so.

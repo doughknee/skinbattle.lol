@@ -10,6 +10,8 @@ import type {
   BattleMode,
   BattleUndoResult,
   BattleVoteResult,
+  CatalogState,
+  ChampionWardrobeState,
   ChromaVisionState,
   DailyHubState,
   DroughtState,
@@ -288,4 +290,21 @@ export const fetchSharedTierList = createServerFn({ method: 'POST' })
   .handler(async ({ data }): Promise<SharedTierListState> => {
     const { sharedTierListState } = await import('./server/tierlist')
     return sharedTierListState(data.id, data.restoreToken)
+  })
+
+// The catalog door. /skins and /champions read the games catalog - the same
+// rows the rankings, the dossiers and the sitemap are built from - never the
+// Go API's copy, which carries base looks and drifts by a skin or two.
+export const fetchCatalog = createServerFn({ method: 'GET' }).handler(
+  async (): Promise<CatalogState> => {
+    const { catalogState } = await import('./server/catalog')
+    return catalogState()
+  },
+)
+
+export const fetchChampionWardrobe = createServerFn({ method: 'POST' })
+  .inputValidator((d: { id: string }) => d)
+  .handler(async ({ data }): Promise<ChampionWardrobeState | null> => {
+    const { championWardrobe } = await import('./server/catalog')
+    return championWardrobe(data.id)
   })

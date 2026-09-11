@@ -38,14 +38,14 @@ export const Route = createFileRoute('/battle/chroma-vision')({
   },
   head: () => ({
     meta: [
-      { title: 'Chroma Vision · Skin Battle' },
+      { title: 'Chroma Vision | SkinBattle' },
       {
         name: 'description',
         content:
           'Name the League skin from its colors alone. The mosaic sharpens with every miss. Six guesses, hard mode.',
       },
       ...ogMeta({
-        title: 'Chroma Vision · Skin Battle',
+        title: 'Chroma Vision | SkinBattle',
         description:
           'Name the League skin from its colors alone. The mosaic sharpens with every miss. Six guesses, hard mode.',
         card: 'chroma-vision',

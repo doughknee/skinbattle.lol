@@ -52,6 +52,23 @@ export async function skinPageState(
   const ratedTotal = ratedCount(db)
   const catalogTotal = catalogSkinTotal(db)
 
+  // Head-to-head appearances only: `battles` also counts one appearance per
+  // Tier Drop board, while `wins` is head-to-head only, so a win rate over
+  // `battles` understates every skin that has been on a board. Same scan
+  // skinVoters runs; one skin per render.
+  const h2hBattles = community
+    ? (
+        db
+          .prepare(
+            `SELECT COUNT(*) AS c FROM game_events
+              WHERE game = 'quick-battle' AND type = 'battle_voted'
+                AND ? IN (json_extract(payload, '$.winnerId'),
+                          json_extract(payload, '$.loserId'))`,
+          )
+          .get(skinId) as { c: number }
+      ).c
+    : 0
+
   const known = peekUser(db, restoreToken)
   const personal = known
     ? (db
@@ -121,6 +138,7 @@ export async function skinPageState(
           uncertainty,
           battles: community.battles,
           wins: community.wins,
+          h2hBattles,
           rank,
           calibrated: community.battles >= CALIBRATED_BATTLES,
         }

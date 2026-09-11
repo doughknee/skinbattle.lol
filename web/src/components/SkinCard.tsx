@@ -5,10 +5,11 @@ import { openLightbox } from '~/components/Lightbox'
 import { championDisplayName, displaySkinName } from '~/lib/skinName'
 import { skinSlug } from '~/lib/games/slug'
 import { fallbackToRaw, skinThumb } from '~/lib/img'
-import type { Skin } from '~/lib/types'
 
+// The catalog entry as the games catalog lists it (types.ts CatalogSkinEntry
+// is a superset). Only these three fields are read.
 interface SkinCardProps {
-  skin: Skin
+  skin: { id: string; name: string; splashUrl: string }
   championId: string
   // Show the champion name above the skin name - used on pages that mix
   // skins from many champions (home, rankings).
@@ -47,8 +48,8 @@ export default function SkinCard({
         className="absolute inset-0 z-0 block"
       >
         <img
-          src={skinThumb(skin.splash_url, 768)}
-          data-raw={skin.splash_url}
+          src={skinThumb(skin.splashUrl, 768)}
+          data-raw={skin.splashUrl}
           onError={fallbackToRaw}
           alt={`${skinName} splash art`}
           loading="lazy"
@@ -85,7 +86,7 @@ export default function SkinCard({
         type="button"
         onClick={() =>
           openLightbox({
-            url: skin.splash_url,
+            url: skin.splashUrl,
             title: skinName,
             subtitle: championName,
           })

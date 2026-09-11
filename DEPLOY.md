@@ -230,3 +230,33 @@ Existing accounts live in the old `users` table with bcrypt `password_hash` valu
 - The original Next.js app at the repo root remains deployable as an instant rollback
   until you're confident, then decommission it.
 ```
+
+## Canonical host: `https://skinbattle.lol`
+
+Every page declares `https://skinbattle.lol/<path>` as its canonical URL, and
+`web/server.mjs` answers any request whose host is `www.skinbattle.lol` with a
+`301` to the same path on the apex. Two things live outside the repo and have
+to be set in Coolify for that redirect to ever run:
+
+1. **Route the www host to the web service.** Coolify → the compose resource
+   → service `web` → Domains: `https://skinbattle.lol,https://www.skinbattle.lol`.
+   Until the second domain is listed, Traefik has no router for `www.` — it
+   answers `404` on http and serves its default (untrusted) certificate on
+   https, which is exactly what external SEO checks flag. Listing the domain
+   also makes Coolify issue the Let's Encrypt certificate for it. If Coolify
+   offers a redirect **Direction** for the domain pair, pick *redirect to
+   non-www*; the app-level redirect is the belt to that suspender.
+2. **Make the http→https hop permanent.** Traefik currently redirects
+   `http://skinbattle.lol/` with a `302`. In the resource's proxy settings the
+   scheme redirect should be permanent (`redirectscheme.permanent=true` on the
+   generated middleware; Coolify exposes this as the "Force HTTPS" / permanent
+   option). A `302` tells crawlers to keep requesting the http URL.
+
+DNS already resolves `www` to the server (the 404 above comes from Traefik,
+not from a missing record). After the change, verify:
+
+```bash
+curl -sI http://www.skinbattle.lol/champions/ahri?x=1 | head -3   # 301 → https://skinbattle.lol/champions/ahri?x=1
+curl -sI https://www.skinbattle.lol/ | head -3                     # 301, valid certificate
+curl -sI http://skinbattle.lol/ | head -3                          # 301 (not 302)
+```

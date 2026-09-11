@@ -23,14 +23,14 @@ export function siteJsonLd(): object[] {
     {
       '@context': 'https://schema.org',
       '@type': 'WebSite',
-      name: 'Skin Battle',
+      name: 'SkinBattle',
       alternateName: 'skinbattle.lol',
       url: `${ORIGIN}/`,
     },
     {
       '@context': 'https://schema.org',
       '@type': 'Organization',
-      name: 'Skin Battle',
+      name: 'SkinBattle',
       url: `${ORIGIN}/`,
       logo: `${ORIGIN}/icon-512.png`,
     },
@@ -99,7 +99,7 @@ export function datasetJsonLd(opts: {
     isBasedOn: opts.basedOn,
     creator: {
       '@type': 'Organization',
-      name: 'Skin Battle',
+      name: 'SkinBattle',
       url: `${ORIGIN}/`,
     },
     isAccessibleForFree: true,

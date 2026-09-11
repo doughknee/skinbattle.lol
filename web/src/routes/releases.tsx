@@ -14,14 +14,14 @@ import { btnSecondarySm } from '~/lib/ui'
 export const Route = createFileRoute('/releases')({
   head: () => ({
     meta: [
-      { title: 'Releases · Skin Battle' },
+      { title: 'Releases | SkinBattle' },
       {
         name: 'description',
         content:
           'What just shipped on skinbattle.lol, in plain language: new games, new rankings, and the fixes in between.',
       },
       ...ogMeta({
-        title: 'Releases · Skin Battle',
+        title: 'Releases | SkinBattle',
         description:
           'What just shipped on skinbattle.lol, in plain language: new games, new rankings, and the fixes in between.',
         card: 'games',

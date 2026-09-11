@@ -39,19 +39,20 @@ export const Route = createFileRoute('/rankings/$slice')({
     return { state, index }
   },
   head: ({ loaderData }) => {
-    if (!loaderData) return { meta: [{ title: 'Rankings · Skin Battle' }] }
+    if (!loaderData) return { meta: [{ title: 'Rankings | SkinBattle' }] }
     const { state } = loaderData
     // Title and description are STATIC per slice - both come from the slice
     // definition, never from live counts. A SERP snippet is cached for weeks,
     // so a description that said "412 of 1,904 rated" would be advertising a
     // number the page stopped showing long before anyone clicked it.
     //
-    // "Full ranking" is the page's label in the nav; the <title> also has to
-    // name the subject, because it is the one line search renders.
+    // The catalog-wide page owns the broad query ("best League of Legends
+    // skins") and says so in the one line search renders. No current #1 in
+    // any title: a winner changes with the next vote, a title is cached.
     const title =
       state.slice === 'all'
-        ? 'Every League of Legends Skin, Ranked · Skin Battle'
-        : `${state.title} · Skin Battle`
+        ? 'Best League of Legends Skins Ranked by Players | SkinBattle'
+        : `${state.title} | SkinBattle`
     return {
       meta: [
         { title },
@@ -307,7 +308,8 @@ function DataSummary({ state }: { state: RankingsState }) {
       </dl>
       <p className="mt-4 max-w-2xl text-sm text-grey1">
         Catalogued and ranked are different counts: a skin enters the ranking
-        only once it has fought at least one head-to-head battle
+        only once it has been through at least one battle, a head-to-head pick
+        or a placement on a Tier Drop board
         {waiting > 0 ? (
           <>
             , so {n(waiting)} of the {n(state.totalCount)} here are still
@@ -667,23 +669,58 @@ function RankingSlicePage() {
       ? 'League of Legends skins ranked by community battles'
       : state.title
 
+  // One crumb per URL: the catalog-wide page IS the Rankings landing, so
+  // its trail stops there rather than naming the same URL twice. The visible
+  // breadcrumb below renders this same list.
+  const trail = [
+    { name: 'Home', path: '/' },
+    { name: 'Rankings', path: '/rankings/all' },
+    ...(state.slice === 'all'
+      ? []
+      : [{ name: state.title, path: `/rankings/${state.slice}` }]),
+  ]
+
   return (
     <div className="container mx-auto max-w-5xl px-6 pt-28 pb-16">
       <JsonLd
         data={[
-          breadcrumbJsonLd([
-            { name: 'Home', path: '/' },
-            { name: 'Rankings', path: '/rankings/all' },
-            { name: state.title, path: `/rankings/${state.slice}` },
-          ]),
+          breadcrumbJsonLd(trail),
           ...(listItems.length
             ? [itemListJsonLd({ name: listName, items: listItems })]
             : []),
         ]}
       />
       <header className="animate-fade-up mb-5">
+        <nav aria-label="Breadcrumb" className="mb-4 text-sm font-semibold">
+          <ol className="flex flex-wrap items-center gap-2 text-grey1">
+            {trail.map((crumb, i) => {
+              const last = i === trail.length - 1
+              return (
+                <li key={crumb.path} className="flex items-center gap-2">
+                  {i > 0 && (
+                    <span aria-hidden className="text-icon/50">
+                      /
+                    </span>
+                  )}
+                  {last ? (
+                    <span aria-current="page" className="text-gold2">
+                      {crumb.name}
+                    </span>
+                  ) : (
+                    <Link
+                      to={crumb.path}
+                      className="transition duration-150 hover:text-gold1"
+                    >
+                      {crumb.name}
+                    </Link>
+                  )}
+                </li>
+              )
+            })}
+          </ol>
+        </nav>
         <p className="mb-2 text-sm font-semibold uppercase tracking-[0.3em] text-gold2">
-          Rankings
+          Community rankings
         </p>
         <h1 className="font-serif text-4xl font-bold text-gold1 md:text-5xl">
           {state.title}

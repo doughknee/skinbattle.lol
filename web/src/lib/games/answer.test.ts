@@ -123,7 +123,7 @@ describe('answerBlock branches', () => {
     expect(b.confidence).toBe('confident')
     expect(b.answer).toContain('Elderwood Ahri is the highest-rated')
     expect(b.answer).toContain('1,642 Elo')
-    expect(b.basis).toContain('41 head-to-head battles')
+    expect(b.basis).toContain('41 battles')
   })
 
   it('is provisional at the band a real page actually carries today', () => {
@@ -142,7 +142,7 @@ describe('answerBlock branches', () => {
     expect(b.confidence).toBe('provisional')
     expect(b.answer).toContain('currently rates highest')
     expect(b.answer).toContain('provisional')
-    expect(b.basis).toContain('3 head-to-head battles')
+    expect(b.basis).toContain('3 battles')
   })
 
   it('holds the band but not the crowd: settled needs both', () => {
@@ -212,8 +212,8 @@ describe('answerBlock branches', () => {
       rated: 1,
     })
     expect(b.answer).toContain('is the only one of the Ahri skins')
-    expect(b.basis).toContain('1 head-to-head battle')
-    expect(b.basis).not.toContain('1 head-to-head battles')
+    expect(b.basis).toContain('1 battle')
+    expect(b.basis).not.toContain('1 battles')
     expect(b.basis).toContain('1 of 24 skins in this group has battle data')
   })
 
@@ -358,7 +358,7 @@ describe('skinAnswerBlock', () => {
   it('says a never-battled skin has no rating rather than inventing one', () => {
     const b = skinAnswerBlock({ ...dossier, community: null })
     expect(b.confidence).toBe('empty')
-    expect(b.answer).toContain('has not been through a head-to-head battle yet')
+    expect(b.answer).toContain('has not been through a battle yet')
     expect(b.answer).not.toMatch(/\bElo\b/)
   })
 

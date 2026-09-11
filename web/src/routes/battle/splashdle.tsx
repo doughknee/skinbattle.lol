@@ -38,14 +38,14 @@ export const Route = createFileRoute('/battle/splashdle')({
   },
   head: () => ({
     meta: [
-      { title: 'Splashdle · Skin Battle' },
+      { title: 'Splashdle | SkinBattle' },
       {
         name: 'description',
         content:
           'Name the League skin from a sliver of its splash art. A new puzzle every day.',
       },
       ...ogMeta({
-        title: 'Splashdle · Skin Battle',
+        title: 'Splashdle | SkinBattle',
         description:
           'Name the League skin from a sliver of its splash art. It zooms out with every miss. Six guesses, new puzzle daily.',
         card: 'splashdle',

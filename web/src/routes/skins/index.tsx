@@ -7,7 +7,6 @@ import {
   faTableCells,
   faTableCellsLarge,
 } from '@fortawesome/free-solid-svg-icons'
-import { api } from '~/lib/api'
 import { fallbackToRaw, skinThumb } from '~/lib/img'
 import CatalogTabs from '~/components/CatalogTabs'
 import Dropdown from '~/components/Dropdown'
@@ -15,9 +14,9 @@ import EmptyState from '~/components/EmptyState'
 import ErrorState from '~/components/ErrorState'
 import PageHeader from '~/components/PageHeader'
 import { RouteSkeleton } from '~/components/Skeletons'
-import { championDisplayName } from '~/lib/skinName'
-import { skinSlug } from '~/lib/games/slug'
+import { fetchCatalog } from '~/lib/games/serverFns'
 import { createSearcher } from '~/lib/search'
+import type { CatalogSkinEntry } from '~/lib/games/types'
 
 const sortOptions = [
   { value: 'az', label: 'A → Z' },
@@ -29,49 +28,25 @@ type Density = 'comfortable' | 'compact'
 // Shared with /champions on purpose: one catalog door, one density preference.
 const DENSITY_KEY = 'sb:championDensity'
 
-interface CatalogEntry {
-  id: string
-  name: string
-  slug: string
-  championName: string
-  splashUrl: string
-  num: number
-}
-
 export const Route = createFileRoute('/skins/')({
-  // The champions payload already carries every champion's full skin list, so
-  // both lenses of the catalog door share one API call - this lens flattens
-  // what the other one groups.
+  // The games catalog, base looks excluded - the exact set /skins/$slug,
+  // the ranking slices and the sitemap are built from, so every card here
+  // links to a page that exists and the count matches every other page.
+  // Both lenses of the catalog door share this one call.
   loader: async () => {
-    const champions = await api.champions()
-    const skins: CatalogEntry[] = champions.flatMap((champion) => {
-      const championName = championDisplayName(champion.id)
-      return (champion.skins ?? [])
-        // num 0 is the champion's base look, not a skin you can own. The games
-        // catalog excludes it, so /skins/$slug and the sitemap never carry it
-        // - this lens has to agree with them.
-        .filter((skin) => skin.num !== 0)
-        .map((skin) => ({
-          id: skin.id,
-          name: skin.name,
-          slug: skinSlug(skin.name, skin.id),
-          championName,
-          splashUrl: skin.splash_url,
-          num: skin.num,
-        }))
-    })
+    const { skins, champions } = await fetchCatalog()
     return { skins, championCount: champions.length }
   },
   head: () => ({
     meta: [
-      { title: 'All Skins · Skin Battle' },
+      { title: 'All Skins | SkinBattle' },
       {
         name: 'description',
         content:
           'Every League of Legends skin in one catalog. Browse the full list by name or champion, then open any skin for its rating, rank, and price.',
       },
       ...ogMeta({
-        title: 'All Skins · Skin Battle',
+        title: 'All Skins | SkinBattle',
         description:
           'Every League of Legends skin in one catalog. Browse the full list by name or champion, then open any skin for its rating, rank, and price.',
         card: 'games',
@@ -91,7 +66,7 @@ export const Route = createFileRoute('/skins/')({
 
 // ─── catalog card ────────────────────────────────────────────────────────────
 
-function SkinCard({ skin, compact }: { skin: CatalogEntry; compact: boolean }) {
+function SkinCard({ skin, compact }: { skin: CatalogSkinEntry; compact: boolean }) {
   return (
     <li className="card-sheen-host group relative aspect-video overflow-hidden bg-hextech-black/40 transition duration-300 hover:shadow-glow">
       <Link
@@ -189,7 +164,7 @@ function AllSkinsPage() {
       <PageHeader
         eyebrow="The catalog"
         title="All Skins"
-        subtitle={`Every skin in the game: ${skins.length.toLocaleString()} of them across ${championCount} champions. Open any one for its rating, rank, and price.`}
+        subtitle={`Every League of Legends skin you can own: ${skins.length.toLocaleString()} across ${championCount} champions, not counting each champion's base look. Open any one for its rating, rank, and price.`}
         className="mb-8"
       />
 
