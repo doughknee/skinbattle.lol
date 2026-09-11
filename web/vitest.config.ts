@@ -8,6 +8,8 @@ export default defineConfig({
   plugins: [tsconfigPaths()],
   test: {
     environment: 'node',
-    include: ['src/**/*.test.ts'],
+    // scripts/ holds the unattended .mjs jobs the GitHub workflows run.
+    // They sit outside tsconfig's `include`, so vitest is their only gate.
+    include: ['src/**/*.test.ts', 'scripts/**/*.test.mjs'],
   },
 })

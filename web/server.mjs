@@ -61,11 +61,27 @@ async function posthogProxy(request, next) {
   })
 }
 
+// IndexNow key file. IndexNow verifies ownership by fetching
+// https://<host>/<key>.txt and checking it contains the key. Serving it from
+// the env var rather than committing web/public/<key>.txt means the key is
+// never in git and rotating it is a restart - the same runtime-env contract
+// Logto and PostHog already use here. Unset → the path 404s like any other.
+const INDEXNOW_KEY = process.env.INDEXNOW_KEY || ''
+
+function indexNowKeyFile(request, next) {
+  if (!INDEXNOW_KEY) return next()
+  if (new URL(request.url).pathname !== `/${INDEXNOW_KEY}.txt`) return next()
+  return new Response(INDEXNOW_KEY, {
+    headers: { 'Content-Type': 'text/plain; charset=utf-8' },
+  })
+}
+
 serve({
   port,
   hostname: '0.0.0.0',
-  // PostHog proxy first, then hashed client assets from disk; SSR handles the rest.
-  middleware: [posthogProxy, serveStatic({ dir: clientDir })],
+  // PostHog proxy and the IndexNow key file first, then hashed client assets
+  // from disk; SSR handles the rest.
+  middleware: [posthogProxy, indexNowKeyFile, serveStatic({ dir: clientDir })],
   fetch: (request) => ssr.fetch(request),
 })
 

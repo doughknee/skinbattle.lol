@@ -47,3 +47,6 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 .env
+
+# IndexNow sweep state - carried by the Actions cache, never committed
+.indexnow-snapshot.txt
