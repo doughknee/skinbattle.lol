@@ -8,7 +8,6 @@ import {
   faScaleUnbalanced,
 } from '@fortawesome/free-solid-svg-icons'
 import { HomeSkeleton } from '~/components/Skeletons'
-import { api } from '~/lib/api'
 import { fetchHome } from '~/lib/games/serverFns'
 import { SITE_SECTIONS } from '~/lib/siteMap'
 import {
@@ -25,24 +24,14 @@ const FALLBACK_SPLASH =
 
 export const Route = createFileRoute('/')({
   loader: async () => {
-    // Two independent sources; each degrades on its own so the page always
-    // renders. The hero set and community totals come from the games catalog,
-    // the catalog counts from the Go API.
-    const [homeRes, championsRes] = await Promise.allSettled([
-      fetchHome(),
-      api.champions(),
-    ])
-    const home: HomeState | null =
-      homeRes.status === 'fulfilled' ? homeRes.value : null
-    const champions =
-      championsRes.status === 'fulfilled' ? championsRes.value : null
-
+    // One source for every counter on this page: the games catalog, through
+    // the helpers in server/catalog.ts and server/ratings.ts. The Go API used
+    // to supply "Skins to rank" from a payload that counts base looks and
+    // syncs on its own clock - 2,116 on the hero against the 1,941 every other
+    // page printed. Degrades to an empty hero rather than a broken page.
+    const home: HomeState | null = await fetchHome().catch(() => null)
     return {
       slides: home?.slides ?? [],
-      championCount: champions?.length ?? 170,
-      skinCount: champions
-        ? champions.reduce((n, c) => n + (c.skins?.length ?? 0), 0)
-        : (home?.community.catalog ?? 0),
       community: home?.community ?? null,
       drought: home?.drought ?? null,
     }
@@ -52,12 +41,12 @@ export const Route = createFileRoute('/')({
       {
         name: 'description',
         content:
-          'Every League of Legends skin, ranked by head-to-head community battles. Pick a winner and settle the debate.',
+          'Every League of Legends skin, ranked by community battles - head-to-head picks and Tier Drop boards. Pick a winner and settle the debate.',
       },
       ...ogMeta({
         title: 'SKINBATTLE.LOL · League of Legends Skin Rankings',
         description:
-          'Every League of Legends skin, ranked by head-to-head community battles. Pick a winner and settle the debate.',
+          'Every League of Legends skin, ranked by community battles - head-to-head picks and Tier Drop boards. Pick a winner and settle the debate.',
         card: 'games',
         path: '/',
       }),
@@ -87,17 +76,11 @@ function formatMonth(iso: string): string {
 }
 
 function HomePage() {
-  const { slides, championCount, skinCount, community, drought } =
-    Route.useLoaderData()
+  const { slides, community, drought } = Route.useLoaderData()
 
   return (
     <>
-      <Hero
-        slides={slides}
-        championCount={championCount}
-        skinCount={skinCount}
-        battleCount={community?.battles ?? 0}
-      />
+      <Hero slides={slides} community={community} />
       <BattleTeaser community={community} />
       <DailyChallenges />
       <div className="container mx-auto grid grid-cols-1 gap-6 px-6 py-12 lg:grid-cols-2">
@@ -113,14 +96,10 @@ function HomePage() {
 
 function Hero({
   slides,
-  championCount,
-  skinCount,
-  battleCount,
+  community,
 }: {
   slides: HomeSlide[]
-  championCount: number
-  skinCount: number
-  battleCount: number
+  community: HomeState['community'] | null
 }) {
   const [index, setIndex] = useState(0)
   const [paused, setPaused] = useState(false)
@@ -171,20 +150,30 @@ function Hero({
       <div className="container relative z-10 mx-auto flex min-h-[100dvh] flex-col px-6 pt-28 pb-8">
         <div className="my-auto max-w-2xl">
           <p className="animate-fade-up mb-4 text-sm font-semibold uppercase tracking-[0.3em] text-gold2">
-            Community Skin Rankings
+            Community rankings
           </p>
+          {/* The H1 says what the page is; the brand line under it is the
+              bigger type. A crawler reads the heading, a visitor reads the
+              room, and neither has to guess what the other saw. */}
           <h1
-            className="animate-fade-up text-shadow-hero font-serif text-5xl font-bold leading-[1.05] text-gold1 md:text-7xl"
+            className="animate-fade-up text-shadow-hero font-serif text-2xl font-bold leading-tight text-gold2 md:text-4xl"
             style={{ animationDelay: '100ms' }}
           >
-            Settle the skin debate.
+            League of Legends Skin Rankings — Decided by Players
           </h1>
+          <p
+            className="animate-fade-up text-shadow-hero mt-3 font-serif text-5xl font-bold leading-[1.05] text-gold1 md:text-7xl"
+            style={{ animationDelay: '150ms' }}
+          >
+            Settle the skin debate.
+          </p>
           <p
             className="animate-fade-up text-shadow-hero mt-6 max-w-xl text-lg text-grey1 md:text-xl"
             style={{ animationDelay: '200ms' }}
           >
-            Every League skin, ranked by head-to-head battles. Pick a winner,
-            watch the rankings move. The community decides.
+            Every League skin, ranked by community battles: head-to-head picks
+            and Tier Drop boards. Pick a winner, watch the rankings move. The
+            community decides.
           </p>
 
           <div
@@ -208,12 +197,17 @@ function Hero({
             className="animate-fade-up mt-12 flex flex-wrap gap-x-12 gap-y-6"
             style={{ animationDelay: '400ms' }}
           >
-            <Stat value={formatCount(championCount)} label="Champions" />
-            {skinCount > 0 && (
-              <Stat value={formatCount(skinCount)} label="Skins to rank" />
+            {community && community.champions > 0 && (
+              <Stat value={formatCount(community.champions)} label="Champions" />
             )}
-            {battleCount > 0 && (
-              <Stat value={formatCount(battleCount)} label="Battles fought" />
+            {community && community.catalog > 0 && (
+              <Stat value={formatCount(community.catalog)} label="Skins to rank" />
+            )}
+            {community && community.battles > 0 && (
+              <Stat
+                value={formatCount(community.battles)}
+                label="Head-to-head battles"
+              />
             )}
           </div>
         </div>
@@ -353,7 +347,7 @@ function BattleTeaser({ community }: { community: HomeState['community'] | null 
         <div className="mt-10 flex flex-wrap items-center justify-center gap-x-14 gap-y-6">
           <Stat
             value={formatCount(community.battles)}
-            label="Battles fought"
+            label="Head-to-head battles"
             center
           />
           <Stat
@@ -363,7 +357,7 @@ function BattleTeaser({ community }: { community: HomeState['community'] | null 
           />
           <Stat
             value={formatCount(community.catalog)}
-            label="In the catalog"
+            label="Skins to rank"
             center
           />
         </div>
@@ -393,8 +387,8 @@ function DailyChallenges() {
             Today's Challenges
           </h2>
           <p className="mt-2 text-lg text-grey1">
-            Three dailies, the same puzzles for everyone. Fresh at midnight
-            UTC.
+            Three dailies, the same puzzles for everyone. Fresh at midnight US
+            Central.
           </p>
         </div>
         <Link
@@ -508,7 +502,7 @@ function MirrorPitch() {
         No forms, no setup. Just battle, then look in the Mirror.
       </p>
       <div className="mt-auto pt-8">
-        <Link to="/battle/mirror" className={`group ${btnSecondarySm}`}>
+        <Link to="/profile" className={`group ${btnSecondarySm}`}>
           See your reflection
           <FontAwesomeIcon
             icon={faArrowRight}

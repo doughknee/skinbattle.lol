@@ -43,7 +43,7 @@ const bare = (s: string) => s.replace(/[^a-z0-9]/gi, '').toLowerCase()
 
 // The name a skin's <title> and share card use. Most skin names already carry
 // their champion ("Elementalist Lux"), but 45 do not - "Birdio", "Emumu",
-// "Urfwick", "Captain Fortune" - and a title reading "Birdio · Skin Battle"
+// "Urfwick", "Captain Fortune" - and a title reading "Birdio | SkinBattle"
 // tells a searcher nothing about what it is. Appending the champion where the
 // name lacks it disambiguates those, and disambiguates any two skins that ever
 // come to share a name (none do today) for free.

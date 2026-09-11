@@ -10,14 +10,14 @@ import PageHeader from '~/components/PageHeader'
 export const Route = createFileRoute('/privacy')({
   head: () => ({
     meta: [
-      { title: 'Privacy · Skin Battle' },
+      { title: 'Privacy | SkinBattle' },
       {
         name: 'description',
         content:
           'What skinbattle.lol collects (very little), why, and how to delete it.',
       },
       ...ogMeta({
-        title: 'Privacy · Skin Battle',
+        title: 'Privacy | SkinBattle',
         description:
           'What skinbattle.lol collects (very little), why, and how to delete it.',
         card: 'games',
@@ -78,9 +78,9 @@ function PrivacyPage() {
             and passkeys never touch the app itself.
           </p>
           <p>
-            <b className="text-gold1">Your votes.</b> Stars, bans, and battle
-            picks are stored against your account so your profile, your
-            Mirror, and the community rankings work. That's the product.
+            <b className="text-gold1">Your battles.</b> Head-to-Head picks and
+            Tier Drop boards are stored against your account so your profile,
+            your Mirror, and the community rankings work. That's the product.
           </p>
           <p>
             <b className="text-gold1">A guest token.</b> If you play without

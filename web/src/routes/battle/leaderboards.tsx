@@ -18,16 +18,16 @@ export const Route = createFileRoute('/battle/leaderboards')({
   loader: () => fetchLeaderboards(),
   head: () => ({
     meta: [
-      { title: 'Leaderboards · Skin Battle' },
+      { title: 'Leaderboards | SkinBattle' },
       {
         name: 'description',
         content:
-          'Streaks, fastest daily solves, and battle volume: the named players of Skin Battle.',
+          'Streaks, fastest daily solves, and battle volume: the named players of SkinBattle.',
       },
       ...ogMeta({
-        title: 'Leaderboards · Skin Battle',
+        title: 'Leaderboards | SkinBattle',
         description:
-          'Streaks, fastest daily solves, and battle volume: the named players of Skin Battle.',
+          'Streaks, fastest daily solves, and battle volume: the named players of SkinBattle.',
         card: 'leaderboards',
         path: '/battle/leaderboards',
       }),
@@ -125,7 +125,7 @@ function LeaderboardsPage() {
           Today's solves
         </h2>
         <p className="mb-4 text-sm text-grey1">
-          Fewest guesses wins; ties go to the earlier solve. Resets midnight UTC.
+          Fewest guesses wins; ties go to the earlier solve. Resets at midnight US Central.
         </p>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           {state.todayBoards.map((b) => (

@@ -3,7 +3,7 @@ import { useMemo, useState } from 'react'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faLayerGroup, faShuffle } from '@fortawesome/free-solid-svg-icons'
 import { api, type ApiError } from '~/lib/api'
-import { fetchRankings } from '~/lib/games/serverFns'
+import { fetchChampionWardrobe, fetchRankings } from '~/lib/games/serverFns'
 import SkinCard from '~/components/SkinCard'
 import Dropdown from '~/components/Dropdown'
 import ErrorState from '~/components/ErrorState'
@@ -33,8 +33,14 @@ const MIN_TIER_BOARD = 4
 
 export const Route = createFileRoute('/champions/$id')({
   loader: async ({ params }) => {
-    // Base (public) champion data. User-vote columns are layered in
-    // client-side once we have a Logto access token.
+    // Two sources, one job each. The Go API supplies the champion's title and
+    // lore - Riot text nothing else on the site holds. The games catalog
+    // supplies the wardrobe: the same rows the champion's ranking slice, the
+    // dossiers, /skins and the sitemap are built from, so the heading, the
+    // verdict's "M of N" and the directory card all count one set. (The Go
+    // copy carries the base look and syncs on its own clock: it gave Ahri 21
+    // on the directory to this page's 20, and ran two skins ahead of the
+    // catalog the rankings use.)
     //
     // An id nothing resolves - `miss-fortune` for missfortune, a typo, a dead
     // link - is a not-found, not a server fault, and api.champion throws on
@@ -43,15 +49,19 @@ export const Route = createFileRoute('/champions/$id')({
     // crawling of all 173 champion pages; a 404 is forgotten cleanly. Only
     // 404 converts: if the API is down that 500 is honest, and turning an
     // outage into 404s would deindex every real page.
-    const champion = await api.champion(params.id).catch((e: ApiError) => {
-      throw e.status === 404 ? notFound() : e
-    })
-    // One URL per champion. The API resolves an id in any casing, so
+    const [champion, catalog] = await Promise.all([
+      api.champion(params.id).catch((e: ApiError) => {
+        throw e.status === 404 ? notFound() : e
+      }),
+      fetchChampionWardrobe({ data: { id: params.id } }),
+    ])
+    if (!catalog) throw notFound()
+    // One URL per champion. Both sources resolve an id in any casing, so
     // /champions/Aatrox and /champions/AATROX would each serve this page with
     // a 200 - three URLs, one page, no way for a crawler to pick. Redirect to
     // the lowercase form (what the sitemap and every internal link use), the
     // same way a non-canonical skin slug redirects in skins_.$slug.
-    const canonicalId = champion.id.toLowerCase()
+    const canonicalId = catalog.championId.toLowerCase()
     if (params.id !== canonicalId) {
       throw redirect({
         to: '/champions/$id',
@@ -60,12 +70,8 @@ export const Route = createFileRoute('/champions/$id')({
       })
     }
 
-    // The wardrobe proper. num 0 is the champion's default look, not a skin
-    // anyone owns: /skins, the battle pool and the champion ranking slice all
-    // exclude it, so this page counts the same set they do - otherwise the
-    // heading says 17 while the verdict says 16 on the same screen. The base
-    // splash still leads the page as the hero art.
-    const wardrobe = champion.skins.filter((s) => s.num !== 0)
+    // The wardrobe proper: base look excluded, release order.
+    const wardrobe = catalog.skins
 
     // Battle-Elo ranks for the wardrobe - display rule: Elo is THE rank;
     // star/ban/vote counts are badges and sorts, never a competing rank.
@@ -89,7 +95,7 @@ export const Route = createFileRoute('/champions/$id')({
       /* unrated wardrobe - no ranked list, no badges */
     }
 
-    const name = championDisplayName(champion.id)
+    const name = championDisplayName(catalog.championId)
     // Built here rather than in the component so head() and the body quote the
     // same sentence. answerBlock is a deterministic template over live ratings
     // - no model runs, and the same data always renders the same words, which
@@ -109,20 +115,29 @@ export const Route = createFileRoute('/champions/$id')({
       total: wardrobe.length,
     })
 
-    return { champion, wardrobe, rows, answer, name }
+    return {
+      champion: { id: catalog.championId, title: champion.title, lore: champion.lore },
+      // Hero art: the base look from the catalog, else the Go API's first skin.
+      splash: catalog.splashUrl ?? champion.skins[0]?.splash_url ?? null,
+      wardrobe,
+      rows,
+      answer,
+      name,
+    }
   },
   head: ({ loaderData }) => {
-    if (!loaderData) return { meta: [{ title: 'Champion · Skin Battle' }] }
-    const { champion, wardrobe, answer, name } = loaderData
-    // "<Name> Skins", not "<Name>": it says what the page is, and it stops the
-    // champion page colliding with its own base-skin page, which titles itself
-    // "Ahri · Skin Battle" too.
-    const title = `${name} Skins · Skin Battle`
-    // Unique per champion because it is generated from that champion's live
-    // ratings - the leader, its band, the coverage - and moves as votes land.
-    // Nothing boilerplate, which is the only defence against 173 near-identical
-    // descriptions. No "best" claim: answerBlock decides what the data pays for.
-    const description = `${answer.answer} All ${wardrobe.length} ${name} skins, with splash art, prices, and release dates.`
+    if (!loaderData) return { meta: [{ title: 'Champion | SkinBattle' }] }
+    const { champion, wardrobe, name } = loaderData
+    // The query this page answers, in the one line search renders. "Best" is
+    // the search intent, not a claim: the verdict block on the page decides
+    // what the data pays for, in the same words every other page uses. No
+    // current #1 in the title - a winner moves with the next vote, a title
+    // is cached for weeks.
+    const title = `Best ${name} Skins Ranked by Players | SkinBattle`
+    // Stable per champion: names the fields the page actually carries and
+    // nothing volatile. The live verdict (the current leader, its band, the
+    // coverage) is on the page itself, where it can change.
+    const description = `Every ${name} skin ranked by SkinBattle community battles, with a rating, uncertainty band and battle count for each of the ${wardrobe.length}, plus the full wardrobe in splash art.`
     const path = `/champions/${champion.id.toLowerCase()}`
     return {
       meta: [
@@ -191,9 +206,7 @@ function ChampionPage() {
     return skins
   }, [wardrobe, sortBy, ranked])
 
-  const splash =
-    champion.skins.find((s) => s.num === 0)?.splash_url ??
-    champion.skins[0]?.splash_url
+  const { splash } = Route.useLoaderData()
   const championPath = `/champions/${champion.id.toLowerCase()}`
   const unrated = wardrobe.length - rows.length
 
@@ -268,11 +281,15 @@ function ChampionPage() {
               </li>
             </ol>
           </nav>
+          {/* "Best <name> Skins" is the question the page exists to answer;
+              the verdict below is the answer, and it says provisional when
+              the data says provisional. The line under it names the frame:
+              these are community rankings, not an editor's list. */}
           <h1 className="text-shadow-hero font-serif text-5xl md:text-7xl font-bold text-gold1">
-            {name} Skins
+            Best {name} Skins
           </h1>
           <p className="text-shadow-hero mt-2 text-xl md:text-2xl italic text-gold2">
-            All {wardrobe.length} of them · {champion.title}
+            Community rankings · All {wardrobe.length} of them · {champion.title}
           </p>
         </div>
       </section>
@@ -287,7 +304,7 @@ function ChampionPage() {
               className={btnPrimarySm}
             >
               <FontAwesomeIcon icon={faLayerGroup} className="h-4" />
-              Rank all {wardrobe.length} in one pass
+              Rank the whole wardrobe in one pass
             </Link>
           )}
           <Link to="/battle" className={btnSecondarySm}>

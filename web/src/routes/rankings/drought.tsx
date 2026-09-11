@@ -2,7 +2,6 @@ import { createFileRoute, Link } from '@tanstack/react-router'
 import { useMemo, useState } from 'react'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import {
-  faArrowLeft,
   faMagnifyingGlass,
   faSort,
   faSortDown,
@@ -42,7 +41,7 @@ export const Route = createFileRoute('/rankings/drought')({
     const description = leader
       ? `${leader.championName} has waited longest: ${leader.days.toLocaleString('en-US')} days since ${leader.lastSkinName}. Days since every League champion's last skin, ranked.`
       : 'Days since every League champion’s last skin, ranked. Settle the drought argument with a link.'
-    const title = 'The Skin Drought Index · Skin Battle'
+    const title = 'The Skin Drought Index | SkinBattle'
     return {
       meta: [
         { title },
@@ -295,7 +294,7 @@ function SourceBlock({ state }: { state: DroughtState }) {
         </time>
         ; champions and skins come from Riot's own catalog. Riot Games owns the
         game data and does not endorse this site. The index itself - the elapsed
-        days, the ranking, the averages - is Skin Battle's, recomputed on every
+        days, the ranking, the averages - is SkinBattle's, recomputed on every
         request from that day's date rather than read off a stored counter.
         Skin counts exclude each champion's base look, the same way{' '}
         <Link
@@ -309,12 +308,12 @@ function SourceBlock({ state }: { state: DroughtState }) {
           to="/methodology"
           className="text-gold2 underline underline-offset-2 transition duration-150 hover:text-gold1"
         >
-          How Skin Battle's data is built
+          How SkinBattle's data is built
         </Link>
         .
       </p>
       <p className="mt-3 max-w-2xl text-sm text-grey1">
-        Cite as: Skin Battle, “The Skin Drought Index”,{' '}
+        Cite as: SkinBattle, “The Skin Drought Index”,{' '}
         <span className="text-gold2">skinbattle.lol/rankings/drought</span>,
         retrieved <time dateTime={state.date}>{fmtDate(state.date)}</time>.
       </p>
@@ -505,10 +504,6 @@ function DroughtPage() {
       <SourceBlock state={state} />
 
       <div className="mt-10 flex flex-wrap items-center gap-3">
-        <Link to="/rankings" className={btnSecondarySm}>
-          <FontAwesomeIcon icon={faArrowLeft} className="h-4" />
-          All rankings
-        </Link>
         <Link
           to="/rankings/$slice"
           params={{ slice: 'all' }}

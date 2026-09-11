@@ -76,12 +76,37 @@ function indexNowKeyFile(request, next) {
   })
 }
 
+// One canonical host. Every page already declares https://skinbattle.lol/...
+// as its canonical URL, so a www request is answered with a permanent
+// redirect to the same path on the apex, query string intact. This only runs
+// once the proxy routes the www host here at all - Coolify has to list
+// https://www.skinbattle.lol on the web service (which also issues its
+// certificate); see DEPLOY.md, "Canonical host".
+const CANONICAL_HOST = process.env.CANONICAL_HOST || 'skinbattle.lol'
+
+function canonicalHost(request, next) {
+  const url = new URL(request.url)
+  const host = (request.headers.get('x-forwarded-host') || url.host)
+    .split(',')[0]
+    .trim()
+  if (host !== `www.${CANONICAL_HOST}`) return next()
+  return Response.redirect(
+    `https://${CANONICAL_HOST}${url.pathname}${url.search}`,
+    301,
+  )
+}
+
 serve({
   port,
   hostname: '0.0.0.0',
-  // PostHog proxy and the IndexNow key file first, then hashed client assets
-  // from disk; SSR handles the rest.
-  middleware: [posthogProxy, indexNowKeyFile, serveStatic({ dir: clientDir })],
+  // Host canonicalisation, the PostHog proxy and the IndexNow key file first,
+  // then hashed client assets from disk; SSR handles the rest.
+  middleware: [
+    canonicalHost,
+    posthogProxy,
+    indexNowKeyFile,
+    serveStatic({ dir: clientDir }),
+  ],
   fetch: (request) => ssr.fetch(request),
 })
 

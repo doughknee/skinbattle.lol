@@ -8,6 +8,14 @@
 // only needs to call ensureCatalog() on a schedule.
 
 import type { DatabaseSync } from 'node:sqlite'
+import { createHash } from 'node:crypto'
+import type {
+  CatalogSkinEntry,
+  CatalogState,
+  ChampionWardrobeState,
+} from '../types'
+import { skinSlug } from '../slug'
+import { getDb } from './db'
 
 const DD = 'https://ddragon.leagueoflegends.com'
 const CDRAGON =
@@ -103,17 +111,32 @@ export async function ensureCatalog(db: DatabaseSync): Promise<string> {
     const latest = versions[0]
     if (!latest) throw new Error('empty versions list')
 
-    if (latest !== version || !populated || !revCurrent) {
-      const champData = (await ddJson(
-        `${DD}/cdn/${latest}/data/en_US/champion.json`,
-      )) as { data: Record<string, DDragonChampion> }
-      const skins = (await ddJson(`${CDRAGON}/v1/skins.json`)) as Record<
-        string,
-        CDragonSkin
-      >
+    // The skin list comes from Community Dragon, which updates on its own
+    // clock: a patch's new skins can land there hours after Data Dragon's
+    // version bumps, and entries get added or dropped mid-patch. Keying the
+    // re-import on the version alone froze the catalog with whatever CDragon
+    // held the first time each version was seen - production ran a patch
+    // behind on two skins while the Go API, synced later, had them. So the
+    // fetch happens every check and the import is keyed on the CONTENT: the
+    // set of importable ids, fingerprinted.
+    const champData = (await ddJson(
+      `${DD}/cdn/${latest}/data/en_US/champion.json`,
+    )) as { data: Record<string, DDragonChampion> }
+    const skins = (await ddJson(`${CDRAGON}/v1/skins.json`)) as Record<
+      string,
+      CDragonSkin
+    >
+    const fingerprint = catalogFingerprint(champData.data, skins)
+    if (
+      latest !== version ||
+      !populated ||
+      !revCurrent ||
+      fingerprint !== getMeta(db, 'catalog_fingerprint')
+    ) {
       replaceCatalog(db, champData.data, skins)
       setMeta(db, 'dd_version', latest)
       setMeta(db, 'catalog_rev', CATALOG_REV)
+      setMeta(db, 'catalog_fingerprint', fingerprint)
     }
     setMeta(db, 'synced_at', new Date().toISOString())
     return latest
@@ -134,16 +157,39 @@ async function ddJson(url: string): Promise<unknown> {
   return res.json()
 }
 
+// Champion key (numeric) → { id, display name }.
+function championsByKey(
+  champions: Record<string, DDragonChampion>,
+): Map<number, { id: string; name: string }> {
+  const byKey = new Map<number, { id: string; name: string }>()
+  for (const c of Object.values(champions)) {
+    byKey.set(Number(c.key), { id: c.id, name: c.name })
+  }
+  return byKey
+}
+
+// A stable digest of what replaceCatalog would import: every skin id whose
+// champion Data Dragon lists, plus its name (renames must re-import too).
+// Same filter as the import, so a difference means the stored catalog is
+// behind the upstream one and nothing else.
+export function catalogFingerprint(
+  champions: Record<string, DDragonChampion>,
+  skins: Record<string, CDragonSkin>,
+): string {
+  const byKey = championsByKey(champions)
+  const entries = Object.values(skins)
+    .filter((s) => byKey.has(Math.floor(s.id / 1000)))
+    .map((s) => `${s.id}:${s.name}`)
+    .sort()
+  return createHash('sha1').update(entries.join('\n')).digest('hex')
+}
+
 function replaceCatalog(
   db: DatabaseSync,
   champions: Record<string, DDragonChampion>,
   skins: Record<string, CDragonSkin>,
 ): void {
-  // Champion key (numeric) → { id, display name }.
-  const byKey = new Map<number, { id: string; name: string }>()
-  for (const c of Object.values(champions)) {
-    byKey.set(Number(c.key), { id: c.id, name: c.name })
-  }
+  const byKey = championsByKey(champions)
 
   const insert = db.prepare(
     `INSERT OR REPLACE INTO catalog_skins
@@ -183,6 +229,19 @@ const SKIN_COLUMNS = `id, champion_id AS championId, champion_name AS championNa
    num, name, splash_url AS splashUrl, tile_url AS tileUrl,
    loadscreen_url AS loadscreenUrl, uncentered_splash_url AS uncenteredSplashUrl`
 
+// ─── the counts every public page prints ────────────────────────────────────
+//
+// One definition each, here, and every surface reads it from here: the home
+// page counters, /skins, /champions, the champion pages, the ranking slices,
+// /methodology and the dossiers. The Go API's Postgres catalog is NOT a
+// source for any public count - it carries base looks (num 0) and syncs on
+// its own schedule, and production printed 2,116 / 1,943 / 1,941 for what
+// readers took to be one number until every page was routed through here.
+//
+// "Skin" means a skin someone can own: catalog rows with num != 0. The base
+// look (num 0) stays in the table for direct lookups and the Tier Drop
+// baseline, and is never counted.
+
 // Skins in the catalog, base looks excluded. The denominator /skins, the
 // methodology page and the dossier's coverage bar all print.
 export function catalogSkinTotal(db: DatabaseSync): number {
@@ -190,6 +249,46 @@ export function catalogSkinTotal(db: DatabaseSync): number {
     .prepare('SELECT COUNT(*) AS c FROM catalog_skins WHERE num != 0')
     .get() as { c: number }
   return row.c
+}
+
+// Champions with at least one ownable skin - the same set /champions lists
+// and the sitemap walks.
+export function championCount(db: DatabaseSync): number {
+  const row = db
+    .prepare(
+      'SELECT COUNT(DISTINCT champion_id) AS c FROM catalog_skins WHERE num != 0',
+    )
+    .get() as { c: number }
+  return row.c
+}
+
+export interface RosterEntry {
+  championId: string
+  championName: string
+  // The base look's splash, the roster card art. Falls back to the first
+  // skin's when a champion somehow has no num 0 row.
+  splashUrl: string
+  // Ownable skins - exactly championSkins(db, championId).length.
+  skinCount: number
+}
+
+// The champion directory: one row per champion, base splash, and the count
+// the champion page will print. Derived in one statement from the same
+// num != 0 rule so the two cannot disagree.
+export function championRoster(db: DatabaseSync): RosterEntry[] {
+  return db
+    .prepare(
+      `SELECT champion_id AS championId,
+              MAX(champion_name) AS championName,
+              COALESCE(MAX(CASE WHEN num = 0 THEN splash_url END),
+                       MIN(splash_url)) AS splashUrl,
+              SUM(num != 0) AS skinCount
+         FROM catalog_skins
+        GROUP BY champion_id
+       HAVING skinCount > 0
+        ORDER BY champion_id`,
+    )
+    .all() as unknown as RosterEntry[]
 }
 
 export function getCatalogSkin(
@@ -228,8 +327,57 @@ export function championSkins(
     .all(championId) as unknown as CatalogSkin[]
 }
 
-// A champion's base (num 0) skin — the default look. Only the Tier List uses
-// this, as a baseline anchor for champion boards.
+// ─── the catalog door ───────────────────────────────────────────────────────
+
+const toEntry = (s: CatalogSkin): CatalogSkinEntry => ({
+  id: s.id,
+  num: s.num,
+  name: s.name,
+  slug: skinSlug(s.name, s.id),
+  championId: s.championId,
+  championName: s.championName,
+  splashUrl: s.splashUrl,
+})
+
+// /skins and /champions: the flat list and the roster, from this catalog and
+// nothing else. Both lenses used to read the Go API's Postgres catalog, which
+// carries base looks and syncs on its own clock - so /skins said 1,943 while
+// every ranking said 1,941, and /champions gave Ahri 21 skins to the champion
+// page's 20.
+export async function catalogState(): Promise<CatalogState> {
+  const db = getDb()
+  await ensureCatalog(db)
+  return {
+    champions: championRoster(db),
+    skins: allCatalogSkins(db).map(toEntry),
+  }
+}
+
+// One champion's wardrobe, resolved case-insensitively (the route redirects
+// to the lowercase id). Null when the catalog has no such champion.
+export async function championWardrobe(
+  championId: string,
+): Promise<ChampionWardrobeState | null> {
+  const db = getDb()
+  await ensureCatalog(db)
+  const row = db
+    .prepare(
+      'SELECT champion_id AS championId FROM catalog_skins WHERE LOWER(champion_id) = LOWER(?) LIMIT 1',
+    )
+    .get(championId) as { championId: string } | undefined
+  if (!row) return null
+  const skins = championSkins(db, row.championId).map(toEntry)
+  const base = championBaseSkin(db, row.championId)
+  return {
+    championId: row.championId,
+    championName: base?.championName ?? skins[0]?.championName ?? row.championId,
+    splashUrl: base?.splashUrl ?? skins[0]?.splashUrl ?? null,
+    skins,
+  }
+}
+
+// A champion's base (num 0) skin — the default look. The Tier List uses it
+// as a baseline anchor for champion boards; the champion page as hero art.
 export function championBaseSkin(
   db: DatabaseSync,
   championId: string,

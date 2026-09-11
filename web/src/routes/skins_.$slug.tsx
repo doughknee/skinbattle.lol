@@ -57,8 +57,8 @@ export const Route = createFileRoute('/skins_/$slug')({
     return state
   },
   head: ({ loaderData }) => {
-    if (!loaderData) return { meta: [{ title: 'Skin · Skin Battle' }] }
-    const title = `${skinTitleName(loaderData.name, loaderData.championName)} · Skin Battle`
+    if (!loaderData) return { meta: [{ title: 'Skin | SkinBattle' }] }
+    const title = `${skinTitleName(loaderData.name, loaderData.championName)} | SkinBattle`
     // Generated from this skin's live rating, so it moves as votes land and no
     // two dossiers share a sentence - the only defence against ~1,900
     // near-identical descriptions. No "best" claim the data has not paid for:
@@ -112,7 +112,9 @@ const fmtDate = (iso: string) =>
 // gets a shorter description rather than a hollow one.
 function factsLine(state: SkinPageState): string {
   const f = state.facts
-  const parts = [`A ${state.championName} skin`]
+  // "An Ahri skin", "A Lux skin": the article follows the name.
+  const article = /^[aeiou]/i.test(state.championName) ? 'An' : 'A'
+  const parts = [`${article} ${state.championName} skin`]
   if (f?.cost != null) parts.push(`${f.cost.toLocaleString('en-US')} RP`)
   if (f?.release) parts.push(`released ${fmtDate(f.release)}`)
   const line = f?.sets.filter((s) => s !== 'Legacy')[0]
@@ -169,8 +171,10 @@ function SkinPage() {
 
   const c = state.community
   const f = state.facts
+  // Over head-to-head battles only: `battles` also counts Tier Drop
+  // placements, which have no "win".
   const winRate =
-    c && c.battles > 0 ? Math.round((100 * c.wins) / c.battles) : null
+    c && c.h2hBattles > 0 ? Math.round((100 * c.wins) / c.h2hBattles) : null
   const lines = f?.sets.filter((s) => s !== 'Legacy') ?? []
   const n = (v: number) => v.toLocaleString('en-US')
 
@@ -318,7 +322,10 @@ function SkinPage() {
               <Fact label="Battles">
                 {n(c.battles)}
                 {winRate !== null && (
-                  <span className="text-base text-grey1"> · {winRate}% won</span>
+                  <span className="text-base text-grey1">
+                    {' '}
+                    · {winRate}% won head-to-head
+                  </span>
                 )}
               </Fact>
             </>
@@ -384,7 +391,7 @@ function SkinPage() {
           Splash art, champion and skin names are Riot Games'. Prices, release
           dates and skin lines come from the committed League Wiki snapshot
           {f ? '' : ', which holds nothing for this skin yet'}. The rating and
-          the rank are Skin Battle's own, computed from community battles -{' '}
+          the rank are SkinBattle's own, computed from community battles -{' '}
           <Link to="/methodology" className={factLink}>
             how that works
           </Link>

@@ -23,14 +23,14 @@ export const Route = createFileRoute('/roadmap')({
   loader: () => fetchRoadmap(),
   head: () => ({
     meta: [
-      { title: 'Roadmap · Skin Battle' },
+      { title: 'Roadmap | SkinBattle' },
       {
         name: 'description',
         content:
           'What is live, what is coming, and the community milestones that unlock it. Every battle counts toward the next era.',
       },
       ...ogMeta({
-        title: 'Roadmap · Skin Battle',
+        title: 'Roadmap | SkinBattle',
         description:
           'What is live, what is coming, and the community milestones that unlock it. Every battle counts toward the next era.',
         card: 'games',

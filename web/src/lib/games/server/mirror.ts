@@ -84,7 +84,7 @@ function loadRatedRows(db: DatabaseSync, userId: string): RatedRow[] {
        FROM user_skin_ratings u
        JOIN catalog_skins c ON c.id = u.skin_id
        LEFT JOIN skin_ratings r ON r.skin_id = u.skin_id
-       WHERE u.user_id = ? AND u.battles > 0
+       WHERE u.user_id = ? AND u.battles > 0 AND c.num != 0
        ORDER BY u.rating DESC`,
     )
     .all(userId) as unknown as RatedRow[]

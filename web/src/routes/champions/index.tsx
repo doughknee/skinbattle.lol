@@ -7,7 +7,6 @@ import {
   faTableCells,
   faTableCellsLarge,
 } from '@fortawesome/free-solid-svg-icons'
-import { api } from '~/lib/api'
 import { fallbackToRaw, skinThumb } from '~/lib/img'
 import CatalogTabs from '~/components/CatalogTabs'
 import Dropdown from '~/components/Dropdown'
@@ -16,8 +15,9 @@ import ErrorState from '~/components/ErrorState'
 import PageHeader from '~/components/PageHeader'
 import { RouteSkeleton } from '~/components/Skeletons'
 import { championDisplayName } from '~/lib/skinName'
+import { fetchCatalog } from '~/lib/games/serverFns'
 import { createSearcher } from '~/lib/search'
-import type { Champion } from '~/lib/types'
+import type { CatalogChampionEntry } from '~/lib/games/types'
 
 const sortOptions = [
   { value: 'az', label: 'A → Z' },
@@ -36,22 +36,26 @@ type Density = 'comfortable' | 'compact'
 const DENSITY_KEY = 'sb:championDensity'
 
 export const Route = createFileRoute('/champions/')({
+  // The roster and each champion's skin count come from the games catalog
+  // (server/catalog.ts championRoster), the same rows the champion page
+  // counts - so a card can never say 21 where the page says 20. The Go API's
+  // copy counted the base look and drifted by a skin or two.
   loader: async () => {
-    const champions = await api.champions()
+    const { champions } = await fetchCatalog()
     return { champions }
   },
   head: () => ({
     meta: [
-      { title: 'Champions · Skin Battle' },
+      { title: 'Champions | SkinBattle' },
       {
         name: 'description',
         content:
-          'Every League of Legends champion and their full wardrobe: splash art, release dates, and prices for every skin.',
+          'Every League of Legends champion and their skins, ranked by SkinBattle community battles. Pick a champion to see its best skins.',
       },
       ...ogMeta({
-        title: 'Champions · Skin Battle',
+        title: 'Champions | SkinBattle',
         description:
-          'Every League of Legends champion and their full wardrobe: splash art, release dates, and prices for every skin.',
+          'Every League of Legends champion and their skins, ranked by SkinBattle community battles. Pick a champion to see its best skins.',
         card: 'games',
         path: '/champions',
       }),
@@ -67,12 +71,8 @@ export const Route = createFileRoute('/champions/')({
   component: ChampionsPage,
 })
 
-const defaultSplash = (champion: Champion) =>
-  (champion.skins.find((skin) => skin.num === 0) || champion.skins[0])
-    ?.splash_url
-
-const firstLetter = (champion: Champion) =>
-  championDisplayName(champion.id).charAt(0).toUpperCase()
+const firstLetter = (champion: CatalogChampionEntry) =>
+  championDisplayName(champion.championId).charAt(0).toUpperCase()
 
 // ─── roster card ─────────────────────────────────────────────────────────────
 
@@ -80,26 +80,26 @@ function ChampionCard({
   champion,
   compact,
 }: {
-  champion: Champion
+  champion: CatalogChampionEntry
   compact: boolean
 }) {
-  const name = championDisplayName(champion.id)
-  const skinCount = champion.skins.length
+  const name = championDisplayName(champion.championId)
+  const skinCount = champion.skinCount
 
   return (
     <li
-      id={`champ-${champion.id}`}
+      id={`champ-${champion.championId}`}
       className="card-sheen-host group relative aspect-video scroll-mt-28 overflow-hidden bg-hextech-black/40 transition duration-300 hover:shadow-glow"
     >
       <Link
         to="/champions/$id"
-        params={{ id: champion.id.toLowerCase() }}
+        params={{ id: champion.championId.toLowerCase() }}
         aria-label={`${name} wardrobe`}
         className="absolute inset-0 z-0 block"
       >
         <img
-          src={skinThumb(defaultSplash(champion), 768)}
-          data-raw={defaultSplash(champion)}
+          src={skinThumb(champion.splashUrl, 768)}
+          data-raw={champion.splashUrl}
           onError={fallbackToRaw}
           alt=""
           loading="lazy"
@@ -154,42 +154,40 @@ function ChampionsPage() {
   }
 
   const totalSkins = useMemo(
-    () => champions.reduce((n, c) => n + (c.skins?.length ?? 0), 0),
+    () => champions.reduce((n, c) => n + c.skinCount, 0),
     [champions],
   )
 
-  // Index the display name (a derived value), id and title.
+  // Index the display name (a derived value) and the id.
   const searcher = useMemo(
     () =>
       createSearcher(
-        champions.map((c) => ({ c, name: championDisplayName(c.id), id: c.id, title: c.title })),
-        { keys: ['name', 'id', 'title'] },
+        champions.map((c) => ({
+          c,
+          name: championDisplayName(c.championId),
+          id: c.championId,
+        })),
+        { keys: ['name', 'id'] },
       ),
     [champions],
   )
 
   const visible = useMemo(() => {
     const filtered = searcher.search(query).map((r) => r.c)
+    const byId = (a: CatalogChampionEntry, b: CatalogChampionEntry) =>
+      a.championId.localeCompare(b.championId)
     switch (sortBy) {
       case 'za':
-        filtered.sort((a, b) => b.id.localeCompare(a.id))
+        filtered.sort((a, b) => byId(b, a))
         break
       case 'most_skins':
-        filtered.sort(
-          (a, b) =>
-            (b.skins?.length ?? 0) - (a.skins?.length ?? 0) ||
-            a.id.localeCompare(b.id),
-        )
+        filtered.sort((a, b) => b.skinCount - a.skinCount || byId(a, b))
         break
       case 'fewest_skins':
-        filtered.sort(
-          (a, b) =>
-            (a.skins?.length ?? 0) - (b.skins?.length ?? 0) ||
-            a.id.localeCompare(b.id),
-        )
+        filtered.sort((a, b) => a.skinCount - b.skinCount || byId(a, b))
         break
       default:
-        filtered.sort((a, b) => a.id.localeCompare(b.id))
+        filtered.sort(byId)
     }
     return filtered
   }, [searcher, query, sortBy])
@@ -202,7 +200,7 @@ function ChampionsPage() {
     if (!alphabetical) return map
     for (const c of visible) {
       const l = firstLetter(c)
-      if (!map.has(l)) map.set(l, c.id)
+      if (!map.has(l)) map.set(l, c.championId)
     }
     return map
   }, [visible, alphabetical])
@@ -226,7 +224,7 @@ function ChampionsPage() {
       <PageHeader
         eyebrow="The catalog"
         title="Champions"
-        subtitle={`Every champion and their wardrobe: ${champions.length} champions, ${totalSkins.toLocaleString()} skins to judge. Pick one to see how its skins rank.`}
+        subtitle={`Browse all ${champions.length} League of Legends champions and see how their skins rank in SkinBattle community battles: ${totalSkins.toLocaleString()} skins, not counting base looks.`}
         className="mb-8"
       />
 
@@ -350,7 +348,7 @@ function ChampionsPage() {
             >
               {visible.map((champion) => (
                 <ChampionCard
-                  key={champion.id}
+                  key={champion.championId}
                   champion={champion}
                   compact={compact}
                 />

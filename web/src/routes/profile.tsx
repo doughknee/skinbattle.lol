@@ -38,14 +38,14 @@ export const Route = createFileRoute('/profile')({
   loader: () => fetchMirror({ data: { restoreToken: guestRestoreToken() } }),
   head: () => ({
     meta: [
-      { title: 'Your Mirror · Skin Battle' },
+      { title: 'Your Mirror | SkinBattle' },
       {
         name: 'description',
         content:
-          'Your personal League skin tier list, auto-built from your battles, plus your votes and account.',
+          'Your personal League skin tier list, auto-built from your battles, plus account settings.',
       },
       ...ogMeta({
-        title: 'The Mirror · Skin Battle',
+        title: 'The Mirror | SkinBattle',
         description:
           'The personal tier list your battles build, plus your most contrarian takes.',
         card: 'mirror',

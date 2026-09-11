@@ -314,7 +314,7 @@ async function buildCard(card: OgCard): Promise<Node> {
           eyebrow("New · sort a champion's wardrobe"),
           title('Tier Drop'),
           body(
-            "Rank a champion's skins S to D. One tier list shapes the community ranking as much as dozens of head-to-head battles.",
+            "Rank a champion's skins S to D. One board counts for up to eight head-to-head battles' worth of evidence.",
           ),
           el(
             'div',
@@ -491,7 +491,7 @@ async function buildCard(card: OgCard): Promise<Node> {
         el(
           'div',
           { flexDirection: 'column', gap: 18, justifyContent: 'center', flexGrow: 1 },
-          eyebrow('Insights · days since last skin'),
+          eyebrow('Rankings · days since last skin'),
           title('The Skin Drought Index', 68),
           leader
             ? text(
@@ -515,10 +515,10 @@ async function buildCard(card: OgCard): Promise<Node> {
         el(
           'div',
           { flexDirection: 'column', gap: 18, justifyContent: 'center', flexGrow: 1 },
-          eyebrow('A new puzzle every day'),
-          title('Daily Skin Games'),
+          eyebrow('Community skin rankings'),
+          title('SkinBattle'),
           body(
-            'Splashdle · Head-to-Head · The Mirror: daily challenges for League skin connoisseurs.',
+            'Every League skin, ranked by community battles. Head-to-Head, Tier Drop, and a new puzzle every day.',
           ),
           battlesLine
             ? text(battlesLine, {
@@ -582,12 +582,10 @@ export async function skinOgResponse(skinId: string): Promise<Response> {
         .get(skinId) as
         | { rating: number; uncertainty: number; battles: number }
         | undefined
-      const { globalRank } = await import('./ratings')
-      const ratedTotal = (
-        db
-          .prepare('SELECT COUNT(*) AS c FROM skin_ratings WHERE battles > 0')
-          .get() as { c: number }
-      ).c
+      // Same rank and denominator the dossier prints (catalog-joined), so
+      // the share card can never say "#N of M" with a different M.
+      const { globalRank, ratedCount } = await import('./ratings')
+      const ratedTotal = ratedCount(db)
       const statLine = rating
         ? `${Math.round(rating.rating)} ± ${Math.round(rating.uncertainty)} · #${globalRank(db, rating.rating)} of ${ratedTotal} rated · ${rating.battles} battles`
         : 'Unranked: no battles fought yet'

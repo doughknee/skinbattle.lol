@@ -8,14 +8,14 @@ import PageHeader from '~/components/PageHeader'
 export const Route = createFileRoute('/terms')({
   head: () => ({
     meta: [
-      { title: 'Terms · Skin Battle' },
+      { title: 'Terms | SkinBattle' },
       {
         name: 'description',
         content:
           'The terms of use for skinbattle.lol: a free League of Legends fan project.',
       },
       ...ogMeta({
-        title: 'Terms · Skin Battle',
+        title: 'Terms | SkinBattle',
         description:
           'The terms of use for skinbattle.lol: a free League of Legends fan project.',
         card: 'games',

@@ -24,7 +24,7 @@ import { PALETTE } from '~/lib/brand'
 const SITE_URL = 'https://skinbattle.lol'
 const SITE_TITLE = 'SKINBATTLE.LOL · League of Legends Skin Rankings'
 const SITE_DESCRIPTION =
-  'Community-built rankings for every League of Legends skin. Battle your way to the definitive list.'
+  'Community-built rankings for every League of Legends skin. Pick a winner, watch the rankings move.'
 
 export const Route = createRootRoute({
   // Runs on the server during SSR; the result is serialized to the client.
@@ -42,7 +42,7 @@ export const Route = createRootRoute({
       { name: 'theme-color', content: PALETTE.blue7 },
       // Open Graph / Twitter cards - what Reddit and Discord shares render.
       { property: 'og:type', content: 'website' },
-      { property: 'og:site_name', content: 'SKINBATTLE.LOL' },
+      { property: 'og:site_name', content: 'SkinBattle' },
       { property: 'og:title', content: SITE_TITLE },
       { property: 'og:description', content: SITE_DESCRIPTION },
       { property: 'og:url', content: SITE_URL },

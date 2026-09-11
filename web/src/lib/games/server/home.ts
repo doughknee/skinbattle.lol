@@ -10,10 +10,21 @@
 import type { DatabaseSync } from 'node:sqlite'
 import type { HomeSlide, HomeState } from '../types'
 import { getDb } from './db'
-import { allCatalogSkins, ensureCatalog, type CatalogSkin } from './catalog'
+import {
+  allCatalogSkins,
+  catalogSkinTotal,
+  championCount,
+  ensureCatalog,
+  type CatalogSkin,
+} from './catalog'
 import { factsFor } from './facts'
 import { seedFloats, puzzleDay } from './daily'
-import { getSkinRating, globalRank } from './ratings'
+import {
+  getSkinRating,
+  globalRank,
+  ratedCount,
+  RATED_IN_CATALOG,
+} from './ratings'
 import { communityBattleCount } from './quickbattle'
 import { droughtIndex } from './insights'
 import { skinSlug } from '../slug'
@@ -25,18 +36,11 @@ const HEADLINER_POOL = 20
 // Drought rows surfaced on the home page.
 const DROUGHT_ROWS = 3
 
-function ratedCount(db: DatabaseSync): number {
-  const row = db
-    .prepare('SELECT COUNT(*) AS c FROM skin_ratings WHERE battles > 0')
-    .get() as { c: number }
-  return row.c
-}
-
 function topRatedSkins(db: DatabaseSync, catalog: CatalogSkin[]): CatalogSkin[] {
   const ids = (
     db
       .prepare(
-        'SELECT skin_id FROM skin_ratings WHERE battles > 0 ORDER BY rating DESC LIMIT ?',
+        `SELECT r.skin_id ${RATED_IN_CATALOG} ORDER BY r.rating DESC LIMIT ?`,
       )
       .all(HEADLINER_POOL) as unknown as { skin_id: string }[]
   ).map((r) => r.skin_id)
@@ -106,10 +110,14 @@ export async function homeState(): Promise<HomeState> {
   return {
     date,
     slides,
+    // The same helpers every other page prints from (catalog.ts, ratings.ts)
+    // - the home counters are the most-quoted numbers on the site and used to
+    // be computed here on their own, orphans and all.
     community: {
       battles: communityBattleCount(db),
       rated: ratedCount(db),
-      catalog: allCatalogSkins(db).length,
+      catalog: catalogSkinTotal(db),
+      champions: championCount(db),
     },
     drought:
       drought.rows.length > 0

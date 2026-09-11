@@ -26,7 +26,7 @@ const flattenScopes = (s: TierScopeCatalog): ScopeOption[] => [
 export const Route = createFileRoute('/battle/tier-drop_/browse')({
   loader: async () => ({ feed: await fetchTierFeed({ data: {} }) }),
   head: () => {
-    const title = 'Community Tier Lists · Skin Battle'
+    const title = 'Community Tier Lists | SkinBattle'
     const description =
       'Browse every tier list the community has ranked, by champion, skin line, year, price, or rarity.'
     return {

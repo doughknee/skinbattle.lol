@@ -550,7 +550,7 @@ function applyPersonalTierUpdate(
 // battle pool, the ranking slices and the champion pages all use it: the base
 // look is not a skin anyone owns, so a page that counted it would contradict
 // every page linking to it.
-const RATED_IN_CATALOG = `FROM skin_ratings r
+export const RATED_IN_CATALOG = `FROM skin_ratings r
      JOIN catalog_skins c ON c.id = r.skin_id
     WHERE r.battles > 0 AND c.num != 0`
 
@@ -586,19 +586,18 @@ export function rankNeighbors(
   rating: number,
   rank: number,
 ): { above: RankNeighbor | null; below: RankNeighbor | null } {
+  // Same set globalRank counts (RATED_IN_CATALOG): a base look placed on a
+  // champion Tier Drop board has a rating row, and without the num != 0
+  // guard it could be named as the neighbour of a rank that excludes it.
   const above = db
     .prepare(
-      `SELECT c.name AS name FROM skin_ratings r
-       JOIN catalog_skins c ON c.id = r.skin_id
-       WHERE r.battles > 0 AND r.rating > ?
+      `SELECT c.name AS name ${RATED_IN_CATALOG} AND r.rating > ?
        ORDER BY r.rating ASC LIMIT 1`,
     )
     .get(rating) as { name: string } | undefined
   const below = db
     .prepare(
-      `SELECT c.name AS name FROM skin_ratings r
-       JOIN catalog_skins c ON c.id = r.skin_id
-       WHERE r.battles > 0 AND r.rating < ?
+      `SELECT c.name AS name ${RATED_IN_CATALOG} AND r.rating < ?
        ORDER BY r.rating DESC LIMIT 1`,
     )
     .get(rating) as { name: string } | undefined

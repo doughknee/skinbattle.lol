@@ -20,7 +20,7 @@ import {
   type CatalogSkin,
 } from './catalog'
 import { factsFor, PRICE_TIERS } from './facts'
-import { ratingEventCount, skinVoters } from './ratings'
+import { ratingEventCount, RATED_IN_CATALOG, skinVoters } from './ratings'
 import { kebab, skinSlug } from '../slug'
 
 // Page size: the route loads the first page server-side and "Show more"
@@ -59,14 +59,16 @@ function lineBySlug(db: DatabaseSync): Map<string, string> {
 function resolveSlice(db: DatabaseSync, slice: string): Slice | null {
   if (slice === 'all') {
     return {
-      // "Full ranking", not "All skins": /skins is the catalog door and owns
-      // the phrase "All Skins" in the nav, footer and palette (see siteMap.ts).
-      // Two entries reading the same sends people to the wrong lens - this one
-      // is a verdict, that one is a wardrobe.
-      title: 'Full ranking',
+      // The page that owns "best League of Legends skins" - the H1 says so.
+      // The nav, footer and slice bar still call it "Full ranking" (siteMap.ts):
+      // /skins owns the phrase "All Skins", and a second entry reading the same
+      // sends people to the wrong lens - this one is a verdict, that one is a
+      // wardrobe. Title and subtitle are STATIC: they are the <title> and the
+      // meta description, and a SERP snippet is cached for weeks.
+      title: 'Best League of Legends Skins',
       subtitle:
-        'Every League of Legends skin with battle data, ranked by community head-to-head votes.',
-      scope: 'skins in the catalog',
+        'Every League of Legends skin ranked by SkinBattle community battles, with a rating, an uncertainty band and a battle count for each.',
+      scope: 'League of Legends skins',
       match: () => true,
     }
   }
@@ -310,9 +312,11 @@ export function catalogEloIndex(): {
   rank: number
 }[] {
   const db = getDb()
+  // Catalog-joined so an orphaned rating row cannot hold a rank a real skin
+  // should have - the same set globalRank() counts.
   const rows = db
     .prepare(
-      'SELECT skin_id, rating FROM skin_ratings WHERE battles > 0 ORDER BY rating DESC',
+      `SELECT r.skin_id, r.rating ${RATED_IN_CATALOG} ORDER BY r.rating DESC`,
     )
     .all() as unknown as { skin_id: string; rating: number }[]
   return rows.map((r, i) => ({ skinId: r.skin_id, rating: r.rating, rank: i + 1 }))
