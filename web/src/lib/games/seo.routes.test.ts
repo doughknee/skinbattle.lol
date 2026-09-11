@@ -252,6 +252,10 @@ describe('internal links never pass through a redirect stub', () => {
     .filter((src) => src.includes('throw redirect('))
     .map((src) => /createFileRoute\('([^']+)'\)/.exec(src)?.[1])
     .filter((p): p is string => !!p && !p.includes('$'))
+    // An index stub registers as "/rankings/" but is linked as "/rankings":
+    // the home hero shipped one such link past the first version of this
+    // guard, so both spellings count.
+    .flatMap((p) => (p.length > 1 && p.endsWith('/') ? [p, p.slice(0, -1)] : [p]))
 
   it('finds the stubs at all', () => {
     expect(stubs).toContain('/rankings/elo')

@@ -187,7 +187,11 @@ function Hero({
                 className="h-4 transition-transform duration-150 group-hover:translate-x-1"
               />
             </Link>
-            <Link to="/rankings" className={btnSecondary}>
+            <Link
+              to="/rankings/$slice"
+              params={{ slice: 'all' }}
+              className={btnSecondary}
+            >
               See the Rankings
             </Link>
           </div>
