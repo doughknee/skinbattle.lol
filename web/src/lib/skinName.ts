@@ -37,3 +37,22 @@ export function displaySkinName(skinName: string, championId: string): string {
   }
   return skinName
 }
+
+// Letters and digits only, so punctuation and casing cannot split a match.
+const bare = (s: string) => s.replace(/[^a-z0-9]/gi, '').toLowerCase()
+
+// The name a skin's <title> and share card use. Most skin names already carry
+// their champion ("Elementalist Lux"), but 45 do not - "Birdio", "Emumu",
+// "Urfwick", "Captain Fortune" - and a title reading "Birdio · Skin Battle"
+// tells a searcher nothing about what it is. Appending the champion where the
+// name lacks it disambiguates those, and disambiguates any two skins that ever
+// come to share a name (none do today) for free.
+// Degrades rather than dangling: this string is a <title> on ~1,900 pages, and
+// "(Lux)" with nothing in front of it is worse than a plain name.
+export function skinTitleName(skinName: string, championName: string): string {
+  const skin = skinName.trim()
+  const champion = championName.trim()
+  if (!skin) return champion || 'Skin'
+  if (!champion || bare(skin).includes(bare(champion))) return skin
+  return `${skin} (${champion})`
+}

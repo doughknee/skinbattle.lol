@@ -183,6 +183,15 @@ const SKIN_COLUMNS = `id, champion_id AS championId, champion_name AS championNa
    num, name, splash_url AS splashUrl, tile_url AS tileUrl,
    loadscreen_url AS loadscreenUrl, uncentered_splash_url AS uncenteredSplashUrl`
 
+// Skins in the catalog, base looks excluded. The denominator /skins, the
+// methodology page and the dossier's coverage bar all print.
+export function catalogSkinTotal(db: DatabaseSync): number {
+  const row = db
+    .prepare('SELECT COUNT(*) AS c FROM catalog_skins WHERE num != 0')
+    .get() as { c: number }
+  return row.c
+}
+
 export function getCatalogSkin(
   db: DatabaseSync,
   skinId: string,
@@ -202,6 +211,21 @@ export function allCatalogSkins(db: DatabaseSync): CatalogSkin[] {
        WHERE num != 0 ORDER BY champion_id, num`,
     )
     .all() as unknown as CatalogSkin[]
+}
+
+// One champion's wardrobe, base look excluded and in release order - the same
+// set /skins, the battle pool and the champion page count, so a dossier's
+// sibling links can never disagree with the champion page linking to it.
+export function championSkins(
+  db: DatabaseSync,
+  championId: string,
+): CatalogSkin[] {
+  return db
+    .prepare(
+      `SELECT ${SKIN_COLUMNS} FROM catalog_skins
+       WHERE champion_id = ? AND num != 0 ORDER BY num`,
+    )
+    .all(championId) as unknown as CatalogSkin[]
 }
 
 // A champion's base (num 0) skin — the default look. Only the Tier List uses

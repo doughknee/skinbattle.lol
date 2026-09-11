@@ -55,3 +55,7 @@ export function skinSets(skinId: string): string[] {
 }
 
 export const factsSnapshotAt: string = dataset.snapshotAt
+
+// The League patch the snapshot was taken at. Printed wherever the dataset
+// is offered for citation, so a reader can tell how current the facts are.
+export const factsPatch: string = dataset.patch

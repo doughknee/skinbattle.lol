@@ -8,7 +8,7 @@ import type { DatabaseSync } from 'node:sqlite'
 import type { DroughtRow, DroughtState } from '../types'
 import { getDb } from './db'
 import { allCatalogSkins, ensureCatalog } from './catalog'
-import { factsFor } from './facts'
+import { factsFor, factsPatch, factsSnapshotAt } from './facts'
 import { puzzleDay } from './daily'
 import { skinSlug } from '../slug'
 
@@ -80,6 +80,11 @@ export async function droughtIndex(): Promise<DroughtState> {
   const ranked: DroughtRow[] = rows.map((r, i) => ({ ...r, rank: i + 1 }))
   return {
     date,
+    // Elapsed days are derived here, at query time, from the release date and
+    // today's UTC day - there is no stored counter to go stale, and no daily
+    // job that can miss a run and quietly publish yesterday's number.
+    snapshotAt: factsSnapshotAt,
+    patch: factsPatch,
     rows: ranked,
     undated,
     stats: {

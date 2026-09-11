@@ -7,8 +7,10 @@ import {
   MAX_CONFIDENT_UNCERTAINTY,
   MIN_CONFIDENT_VOTERS,
   VOTER_SKIN_CAP,
+  skinAnswerBlock,
   weightedBattlesFor,
   type AnswerInput,
+  type SkinAnswerInput,
 } from './answer'
 import { MIN_INDEXABLE_BATTLES } from './seo'
 import { BATTLE_VOTER_SKIN_CAP, START_UNCERTAINTY } from './server/ratings'
@@ -284,5 +286,159 @@ describe('never emits undefined', () => {
 
   it('is deterministic - same input, same words', () => {
     expect(answerBlock(base)).toEqual(answerBlock(base))
+  })
+})
+
+// ─── the dossier sentence ───────────────────────────────────────────────────
+
+const dossier: SkinAnswerInput = {
+  name: 'Elderwood Ahri',
+  community: {
+    rating: 1642,
+    uncertainty: 62,
+    battles: 41,
+    rank: 3,
+    voters: crowd,
+  },
+  rated: 1904,
+  total: 1943,
+}
+
+describe('skinAnswerBlock', () => {
+  it('answers about the skin the page is named after, not a leader', () => {
+    const b = skinAnswerBlock(dossier)
+    expect(b.answer).toContain('Elderwood Ahri rates 1,642 Elo')
+    expect(b.answer).toContain('#3 of 1,904 ranked skins')
+    // The dossier never claims a "best" it has not measured.
+    expect(b.answer).not.toMatch(/highest-rated|best/)
+  })
+
+  it('is settled only when the band AND the crowd clear the same two bars', () => {
+    expect(skinAnswerBlock(dossier).confidence).toBe('confident')
+    // Band blown, crowd fine.
+    expect(
+      skinAnswerBlock({
+        ...dossier,
+        community: {
+          ...dossier.community!,
+          uncertainty: MAX_CONFIDENT_UNCERTAINTY + 1,
+        },
+      }).confidence,
+    ).toBe('provisional')
+    // Band fine, crowd too small - the case a single afternoon produces.
+    expect(
+      skinAnswerBlock({
+        ...dossier,
+        community: { ...dossier.community!, voters: { members: 1, guests: 1 } },
+      }).confidence,
+    ).toBe('provisional')
+  })
+
+  it('names which bar it missed, and quotes the same rule as a ranking', () => {
+    const wideBand = skinAnswerBlock({
+      ...dossier,
+      community: { ...dossier.community!, uncertainty: 240 },
+    })
+    expect(wideBand.answer).toContain('at ±240 that placing is provisional')
+
+    const thinCrowd = skinAnswerBlock({
+      ...dossier,
+      community: { ...dossier.community!, voters: { members: 1, guests: 0 } },
+    })
+    expect(thinCrowd.answer).toContain('too few people have voted')
+
+    // One rule, one place. Both branches cite it, and so does answerBlock.
+    const rule = `±${MAX_CONFIDENT_UNCERTAINTY} Elo`
+    for (const b of [wideBand, thinCrowd]) {
+      expect(b.basis).toContain(rule)
+      expect(b.basis).toContain(`${MIN_CONFIDENT_VOTERS} separate voters`)
+    }
+  })
+
+  it('says a never-battled skin has no rating rather than inventing one', () => {
+    const b = skinAnswerBlock({ ...dossier, community: null })
+    expect(b.confidence).toBe('empty')
+    expect(b.answer).toContain('has not been through a head-to-head battle yet')
+    expect(b.answer).not.toMatch(/\bElo\b/)
+  })
+
+  it('drops a rank it cannot stand behind instead of printing "#0 of 0"', () => {
+    for (const rank of [0, -1, 1905]) {
+      const b = skinAnswerBlock({
+        ...dossier,
+        community: { ...dossier.community!, rank },
+      })
+      expect(b.answer).not.toMatch(/#\s*-?\d/)
+      expect(b.answer).toContain('1,642 Elo')
+    }
+  })
+
+  it('never prints a zero head count', () => {
+    const b = skinAnswerBlock({
+      ...dossier,
+      community: { ...dossier.community!, voters: { members: 0, guests: 0 } },
+    })
+    expect(b.basis).not.toContain('0 voters')
+  })
+
+  it('produces clean prose from hostile input', () => {
+    const hostile: SkinAnswerInput[] = [
+      { name: '', community: null, rated: 0, total: 0 },
+      {
+        name: undefined as never,
+        community: undefined as never,
+        rated: NaN,
+        total: NaN,
+      },
+      {
+        name: '  ',
+        community: {
+          rating: NaN,
+          uncertainty: Infinity,
+          battles: -4,
+          rank: NaN,
+          voters: { members: -2, guests: NaN as never },
+        },
+        rated: -1,
+        total: 3,
+      },
+      {
+        name: 'A',
+        community: {
+          rating: undefined as never,
+          uncertainty: undefined as never,
+          battles: undefined as never,
+          rank: undefined as never,
+          voters: undefined as never,
+        },
+        rated: 5,
+        total: 2,
+      },
+      {
+        name: "Bel'Veth's <script>",
+        community: {
+          rating: 1500,
+          uncertainty: 0,
+          battles: 1,
+          rank: 1,
+          voters: { members: 1, guests: 0 },
+        },
+        rated: 1,
+        total: 1,
+      },
+    ]
+    for (const input of hostile) {
+      const b = skinAnswerBlock(input)
+      for (const s of [b.answer, b.basis]) {
+        expect(s).not.toMatch(/undefined|null|NaN|Infinity/)
+        expect(s.trim()).toMatch(/\.$/)
+        expect(s).not.toMatch(/\s{2,}|\s\./)
+      }
+      expect(['confident', 'provisional', 'empty']).toContain(b.confidence)
+    }
+  })
+
+  it('is deterministic - same input, same words', () => {
+    expect(skinAnswerBlock(dossier)).toEqual(skinAnswerBlock(dossier))
   })
 })
