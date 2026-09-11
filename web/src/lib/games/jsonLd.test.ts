@@ -8,7 +8,12 @@
 // Mundo). Skin names add quotes and accents on top.
 
 import { describe, expect, it } from 'vitest'
-import { breadcrumbJsonLd, itemListJsonLd, absUrl } from './jsonLd'
+import {
+  absUrl,
+  breadcrumbJsonLd,
+  datasetJsonLd,
+  itemListJsonLd,
+} from './jsonLd'
 import { championDisplayName } from '../skinName'
 
 // Exactly what components/JsonLd.tsx writes into the document. If that
@@ -106,5 +111,63 @@ describe('the ranked ItemList survives skin names', () => {
     expect(JSON.parse(raw).itemListElement[0].name).toBe(
       '</script><img onerror=1>',
     )
+  })
+})
+
+describe('the skin dossier trail', () => {
+  // Four crumbs, and the last one is a SKIN name - the roster's punctuation now
+  // reaches a BreadcrumbList, not just an ItemList.
+  it.each(HOSTILE_SKIN_NAMES)('parses with %s as the leaf', (skinName) => {
+    const parsed = JSON.parse(
+      serialize(
+        breadcrumbJsonLd([
+          { name: 'Home', path: '/' },
+          { name: 'Skins', path: '/skins' },
+          { name: "Kai'Sa", path: '/champions/kaisa' },
+          { name: skinName, path: '/skins/a-skin-12345' },
+        ]),
+      ),
+    )
+    expect(parsed.itemListElement).toHaveLength(4)
+    expect(parsed.itemListElement[3].name).toBe(skinName)
+    expect(parsed.itemListElement[3].position).toBe(4)
+  })
+})
+
+describe('the Drought Index dataset block', () => {
+  it('parses, and carries the fields an attribution needs', () => {
+    const parsed = JSON.parse(
+      serialize(
+        datasetJsonLd({
+          name: 'The Skin Drought Index',
+          description: "Days since each champion's most recent skin. <script>",
+          path: '/rankings/drought',
+          dateModified: '2026-09-11',
+          basedOn: [
+            'League of Legends Wiki SkinData snapshot (patch 16.18.1)',
+            'Riot Games champion and skin catalog',
+          ],
+        }),
+      ),
+    )
+    expect(parsed['@type']).toBe('Dataset')
+    expect(parsed.url).toBe(absUrl('/rankings/drought'))
+    expect(parsed.dateModified).toBe('2026-09-11')
+    expect(parsed.creator.name).toBe('Skin Battle')
+    expect(parsed.isBasedOn).toHaveLength(2)
+    // The upstream source stays named: the derivation is ours, the game data
+    // is not, and the markup has to keep saying so.
+    expect(parsed.isBasedOn[1]).toContain('Riot Games')
+  })
+
+  it('makes no licence claim over data it does not own', () => {
+    const block = datasetJsonLd({
+      name: 'x',
+      description: 'x',
+      path: '/rankings/drought',
+      dateModified: '2026-09-11',
+      basedOn: ['x'],
+    }) as Record<string, unknown>
+    expect(block.license).toBeUndefined()
   })
 })

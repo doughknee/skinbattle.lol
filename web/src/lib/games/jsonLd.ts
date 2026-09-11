@@ -71,3 +71,37 @@ export function itemListJsonLd(opts: {
     })),
   }
 }
+
+// A page whose whole value is a derived table IS a dataset, so this is honest
+// markup rather than decoration - and it is what lets a journalist or an answer
+// engine attribute the number to someone. Deliberately minimal: creator (ours,
+// because the derivation is ours), isBasedOn (Riot's, because the underlying
+// game data is not), and a real dateModified so nobody cites a stale figure.
+//
+// No `license` field: this makes no claim about Riot's data, and inventing one
+// would be exactly the kind of self-serving markup the rest of this file avoids.
+export function datasetJsonLd(opts: {
+  name: string
+  description: string
+  path: string
+  // ISO date-time the figures were computed for.
+  dateModified: string
+  // Upstream sources, as names or URLs.
+  basedOn: string[]
+}): object {
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'Dataset',
+    name: opts.name,
+    description: opts.description,
+    url: absUrl(opts.path),
+    dateModified: opts.dateModified,
+    isBasedOn: opts.basedOn,
+    creator: {
+      '@type': 'Organization',
+      name: 'Skin Battle',
+      url: `${ORIGIN}/`,
+    },
+    isAccessibleForFree: true,
+  }
+}

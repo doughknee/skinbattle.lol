@@ -151,6 +151,14 @@ export const hasEnoughVoters = (v: AnswerVoters | null | undefined): boolean =>
   count(v?.members) + GUEST_VOTER_WEIGHT * count(v?.guests) >=
   MIN_CONFIDENT_VOTERS
 
+// The published rule, in one sentence, from the three constants above. Both
+// block builders call it so a reader who meets it on a ranking and again on a
+// skin meets the same numbers in the same words; only the subject moves,
+// because a ranking's claim is about its leader and a dossier's is about the
+// one skin it covers.
+const settledRule = (subject: string): string =>
+  `A placing here is settled once its band reaches ±${num(MAX_CONFIDENT_UNCERTAINTY)} Elo, which takes about ${plural(weightedBattlesFor(MAX_CONFIDENT_UNCERTAINTY), 'weighted battle')}, and once ${plural(MIN_CONFIDENT_VOTERS, 'separate voter')} stand behind ${subject}, counting a signed-out visitor as half a person.`
+
 // ─── the block ──────────────────────────────────────────────────────────────
 
 export function answerBlock(input: AnswerInput): AnswerBlock {
@@ -203,13 +211,13 @@ export function answerBlock(input: AnswerInput): AnswerBlock {
     rated === 1
       ? `${name} is the only one of the ${scope} with battle data so far, at ${rating} Elo`
       : `${name} currently rates highest of the ${scope}, at ${rating} Elo`
-  const settledRule = `A placing here is settled once its band reaches ±${num(MAX_CONFIDENT_UNCERTAINTY)} Elo, which takes about ${plural(weightedBattlesFor(MAX_CONFIDENT_UNCERTAINTY), 'weighted battle')}, and once ${plural(MIN_CONFIDENT_VOTERS, 'separate voter')} stand behind the leader, counting a signed-out visitor as half a person.`
+  const rule = settledRule('the leader')
 
   if (!isConfident(leader.uncertainty)) {
     return {
       confidence: 'provisional',
       answer: `${lead}, but at ±${num(band)} that placing is provisional.`,
-      basis: `It rests on ${plural(battles, 'head-to-head battle')}${from} so far. ${settledRule} ${coverage}`,
+      basis: `It rests on ${plural(battles, 'head-to-head battle')}${from} so far. ${rule} ${coverage}`,
     }
   }
 
@@ -220,6 +228,84 @@ export function answerBlock(input: AnswerInput): AnswerBlock {
   return {
     confidence: 'provisional',
     answer: `${lead}, but too few people have voted on it for that placing to be settled.`,
-    basis: `Its band is tight, at ±${num(band)} over ${plural(battles, 'head-to-head battle')}${from}, but a community ranking needs more than that. ${settledRule} ${coverage}`,
+    basis: `Its band is tight, at ±${num(band)} over ${plural(battles, 'head-to-head battle')}${from}, but a community ranking needs more than that. ${rule} ${coverage}`,
+  }
+}
+
+// ─── one skin ───────────────────────────────────────────────────────────────
+
+// A dossier asks a different question from a ranking. A ranking asks "which of
+// these is best", so its sentence is about a leader; a dossier asks "how good
+// is this one, and is that placing settled", so its sentence is about the skin
+// the page is named after - which is usually not anyone's leader.
+//
+// Same two bars decide both, from the same two predicates and the same three
+// numbers: this is a second sentence, not a second scale. Expect provisional
+// to dominate here and build it as a first-class state - a dossier's voter
+// count is its OWN, and most skins have only a handful.
+export interface SkinAnswerInput {
+  name: string
+  // null when the skin has never been battled.
+  community: {
+    rating: number
+    uncertainty: number
+    battles: number
+    // Rank among skins with battle data, and how many those are.
+    rank: number
+    // Heads behind this skin's own battles. Two counts, never a list.
+    voters: AnswerVoters
+  } | null
+  // Skins with battle data, and skins catalogued (num 0 excluded, the same
+  // set /skins, the battle pool and the champion pages count).
+  rated: number
+  total: number
+}
+
+export function skinAnswerBlock(input: SkinAnswerInput): AnswerBlock {
+  const name = text(input.name, 'This skin')
+  const rated = count(input.rated)
+  const total = Math.max(count(input.total), rated)
+  const c = input.community
+
+  if (!c || !usableRating(c.rating)) {
+    return {
+      confidence: 'empty',
+      answer: `${name} has not been through a head-to-head battle yet, so it has no community rating.`,
+      basis: `Of the ${plural(total, 'skin')} in the catalog, ${num(rated)} ${
+        rated === 1 ? 'has' : 'have'
+      } battle data so far. This one is waiting for its first vote.`,
+    }
+  }
+
+  const rating = num(c.rating)
+  const band = count(c.uncertainty)
+  const battles = count(c.battles)
+  const heads = voterHeads(c.voters)
+  const from = heads > 0 ? ` from ${plural(heads, 'voter')}` : ''
+  // Dropped rather than printed as "#0 of 0": a rank outside the rated field
+  // is a data fault, and the rating sentence stands on its own without it.
+  const rank = count(c.rank)
+  const place = rank >= 1 && rank <= rated ? `, #${num(rank)} of ${plural(rated, 'ranked skin')}` : ''
+
+  if (isConfident(c.uncertainty) && hasEnoughVoters(c.voters)) {
+    return {
+      confidence: 'confident',
+      answer: `${name} rates ${rating} Elo (±${num(band)})${place}.`,
+      basis: `That rests on ${plural(battles, 'head-to-head battle')}${from}, a band narrow enough to hold the placing against the field and enough separate people to call it a community result.`,
+    }
+  }
+
+  if (!isConfident(c.uncertainty)) {
+    return {
+      confidence: 'provisional',
+      answer: `${name} currently rates ${rating} Elo${place}, but at ±${num(band)} that placing is provisional.`,
+      basis: `It rests on ${plural(battles, 'head-to-head battle')}${from} so far. ${settledRule('it')}`,
+    }
+  }
+
+  return {
+    confidence: 'provisional',
+    answer: `${name} rates ${rating} Elo${place}, but too few people have voted on it for that placing to be settled.`,
+    basis: `Its band is tight, at ±${num(band)} over ${plural(battles, 'head-to-head battle')}${from}, but a community ranking needs more than that. ${settledRule('it')}`,
   }
 }

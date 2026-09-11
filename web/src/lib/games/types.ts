@@ -475,6 +475,20 @@ export interface SkinPageState {
     calibrated: boolean // false = "Early ranking: needs more votes"
   } | null // null = never battled
   ratedTotal: number
+  // Skins catalogued, base looks (num 0) excluded - the same denominator
+  // /skins and the champion pages count.
+  catalogTotal: number
+  // The dossier's verdict, built server-side from this skin's own band and
+  // its own voters so head() and the body quote one sentence. Voter counts
+  // stay on the server: only the prose crosses.
+  answer: AnswerBlock
+  // Wardrobe neighbours, for readers and for crawl depth.
+  related: {
+    skinId: string
+    name: string
+    slug: string
+    splashUrl: string
+  }[]
   personal: {
     rating: number
     battles: number
@@ -530,6 +544,10 @@ export interface DroughtRow {
 
 export interface DroughtState {
   date: string // UTC day the numbers are relative to
+  // Where the release dates came from, so the page can say it and a reader
+  // can date the claim: when the wiki snapshot was taken, and at which patch.
+  snapshotAt: string
+  patch: string
   rows: DroughtRow[] // drought days desc
   // Champions with no dated skins (typically brand-new - the facts snapshot
   // hasn't caught up). Listed honestly rather than silently dropped.
