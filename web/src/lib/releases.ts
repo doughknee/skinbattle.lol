@@ -17,6 +17,17 @@ export interface ReleaseEntry {
 export const RELEASES: ReleaseEntry[] = [
   {
     date: '2026-09-11',
+    title: 'Every link you share now unfurls as a card',
+    highlights: [
+      'Rankings and skin pages got their share cards last release. Now every other page has one too: the home page, Head-to-Head, Tier Drop, the Mirror, the three dailies, the leaderboards and the Drought Index all show up in Discord, X and group chats as a card you can read at chat size, with big type, the splash of the skin sitting at #1 right now, and live numbers for battles fought and skins ranked.',
+      "Daily puzzle links carry today's own puzzle. The Splashdle sliver and the Chroma Vision mosaic sit right on the card, blurred behind the words, so a share teases the puzzle without spoiling it.",
+    ],
+    fixes: [
+      'The Drought Index card names the champion who has waited longest and the last skin they got.',
+    ],
+  },
+  {
+    date: '2026-09-11',
     title: 'Help settle a ranking, then share it',
     highlights: [
       "Every champion page, skin page and ranking now says whether the community's verdict is settled or still provisional, and one tap drops you into battles dealt only from that champion's skins. A banner keeps score of what you're settling, every vote shows where the winner lands among that champion's skins, and after a few battles you get pointed back to the ranking you just moved.",
