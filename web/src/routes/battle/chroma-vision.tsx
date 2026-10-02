@@ -128,7 +128,7 @@ function ChromaVisionPage() {
       })
       rememberGuestToken(next.guestToken)
       const last = next.guesses[next.guesses.length - 1]
-      posthog.capture('chromavision_guess_submitted', {
+      posthog?.capture('chromavision_guess_submitted', {
         puzzle_number: next.puzzleNumber,
         guess_number: next.guesses.length,
         correct: last?.correct ?? false,
@@ -137,7 +137,7 @@ function ChromaVisionPage() {
         guessed_skin_id: opt.skinId,
       })
       if (next.status !== 'in_progress') {
-        posthog.capture('chromavision_completed', {
+        posthog?.capture('chromavision_completed', {
           puzzle_number: next.puzzleNumber,
           outcome: next.status,
           guesses_used: next.guesses.length,

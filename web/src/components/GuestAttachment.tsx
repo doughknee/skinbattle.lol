@@ -63,7 +63,7 @@ export default function GuestAttachment() {
           guestToken: string
         }
         rememberGuestToken(result.guestToken)
-        posthog.capture('guest_account_attached', { outcome: result.outcome })
+        posthog?.capture('guest_account_attached', { outcome: result.outcome })
         try {
           sessionStorage.setItem(ATTACH_SESSION_KEY, marker)
         } catch {

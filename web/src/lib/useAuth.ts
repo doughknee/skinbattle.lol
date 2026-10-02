@@ -162,8 +162,8 @@ export function useAuth() {
     sessionExpiredStore.set(false)
     const client = getLogtoClient()
     if (!client) return
-    posthog.capture('user_signed_out')
-    posthog.reset()
+    posthog?.capture('user_signed_out')
+    posthog?.reset()
     // Drop the games guest identity BEFORE the sign-out redirect unloads the
     // page - otherwise the next account on this browser inherits this
     // device's games record (tier list, history, streaks).
