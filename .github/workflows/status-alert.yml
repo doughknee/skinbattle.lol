@@ -1,0 +1,63 @@
+# Daily staleness alert (DONI-82): curls the live /games-status and, when it
+# is not HTTP 200, posts the problems into the Discord forum thread
+# "Staleness alerts". Healthy days post nothing.
+#
+# Why Discord: the facts-snapshot pipeline failed loudly on schedule and
+# GitHub emailed every failure for 91 days, while /games-status sat at 503 and
+# nobody read the email. The alarm worked; the channel did not. Discord is
+# where this project actually gets read, so email is deliberately not involved.
+#
+# Why not the container healthcheck: /games-status is a freshness endpoint.
+# Wiring it to a healthcheck would restart-loop the container on stale data,
+# which a restart cannot fix.
+#
+# An unhealthy site is the alert, not a workflow error, so that step never
+# fails the run. The run fails only if the Discord POST itself fails, so a
+# broken webhook still shows up red. Run it with `force` to test the channel:
+#   gh workflow run status-alert.yml -f force=true
+name: status-alert
+
+on:
+  schedule:
+    - cron: '0 8 * * *' # daily, 08:00 UTC - an hour behind indexnow
+  workflow_dispatch:
+    inputs:
+      force:
+        description: Post even when the site is healthy (tests the channel)
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check /games-status and alert Discord
+        env:
+          URL: https://skinbattle.lol/games-status
+          FORCE: ${{ inputs.force }}
+          WEBHOOK: ${{ secrets.DISCORD_STATUS_WEBHOOK }}
+          THREAD_ID: ${{ vars.DISCORD_STATUS_THREAD_ID }}
+        run: |
+          # A network failure leaves code 000 (curl then exits non-zero, so swallow it).
+          code=$(curl -s -o body.json -w '%{http_code}' --max-time 30 "$URL") || true
+          echo "status: $code"
+          if [ "$code" = 200 ] && [ "$FORCE" != true ]; then
+            echo "healthy, nothing to post"
+            exit 0
+          fi
+
+          problems=$(jq -r '.problems[]? | "- " + tostring' body.json 2>/dev/null || true)
+          [ -n "$problems" ] || problems="- (no problems[] in response body)"
+          tag=""
+          [ "$FORCE" = true ] && tag=" (forced test)"
+          msg=$(printf '**/games-status returned HTTP %s**%s\n%s\n<%s>' "$code" "$tag" "$problems" "$URL")
+          if [ "${#msg}" -gt 1900 ]; then
+            msg="${msg:0:1850}"$'\n'"... (truncated, see $URL)"
+          fi
+
+          jq -n --arg content "$msg" '{content: $content}' |
+            curl -s --fail-with-body -X POST -H 'Content-Type: application/json' \
+              -d @- "$WEBHOOK?thread_id=$THREAD_ID"
