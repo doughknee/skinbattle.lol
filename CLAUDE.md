@@ -5,3 +5,4 @@
 - PostHog reads go through the PostHog connector; its active project must be 468413 (SkinBattle.lol). It defaults to another project; run `switch-project` first.
 - `npm run motion-plus` needs `MOTION_PLUS_TOKEN`, which worker sessions do not have. The main checkout's `node_modules` already carries motion-plus; a worktree that reuses it can skip that step and run build + tsc + vitest.
 - `gh pr merge` from a worktree prints a local-checkout error because `main` is checked out in the primary worktree; the remote merge still lands. Confirm with `gh pr view <n> --json state`.
+- Before returning, a worker stops the vite server it started. A live server holds `games.db` open and Home cannot remove the worktree until the process is killed.
