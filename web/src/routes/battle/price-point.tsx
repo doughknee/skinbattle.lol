@@ -201,7 +201,7 @@ function PriceCheckPage() {
         data: { tier, restoreToken: guestRestoreToken() },
       })
       const last = next.results[next.results.length - 1]
-      posthog.capture('price_check_guess_submitted', {
+      posthog?.capture('price_check_guess_submitted', {
         puzzle_number: next.puzzleNumber,
         round: state.current?.round ?? next.results.length,
         guessed_tier: tier,
@@ -210,7 +210,7 @@ function PriceCheckPage() {
         actual_price: last?.actual,
       })
       if (next.status !== 'in_progress') {
-        posthog.capture('price_check_completed', {
+        posthog?.capture('price_check_completed', {
           puzzle_number: next.puzzleNumber,
           score: next.score,
           total_rounds: next.totalRounds,

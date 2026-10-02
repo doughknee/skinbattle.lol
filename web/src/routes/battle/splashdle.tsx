@@ -129,7 +129,7 @@ function SplashdlePage() {
       })
       rememberGuestToken(next.guestToken)
       const last = next.guesses[next.guesses.length - 1]
-      posthog.capture('splashdle_guess_submitted', {
+      posthog?.capture('splashdle_guess_submitted', {
         puzzle_number: next.puzzleNumber,
         guess_number: next.guesses.length,
         correct: last?.correct ?? false,
@@ -138,7 +138,7 @@ function SplashdlePage() {
         guessed_skin_id: opt.skinId,
       })
       if (next.status !== 'in_progress') {
-        posthog.capture('splashdle_completed', {
+        posthog?.capture('splashdle_completed', {
           puzzle_number: next.puzzleNumber,
           outcome: next.status,
           guesses_used: next.guesses.length,

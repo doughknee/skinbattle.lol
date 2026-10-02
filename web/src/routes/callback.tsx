@@ -46,13 +46,13 @@ function CallbackPage() {
         // nothing here reads them, and /privacy promises analytics holds
         // neither. Keep it that way - adding a person property means
         // changing that page in the same PR.
-        posthog.identify(claims.sub, { player_tier: 'member' })
+        posthog?.identify(claims.sub, { player_tier: 'member' })
         // Flip the super-property immediately so events between here and the
         // next render carry 'member'. user_signed_in fires ONLY after a
         // successful identify - otherwise it would land on the anonymous id
         // and corrupt the sign-up conversion funnel.
-        posthog.register({ is_authenticated: true, player_tier: 'member' })
-        posthog.capture('user_signed_in')
+        posthog?.register({ is_authenticated: true, player_tier: 'member' })
+        posthog?.capture('user_signed_in')
       }
     } catch {
       /* non-fatal: analytics shouldn't block navigation */

@@ -142,7 +142,7 @@ function ProfilePage() {
   // the sign-in prompt. player_tier rides along as a super-property.
   useEffect(() => {
     if (active !== 'mirror') return
-    posthog.capture('mirror_viewed', {
+    posthog?.capture('mirror_viewed', {
       skins_ranked: mirror.skinsRated,
       total_battles: mirror.totalBattles,
     })
