@@ -29,7 +29,7 @@ export const Route = createFileRoute('/privacy')({
   component: PrivacyPage,
 })
 
-const EFFECTIVE = 'September 11, 2026'
+const EFFECTIVE = 'October 1, 2026'
 
 function Section({
   title,
@@ -149,6 +149,19 @@ function PrivacyPage() {
               Profile → Account
             </Link>
             . That permanently removes your account and your sign-in identity.
+            Analytics events already recorded are keyed to an opaque id (never
+            email or name) and are not deleted with your account. PostHog
+            retains product analytics events for up to 7 years and session
+            recordings for up to 3 months; to request their removal,{' '}
+            <a
+              href="https://github.com/doughknee/skinbattle.lol/issues"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-gold2 underline-offset-2 hover:underline"
+            >
+              open an issue on GitHub
+            </a>{' '}
+            and the maintainer will delete the person record in PostHog.
             Your individual votes are disconnected from you. They survive
             only inside anonymous aggregate tallies, with nothing linking them
             back to a person. Guest data lives in your browser: clearing
