@@ -300,7 +300,7 @@ function ChampionPage() {
         {/* Left wash for title legibility, faded out at the bottom with the art. */}
         <div className="absolute inset-0 bg-gradient-to-r from-hextech-black/85 via-hextech-black/30 to-transparent [mask-image:linear-gradient(to_bottom,#000_42%,transparent_94%)] [-webkit-mask-image:linear-gradient(to_bottom,#000_42%,transparent_94%)]" />
 
-        <div className="animate-fade-up container mx-auto max-w-5xl px-6 relative z-10 flex min-h-[52vh] flex-col justify-end pt-28 pb-16">
+        <div className="animate-fade-up container mx-auto max-w-5xl px-6 relative z-10 flex min-h-[52vh] flex-col justify-end pt-28 pb-8 md:pb-16">
           <nav aria-label="Breadcrumb" className="mb-6 text-sm font-semibold">
             <ol className="text-shadow-hero flex flex-wrap items-center gap-2 text-grey1">
               <li>
@@ -345,23 +345,31 @@ function ChampionPage() {
 
       {/* ── The answer ───────────────────────────────────────── */}
       <div className="container mx-auto max-w-5xl px-6 pt-4">
-        <Verdict answer={answer} rated={rows.length} total={wardrobe.length}>
-          {/* The supporting line for the ask, in the verdict's own state:
-              provisional says what a battle here does, settled says the
-              ranking is open to argument. Never a count of votes to go. */}
-          <p className="w-full text-sm text-gold1/90">{cta.hint}</p>
-          {/* Scoped battle: every pair is dealt from this wardrobe, so each
-              pick is evidence for THIS ranking rather than for two skins the
-              visitor did not come for. */}
-          <Link
-            to="/battle"
-            search={{ champion: slug }}
-            onClick={() => ctaClick('battle')}
-            className={btnPrimarySm}
-          >
-            <FontAwesomeIcon icon={faShuffle} className="h-4" />
-            {cta.label}
-          </Link>
+        <Verdict
+          answer={answer}
+          rated={rows.length}
+          total={wardrobe.length}
+          ask={
+            <>
+              {/* Scoped battle: every pair is dealt from this wardrobe, so each
+                  pick is evidence for THIS ranking rather than for two skins the
+                  visitor did not come for. */}
+              <Link
+                to="/battle"
+                search={{ champion: slug }}
+                onClick={() => ctaClick('battle')}
+                className={btnPrimarySm}
+              >
+                <FontAwesomeIcon icon={faShuffle} className="h-4" />
+                {cta.label}
+              </Link>
+              {/* The supporting line for the ask, in the verdict's own state:
+                  provisional says what a battle here does, settled says the
+                  ranking is open to argument. Never a count of votes to go. */}
+              <p className="w-full text-sm text-gold1/90">{cta.hint}</p>
+            </>
+          }
+        >
           {wardrobe.length >= MIN_TIER_BOARD && (
             <Link
               to="/battle/tier-drop"
