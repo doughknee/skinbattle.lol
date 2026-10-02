@@ -16,6 +16,7 @@ import {
 import EmptyState from '~/components/EmptyState'
 import ErrorState from '~/components/ErrorState'
 import JsonLd from '~/components/JsonLd'
+import PodiumCard from '~/components/PodiumCard'
 import ShareRanking from '~/components/ShareRanking'
 import Verdict from '~/components/Verdict'
 import { btnChip, btnPrimarySm, btnSecondarySm } from '~/lib/ui'
@@ -114,6 +115,14 @@ const releaseLabel = (iso: string | null): string | null => {
 }
 
 const n = (v: number): string => v.toLocaleString('en-US')
+
+// Slices up to this many catalogued skins get a splash podium over ranks 1-3;
+// the table carries the rest. Measured, not guessed: across the 368 non-"all"
+// slices every champion slice holds 1-23 skins and every skin line 4-38, and
+// then nothing until 55 (the smaller year slices), so any cut in 39-54 splits
+// the same way. Catalogued, not rated, so a slice does not change layout as
+// votes land. Price tiers (125-983) and years (55+) stay a pure table.
+const PODIUM_MAX_SKINS = 40
 
 // A real <table>, because a ranking with evidence columns is tabular data and
 // nothing else. It is entirely server-rendered - no JS runs to produce a row -
@@ -702,6 +711,8 @@ function RankingSlicePage() {
   const rows =
     extra.slice === state.slice ? [...state.rows, ...extra.rows] : state.rows
   const remaining = state.ratedCount - rows.length
+  const podium = state.totalCount <= PODIUM_MAX_SKINS ? rows.slice(0, 3) : []
+  const field = rows.slice(podium.length)
 
   async function loadMore() {
     if (loadingMore || remaining <= 0) return
@@ -888,9 +899,25 @@ function RankingSlicePage() {
             )}
           </p>
 
-          <div className="animate-fade-up">
-            <RankingTable rows={rows} caption={`${state.title}, best first`} />
-          </div>
+          {podium.length > 0 && (
+            <section
+              aria-label={`Top ${podium.length} of ${state.title}`}
+              className="animate-fade-up mb-2 grid grid-cols-1 gap-2 sm:grid-cols-2"
+            >
+              {podium.map((row) => (
+                <PodiumCard key={row.skinId} row={row} />
+              ))}
+            </section>
+          )}
+
+          {field.length > 0 && (
+            <div className="animate-fade-up">
+              <RankingTable
+                rows={field}
+                caption={`${state.title}, best first${podium.length ? `, from rank ${podium.length + 1}` : ''}`}
+              />
+            </div>
+          )}
 
           {remaining > 0 && (
             <div className="mt-6 flex justify-center">
