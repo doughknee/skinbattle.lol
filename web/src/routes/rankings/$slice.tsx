@@ -815,17 +815,21 @@ function RankingSlicePage() {
         answer={state.answer}
         rated={state.ratedCount}
         total={state.totalCount}
+        ask={
+          <>
+            <Link
+              to="/battle"
+              search={champion ? { champion } : {}}
+              onClick={() => ctaClick('battle')}
+              className={btnPrimarySm}
+            >
+              <FontAwesomeIcon icon={faShuffle} className="h-4" />
+              {ask.label}
+            </Link>
+            <p className="w-full text-sm text-gold1/90">{ask.hint}</p>
+          </>
+        }
       >
-        <p className="w-full text-sm text-gold1/90">{ask.hint}</p>
-        <Link
-          to="/battle"
-          search={champion ? { champion } : {}}
-          onClick={() => ctaClick('battle')}
-          className={btnPrimarySm}
-        >
-          <FontAwesomeIcon icon={faShuffle} className="h-4" />
-          {ask.label}
-        </Link>
         {tierBoard && (
           <Link
             to="/battle/tier-drop"

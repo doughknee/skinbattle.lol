@@ -44,6 +44,7 @@ export default function Verdict({
   answer,
   rated,
   total,
+  ask,
   children,
 }: {
   answer: AnswerBlock
@@ -51,6 +52,9 @@ export default function Verdict({
   // the panel shows both rather than letting either stand in for the other.
   rated: number
   total: number
+  // The primary ask, shown straight under the answer sentence: that is where an
+  // SEO reader stops, so it must land above the fold, before the long basis.
+  ask?: ReactNode
   children?: ReactNode
 }) {
   const tone = TONE[answer.confidence]
@@ -81,7 +85,8 @@ export default function Verdict({
       <p className="mt-4 text-xl leading-relaxed text-gold1 md:text-2xl">
         {answer.answer}
       </p>
-      <p className="mt-3 max-w-2xl text-grey1">{answer.basis}</p>
+      {ask && <div className="mt-5 flex flex-wrap items-center gap-3">{ask}</div>}
+      <p className="mt-5 max-w-2xl text-grey1">{answer.basis}</p>
 
       {/* Coverage as a measured quantity, same idiom as the ranking slices. */}
       <div className="mt-5 max-w-sm">
