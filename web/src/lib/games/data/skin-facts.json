@@ -1,6 +1,6 @@
 {
- "snapshotAt": "2026-10-01T12:15:54.154Z",
- "patch": "16.19.1",
+ "snapshotAt": "2026-10-15T10:43:41.310Z",
+ "patch": "16.20.1",
  "skins": {
   "1001": {
    "cost": null,
@@ -6602,7 +6602,8 @@
    "rarity": "Epic",
    "availability": "Available",
    "sets": [
-    "Coven"
+    "Coven",
+    "Elderwood"
    ],
    "release": "2019-08-29"
   },
@@ -8874,12 +8875,12 @@
   },
   "81078": {
    "cost": 1350,
-   "rarity": null,
-   "availability": "Upcoming",
+   "rarity": "Epic",
+   "availability": "Available",
    "sets": [
     "HEARTSTEEL"
    ],
-   "release": null
+   "release": "2026-10-07"
   },
   "82001": {
    "cost": 520,
@@ -9263,6 +9264,15 @@
     "Spirit Blossom"
    ],
    "release": "2025-06-25"
+  },
+  "84103": {
+   "cost": 1820,
+   "rarity": null,
+   "availability": "Upcoming",
+   "sets": [
+    "True Damage"
+   ],
+   "release": null
   },
   "85001": {
    "cost": 520,
@@ -10182,12 +10192,12 @@
   },
   "96065": {
    "cost": null,
-   "rarity": null,
-   "availability": "Upcoming",
+   "rarity": "Mythic",
+   "availability": "Rare",
    "sets": [
     "Classic"
    ],
-   "release": null
+   "release": "2026-10-07"
   },
   "98001": {
    "cost": 520,
@@ -13123,12 +13133,12 @@
   },
   "141032": {
    "cost": 1350,
-   "rarity": null,
-   "availability": "Upcoming",
+   "rarity": "Epic",
+   "availability": "Available",
    "sets": [
     "HEARTSTEEL"
    ],
-   "release": null
+   "release": "2026-10-07"
   },
   "142001": {
    "cost": 1350,
@@ -13885,6 +13895,15 @@
     "Petals of Spring"
    ],
    "release": "2026-02-19"
+  },
+  "157097": {
+   "cost": 1350,
+   "rarity": null,
+   "availability": "Upcoming",
+   "sets": [
+    "True Damage"
+   ],
+   "release": null
   },
   "161001": {
    "cost": 1350,
@@ -14867,6 +14886,15 @@
    ],
    "release": "2026-03-19"
   },
+  "235081": {
+   "cost": 1350,
+   "rarity": null,
+   "availability": "Upcoming",
+   "sets": [
+    "True Damage"
+   ],
+   "release": null
+  },
   "236001": {
    "cost": 975,
    "rarity": null,
@@ -15263,6 +15291,15 @@
    ],
    "release": "2024-12-11"
   },
+  "245059": {
+   "cost": null,
+   "rarity": null,
+   "availability": "Upcoming",
+   "sets": [
+    "True Damage"
+   ],
+   "release": null
+  },
   "246001": {
    "cost": 1350,
    "rarity": "Epic",
@@ -15343,6 +15380,15 @@
     "Battle Academia"
    ],
    "release": "2025-03-19"
+  },
+  "246051": {
+   "cost": 1350,
+   "rarity": null,
+   "availability": "Upcoming",
+   "sets": [
+    "True Damage"
+   ],
+   "release": null
   },
   "254001": {
    "cost": 975,
@@ -16804,12 +16850,12 @@
   },
   "523041": {
    "cost": 1350,
-   "rarity": null,
-   "availability": "Upcoming",
+   "rarity": "Epic",
+   "availability": "Available",
    "sets": [
     "HEARTSTEEL"
    ],
-   "release": null
+   "release": "2026-10-07"
   },
   "526001": {
    "cost": 1350,
@@ -17092,12 +17138,12 @@
   },
   "777077": {
    "cost": 1350,
-   "rarity": null,
-   "availability": "Upcoming",
+   "rarity": "Epic",
+   "availability": "Available",
    "sets": [
     "HEARTSTEEL"
    ],
-   "release": null
+   "release": "2026-10-07"
   },
   "799001": {
    "cost": 1820,
@@ -17263,12 +17309,12 @@
   },
   "875076": {
    "cost": null,
-   "rarity": null,
-   "availability": "Upcoming",
+   "rarity": "Mythic",
+   "availability": "Rare",
    "sets": [
     "HEARTSTEEL"
    ],
-   "release": null
+   "release": "2026-10-07"
   },
   "876001": {
    "cost": 1350,
@@ -17506,12 +17552,12 @@
   },
   "897018": {
    "cost": 1350,
-   "rarity": null,
-   "availability": "Upcoming",
+   "rarity": "Epic",
+   "availability": "Available",
    "sets": [
     "HEARTSTEEL"
    ],
-   "release": null
+   "release": "2026-10-07"
   },
   "901001": {
    "cost": 1350,
